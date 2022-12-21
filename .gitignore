@@ -1,3 +1,7 @@
+# Android Studio
+.idea/
+.gradle/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
@@ -29,12 +33,6 @@ $RECYCLE.BIN/
 *.ap_
 *.class
 drbeef-release-key.keystore
-projects/Android/.cxx
-projects/Android/build/*
-Projects/Android/.externalNativeBuild/*
 *.json
 *.bin
-Projects/Android/.gradle/*
 *.ser
-Projects/Android/.idea/*
-Projects/Android/Android.iml
