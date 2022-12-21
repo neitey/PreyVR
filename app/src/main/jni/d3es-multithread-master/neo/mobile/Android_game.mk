@@ -14,7 +14,7 @@ $(SDL_INCLUDE_PATHS)
 
 LOCAL_CPPFLAGS :=  -DGAME_DLL -fPIC
 
-LOCAL_CPPFLAGS += -std=gnu++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
+LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
 
 
 LOCAL_CPPFLAGS += -Wno-sign-compare \
