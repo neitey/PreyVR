@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MATH_EXTRAPOLATE_H__
 #define __MATH_EXTRAPOLATE_H__
 
-#include "idlib/math/Math.h"
-
 /*
 ==============================================================================================
 
@@ -50,33 +48,56 @@ typedef enum {
 } extrapolation_t;
 
 template< class type >
-class idExtrapolate {
-public:
-						idExtrapolate();
+class idExtrapolate
+{
+	public:
+		idExtrapolate();
 
-	void				Init( const float startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType );
-	type				GetCurrentValue( float time ) const;
-	type				GetCurrentSpeed( float time ) const;
-	bool				IsDone( float time ) const { return ( !( extrapolationType & EXTRAPOLATION_NOSTOP ) && time >= startTime + duration ); }
-	void				SetStartTime( float time ) { startTime = time; currentTime = -1; }
-	float				GetStartTime( void ) const { return startTime; }
-	float				GetEndTime( void ) const { return ( !( extrapolationType & EXTRAPOLATION_NOSTOP ) && duration > 0 ) ? startTime + duration : 0; }
-	float				GetDuration( void ) const { return duration; }
-	void				SetStartValue( const type &value ) { startValue = value; currentTime = -1; }
-	const type &		GetStartValue( void ) const { return startValue; }
-	const type &		GetBaseSpeed( void ) const { return baseSpeed; }
-	const type &		GetSpeed( void ) const { return speed; }
-	extrapolation_t		GetExtrapolationType( void ) const { return extrapolationType; }
+		void				Init(const float startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType);
+		type				GetCurrentValue(float time) const;
+		type				GetCurrentSpeed(float time) const;
+		bool				IsDone(float time) const {
+			return (!(extrapolationType & EXTRAPOLATION_NOSTOP) && time >= startTime + duration);
+		}
+		void				SetStartTime(float time) {
+			startTime = time;
+			currentTime = -1;
+		}
+		float				GetStartTime(void) const {
+			return startTime;
+		}
+		float				GetEndTime(void) const {
+			return (!(extrapolationType & EXTRAPOLATION_NOSTOP) && duration > 0) ? startTime + duration : 0;
+		}
+		float				GetDuration(void) const {
+			return duration;
+		}
+		void				SetStartValue(const type &value) {
+			startValue = value;
+			currentTime = -1;
+		}
+		const type 		&GetStartValue(void) const {
+			return startValue;
+		}
+		const type 		&GetBaseSpeed(void) const {
+			return baseSpeed;
+		}
+		const type 		&GetSpeed(void) const {
+			return speed;
+		}
+		extrapolation_t		GetExtrapolationType(void) const {
+			return extrapolationType;
+		}
 
-private:
-	extrapolation_t		extrapolationType;
-	float				startTime;
-	float				duration;
-	type				startValue;
-	type				baseSpeed;
-	type				speed;
-	mutable float		currentTime;
-	mutable type		currentValue;
+	private:
+		extrapolation_t		extrapolationType;
+		float				startTime;
+		float				duration;
+		type				startValue;
+		type				baseSpeed;
+		type				speed;
+		mutable float		currentTime;
+		mutable type		currentValue;
 };
 
 /*
@@ -85,12 +106,13 @@ idExtrapolate::idExtrapolate
 ====================
 */
 template< class type >
-ID_INLINE idExtrapolate<type>::idExtrapolate() {
+ID_INLINE idExtrapolate<type>::idExtrapolate()
+{
 	extrapolationType = EXTRAPOLATION_NONE;
 	startTime = duration = 0.0f;
-	memset( &startValue, 0, sizeof( startValue ) );
-	memset( &baseSpeed, 0, sizeof( baseSpeed ) );
-	memset( &speed, 0, sizeof( speed ) );
+	memset(&startValue, 0, sizeof(startValue));
+	memset(&baseSpeed, 0, sizeof(baseSpeed));
+	memset(&speed, 0, sizeof(speed));
 	currentTime = -1;
 	currentValue = startValue;
 }
@@ -101,7 +123,8 @@ idExtrapolate::Init
 ====================
 */
 template< class type >
-ID_INLINE void idExtrapolate<type>::Init( const float startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType ) {
+ID_INLINE void idExtrapolate<type>::Init(const float startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType)
+{
 	this->extrapolationType = extrapolationType;
 	this->startTime = startTime;
 	this->duration = duration;
@@ -118,75 +141,81 @@ idExtrapolate::GetCurrentValue
 ====================
 */
 template< class type >
-ID_INLINE type idExtrapolate<type>::GetCurrentValue( float time ) const {
+ID_INLINE type idExtrapolate<type>::GetCurrentValue(float time) const
+{
 	float deltaTime, s;
 
-	if ( time == currentTime ) {
+	if (time == currentTime) {
 		return currentValue;
 	}
 
 	currentTime = time;
 
-	if ( time < startTime ) {
+	if (time < startTime) {
 		return startValue;
 	}
 
-	if ( !( extrapolationType &	EXTRAPOLATION_NOSTOP ) && ( time > startTime + duration ) ) {
+	if (!(extrapolationType &	EXTRAPOLATION_NOSTOP) && (time > startTime + duration)) {
 		time = startTime + duration;
 	}
 
-	switch( extrapolationType & ~EXTRAPOLATION_NOSTOP ) {
+	switch (extrapolationType & ~EXTRAPOLATION_NOSTOP) {
 		case EXTRAPOLATION_NONE: {
-			deltaTime = ( time - startTime ) * 0.001f;
+			deltaTime = (time - startTime) * 0.001f;
 			currentValue = startValue + deltaTime * baseSpeed;
 			break;
 		}
 		case EXTRAPOLATION_LINEAR: {
-			deltaTime = ( time - startTime ) * 0.001f;
-			currentValue = startValue + deltaTime * ( baseSpeed + speed );
+			deltaTime = (time - startTime) * 0.001f;
+			currentValue = startValue + deltaTime * (baseSpeed + speed);
 			break;
 		}
 		case EXTRAPOLATION_ACCELLINEAR: {
-			if ( !duration ) {
+			if (!duration) {
 				currentValue = startValue;
 			} else {
-				deltaTime = ( time - startTime ) / duration;
-				s = ( 0.5f * deltaTime * deltaTime ) * ( duration * 0.001f );
+				deltaTime = (time - startTime) / duration;
+				s = (0.5f * deltaTime * deltaTime) * (duration * 0.001f);
 				currentValue = startValue + deltaTime * baseSpeed + s * speed;
 			}
+
 			break;
 		}
 		case EXTRAPOLATION_DECELLINEAR: {
-			if ( !duration ) {
+			if (!duration) {
 				currentValue = startValue;
 			} else {
-				deltaTime = ( time - startTime ) / duration;
-				s = ( deltaTime - ( 0.5f * deltaTime * deltaTime ) ) * ( duration * 0.001f );
+				deltaTime = (time - startTime) / duration;
+				s = (deltaTime - (0.5f * deltaTime * deltaTime)) * (duration * 0.001f);
 				currentValue = startValue + deltaTime * baseSpeed + s * speed;
 			}
+
 			break;
 		}
 		case EXTRAPOLATION_ACCELSINE: {
-			if ( !duration ) {
+			if (!duration) {
 				currentValue = startValue;
 			} else {
-				deltaTime = ( time - startTime ) / duration;
-				s = ( 1.0f - idMath::Cos( deltaTime * idMath::HALF_PI ) ) * duration * 0.001f * idMath::SQRT_1OVER2;
+				deltaTime = (time - startTime) / duration;
+				s = (1.0f - idMath::Cos(deltaTime * idMath::HALF_PI)) * duration * 0.001f * idMath::SQRT_1OVER2;
 				currentValue = startValue + deltaTime * baseSpeed + s * speed;
 			}
+
 			break;
 		}
 		case EXTRAPOLATION_DECELSINE: {
-			if ( !duration ) {
+			if (!duration) {
 				currentValue = startValue;
 			} else {
-				deltaTime = ( time - startTime ) / duration;
-				s = idMath::Sin( deltaTime * idMath::HALF_PI ) * duration * 0.001f * idMath::SQRT_1OVER2;
+				deltaTime = (time - startTime) / duration;
+				s = idMath::Sin(deltaTime * idMath::HALF_PI) * duration * 0.001f * idMath::SQRT_1OVER2;
 				currentValue = startValue + deltaTime * baseSpeed + s * speed;
 			}
+
 			break;
 		}
 	}
+
 	return currentValue;
 }
 
@@ -196,18 +225,19 @@ idExtrapolate::GetCurrentSpeed
 ====================
 */
 template< class type >
-ID_INLINE type idExtrapolate<type>::GetCurrentSpeed( float time ) const {
+ID_INLINE type idExtrapolate<type>::GetCurrentSpeed(float time) const
+{
 	float deltaTime, s;
 
-	if ( time < startTime || !duration ) {
-		return ( startValue - startValue );
+	if (time < startTime || !duration) {
+		return (startValue - startValue);
 	}
 
-	if ( !( extrapolationType &	EXTRAPOLATION_NOSTOP ) && ( time > startTime + duration ) ) {
-		return ( startValue - startValue );
+	if (!(extrapolationType &	EXTRAPOLATION_NOSTOP) && (time > startTime + duration)) {
+		return (startValue - startValue);
 	}
 
-	switch( extrapolationType & ~EXTRAPOLATION_NOSTOP ) {
+	switch (extrapolationType & ~EXTRAPOLATION_NOSTOP) {
 		case EXTRAPOLATION_NONE: {
 			return baseSpeed;
 		}
@@ -215,23 +245,23 @@ ID_INLINE type idExtrapolate<type>::GetCurrentSpeed( float time ) const {
 			return baseSpeed + speed;
 		}
 		case EXTRAPOLATION_ACCELLINEAR: {
-			deltaTime = ( time - startTime ) / duration;
+			deltaTime = (time - startTime) / duration;
 			s = deltaTime;
 			return baseSpeed + s * speed;
 		}
 		case EXTRAPOLATION_DECELLINEAR: {
-			deltaTime = ( time - startTime ) / duration;
+			deltaTime = (time - startTime) / duration;
 			s = 1.0f - deltaTime;
 			return baseSpeed + s * speed;
 		}
 		case EXTRAPOLATION_ACCELSINE: {
-			deltaTime = ( time - startTime ) / duration;
-			s = idMath::Sin( deltaTime * idMath::HALF_PI );
+			deltaTime = (time - startTime) / duration;
+			s = idMath::Sin(deltaTime * idMath::HALF_PI);
 			return baseSpeed + s * speed;
 		}
 		case EXTRAPOLATION_DECELSINE: {
-			deltaTime = ( time - startTime ) / duration;
-			s = idMath::Cos( deltaTime * idMath::HALF_PI );
+			deltaTime = (time - startTime) / duration;
+			s = idMath::Cos(deltaTime * idMath::HALF_PI);
 			return baseSpeed + s * speed;
 		}
 		default: {

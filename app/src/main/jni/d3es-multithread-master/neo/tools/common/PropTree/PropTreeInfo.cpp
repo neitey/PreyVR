@@ -17,8 +17,8 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "PropTree.h"
 #include "../../../sys/win32/rc/proptree_Resource.h"
@@ -52,7 +52,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CPropTreeInfo message handlers
 
-void CPropTreeInfo::SetPropOwner(CPropTree* pProp)
+void CPropTreeInfo::SetPropOwner(CPropTree *pProp)
 {
 	m_pProp = pProp;
 }
@@ -72,7 +72,7 @@ void CPropTreeInfo::OnPaint()
 
 	ASSERT(m_pProp!=NULL);
 
-	CPropTreeItem* pItem = m_pProp->GetFocusedItem();
+	CPropTreeItem *pItem = m_pProp->GetFocusedItem();
 
 	if (!m_pProp->IsWindowEnabled())
 		dc.SetTextColor(GetSysColor(COLOR_GRAYTEXT));

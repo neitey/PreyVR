@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include <idlib/containers/Sort.h>
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/DeclEntityDef.h"
 #include "framework/DeclSkin.h"
 #include "framework/Session.h"
@@ -1341,7 +1340,10 @@ void idWeapon::UpdateFlashPosition( void ) {
 //		static idAngles baseAdjustAng = ang_zero;	//idAngles( 0.0f, 10.0f, 0.0f );
         idAngles adjustAng = /*baseAdjustAng +*/ idAngles( fraccos * yscale, 0.0f, fraccos2 * pscale );
         idAngles bobAngles = owner->GetViewBobAngles();
-        SwapValues( bobAngles.pitch, bobAngles.roll );
+		float pitch = bobAngles.pitch;
+		float roll = bobAngles.roll;
+	    bobAngles.pitch = roll;
+	    bobAngles.roll = pitch;
         adjustAng += bobAngles * 3.0f;
         muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
     }
@@ -3228,7 +3230,7 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return true;
 		}
 		case EVENT_CHANGESKIN: {
-			int index = gameLocal.ClientRemapDecl( DECL_SKIN, msg.ReadInt() );
+			int index = gameLocal.ClientRemapDecl( DECL_SKIN, msg.ReadLong() );
 			renderEntity.customSkin = ( index != -1 ) ? static_cast<const idDeclSkin *>( declManager->DeclByIndex( DECL_SKIN, index ) ) : NULL;
 			UpdateVisuals();
 			if ( worldModel.GetEntity() ) {
@@ -3683,7 +3685,7 @@ void idWeapon::Event_SetSkin( const char *skinname ) {
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
 		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.WriteInt( ( skinDecl != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_SKIN, skinDecl->Index() ) : -1 );
+		msg.WriteLong( ( skinDecl != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_SKIN, skinDecl->Index() ) : -1 );
 		ServerSendEvent( EVENT_CHANGESKIN, &msg, false, -1 );
 	}
 }

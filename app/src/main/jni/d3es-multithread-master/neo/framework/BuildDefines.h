@@ -127,6 +127,4 @@ dhewm WIP		42
 #define GAME_INIT_ID_INVALID	(-1)
 #define GAME_INIT_ID_MAP_LOAD	(-2)
 
-// threads
-
-#define MAX_THREADS				(10)
+#define MAX_THREADS                            (10)

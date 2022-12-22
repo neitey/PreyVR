@@ -30,74 +30,73 @@
 class PROPTREE_API CPropTreeItemEdit : public CEdit, public CPropTreeItem
 {
 // Construction
-public:
-	CPropTreeItemEdit();
-	virtual ~CPropTreeItemEdit();
+	public:
+		CPropTreeItemEdit();
+		virtual ~CPropTreeItemEdit();
 
 // Attributes
-public:
-	// The attribute area needs drawing
-	virtual void DrawAttribute(CDC* pDC, const RECT& rc);
+	public:
+		// The attribute area needs drawing
+		virtual void DrawAttribute(CDC *pDC, const RECT &rc);
 
-	// Retrieve the item's attribute value
-	virtual LPARAM GetItemValue();
+		// Retrieve the item's attribute value
+		virtual LPARAM GetItemValue();
 
-	// Set the item's attribute value
-	virtual void SetItemValue(LPARAM lParam);
+		// Set the item's attribute value
+		virtual void SetItemValue(LPARAM lParam);
 
-	// Called when attribute area has changed size
-	virtual void OnMove();
+		// Called when attribute area has changed size
+		virtual void OnMove();
 
-	// Called when the item needs to refresh its data
-	virtual void OnRefresh();
+		// Called when the item needs to refresh its data
+		virtual void OnRefresh();
 
-	// Called when the item needs to commit its changes
-	virtual void OnCommit();
+		// Called when the item needs to commit its changes
+		virtual void OnCommit();
 
-	// Called to activate the item
-	virtual void OnActivate(int activateType, CPoint point);
+		// Called to activate the item
+		virtual void OnActivate(int activateType, CPoint point);
 
 
-	enum ValueFormat
-	{
-		ValueFormatText,
-		ValueFormatNumber,
-		ValueFormatFloatPointer
-	};
+		enum ValueFormat {
+			ValueFormatText,
+			ValueFormatNumber,
+			ValueFormatFloatPointer
+		};
 
-	// Set to specifify format of SetItemValue/GetItemValue
-	void SetValueFormat(ValueFormat nFormat);
+		// Set to specifify format of SetItemValue/GetItemValue
+		void SetValueFormat(ValueFormat nFormat);
 
-	// Set to TRUE for to use a password edit control
-	void SetAsPassword(BOOL bPassword);
+		// Set to TRUE for to use a password edit control
+		void SetAsPassword(BOOL bPassword);
 
-protected:
-	CString		m_sEdit;
-	float		m_fValue;
+	protected:
+		CString		m_sEdit;
+		float		m_fValue;
 
-	ValueFormat m_nFormat;
-	BOOL		m_bPassword;
+		ValueFormat m_nFormat;
+		BOOL		m_bPassword;
 
 // Operations
-public:
+	public:
 
 // Overrides
-	// ClassWizard generated virtual function overrides
-	//{{AFX_VIRTUAL(CPropTreeItemEdit)
-	//}}AFX_VIRTUAL
+		// ClassWizard generated virtual function overrides
+		//{{AFX_VIRTUAL(CPropTreeItemEdit)
+		//}}AFX_VIRTUAL
 
 // Implementation
-public:
+	public:
 
-	// Generated message map functions
-protected:
-	//{{AFX_MSG(CPropTreeItemEdit)
-	afx_msg UINT OnGetDlgCode();
-	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	afx_msg void OnKillfocus();
-	//}}AFX_MSG
+		// Generated message map functions
+	protected:
+		//{{AFX_MSG(CPropTreeItemEdit)
+		afx_msg UINT OnGetDlgCode();
+		afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+		afx_msg void OnKillfocus();
+		//}}AFX_MSG
 
-	DECLARE_MESSAGE_MAP()
+		DECLARE_MESSAGE_MAP()
 };
 
 /////////////////////////////////////////////////////////////////////////////

@@ -26,11 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/containers/List.h"
-#include "idlib/containers/HashIndex.h"
-#include "idlib/hashing/MD5.h"
-#include "idlib/BitMsg.h"
+#include "idlib/precompiled.h"
 #include "framework/FileSystem.h"
 #include "framework/CVarSystem.h"
 #include "framework/DeclAF.h"

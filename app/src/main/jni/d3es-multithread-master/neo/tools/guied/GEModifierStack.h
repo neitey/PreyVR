@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -34,56 +34,56 @@ If you have questions concerning this license or the applicable additional terms
 
 class rvGEModifierStack
 {
-public:
+	public:
 
-	rvGEModifierStack ( );
-	~rvGEModifierStack ( );
+		rvGEModifierStack();
+		~rvGEModifierStack();
 
-	void			BlockNextMerge	( void );
+		void			BlockNextMerge(void);
 
-	bool			Append			( rvGEModifier* modifier );
-	bool			Undo			( void );
-	bool			Redo			( void );
+		bool			Append(rvGEModifier *modifier);
+		bool			Undo(void);
+		bool			Redo(void);
 
-	void			Reset			( void );
+		void			Reset(void);
 
-	bool			CanUndo			( void );
-	bool			CanRedo			( void );
+		bool			CanUndo(void);
+		bool			CanRedo(void);
 
-	rvGEModifier*	GetUndoModifier	( void );
-	rvGEModifier*	GetRedoModifier	( void );
+		rvGEModifier	*GetUndoModifier(void);
+		rvGEModifier	*GetRedoModifier(void);
 
-protected:
+	protected:
 
-	idList<rvGEModifier*>	mModifiers;
-	int						mCurrentModifier;
-	bool					mMergeBlock;
+		idList<rvGEModifier *>	mModifiers;
+		int						mCurrentModifier;
+		bool					mMergeBlock;
 };
 
-ID_INLINE bool rvGEModifierStack::CanRedo ( void )
+ID_INLINE bool rvGEModifierStack::CanRedo(void)
 {
 	return mCurrentModifier < mModifiers.Num()-1;
 }
 
-ID_INLINE bool rvGEModifierStack::CanUndo ( void )
+ID_INLINE bool rvGEModifierStack::CanUndo(void)
 {
 	return mCurrentModifier >= 0;
 }
 
-ID_INLINE void rvGEModifierStack::BlockNextMerge ( void )
+ID_INLINE void rvGEModifierStack::BlockNextMerge(void)
 {
 	mMergeBlock = true;
 }
 
-ID_INLINE rvGEModifier* rvGEModifierStack::GetUndoModifier ( void )
+ID_INLINE rvGEModifier *rvGEModifierStack::GetUndoModifier(void)
 {
-	assert ( CanUndo ( ) );
+	assert(CanUndo());
 	return mModifiers[mCurrentModifier];
 }
 
-ID_INLINE rvGEModifier* rvGEModifierStack::GetRedoModifier ( void )
+ID_INLINE rvGEModifier *rvGEModifierStack::GetRedoModifier(void)
 {
-	assert ( CanRedo ( ) );
+	assert(CanRedo());
 	return mModifiers[mCurrentModifier+1];
 }
 

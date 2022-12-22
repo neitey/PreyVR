@@ -43,27 +43,39 @@ If you have questions concerning this license or the applicable additional terms
 
 class idSysLocal : public idSys {
 public:
-	virtual void			DebugPrintf( const char *fmt, ... )id_attribute((format(printf,2,3)));
-	virtual void			DebugVPrintf( const char *fmt, va_list arg );
+	virtual void			DebugPrintf(const char *fmt, ...)id_attribute((format(printf,2,3)));
+	virtual void			DebugVPrintf(const char *fmt, va_list arg);
 
-	virtual unsigned int	GetMilliseconds( void );
-	virtual int				GetProcessorId( void );
-	virtual void			FPU_SetFTZ( bool enable );
-	virtual void			FPU_SetDAZ( bool enable );
+	virtual double			GetClockTicks(void);
+	virtual double			ClockTicksPerSecond(void);
+	virtual int 			GetProcessorId(void);
+	virtual const char 	*GetProcessorString(void);
+	virtual const char 	*FPU_GetState(void);
+	virtual bool			FPU_StackIsEmpty(void);
+	virtual void			FPU_SetFTZ(bool enable);
+	virtual void			FPU_SetDAZ(bool enable);
 
-	virtual bool			LockMemory( void *ptr, int bytes );
-	virtual bool			UnlockMemory( void *ptr, int bytes );
+	virtual void			FPU_EnableExceptions(int exceptions);
 
-	virtual uintptr_t		DLL_Load( const char *dllName );
-	virtual void *			DLL_GetProcAddress( uintptr_t dllHandle, const char *procName );
-	virtual void			DLL_Unload( uintptr_t dllHandle );
-	virtual void			DLL_GetFileName( const char *baseName, char *dllName, int maxLength );
+	virtual void			GetCallStack(address_t *callStack, const int callStackSize);
+	virtual const char 	*GetCallStackStr(const address_t *callStack, const int callStackSize);
+	virtual const char 	*GetCallStackCurStr(int depth);
+	virtual void			ShutdownSymbols(void);
 
-	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down );
-	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay );
+	virtual bool			LockMemory(void *ptr, int bytes);
+	virtual bool			UnlockMemory(void *ptr, int bytes);
 
-	virtual void			OpenURL( const char *url, bool quit );
-	virtual void			StartProcess( const char *exeName, bool quit );
+//k 64
+	virtual uintptr_t		DLL_Load(const char *dllName);
+	virtual void 			*DLL_GetProcAddress(uintptr_t dllHandle, const char *procName);
+	virtual void			DLL_Unload(uintptr_t dllHandle);
+	virtual void			DLL_GetFileName(const char *baseName, char *dllName, int maxLength);
+
+	virtual sysEvent_t		GenerateMouseButtonEvent(int button, bool down);
+	virtual sysEvent_t		GenerateMouseMoveEvent(int deltax, int deltay);
+
+	virtual void			OpenURL(const char *url, bool quit);
+	virtual void			StartProcess(const char *exeName, bool quit);
 };
 
 #endif /* !__SYS_LOCAL__ */

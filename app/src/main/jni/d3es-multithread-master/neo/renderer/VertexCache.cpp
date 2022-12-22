@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Common.h"
 #include "renderer/tr_local.h"
 
@@ -191,7 +191,7 @@ void* idVertexCache::Position(vertCache_t* buffer) {
 	if( buffer->vbo == -1 )
 	{
 		if( !buffer->frontEndMemory )
-			LOGI("MEMORY NULL");
+			printf("MEMORY NULL");
 		qglGenBuffers(1, &buffer->vbo);
 
 		if(buffer->vbo > vboMax)
@@ -221,7 +221,7 @@ void* idVertexCache::Position(vertCache_t* buffer) {
 
 	// Update any new data
 	if (buffer->frontEndMemoryDirty){
-		//LOGI("Uploading Static vertex");
+		//printf("Uploading Static vertex");
 		if (buffer->indexBuffer) {
             qglBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer->size, buffer->frontEndMemory, GL_STATIC_DRAW);
         } else {
@@ -566,7 +566,7 @@ vertCache_t* idVertexCache::AllocFrameTemp(void* data, int size, bool indexBuffe
 
 	if (indexBuffer) {
 		if (dynamicAllocThisFrame_Index[listNum] + size > frameBytes) {
-			LOGI("WARNING DYNAMIC OVERFLOW!!");
+			printf("WARNING DYNAMIC OVERFLOW!!");
 			// if we don't have enough room in the temp block, allocate a static block,
 			// but immediately free it so it will get freed at the next frame
 			tempOverflow = true;
@@ -576,7 +576,7 @@ vertCache_t* idVertexCache::AllocFrameTemp(void* data, int size, bool indexBuffe
 		}
 	} else {
 		if (dynamicAllocThisFrame[listNum] + size > frameBytes) {
-			LOGI("WARNING DYNAMIC OVERFLOW!!");
+			printf("WARNING DYNAMIC OVERFLOW!!");
 			// if we don't have enough room in the temp block, allocate a static block,
 			// but immediately free it so it will get freed at the next frame
 			tempOverflow = true;
@@ -681,7 +681,7 @@ vertCache_t* idVertexCache::AllocFrameTemp(void* data, int size, bool indexBuffe
 #define GL_MAP_WRITE_BIT 0x0002
 void  idVertexCache::BeginBackEnd(int which)
 {
-//LOGI("BeginBackEnd list = %d, size index = %d, size = %d", listNum,dynamicAllocThisFrame_Index,dynamicAllocThisFrame);
+//printf("BeginBackEnd list = %d, size index = %d, size = %d", listNum,dynamicAllocThisFrame_Index,dynamicAllocThisFrame);
 
 #if USE_MAP
 	qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER,  tempIndexBuffers[which]->vbo);

@@ -2,7 +2,7 @@
 
 //#include"precompiled.h"
 
-#include "../sys/platform.h"
+#include "idlib/precompiled.h"
 #include "../framework/CVarSystem.h"
 #include "GameBase.h"
 #include "MultiplayerGame.h"

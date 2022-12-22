@@ -33,7 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 // MSVC header intrin.h uses strcmp and errors out when not set
 #define IDSTR_NO_REDIRECT
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Common.h"
 
 #include "sys/sys_public.h"

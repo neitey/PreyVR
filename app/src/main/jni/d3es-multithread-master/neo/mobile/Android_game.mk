@@ -12,7 +12,7 @@ $(D3QUEST_TOP_PATH)/neo/game \
 $(SDL_INCLUDE_PATHS)
 
 
-LOCAL_CPPFLAGS :=  -DGAME_DLL -fPIC
+LOCAL_CPPFLAGS :=  -DGAME_DLL -fPIC -D_K_CLANG
 
 LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
 
@@ -77,6 +77,8 @@ src_idlib = \
 	idlib/Base64.cpp \
 	idlib/Timer.cpp \
 	idlib/Heap.cpp \
+	idlib/bv/Frustum_gcc.cpp \
+    idlib/precompiled.cpp \
 
 
 src_game = \

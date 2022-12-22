@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,14 +26,14 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "tools/edit_gui_common.h"
-
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "GEApp.h"
 #include "GEDeleteModifier.h"
 
-rvGEDeleteModifier::rvGEDeleteModifier ( const char* name, idWindow* window ) :
-	rvGEModifier ( name, window )
+rvGEDeleteModifier::rvGEDeleteModifier(const char *name, idWindow *window) :
+	rvGEModifier(name, window)
 {
 }
 
@@ -44,9 +44,9 @@ rvGEDeleteModifier::Apply
 Apply the delete modifier by setting the deleted flag in the wrapper
 ================
 */
-bool rvGEDeleteModifier::Apply ( void )
+bool rvGEDeleteModifier::Apply(void)
 {
-	mWrapper->SetDeleted ( true );
+	mWrapper->SetDeleted(true);
 
 	return true;
 }
@@ -58,9 +58,10 @@ rvGEDeleteModifier::Undo
 Undo the delete modifier by unsetting the deleted flag in the wrapper
 ================
 */
-bool rvGEDeleteModifier::Undo ( void )
+bool rvGEDeleteModifier::Undo(void)
 {
-	mWrapper->SetDeleted ( false );
+	mWrapper->SetDeleted(false);
 
 	return true;
 }
+

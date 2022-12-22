@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -33,43 +33,43 @@ class idWindow;
 
 class rvGENavigator
 {
-public:
+	public:
 
-	rvGENavigator ( );
+		rvGENavigator();
 
-	bool	Create				( HWND parent, bool visible );
-	void	Show				( bool visibile );
+		bool	Create(HWND parent, bool visible);
+		void	Show(bool visibile);
 
-	void	Refresh				( void );
+		void	Refresh(void);
 
-	void	SetWorkspace		( rvGEWorkspace* workspace );
+		void	SetWorkspace(rvGEWorkspace *workspace);
 
-	void	Update				( void );
-	void	UpdateSelections	( void );
+		void	Update(void);
+		void	UpdateSelections(void);
 
-	HWND	GetWindow			( void );
+		HWND	GetWindow(void);
 
-protected:
+	protected:
 
-	void	AddWindow			( idWindow* window );
+		void	AddWindow(idWindow *window);
 
-	static LRESULT CALLBACK WndProc ( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-	static LRESULT CALLBACK ListWndProc ( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-	static LRESULT FAR PASCAL GetMsgProc ( int nCode, WPARAM wParam, LPARAM lParam );
+		static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static LRESULT CALLBACK ListWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static LRESULT FAR PASCAL GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam);
 
-	HWND			mWnd;
-	HWND			mTree;
-	HICON			mVisibleIcon;
-	HICON			mVisibleIconDisabled;
-	HICON			mScriptsIcon;
-	HICON			mScriptsLightIcon;
-	HICON			mCollapseIcon;
-	HICON			mExpandIcon;
-	rvGEWorkspace*	mWorkspace;
-	WNDPROC			mListWndProc;
+		HWND			mWnd;
+		HWND			mTree;
+		HICON			mVisibleIcon;
+		HICON			mVisibleIconDisabled;
+		HICON			mScriptsIcon;
+		HICON			mScriptsLightIcon;
+		HICON			mCollapseIcon;
+		HICON			mExpandIcon;
+		rvGEWorkspace	*mWorkspace;
+		WNDPROC			mListWndProc;
 };
 
-ID_INLINE HWND rvGENavigator::GetWindow ( void )
+ID_INLINE HWND rvGENavigator::GetWindow(void)
 {
 	return mWnd;
 }

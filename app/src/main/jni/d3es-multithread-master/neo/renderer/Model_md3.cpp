@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "renderer/tr_local.h"
 #include "renderer/Model_local.h"
 
@@ -38,7 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ***********************************************************************/
 
-#define	LL(x) x=LittleInt(x)
+#define	LL(x) x=LittleLong(x)
 
 /*
 =================
@@ -69,7 +69,7 @@ void idRenderModelMD3::InitFromFile( const char *fileName ) {
 
 	pinmodel = (md3Header_t *)buffer;
 
-	version = LittleInt (pinmodel->version);
+	version = LittleLong (pinmodel->version);
 	if (version != MD3_VERSION) {
 		fileSystem->FreeFile( buffer );
 		common->Warning( "InitFromFile: %s has wrong version (%i should be %i)",
@@ -77,11 +77,11 @@ void idRenderModelMD3::InitFromFile( const char *fileName ) {
 		return;
 	}
 
-	size = LittleInt(pinmodel->ofsEnd);
+	size = LittleLong(pinmodel->ofsEnd);
 	dataSize += size;
 	md3 = (md3Header_t *)Mem_Alloc( size );
 
-	memcpy (md3, buffer, LittleInt(pinmodel->ofsEnd) );
+	memcpy (md3, buffer, LittleLong(pinmodel->ofsEnd) );
 
 	LL(md3->ident);
 	LL(md3->version);

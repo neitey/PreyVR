@@ -31,17 +31,93 @@ If you have questions concerning this license or the applicable additional terms
 
 class idStr;
 
+// Linux
+#ifdef __linux__
+
+#if defined(__ANDROID__)
+
+#if defined(__i386__)
+#define	BUILD_STRING				"android-x86"
+#define BUILD_OS_ID					2
+#define CPUSTRING					"x86"
+#elif defined(__x86_64__)
+#define	BUILD_STRING				"android-x86_64"
+#define BUILD_OS_ID					2
+#define CPUSTRING					"x86_64"
+#elif defined(__aarch64__)
+#define	BUILD_STRING				"android-arm64"
+#define CPUSTRING					"arm64"
+#define BUILD_OS_ID					2
+#elif defined(__arm__)
+#define	BUILD_STRING				"android-arm"
+#define CPUSTRING					"arm"
+#define BUILD_OS_ID					2
+#endif
+
+#else
+
+#if defined(__i386__)
+#define	BUILD_STRING				"linux-x86"
+#define BUILD_OS_ID					2
+#define CPUSTRING					"x86"
+#elif defined(__x86_64__)
+#define	BUILD_STRING				"linux-x86_64"
+#define BUILD_OS_ID					2
+#define CPUSTRING					"x86_64"
+#elif defined(__ppc__)
+#define	BUILD_STRING				"linux-ppc"
+#define CPUSTRING					"ppc"
+#elif defined(__arm__)
+#define	BUILD_STRING				"linux-arm"
+#define BUILD_OS_ID					2
+#define CPUSTRING					"arm"
+#endif
+
+#endif
+
+#define _alloca							alloca
+//k 64
+#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
+
+#define ALIGN16( x )					x
+#define PACKED							__attribute__((packed))
+
+#define PATHSEPERATOR_STR				"/"
+#define PATHSEPERATOR_CHAR				'/'
+
+#define __cdecl
+#define ASSERT							assert
+
+#define ID_INLINE						inline
+#define ID_STATIC_TEMPLATE
+
+#define assertmem( x, y )
+
+#endif
+
+#ifdef __GNUC__
+#define id_attribute(x) __attribute__(x)
+#else
+#define id_attribute(x)
+#endif
+
 typedef enum {
 	CPUID_NONE							= 0x00000,
 	CPUID_UNSUPPORTED					= 0x00001,	// unsupported (386/486)
 	CPUID_GENERIC						= 0x00002,	// unrecognized processor
+	CPUID_INTEL							= 0x00004,	// Intel
+	CPUID_AMD							= 0x00008,	// AMD
 	CPUID_MMX							= 0x00010,	// Multi Media Extensions
 	CPUID_3DNOW							= 0x00020,	// 3DNow!
 	CPUID_SSE							= 0x00040,	// Streaming SIMD Extensions
 	CPUID_SSE2							= 0x00080,	// Streaming SIMD Extensions 2
 	CPUID_SSE3							= 0x00100,	// Streaming SIMD Extentions 3 aka Prescott's New Instructions
 	CPUID_ALTIVEC						= 0x00200,	// AltiVec
-} cpuidSimd_t;
+	CPUID_HTT							= 0x01000,	// Hyper-Threading Technology
+	CPUID_CMOV							= 0x02000,	// Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
+	CPUID_FTZ							= 0x04000,	// Flush-To-Zero mode (denormal results are flushed to zero)
+	CPUID_DAZ							= 0x08000	// Denormals-Are-Zero mode (denormal source operands are set to zero)
+} cpuid_t;
 
 typedef enum {
 	AXIS_SIDE,
@@ -91,6 +167,8 @@ enum sysPath_t {
 	PATH_EXE
 };
 
+typedef unsigned long address_t;
+
 template<class type> class idList;		// for Sys_ListFiles
 
 
@@ -119,8 +197,22 @@ void			Sys_Sleep( int msec );
 // any game related timing information should come from event timestamps
 unsigned int	Sys_Milliseconds( void );
 
+// for accurate performance testing
+double			Sys_GetClockTicks(void);
+double			Sys_ClockTicksPerSecond(void);
+
 // returns a selection of the CPUID_* flags
-int				Sys_GetProcessorId( void );
+int 			Sys_GetProcessorId( void );
+const char 	*Sys_GetProcessorString(void);
+
+// returns true if the FPU stack is empty
+bool			Sys_FPU_StackIsEmpty(void);
+
+// returns the FPU state as a string
+const char 	*Sys_FPU_GetState(void);
+
+// enables the given FPU exceptions
+void			Sys_FPU_EnableExceptions(int exceptions);
 
 // sets the FPU precision
 void			Sys_FPU_SetPrecision();
@@ -143,6 +235,13 @@ bool			Sys_UnlockMemory( void *ptr, int bytes );
 
 // set amount of physical work memory
 void			Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes );
+
+// allows retrieving the call stack at execution points
+void			Sys_GetCallStack(address_t *callStack, const int callStackSize);
+const char 	*Sys_GetCallStackStr(const address_t *callStack, const int callStackSize);
+const char 	*Sys_GetCallStackCurStr(int depth);
+const char 	*Sys_GetCallStackCurAddressStr(int depth);
+void			Sys_ShutdownSymbols(void);
 
 // DLL loading, the path should be a fully qualified OS path to the DLL file to be loaded
 uintptr_t		Sys_DLL_Load( const char *dllName );
@@ -349,31 +448,48 @@ void				Sys_TriggerEvent( int index = TRIGGER_EVENT_ZERO );
 ==============================================================
 */
 
-class idSys {
+class idSys
+{
 public:
-	virtual void			DebugPrintf( const char *fmt, ... )id_attribute((format(printf,2,3))) = 0;
-	virtual void			DebugVPrintf( const char *fmt, va_list arg ) = 0;
+	virtual void			DebugPrintf(const char *fmt, ...)id_attribute((format(printf,2,3))) = 0;
+	virtual void			DebugVPrintf(const char *fmt, va_list arg) = 0;
 
-	virtual unsigned int	GetMilliseconds( void ) = 0;
-	virtual int				GetProcessorId( void ) = 0;
-	virtual void			FPU_SetFTZ( bool enable ) = 0;
-	virtual void			FPU_SetDAZ( bool enable ) = 0;
+	virtual double			GetClockTicks(void) = 0;
+	virtual double			ClockTicksPerSecond(void) = 0;
+	virtual int 			GetProcessorId(void) = 0;
+	virtual const char 	*GetProcessorString(void) = 0;
+	virtual const char 	*FPU_GetState(void) = 0;
+	virtual bool			FPU_StackIsEmpty(void) = 0;
+	virtual void			FPU_SetFTZ(bool enable) = 0;
+	virtual void			FPU_SetDAZ(bool enable) = 0;
 
-	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
-	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;
+	virtual void			FPU_EnableExceptions(int exceptions) = 0;
 
-	virtual uintptr_t		DLL_Load( const char *dllName ) = 0;
-	virtual void *			DLL_GetProcAddress( uintptr_t dllHandle, const char *procName ) = 0;
-	virtual void			DLL_Unload( uintptr_t dllHandle ) = 0;
-	virtual void			DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) = 0;
+	virtual bool			LockMemory(void *ptr, int bytes) = 0;
+	virtual bool			UnlockMemory(void *ptr, int bytes) = 0;
 
-	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down ) = 0;
-	virtual sysEvent_t		GenerateMouseMoveEvent( int deltax, int deltay ) = 0;
+	virtual void			GetCallStack(address_t *callStack, const int callStackSize) = 0;
+	virtual const char 	*GetCallStackStr(const address_t *callStack, const int callStackSize) = 0;
+	virtual const char 	*GetCallStackCurStr(int depth) = 0;
+	virtual void			ShutdownSymbols(void) = 0;
 
-	virtual void			OpenURL( const char *url, bool quit ) = 0;
-	virtual void			StartProcess( const char *exePath, bool quit ) = 0;
+//k 64
+	virtual uintptr_t		DLL_Load(const char *dllName) = 0;
+	virtual void 			*DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) = 0;
+	virtual void			DLL_Unload(uintptr_t dllHandle) = 0;
+	virtual void			DLL_GetFileName(const char *baseName, char *dllName, int maxLength) = 0;
+
+	virtual sysEvent_t		GenerateMouseButtonEvent(int button, bool down) = 0;
+	virtual sysEvent_t		GenerateMouseMoveEvent(int deltax, int deltay) = 0;
+
+	virtual void			OpenURL(const char *url, bool quit) = 0;
+	virtual void			StartProcess(const char *exePath, bool quit) = 0;
+#ifdef _RAVEN
+	virtual int				Milliseconds(void) { return Sys_Milliseconds(); }
+#endif
 };
 
-extern idSys *				sys;
+extern idSys 				*sys;
+
 
 #endif /* !__SYS_PUBLIC__ */

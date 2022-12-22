@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -59,23 +59,45 @@ typedef struct {
 ==============================================================================================
 */
 
-class idTokenizer {
-private:
-	int					currentToken;
-	idStrList			tokens;
+class idTokenizer
+{
+	private:
+		int					currentToken;
+		idStrList			tokens;
 
-public:
-						idTokenizer()			{ Clear(); };
-	void				Clear( void )			{ currentToken = 0;	tokens.Clear(); };
+	public:
+		idTokenizer()			{
+			Clear();
+		};
+		void				Clear(void)			{
+			currentToken = 0;
+			tokens.Clear();
+		};
 
-	int					SetTokens( const char *buffer );
-	const char			*NextToken( const char *errorstring = NULL );
+		int					SetTokens(const char *buffer);
+		const char			*NextToken(const char *errorstring = NULL);
 
-	bool				TokenAvailable( void )	{ return currentToken < tokens.Num(); };
-	int					Num( void )				{ return tokens.Num(); };
-	void				UnGetToken( void )		{ if ( currentToken > 0 ) { currentToken--; } };
-	const char			*GetToken( int index )	{ if ( ( index >= 0 ) && ( index < tokens.Num() ) ) { return tokens[ index ]; } else { return NULL; } };
-	const char			*CurrentToken( void )	{ return GetToken( currentToken ); };
+		bool				TokenAvailable(void)	{
+			return currentToken < tokens.Num();
+		};
+		int					Num(void) 			{
+			return tokens.Num();
+		};
+		void				UnGetToken(void)		{
+			if (currentToken > 0) {
+				currentToken--;
+			}
+		};
+		const char			*GetToken(int index)	{
+			if ((index >= 0) && (index < tokens.Num())) {
+				return tokens[ index ];
+			} else {
+				return NULL;
+			}
+		};
+		const char			*CurrentToken(void)	{
+			return GetToken(currentToken);
+		};
 };
 
 /*
@@ -86,56 +108,59 @@ public:
 ==============================================================================================
 */
 
-class idNamePair {
-public:
-	idStr	from;
-	idStr	to;
+class idNamePair
+{
+	public:
+		idStr	from;
+		idStr	to;
 };
 
-class idAnimGroup {
-public:
-	idStr		name;
-	idStrList	joints;
+class idAnimGroup
+{
+	public:
+		idStr		name;
+		idStrList	joints;
 };
 
-class idExportOptions {
-private:
-	idTokenizer				tokens;
+class idExportOptions
+{
+	private:
+		idTokenizer				tokens;
 
-	void					Reset( const char *commandline );
+		void					Reset(const char *commandline);
 
-public:
-	idStr					commandLine;
-	idStr					src;
-	idStr					dest;
-	idStr					game;
-	idStr					prefix;
-	float					scale;
-	exportType_t			type;
-	bool					ignoreMeshes;
-	bool					clearOrigin;
-	bool					clearOriginAxis;
-	bool					ignoreScale;
-	int						startframe;
-	int						endframe;
-	int						framerate;
-	float					xyzPrecision;
-	float					quatPrecision;
-	idStr					align;
-	idList<idNamePair>		renamejoints;
-	idList<idNamePair>		remapjoints;
-	idStrList				keepjoints;
-	idStrList				skipmeshes;
-	idStrList				keepmeshes;
-	idList<idAnimGroup *>	exportgroups;
-	idList<idAnimGroup>		groups;
-	float					rotate;
-	float					jointThreshold;
-	int						cycleStart;
+	public:
+		idStr					commandLine;
+		idStr					src;
+		idStr					dest;
+		idStr					game;
+		idStr					prefix;
+		float					scale;
+		exportType_t			type;
+		bool					ignoreMeshes;
+		bool					clearOrigin;
+		bool					clearOriginAxis;
+		bool					ignoreScale;
+		int						startframe;
+		int						endframe;
+		int						framerate;
+		float					xyzPrecision;
+		float					quatPrecision;
+		idStr					align;
+		idList<idNamePair>		renamejoints;
+		idList<idNamePair>		remapjoints;
+		idStrList				keepjoints;
+		idStrList				skipmeshes;
+		idStrList				keepmeshes;
+		idList<idAnimGroup *>	exportgroups;
+		idList<idAnimGroup>		groups;
+		float					rotate;
+		float					jointThreshold;
+		int						cycleStart;
 
-							idExportOptions( const char *commandline, const char *ospath );
+		idExportOptions(const char *commandline, const char *ospath);
 
-	bool					jointInExportGroup( const char *jointname );
+		bool					jointInExportGroup(const char *jointname);
 };
 
 /*
@@ -146,39 +171,40 @@ idExportJoint
 ==============================================================================
 */
 
-class idExportJoint {
-public:
-	idStr						name;
-	idStr						realname;
-	idStr						longname;
-	int							index;
-	int							exportNum;
-	bool						keep;
+class idExportJoint
+{
+	public:
+		idStr						name;
+		idStr						realname;
+		idStr						longname;
+		int							index;
+		int							exportNum;
+		bool						keep;
 
-	float						scale;
-	float						invscale;
+		float						scale;
+		float						invscale;
 
-	MFnDagNode					*dagnode;
+		MFnDagNode					*dagnode;
 
-	idHierarchy<idExportJoint>	mayaNode;
-	idHierarchy<idExportJoint>	exportNode;
+		idHierarchy<idExportJoint>	mayaNode;
+		idHierarchy<idExportJoint>	exportNode;
 
-	idVec3						t;
-	idMat3						wm;
+		idVec3						t;
+		idMat3						wm;
 
-	idVec3						idt;
-	idMat3						idwm;
+		idVec3						idt;
+		idMat3						idwm;
 
-	idVec3						bindpos;
-	idMat3						bindmat;
+		idVec3						bindpos;
+		idMat3						bindmat;
 
-	int							animBits;
-	int							firstComponent;
-	jointFrame_t				baseFrame;
-	int							depth;
+		int							animBits;
+		int							firstComponent;
+		jointFrame_t				baseFrame;
+		int							depth;
 
-								idExportJoint();
-	idExportJoint				&operator=( const idExportJoint &other );
+		idExportJoint();
+		idExportJoint				&operator=(const idExportJoint &other);
 };
 
 /*
@@ -210,16 +236,17 @@ typedef struct {
 	idVec2					uv[ 3 ];
 } exportUV_t;
 
-ID_INLINE int operator==( exportVertex_t a, exportVertex_t b ) {
-	if ( a.pos != b.pos ) {
+ID_INLINE int operator==(exportVertex_t a, exportVertex_t b)
+{
+	if (a.pos != b.pos) {
 		return false;
 	}
 
-	if ( ( a.texCoords[ 0 ] != b.texCoords[ 0 ] ) || ( a.texCoords[ 1 ] != b.texCoords[ 1 ] ) ) {
+	if ((a.texCoords[ 0 ] != b.texCoords[ 0 ]) || (a.texCoords[ 1 ] != b.texCoords[ 1 ])) {
 		return false;
 	}
 
-	if ( ( a.startweight != b.startweight ) || ( a.numWeights != b.numWeights ) ) {
+	if ((a.startweight != b.startweight) || (a.numWeights != b.numWeights)) {
 		return false;
 	}
 
@@ -348,23 +375,26 @@ idExportMesh
 ==============================================================================
 */
 
-class idExportMesh {
-public:
+class idExportMesh
+{
+	public:
 
-	idStr						name;
-	idStr						shader;
+		idStr						name;
+		idStr						shader;
 
-	bool						keep;
+		bool						keep;
 
-	idList<exportVertex_t>		verts;
-	idList<exportTriangle_t>	tris;
-	idList<exportWeight_t>		weights;
-	idList<exportUV_t>			uv;
+		idList<exportVertex_t>		verts;
+		idList<exportTriangle_t>	tris;
+		idList<exportWeight_t>		weights;
+		idList<exportUV_t>			uv;
 
-								idExportMesh() { keep = true; };
-	void						ShareVerts( void );
-	void						GetBounds( idBounds &bounds ) const;
-	void						Merge( idExportMesh *mesh );
+		idExportMesh() {
+			keep = true;
+		};
+		void						ShareVerts(void);
+		void						GetBounds(idBounds &bounds) const;
+		void						Merge(idExportMesh *mesh);
 };
 
 /*
@@ -375,30 +405,31 @@ idExportModel
 ==============================================================================
 */
 
-class idExportModel {
-public:
-	idExportJoint				*exportOrigin;
-	idList<idExportJoint>		joints;
-	idHierarchy<idExportJoint>	mayaHead;
-	idHierarchy<idExportJoint>	exportHead;
-	idList<int>					cameraCuts;
-	idList<cameraFrame_t>		camera;
-	idList<idBounds>			bounds;
-	idList<jointFrame_t>		jointFrames;
-	idList<jointFrame_t	*>		frames;
-	int							frameRate;
-	int							numFrames;
-	int							skipjoints;
-	int							export_joints;
-	idList<idExportMesh *>		meshes;
+class idExportModel
+{
+	public:
+		idExportJoint				*exportOrigin;
+		idList<idExportJoint>		joints;
+		idHierarchy<idExportJoint>	mayaHead;
+		idHierarchy<idExportJoint>	exportHead;
+		idList<int>					cameraCuts;
+		idList<cameraFrame_t>		camera;
+		idList<idBounds>			bounds;
+		idList<jointFrame_t>		jointFrames;
+		idList<jointFrame_t *>		frames;
+		int							frameRate;
+		int							numFrames;
+		int							skipjoints;
+		int							export_joints;
+		idList<idExportMesh *>		meshes;
 
-								idExportModel();
-								~idExportModel();
-	idExportJoint				*FindJointReal( const char *name );
-	idExportJoint				*FindJoint( const char *name );
-	bool						WriteMesh( const char *filename, idExportOptions &options );
-	bool						WriteAnim( const char *filename, idExportOptions &options );
-	bool						WriteCamera( const char *filename, idExportOptions &options );
+		idExportModel();
+		~idExportModel();
+		idExportJoint				*FindJointReal(const char *name);
+		idExportJoint				*FindJoint(const char *name);
+		bool						WriteMesh(const char *filename, idExportOptions &options);
+		bool						WriteAnim(const char *filename, idExportOptions &options);
+		bool						WriteCamera(const char *filename, idExportOptions &options);
 };
 
 /*
@@ -409,49 +440,50 @@ Maya
 ==============================================================================
 */
 
-class idMayaExport {
-private:
-	idExportModel			model;
-	idExportOptions			&options;
+class idMayaExport
+{
+	private:
+		idExportModel			model;
+		idExportOptions			&options;
 
-	void					FreeDagNodes( void );
+		void					FreeDagNodes(void);
 
-	float					TimeForFrame( int num ) const;
-	int						GetMayaFrameNum( int num ) const;
-	void					SetFrame( int num );
+		float					TimeForFrame(int num) const;
+		int						GetMayaFrameNum(int num) const;
+		void					SetFrame(int num);
 
 
-	void					GetBindPose( MObject &jointNode, idExportJoint *joint, float scale );
-	void					GetLocalTransform( idExportJoint *joint, idVec3 &pos, idMat3 &mat );
-	void					GetWorldTransform( idExportJoint *joint, idVec3 &pos, idMat3 &mat, float scale );
+		void					GetBindPose(MObject &jointNode, idExportJoint *joint, float scale);
+		void					GetLocalTransform(idExportJoint *joint, idVec3 &pos, idMat3 &mat);
+		void					GetWorldTransform(idExportJoint *joint, idVec3 &pos, idMat3 &mat, float scale);
 
-	void					CreateJoints( float scale );
-	void					PruneJoints( idStrList &keepjoints, idStr &prefix );
-	void					RenameJoints( idList<idNamePair> &renamejoints, idStr &prefix );
-	bool					RemapParents( idList<idNamePair> &remapjoints );
+		void					CreateJoints(float scale);
+		void					PruneJoints(idStrList &keepjoints, idStr &prefix);
+		void					RenameJoints(idList<idNamePair> &renamejoints, idStr &prefix);
+		bool					RemapParents(idList<idNamePair> &remapjoints);
 
-	MObject					FindShader( MObject& setNode );
-	void					GetTextureForMesh( idExportMesh *mesh, MFnDagNode &dagNode );
+		MObject					FindShader(MObject &setNode);
+		void					GetTextureForMesh(idExportMesh *mesh, MFnDagNode &dagNode);
 
-	idExportMesh			*CopyMesh( MFnSkinCluster &skinCluster, float scale );
-	void					CreateMesh( float scale );
-	void					CombineMeshes( void );
+		idExportMesh			*CopyMesh(MFnSkinCluster &skinCluster, float scale);
+		void					CreateMesh(float scale);
+		void					CombineMeshes(void);
 
-	void					GetAlignment( idStr &alignName, idMat3 &align, float rotate, int startframe );
+		void					GetAlignment(idStr &alignName, idMat3 &align, float rotate, int startframe);
 
-	const char				*GetObjectType( MObject object );
+		const char				*GetObjectType(MObject object);
 
-	float					GetCameraFov( idExportJoint *joint );
-	void					GetCameraFrame( idExportJoint *camera, idMat3 &align, cameraFrame_t *cam );
-	void					CreateCameraAnim( idMat3 &align );
+		float					GetCameraFov(idExportJoint *joint);
+		void					GetCameraFrame(idExportJoint *camera, idMat3 &align, cameraFrame_t *cam);
+		void					CreateCameraAnim(idMat3 &align);
 
-	void					GetDefaultPose( idMat3 &align );
-	void					CreateAnimation( idMat3 &align );
+		void					GetDefaultPose(idMat3 &align);
+		void					CreateAnimation(idMat3 &align);
 
-public:
-							idMayaExport( idExportOptions &exportOptions ) : options( exportOptions ) { };
-							~idMayaExport();
+	public:
+		idMayaExport(idExportOptions &exportOptions) : options(exportOptions) { };
+		~idMayaExport();
 
-	void					ConvertModel( void );
-	void					ConvertToMD3( void );
+		void					ConvertModel(void);
+		void					ConvertToMD3(void);
 };

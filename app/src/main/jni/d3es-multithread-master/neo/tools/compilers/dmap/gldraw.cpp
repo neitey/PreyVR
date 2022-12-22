@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,28 +26,32 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "tools/compilers/dmap/dmap.h"
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
-#if 0 // FIXME
-#include "sys/win32/win_local.h"
+#include "dmap.h"
 
+#ifdef WIN32
+#include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 //#include <GL/glaux.h>
 
-void Draw_ClearWindow( void ) {
+#define	WIN_SIZE	1024
 
-	if ( !dmapGlobals.drawflag ) {
+void Draw_ClearWindow(void)
+{
+
+	if (!dmapGlobals.drawflag) {
 		return;
 	}
 
-	glDrawBuffer( GL_FRONT );
+	glDrawBuffer(GL_FRONT);
 
 	RB_SetGL2D();
 
-	glClearColor( 0.5, 0.5, 0.5, 0 );
-	glClear( GL_COLOR_BUFFER_BIT );
+	glClearColor(0.5, 0.5, 0.5, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 #if 0
 	int		w, h, g;
@@ -61,130 +65,155 @@ void Draw_ClearWindow( void ) {
 
 	g = w > h ? w : h;
 
-	glLoadIdentity ();
-	gluPerspective (90,  1,  2,  16384);
-	gluLookAt (mx, my, draw_maxs[2] + g/2, mx , my, draw_maxs[2], 0, 1, 0);
+	glLoadIdentity();
+	gluPerspective(90,  1,  2,  16384);
+	gluLookAt(mx, my, draw_maxs[2] + g/2, mx , my, draw_maxs[2], 0, 1, 0);
 #else
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity ();
-	glOrtho( dmapGlobals.drawBounds[0][0], dmapGlobals.drawBounds[1][0],
-		dmapGlobals.drawBounds[0][1], dmapGlobals.drawBounds[1][1],
-		-1, 1 );
-	glMatrixMode( GL_MODELVIEW );
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(dmapGlobals.drawBounds[0][0], dmapGlobals.drawBounds[1][0],
+	        dmapGlobals.drawBounds[0][1], dmapGlobals.drawBounds[1][1],
+	        -1, 1);
+	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
-	glColor3f (0,0,0);
+	glColor3f(0,0,0);
 //	glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-	glDisable (GL_DEPTH_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_DEPTH_TEST);
 //	glEnable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 #if 0
 //glColor4f (1,0,0,0.5);
 //	glBegin( GL_LINE_LOOP );
-	glBegin( GL_QUADS );
+	glBegin(GL_QUADS);
 
-	glVertex2f( dmapGlobals.drawBounds.b[0][0] + 20, dmapGlobals.drawBounds.b[0][1] + 20 );
-	glVertex2f( dmapGlobals.drawBounds.b[1][0] - 20, dmapGlobals.drawBounds.b[0][1] + 20 );
-	glVertex2f( dmapGlobals.drawBounds.b[1][0] - 20, dmapGlobals.drawBounds.b[1][1] - 20 );
-	glVertex2f( dmapGlobals.drawBounds.b[0][0] + 20, dmapGlobals.drawBounds.b[1][1] - 20 );
+	glVertex2f(dmapGlobals.drawBounds.b[0][0] + 20, dmapGlobals.drawBounds.b[0][1] + 20);
+	glVertex2f(dmapGlobals.drawBounds.b[1][0] - 20, dmapGlobals.drawBounds.b[0][1] + 20);
+	glVertex2f(dmapGlobals.drawBounds.b[1][0] - 20, dmapGlobals.drawBounds.b[1][1] - 20);
+	glVertex2f(dmapGlobals.drawBounds.b[0][0] + 20, dmapGlobals.drawBounds.b[1][1] - 20);
 
-	glEnd ();
+	glEnd();
 #endif
 
-	glFlush ();
+	glFlush();
 
 }
 
-void Draw_SetRed (void)
+void Draw_SetRed(void)
 {
 	if (!dmapGlobals.drawflag)
 		return;
 
-	glColor3f (1,0,0);
+	glColor3f(1,0,0);
 }
 
-void Draw_SetGrey (void)
+void Draw_SetGrey(void)
 {
 	if (!dmapGlobals.drawflag)
 		return;
 
-	glColor3f( 0.5f, 0.5f, 0.5f);
+	glColor3f(0.5f, 0.5f, 0.5f);
 }
 
-void Draw_SetBlack (void)
+void Draw_SetBlack(void)
 {
 	if (!dmapGlobals.drawflag)
 		return;
 
-	glColor3f( 0.0f, 0.0f, 0.0f );
+	glColor3f(0.0f, 0.0f, 0.0f);
 }
 
-void DrawWinding ( const idWinding *w )
-{
-	int		i;
-
-	if (!dmapGlobals.drawflag)
-		return;
-
-	glColor3f( 0.3f, 0.0f, 0.0f );
-	glBegin (GL_POLYGON);
-	for ( i = 0; i < w->GetNumPoints(); i++ )
-		glVertex3f( (*w)[i][0], (*w)[i][1], (*w)[i][2] );
-	glEnd ();
-
-	glColor3f( 1, 0, 0 );
-	glBegin (GL_LINE_LOOP);
-	for ( i = 0; i < w->GetNumPoints(); i++ )
-		glVertex3f( (*w)[i][0], (*w)[i][1], (*w)[i][2] );
-	glEnd ();
-
-	glFlush ();
-}
-
-void DrawAuxWinding ( const idWinding *w)
+void DrawWinding(const idWinding *w)
 {
 	int		i;
 
 	if (!dmapGlobals.drawflag)
 		return;
 
-	glColor3f( 0.0f, 0.3f, 0.0f );
-	glBegin (GL_POLYGON);
-	for ( i = 0; i < w->GetNumPoints(); i++ )
-		glVertex3f( (*w)[i][0], (*w)[i][1], (*w)[i][2] );
-	glEnd ();
+	glColor3f(0.3f, 0.0f, 0.0f);
+	glBegin(GL_POLYGON);
 
-	glColor3f( 0.0f, 1.0f, 0.0f );
-	glBegin (GL_LINE_LOOP);
-	for ( i = 0; i < w->GetNumPoints(); i++ )
-		glVertex3f( (*w)[i][0], (*w)[i][1], (*w)[i][2] );
-	glEnd ();
+	for (i = 0; i < w->GetNumPoints(); i++)
+		glVertex3f((*w)[i][0], (*w)[i][1], (*w)[i][2]);
 
-	glFlush ();
+	glEnd();
+
+	glColor3f(1, 0, 0);
+	glBegin(GL_LINE_LOOP);
+
+	for (i = 0; i < w->GetNumPoints(); i++)
+		glVertex3f((*w)[i][0], (*w)[i][1], (*w)[i][2]);
+
+	glEnd();
+
+	glFlush();
 }
 
-void DrawLine( idVec3 v1, idVec3 v2, int color ) {
+void DrawAuxWinding(const idWinding *w)
+{
+	int		i;
+
 	if (!dmapGlobals.drawflag)
 		return;
 
-	switch( color ) {
-	case 0: glColor3f( 0, 0, 0 ); break;
-	case 1: glColor3f( 0, 0, 1 ); break;
-	case 2: glColor3f( 0, 1, 0 ); break;
-	case 3: glColor3f( 0, 1, 1 ); break;
-	case 4: glColor3f( 1, 0, 0 ); break;
-	case 5: glColor3f( 1, 0, 1 ); break;
-	case 6: glColor3f( 1, 1, 0 ); break;
-	case 7: glColor3f( 1, 1, 1 ); break;
+	glColor3f(0.0f, 0.3f, 0.0f);
+	glBegin(GL_POLYGON);
+
+	for (i = 0; i < w->GetNumPoints(); i++)
+		glVertex3f((*w)[i][0], (*w)[i][1], (*w)[i][2]);
+
+	glEnd();
+
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glBegin(GL_LINE_LOOP);
+
+	for (i = 0; i < w->GetNumPoints(); i++)
+		glVertex3f((*w)[i][0], (*w)[i][1], (*w)[i][2]);
+
+	glEnd();
+
+	glFlush();
+}
+
+void DrawLine(idVec3 v1, idVec3 v2, int color)
+{
+	if (!dmapGlobals.drawflag)
+		return;
+
+	switch (color) {
+		case 0:
+			glColor3f(0, 0, 0);
+			break;
+		case 1:
+			glColor3f(0, 0, 1);
+			break;
+		case 2:
+			glColor3f(0, 1, 0);
+			break;
+		case 3:
+			glColor3f(0, 1, 1);
+			break;
+		case 4:
+			glColor3f(1, 0, 0);
+			break;
+		case 5:
+			glColor3f(1, 0, 1);
+			break;
+		case 6:
+			glColor3f(1, 1, 0);
+			break;
+		case 7:
+			glColor3f(1, 1, 1);
+			break;
 	}
 
 
-	glBegin( GL_LINES );
+	glBegin(GL_LINES);
 
-	glVertex3fv( v1.ToFloatPtr() );
-	glVertex3fv( v2.ToFloatPtr() );
+	glVertex3fv(v1.ToFloatPtr());
+	glVertex3fv(v2.ToFloatPtr());
 
 	glEnd();
 	glFlush();
@@ -197,44 +226,44 @@ void DrawLine( idVec3 v1, idVec3 v2, int color ) {
 bool	wins_init;
 int			draw_socket;
 
-void GLS_BeginScene (void)
+void GLS_BeginScene(void)
 {
 	WSADATA	winsockdata;
 	WORD	wVersionRequested;
 	struct sockaddr_in	address;
 	int		r;
 
-	if (!wins_init)
-	{
+	if (!wins_init) {
 		wins_init = true;
 
 		wVersionRequested = MAKEWORD(1, 1);
 
-		r = WSAStartup (MAKEWORD(1, 1), &winsockdata);
+		r = WSAStartup(MAKEWORD(1, 1), &winsockdata);
 
 		if (r)
-			common->Error( "Winsock initialization failed.");
+			common->Error("Winsock initialization failed.");
 
 	}
 
 	// connect a socket to the server
 
-	draw_socket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	draw_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+
 	if (draw_socket == -1)
-		common->Error( "draw_socket failed");
+		common->Error("draw_socket failed");
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	address.sin_port = GLSERV_PORT;
-	r = connect (draw_socket, (struct sockaddr *)&address, sizeof(address));
-	if (r == -1)
-	{
-		closesocket (draw_socket);
+	r = connect(draw_socket, (struct sockaddr *)&address, sizeof(address));
+
+	if (r == -1) {
+		closesocket(draw_socket);
 		draw_socket = 0;
 	}
 }
 
-void GLS_Winding( const idWinding *w, int code )
+void GLS_Winding(const idWinding *w, int code)
 {
 	byte	buf[1024];
 	int		i, j;
@@ -244,45 +273,52 @@ void GLS_Winding( const idWinding *w, int code )
 
 	((int *)buf)[0] = w->GetNumPoints();
 	((int *)buf)[1] = code;
-	for ( i = 0; i < w->GetNumPoints(); i++ )
+
+	for (i = 0; i < w->GetNumPoints(); i++)
 		for (j=0 ; j<3 ; j++)
 			((float *)buf)[2+i*3+j] = (*w)[i][j];
 
-	send (draw_socket, (const char *)buf, w->GetNumPoints() * 12 + 8, 0);
+	send(draw_socket, (const char *)buf, w->GetNumPoints() * 12 + 8, 0);
 }
 
-void GLS_Triangle( const mapTri_t *tri, int code ) {
+void GLS_Triangle(const mapTri_t *tri, int code)
+{
 	idWinding w;
 
-	w.SetNumPoints( 3 );
-	VectorCopy( tri->v[0].xyz, w[0] );
-	VectorCopy( tri->v[1].xyz, w[1] );
-	VectorCopy( tri->v[2].xyz, w[2] );
-	GLS_Winding( &w, code );
+	w.SetNumPoints(3);
+	VectorCopy(tri->v[0].xyz, w[0]);
+	VectorCopy(tri->v[1].xyz, w[1]);
+	VectorCopy(tri->v[2].xyz, w[2]);
+	GLS_Winding(&w, code);
 }
 
-void GLS_EndScene (void)
+void GLS_EndScene(void)
 {
-	closesocket (draw_socket);
+	closesocket(draw_socket);
 	draw_socket = 0;
 }
 #else
-void Draw_ClearWindow( void ) {
+void Draw_ClearWindow(void)
+{
 }
 
-void DrawWinding( const idWinding *w) {
+void DrawWinding(const idWinding *w)
+{
 }
 
-void DrawAuxWinding ( const idWinding *w) {
+void DrawAuxWinding(const idWinding *w)
+{
 }
 
-void GLS_Winding( const idWinding *w, int code ) {
+void GLS_Winding(const idWinding *w, int code)
+{
 }
 
-void GLS_BeginScene (void) {
+void GLS_BeginScene(void)
+{
 }
 
-void GLS_EndScene (void)
+void GLS_EndScene(void)
 {
 }
 

@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/containers/StrList.h"
+#include "idlib/precompiled.h"
 #include "framework/Common.h"
 
 #include "framework/DeclPDA.h"

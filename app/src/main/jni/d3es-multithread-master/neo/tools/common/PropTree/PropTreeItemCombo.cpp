@@ -17,8 +17,8 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "PropTree.h"
 #include "../../../sys/win32/rc/proptree_Resource.h"
@@ -57,13 +57,12 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CPropTreeItemCombo message handlers
 
-void CPropTreeItemCombo::DrawAttribute(CDC* pDC, const RECT& rc)
+void CPropTreeItemCombo::DrawAttribute(CDC *pDC, const RECT &rc)
 {
 	ASSERT(m_pProp!=NULL);
 
 	// verify the window has been created
-	if (!IsWindow(m_hWnd))
-	{
+	if (!IsWindow(m_hWnd)) {
 		TRACE0("CPropTreeItemCombo::DrawAttribute() - The window has not been created\n");
 		return;
 	}
@@ -149,8 +148,7 @@ BOOL CPropTreeItemCombo::CreateComboBox(DWORD dwStyle)
 	// force as not visible child window
 	dwStyle = (WS_CHILD|WS_VSCROLL|dwStyle) & ~WS_VISIBLE;
 
-	if (!Create(dwStyle, CRect(0,0,0,0), m_pProp->GetCtrlParent(), GetCtrlID()))
-	{
+	if (!Create(dwStyle, CRect(0,0,0,0), m_pProp->GetCtrlParent(), GetCtrlID())) {
 		TRACE0("CPropTreeItemCombo::CreateComboBox() - failed to create combo box\n");
 		return FALSE;
 	}
@@ -171,8 +169,7 @@ BOOL CPropTreeItemCombo::CreateComboBoxBool()
 	// force as a non-visible child window
 	DWORD dwStyle = WS_CHILD|WS_VSCROLL|CBS_SORT|CBS_DROPDOWNLIST;
 
-	if (!Create(dwStyle, CRect(0,0,0,0), m_pProp->GetCtrlParent(), GetCtrlID()))
-	{
+	if (!Create(dwStyle, CRect(0,0,0,0), m_pProp->GetCtrlParent(), GetCtrlID())) {
 		TRACE0("CPropTreeItemCombo::CreateComboBoxBool() - failed to create combo box\n");
 		return FALSE;
 	}
@@ -199,8 +196,7 @@ LONG CPropTreeItemCombo::FindCBData(LPARAM lParam)
 {
 	LONG idx;
 
-	for (idx = 0; idx < GetCount(); idx++)
-	{
+	for (idx = 0; idx < GetCount(); idx++) {
 		if (GetItemData(idx)==(DWORD)lParam)
 			return idx;
 	}

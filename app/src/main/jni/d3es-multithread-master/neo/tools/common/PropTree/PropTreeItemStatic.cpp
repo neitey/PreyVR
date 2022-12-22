@@ -17,8 +17,8 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "PropTree.h"
 
@@ -36,7 +36,7 @@ CPropTreeItemStatic::~CPropTreeItemStatic()
 }
 
 
-void CPropTreeItemStatic::DrawAttribute(CDC* pDC, const RECT& rc)
+void CPropTreeItemStatic::DrawAttribute(CDC *pDC, const RECT &rc)
 {
 	ASSERT(m_pProp!=NULL);
 
@@ -57,8 +57,7 @@ LPARAM CPropTreeItemStatic::GetItemValue()
 
 void CPropTreeItemStatic::SetItemValue(LPARAM lParam)
 {
-	if (lParam==0L)
-	{
+	if (lParam==0L) {
 		TRACE0("CPropTreeItemStatic::SetItemValue() - Invalid lParam value\n");
 		return;
 	}

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,9 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "tools/compilers/aas/AASFile_local.h"
+#include "AASFile.h"
+#include "AASFile_local.h"
+
 
 //===============================================================
 //
@@ -41,7 +44,8 @@ If you have questions concerning this license or the applicable additional terms
 idAASFileLocal::Optimize
 ================
 */
-void idAASFileLocal::Optimize( void ) {
+void idAASFileLocal::Optimize(void)
+{
 	int i, j, k, faceNum, edgeNum, areaFirstFace, faceFirstEdge;
 	aasArea_t *area;
 	aasFace_t *face;
@@ -56,33 +60,34 @@ void idAASFileLocal::Optimize( void ) {
 	idList<aasFace_t> newFaces;
 	idList<aasIndex_t> newFaceIndex;
 
-	vertexRemap.AssureSize( vertices.Num(), -1 );
-	edgeRemap.AssureSize( edges.Num(), 0 );
-	faceRemap.AssureSize( faces.Num(), 0 );
+	vertexRemap.AssureSize(vertices.Num(), -1);
+	edgeRemap.AssureSize(edges.Num(), 0);
+	faceRemap.AssureSize(faces.Num(), 0);
 
-	newVertices.Resize( vertices.Num() );
-	newEdges.Resize( edges.Num() );
-	newEdges.SetNum( 1, false );
-	newEdgeIndex.Resize( edgeIndex.Num() );
-	newFaces.Resize( faces.Num() );
-	newFaces.SetNum( 1, false );
-	newFaceIndex.Resize( faceIndex.Num() );
+	newVertices.Resize(vertices.Num());
+	newEdges.Resize(edges.Num());
+	newEdges.SetNum(1, false);
+	newEdgeIndex.Resize(edgeIndex.Num());
+	newFaces.Resize(faces.Num());
+	newFaces.SetNum(1, false);
+	newFaceIndex.Resize(faceIndex.Num());
 
-	for ( i = 0; i < areas.Num(); i++ ) {
+	for (i = 0; i < areas.Num(); i++) {
 		area = &areas[i];
 
 		areaFirstFace = newFaceIndex.Num();
-		for ( j = 0; j < area->numFaces; j++ ) {
+
+		for (j = 0; j < area->numFaces; j++) {
 			faceNum = faceIndex[area->firstFace + j];
-			face = &faces[ abs(faceNum) ];
+			face = &faces[ abs(faceNum)];
 
 			// store face
-			if ( !faceRemap[ abs(faceNum) ] ) {
-				faceRemap[ abs(faceNum) ] = newFaces.Num();
-				newFaces.Append( *face );
+			if (!faceRemap[ abs(faceNum)]) {
+				faceRemap[ abs(faceNum)] = newFaces.Num();
+				newFaces.Append(*face);
 
 				// don't store edges for faces we don't care about
-				if ( !( face->flags & ( FACE_FLOOR|FACE_LADDER ) ) ) {
+				if (!(face->flags & (FACE_FLOOR|FACE_LADDER))) {
 
 					newFaces[ newFaces.Num()-1 ].firstEdge = 0;
 					newFaces[ newFaces.Num()-1 ].numEdges = 0;
@@ -91,34 +96,35 @@ void idAASFileLocal::Optimize( void ) {
 
 					// store edges
 					faceFirstEdge = newEdgeIndex.Num();
-					for ( k = 0; k < face->numEdges; k++ ) {
-						edgeNum = edgeIndex[ face->firstEdge + k ];
-						edge = &edges[ abs(edgeNum) ];
 
-						if ( !edgeRemap[ abs(edgeNum) ] ) {
-							if ( edgeNum < 0 ) {
-								edgeRemap[ abs(edgeNum) ] = -newEdges.Num();
-							}
-							else {
-								edgeRemap[ abs(edgeNum) ] = newEdges.Num();
+					for (k = 0; k < face->numEdges; k++) {
+						edgeNum = edgeIndex[ face->firstEdge + k ];
+						edge = &edges[ abs(edgeNum)];
+
+						if (!edgeRemap[ abs(edgeNum)]) {
+							if (edgeNum < 0) {
+								edgeRemap[ abs(edgeNum)] = -newEdges.Num();
+							} else {
+								edgeRemap[ abs(edgeNum)] = newEdges.Num();
 							}
 
 							// remap vertices if not yet remapped
-							if ( vertexRemap[ edge->vertexNum[0] ] == -1 ) {
+							if (vertexRemap[ edge->vertexNum[0] ] == -1) {
 								vertexRemap[ edge->vertexNum[0] ] = newVertices.Num();
-								newVertices.Append( vertices[ edge->vertexNum[0] ] );
-							}
-							if ( vertexRemap[ edge->vertexNum[1] ] == -1 ) {
-								vertexRemap[ edge->vertexNum[1] ] = newVertices.Num();
-								newVertices.Append( vertices[ edge->vertexNum[1] ] );
+								newVertices.Append(vertices[ edge->vertexNum[0] ]);
 							}
 
-							newEdges.Append( *edge );
+							if (vertexRemap[ edge->vertexNum[1] ] == -1) {
+								vertexRemap[ edge->vertexNum[1] ] = newVertices.Num();
+								newVertices.Append(vertices[ edge->vertexNum[1] ]);
+							}
+
+							newEdges.Append(*edge);
 							newEdges[ newEdges.Num()-1 ].vertexNum[0] = vertexRemap[ edge->vertexNum[0] ];
 							newEdges[ newEdges.Num()-1 ].vertexNum[1] = vertexRemap[ edge->vertexNum[1] ];
 						}
 
-						newEdgeIndex.Append( edgeRemap[ abs(edgeNum) ] );
+						newEdgeIndex.Append(edgeRemap[ abs(edgeNum)]);
 					}
 
 					newFaces[ newFaces.Num()-1 ].firstEdge = faceFirstEdge;
@@ -126,10 +132,10 @@ void idAASFileLocal::Optimize( void ) {
 				}
 			}
 
-			if ( faceNum < 0 ) {
-				newFaceIndex.Append( -faceRemap[ abs(faceNum) ] );
+			if (faceNum < 0) {
+				newFaceIndex.Append(-faceRemap[ abs(faceNum)]);
 			} else {
-				newFaceIndex.Append( faceRemap[ abs(faceNum) ] );
+				newFaceIndex.Append(faceRemap[ abs(faceNum)]);
 			}
 		}
 
@@ -137,8 +143,8 @@ void idAASFileLocal::Optimize( void ) {
 		area->numFaces = newFaceIndex.Num() - areaFirstFace;
 
 		// remap the reachability edges
-		for ( reach = area->reach; reach; reach = reach->next ) {
-			reach->edgeNum = abs( edgeRemap[reach->edgeNum] );
+		for (reach = area->reach; reach; reach = reach->next) {
+			reach->edgeNum = abs(edgeRemap[reach->edgeNum]);
 		}
 	}
 

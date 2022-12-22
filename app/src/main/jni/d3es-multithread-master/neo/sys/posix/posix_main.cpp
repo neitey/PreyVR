@@ -39,8 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <signal.h>
 #include <fcntl.h>
 
-#include "sys/platform.h"
-#include "idlib/containers/StrList.h"
+#include "idlib/precompiled.h"
 #include "framework/FileSystem.h"
 #include "framework/KeyInput.h"
 #include "framework/EditField.h"
@@ -957,4 +956,15 @@ void Sys_Error(const char *error, ...) {
 	Sys_Printf( "\n" );
 
 	Posix_Exit( EXIT_FAILURE );
+}
+
+
+const char *Sys_FPU_GetState(void)
+{
+	return "";
+}
+
+bool Sys_FPU_StackIsEmpty(void)
+{
+	return true;
 }

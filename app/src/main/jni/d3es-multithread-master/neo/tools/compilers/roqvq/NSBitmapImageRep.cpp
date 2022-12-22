@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,80 +25,94 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "sys/platform.h"
+#include "roq.h"
 
-#include "tools/compilers/roqvq/roq.h"
+void R_LoadImage(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, bool makePowerOf2);
 
-void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, bool makePowerOf2 );
-
-NSBitmapImageRep::NSBitmapImageRep( void ) {
+NSBitmapImageRep::NSBitmapImageRep(void)
+{
 	bmap = NULL;
 	width = 0;
 	height = 0;
 	timestamp = 0;
 }
 
-NSBitmapImageRep::NSBitmapImageRep( const char *filename ) {
+NSBitmapImageRep::NSBitmapImageRep(const char *filename)
+{
 
-	R_LoadImage( filename, &bmap, &width, &height, &timestamp, false );
+	R_LoadImage(filename, &bmap, &width, &height, &timestamp, false);
+
 	if (!width || !height) {
-		common->FatalError( "roqvq: unable to load image %s\n", filename );
+		common->FatalError("roqvq: unable to load image %s\n", filename);
 	}
 }
 
-NSBitmapImageRep::NSBitmapImageRep( int wide, int high ) {
-	bmap = (byte *)Mem_ClearedAlloc( wide * high * 4 );
+NSBitmapImageRep::NSBitmapImageRep(int wide, int high)
+{
+	bmap = (byte *)Mem_ClearedAlloc(wide * high * 4);
 	width = wide;
 	height = high;
 }
 
-void R_StaticFree( void *data );
+void R_StaticFree(void *data);
 
-NSBitmapImageRep::~NSBitmapImageRep() {
-	R_StaticFree( bmap );
+NSBitmapImageRep::~NSBitmapImageRep()
+{
+	R_StaticFree(bmap);
 	bmap = NULL;
 }
 
-int NSBitmapImageRep::samplesPerPixel( void ) {
+int NSBitmapImageRep::samplesPerPixel(void)
+{
 	return 4;
 }
 
-int NSBitmapImageRep::pixelsWide( void ) {
+int NSBitmapImageRep::pixelsWide(void)
+{
 	return width;
 }
 
-int NSBitmapImageRep::pixelsHigh( void ) {
+int NSBitmapImageRep::pixelsHigh(void)
+{
 	return height;
 }
 
-byte * NSBitmapImageRep::bitmapData( void ) {
+byte *NSBitmapImageRep::bitmapData(void)
+{
 	return bmap;
 }
 
-bool NSBitmapImageRep::hasAlpha( void ) {
+bool NSBitmapImageRep::hasAlpha(void)
+{
 	return false;
 }
 
-bool NSBitmapImageRep::isPlanar( void ) {
+bool NSBitmapImageRep::isPlanar(void)
+{
 	return false;
 }
 
-NSBitmapImageRep &NSBitmapImageRep::operator=( const NSBitmapImageRep &a ) {
+NSBitmapImageRep &NSBitmapImageRep::operator=(const NSBitmapImageRep &a)
+{
 
 	// check for assignment to self
-	if ( this == &a ) {
+	if (this == &a) {
 		return *this;
 	}
 
 	if (bmap) {
 		Mem_Free(bmap);
 	}
-	bmap	= (byte *)Mem_Alloc( a.width * a.height * 4 );
-	memcpy( bmap, a.bmap, a.width * a.height * 4 );
+
+	bmap	= (byte *)Mem_Alloc(a.width * a.height * 4);
+	memcpy(bmap, a.bmap, a.width * a.height * 4);
 	width = a.width;
 	height = a.height;
 	timestamp = a.timestamp;
 
 	return *this;
 }
+

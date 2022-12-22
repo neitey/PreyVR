@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Session.h"
 #include "renderer/tr_local.h"
 
@@ -635,8 +635,8 @@ void idRenderModelMD5::LoadModel() {
 					common->Printf( "Numverts %d Vert %d %f %f %f : %f %f %f %f\n", meshes[i].NumVerts(), ti, meshes[i].deformInfo->verts[ti].xyz.x,
 						meshes[i].deformInfo->verts[ti].xyz.y,
 						meshes[i].deformInfo->verts[ti].xyz.z,
-						meshes[i].deformInfo->verts[ti].GetTexCoordS(),
-						meshes[i].deformInfo->verts[ti].GetTexCoordT(),
+						meshes[i].deformInfo->verts[ti].st[0],
+						meshes[i].deformInfo->verts[ti].st[1],
 						meshes[i].deformInfo->verts[ti].st[0],
 						meshes[i].deformInfo->verts[ti].st[1]);
 				}
@@ -685,8 +685,8 @@ void idRenderModelMD5::LoadModel() {
 					common->Printf( "Numverts %d Vert %d %f %f %f : %f %f %f %f\n", pdageometry->numVerts, ti, pdageometry->verts[ti].xyz.x,
 						pdageometry->verts[ti].xyz.y,
 						pdageometry->verts[ti].xyz.z,
-						pdageometry->verts[ti].GetTexCoordS(),
-						pdageometry->verts[ti].GetTexCoordT(),
+						pdageometry->verts[ti].st[0],
+						pdageometry->verts[ti].st[1],
 						pdageometry->verts[ti].st[0],
 						pdageometry->verts[ti].st[1] );
 				}

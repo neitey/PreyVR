@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MATH_SIMD_MMX_H__
 #define __MATH_SIMD_MMX_H__
 
-#include "idlib/math/Simd_Generic.h"
-
 /*
 ===============================================================================
 
@@ -39,16 +37,17 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idSIMD_MMX : public idSIMD_Generic {
-public:
-#if defined(__GNUC__) && defined(__MMX__)
-	virtual const char * VPCALL GetName( void ) const;
+class idSIMD_MMX : public idSIMD_Generic
+{
+	public:
+#if defined(MACOS_X) && defined(__i386__)
+		virtual const char *VPCALL GetName(void) const;
 
-#elif defined(_MSC_VER) && defined(_M_IX86)
-	virtual const char * VPCALL GetName( void ) const;
+#elif defined(_WIN32)
+		virtual const char *VPCALL GetName(void) const;
 
-	virtual void VPCALL Memcpy( void *dst,			const void *src,		const int count );
-	virtual void VPCALL Memset( void *dst,			const int val,			const int count );
+		virtual void VPCALL Memcpy(void *dst,			const void *src,		const int count);
+		virtual void VPCALL Memset(void *dst,			const int val,			const int count);
 
 #endif
 };

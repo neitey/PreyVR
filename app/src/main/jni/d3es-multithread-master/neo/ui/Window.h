@@ -74,9 +74,6 @@ const int SCROLLBAR_SIZE = 16;
 const int MAX_WINDOW_NAME = 32;
 const int MAX_LIST_ITEMS = 1024;
 
-const int MAX_EXPRESSION_OPS = 4096;
-const int MAX_EXPRESSION_REGISTERS = 4096;
-
 const char DEFAULT_BACKCOLOR[] = "1 1 1 1";
 const char DEFAULT_FORECOLOR[] = "0 0 0 1";
 const char DEFAULT_BORDERCOLOR[] = "0 0 0 1";

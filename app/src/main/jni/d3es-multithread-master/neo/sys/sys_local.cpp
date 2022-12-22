@@ -26,10 +26,11 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/KeyInput.h"
 
 #include "sys/sys_local.h"
+#include "config.h"
 
 const char * sysLanguageNames[] = {
 	"english", "spanish", "italian", "german", "french", "russian",
@@ -38,62 +39,127 @@ const char * sysLanguageNames[] = {
 
 idCVar sys_lang( "sys_lang", "english", CVAR_SYSTEM | CVAR_ARCHIVE,  "", sysLanguageNames, idCmdSystem::ArgCompletion_String<sysLanguageNames> );
 
-idSysLocal			sysLocal;
-idSys *				sys = &sysLocal;
+idSysLocal                     sysLocal;
+idSys *                                sys = &sysLocal;
 
-void idSysLocal::DebugPrintf( const char *fmt, ... ) {
+void idSysLocal::DebugPrintf(const char *fmt, ...)
+{
 	va_list argptr;
 
-	va_start( argptr, fmt );
-	Sys_DebugVPrintf( fmt, argptr );
-	va_end( argptr );
+	va_start(argptr, fmt);
+	Sys_DebugVPrintf(fmt, argptr);
+	va_end(argptr);
 }
 
-void idSysLocal::DebugVPrintf( const char *fmt, va_list arg ) {
-	Sys_DebugVPrintf( fmt, arg );
+void idSysLocal::DebugVPrintf(const char *fmt, va_list arg)
+{
+	Sys_DebugVPrintf(fmt, arg);
 }
 
-unsigned int idSysLocal::GetMilliseconds( void ) {
-	return Sys_Milliseconds();
+double idSysLocal::GetClockTicks(void)
+{
+	return Sys_GetClockTicks();
 }
 
-int idSysLocal::GetProcessorId( void ) {
+double idSysLocal::ClockTicksPerSecond(void)
+{
+	return Sys_ClockTicksPerSecond();
+}
+
+int idSysLocal::GetProcessorId(void)
+{
 	return Sys_GetProcessorId();
 }
 
-void idSysLocal::FPU_SetFTZ( bool enable ) {
-	Sys_FPU_SetFTZ( enable );
+const char *idSysLocal::GetProcessorString(void)
+{
+	return Sys_GetProcessorString();
 }
 
-void idSysLocal::FPU_SetDAZ( bool enable ) {
-	Sys_FPU_SetDAZ( enable );
+const char *idSysLocal::FPU_GetState(void)
+{
+	return Sys_FPU_GetState();
 }
 
-bool idSysLocal::LockMemory( void *ptr, int bytes ) {
-	return Sys_LockMemory( ptr, bytes );
+bool idSysLocal::FPU_StackIsEmpty(void)
+{
+	return Sys_FPU_StackIsEmpty();
 }
 
-bool idSysLocal::UnlockMemory( void *ptr, int bytes ) {
-	return Sys_UnlockMemory( ptr, bytes );
+void idSysLocal::FPU_SetFTZ(bool enable)
+{
+	Sys_FPU_SetFTZ(enable);
 }
 
-uintptr_t idSysLocal::DLL_Load( const char *dllName ) {
-	return Sys_DLL_Load( dllName );
+void idSysLocal::FPU_SetDAZ(bool enable)
+{
+	Sys_FPU_SetDAZ(enable);
 }
 
-void *idSysLocal::DLL_GetProcAddress( uintptr_t dllHandle, const char *procName ) {
-	return Sys_DLL_GetProcAddress( dllHandle, procName );
+bool idSysLocal::LockMemory(void *ptr, int bytes)
+{
+	return Sys_LockMemory(ptr, bytes);
 }
 
-void idSysLocal::DLL_Unload( uintptr_t dllHandle ) {
-	Sys_DLL_Unload( dllHandle );
+bool idSysLocal::UnlockMemory(void *ptr, int bytes)
+{
+	return Sys_UnlockMemory(ptr, bytes);
 }
 
-void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) {
-	idStr::snPrintf( dllName, maxLength, "%s" BUILD_LIBRARY_SUFFIX, baseName );
+void idSysLocal::GetCallStack(address_t *callStack, const int callStackSize)
+{
+	Sys_GetCallStack(callStack, callStackSize);
 }
 
-sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down ) {
+const char *idSysLocal::GetCallStackStr(const address_t *callStack, const int callStackSize)
+{
+	return Sys_GetCallStackStr(callStack, callStackSize);
+}
+
+const char *idSysLocal::GetCallStackCurStr(int depth)
+{
+	return Sys_GetCallStackCurStr(depth);
+}
+
+void idSysLocal::ShutdownSymbols(void)
+{
+	Sys_ShutdownSymbols();
+}
+
+//k 64
+uintptr_t idSysLocal::DLL_Load(const char *dllName)
+{
+	DebugPrintf("[Harmattan]: DLL_Load(%s)\n", dllName);
+	return Sys_DLL_Load(dllName);
+}
+
+//k 64
+void *idSysLocal::DLL_GetProcAddress(uintptr_t dllHandle, const char *procName)
+{
+	return Sys_DLL_GetProcAddress(dllHandle, procName);
+}
+
+//k 64
+void idSysLocal::DLL_Unload(uintptr_t dllHandle)
+{
+	Sys_DLL_Unload(dllHandle);
+}
+
+void idSysLocal::DLL_GetFileName(const char *baseName, char *dllName, int maxLength)
+{
+#ifdef _WIN32
+	idStr::snPrintf(dllName, maxLength, "%s" CPUSTRING ".dll", baseName);
+#elif defined( __linux__ )
+	idStr::snPrintf(dllName, maxLength, "%s" CPUSTRING ".so", baseName);
+#elif defined( MACOS_X )
+	idStr::snPrintf(dllName, maxLength, "%s" ".dylib", baseName);
+#else
+#error OS define is required
+#endif
+}
+
+sysEvent_t idSysLocal::GenerateMouseButtonEvent(int button, bool down)
+{
 	sysEvent_t ev;
 	ev.evType = SE_KEY;
 	ev.evValue = K_MOUSE1 + button - 1;
@@ -103,7 +169,8 @@ sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down ) {
 	return ev;
 }
 
-sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay ) {
+sysEvent_t idSysLocal::GenerateMouseMoveEvent(int deltax, int deltay)
+{
 	sysEvent_t ev;
 	ev.evType = SE_MOUSE;
 	ev.evValue = deltax;
@@ -113,54 +180,65 @@ sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay ) {
 	return ev;
 }
 
+void idSysLocal::FPU_EnableExceptions(int exceptions)
+{
+	Sys_FPU_EnableExceptions(exceptions);
+}
+
 /*
 =================
 Sys_TimeStampToStr
 =================
 */
-const char *Sys_TimeStampToStr( ID_TIME_T timeStamp ) {
+const char *Sys_TimeStampToStr(ID_TIME_T timeStamp)
+{
 	static char timeString[MAX_STRING_CHARS];
 	timeString[0] = '\0';
 
-	tm*	time = localtime( &timeStamp );
+	tm	*time = localtime(&timeStamp);
 	idStr out;
 
-	idStr lang = cvarSystem->GetCVarString( "sys_lang" );
-	if ( lang.Icmp( "english" ) == 0 ) {
+	idStr lang = cvarSystem->GetCVarString("sys_lang");
+
+	if (lang.Icmp("english") == 0) {
 		// english gets "month/day/year  hour:min" + "am" or "pm"
-		out = va( "%02d", time->tm_mon + 1 );
+		out = va("%02d", time->tm_mon + 1);
 		out += "/";
-		out += va( "%02d", time->tm_mday );
+		out += va("%02d", time->tm_mday);
 		out += "/";
-		out += va( "%d", time->tm_year + 1900 );
+		out += va("%d", time->tm_year + 1900);
 		out += "\t";
-		if ( time->tm_hour > 12 ) {
-			out += va( "%02d", time->tm_hour - 12 );
-		} else if ( time->tm_hour == 0 ) {
-				out += "12";
+
+		if (time->tm_hour > 12) {
+			out += va("%02d", time->tm_hour - 12);
+		} else if (time->tm_hour == 0) {
+			out += "12";
 		} else {
-			out += va( "%02d", time->tm_hour );
+			out += va("%02d", time->tm_hour);
 		}
+
 		out += ":";
-		out +=va( "%02d", time->tm_min );
-		if ( time->tm_hour >= 12 ) {
+		out +=va("%02d", time->tm_min);
+
+		if (time->tm_hour >= 12) {
 			out += "pm";
 		} else {
 			out += "am";
 		}
 	} else {
 		// europeans get "day/month/year  24hour:min"
-		out = va( "%02d", time->tm_mday );
+		out = va("%02d", time->tm_mday);
 		out += "/";
-		out += va( "%02d", time->tm_mon + 1 );
+		out += va("%02d", time->tm_mon + 1);
 		out += "/";
-		out += va( "%d", time->tm_year + 1900 );
+		out += va("%d", time->tm_year + 1900);
 		out += "\t";
-		out += va( "%02d", time->tm_hour );
+		out += va("%02d", time->tm_hour);
 		out += ":";
-		out += va( "%02d", time->tm_min );
+		out += va("%02d", time->tm_min);
 	}
-	idStr::Copynz( timeString, out, sizeof( timeString ) );
+
+	idStr::Copynz(timeString, out, sizeof(timeString));
 
 	return timeString;
 }

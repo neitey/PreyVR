@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 
 #include "framework/FileSystem.h"
 #include "renderer/tr_local.h"
@@ -1045,7 +1045,7 @@ unsigned int idCinematicLocal::yuv_to_rgb24( int y, int u, int v ) {
 	if (g > 255) g = 255;
 	if (b > 255) b = 255;
 
-	return LittleInt((r)+(g<<8)+(b<<16));
+	return LittleLong((r)+(g<<8)+(b<<16));
 }
 
 /*

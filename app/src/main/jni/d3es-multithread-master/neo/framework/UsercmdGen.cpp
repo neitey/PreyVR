@@ -26,13 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#include "idlib/precompiled.h"
+
 #include "game/Game_local.h"
 #include "game/Vr.h"
 #include "game/gamesys/SysCvar.h"
 
-#include "sys/platform.h"
-#include "idlib/math/Vector.h"
-#include "idlib/Lib.h"
 #include "framework/CVarSystem.h"
 #include "framework/KeyInput.h"
 #include "framework/async/AsyncNetwork.h"
@@ -52,7 +51,7 @@ void usercmd_t::ByteSwap( void ) {
 	angles[0] = LittleShort( angles[0] );
 	angles[1] = LittleShort( angles[1] );
 	angles[2] = LittleShort( angles[2] );
-	sequence = LittleInt( sequence );
+	sequence = LittleLong( sequence );
 }
 
 /*

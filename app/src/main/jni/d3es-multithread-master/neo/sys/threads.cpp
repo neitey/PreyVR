@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <SDL_thread.h>
 #include <SDL_timer.h>
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Common.h"
 
 #include "sys/sys_public.h"

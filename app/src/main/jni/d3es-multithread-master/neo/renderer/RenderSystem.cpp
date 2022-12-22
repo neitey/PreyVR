@@ -25,10 +25,10 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+
+#include "idlib/precompiled.h"
 #include "framework/Game.h"
 #include "../game/Vr.h"
-#include "sys/platform.h"
-#include "idlib/containers/List.h"
 #include "framework/EventLoop.h"
 #include "framework/Session.h"
 #include "framework/DemoFile.h"
@@ -645,15 +645,15 @@ void idRenderSystemLocal::BackendThread()
     	}
     	else
     	{
-			// LOGI("Wait TRIGGER_EVENT_RUN_BACKEND");
+			// printf("Wait TRIGGER_EVENT_RUN_BACKEND");
 			Sys_WaitForEvent(TRIGGER_EVENT_RUN_BACKEND);
-			// LOGI("Done TRIGGER_EVENT_RUN_BACKEND");
+			// printf("Done TRIGGER_EVENT_RUN_BACKEND");
 		}
 
 		// Thread will be woken up to either shutdown or render
 		if( backendThreadShutdown )
 		{
-			LOGI("Backend thread ending..");
+			printf("Backend thread ending..");
 			// Release context
 			GLimp_DeactivateContext();
 
@@ -674,14 +674,14 @@ void idRenderSystemLocal::BackendThreadTask()
 	// Purge all images
 	while( (img = globalImages->GetNextPurgeImage()) != NULL )
 	{
-		//LOGI("IMAGE PURGE!");
+		//printf("IMAGE PURGE!");
 		img->PurgeImage();
 	}
 
 	// Load all images
 	while( (img = globalImages->GetNextAllocImage()) != NULL )
 	{
-		// LOGI("IMAGE LOAD!");
+		// printf("IMAGE LOAD!");
 		img->ActuallyLoadImage( false );
 	}
 
@@ -713,14 +713,14 @@ void idRenderSystemLocal::BackendThreadTask()
 
 void idRenderSystemLocal::BackendThreadExecute()
 {
-	//LOGI("BackendThreadRun called..");
+	//printf("BackendThreadRun called..");
 	imagesFinished = false;
 	backendFinished = false;
 
 	if(multithreadActive)
 	{
 		if ( !renderThread.threadHandle ) {
-			LOGI("Starting new backend thread");
+			printf("Starting new backend thread");
 
 			GLimp_DeactivateContext();
 			backendThreadShutdown = false;
@@ -734,7 +734,7 @@ void idRenderSystemLocal::BackendThreadExecute()
 		}
 		else
 		{
-			// LOGI("Trigger TRIGGER_EVENT_RUN_BACKEND");
+			// printf("Trigger TRIGGER_EVENT_RUN_BACKEND");
 			Sys_TriggerEvent(TRIGGER_EVENT_RUN_BACKEND);
 		}
 	}
@@ -746,7 +746,7 @@ void idRenderSystemLocal::BackendThreadExecute()
 
 void idRenderSystemLocal::BackendThreadShutdown()
 {
-	LOGI("Shutting down backend thread");
+	printf("Shutting down backend thread");
 
 	if( multithreadActive && renderThread.threadHandle )
 	{
@@ -762,7 +762,7 @@ void idRenderSystemLocal::BackendThreadShutdown()
 		}
 		else
 		{
-			// LOGI("Trigger TRIGGER_EVENT_RUN_BACKEND");
+			// printf("Trigger TRIGGER_EVENT_RUN_BACKEND");
 			Sys_TriggerEvent(TRIGGER_EVENT_RUN_BACKEND);
 		}
 
@@ -799,7 +799,7 @@ void idRenderSystemLocal::RenderCommands(renderCrop_t *pc, byte *pix)
 			lastRenderTime = Sys_Milliseconds();
 		}
 
-		// LOGI("---------------------NEW FRAME---------------------");
+		// printf("---------------------NEW FRAME---------------------");
 
 		// We have turned off multithreading, we need to shut it down
 		if(multithreadActive && !r_multithread.GetBool())

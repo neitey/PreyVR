@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "tools/edit_gui_common.h"
-
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "../../sys/win32/rc/AFEditor_resource.h"
 
@@ -70,7 +70,7 @@ IMPLEMENT_DYNAMIC(DialogAFProperties, CDialog)
 DialogAFProperties::DialogAFProperties
 ================
 */
-DialogAFProperties::DialogAFProperties(CWnd* pParent /*=NULL*/)
+DialogAFProperties::DialogAFProperties(CWnd *pParent /*=NULL*/)
 	: CDialog(DialogAFProperties::IDD, pParent)
 	, m_selfCollision(false)
 	, m_linearFriction(0)
@@ -89,8 +89,8 @@ DialogAFProperties::DialogAFProperties(CWnd* pParent /*=NULL*/)
 	, m_angularTolerance(0)
 	, file(NULL)
 {
-	Create( IDD_DIALOG_AF_PROPERTIES, pParent );
-	EnableToolTips( TRUE );
+	Create(IDD_DIALOG_AF_PROPERTIES, pParent);
+	EnableToolTips(TRUE);
 }
 
 /*
@@ -98,7 +98,8 @@ DialogAFProperties::DialogAFProperties(CWnd* pParent /*=NULL*/)
 DialogAFProperties::~DialogAFProperties
 ================
 */
-DialogAFProperties::~DialogAFProperties() {
+DialogAFProperties::~DialogAFProperties()
+{
 }
 
 /*
@@ -106,7 +107,8 @@ DialogAFProperties::~DialogAFProperties() {
 DialogAFProperties::DoDataExchange
 ================
 */
-void DialogAFProperties::DoDataExchange(CDataExchange* pDX) {
+void DialogAFProperties::DoDataExchange(CDataExchange *pDX)
+{
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(DialogAFProperties)
 	DDX_Control(pDX, IDC_EDIT_MODEL, m_editModel);
@@ -136,22 +138,24 @@ void DialogAFProperties::DoDataExchange(CDataExchange* pDX) {
 DialogAFProperties::LoadFile
 ================
 */
-void DialogAFProperties::LoadFile( idDeclAF *af ) {
+void DialogAFProperties::LoadFile(idDeclAF *af)
+{
 	idStr str;
 
 	file = af;
 
-	if ( !file ) {
+	if (!file) {
 		ClearFile();
 		return;
 	}
-	m_editModel.SetWindowText( file->model.c_str() );
-	m_editSkin.SetWindowText( file->skin.c_str() );
+
+	m_editModel.SetWindowText(file->model.c_str());
+	m_editSkin.SetWindowText(file->skin.c_str());
 	m_selfCollision = file->selfCollision;
-	idDeclAF::ContentsToString( file->contents, str );
-	m_editContents.SetWindowText( str );
-	idDeclAF::ContentsToString( file->clipMask, str );
-	m_editClipMask.SetWindowText( str );
+	idDeclAF::ContentsToString(file->contents, str);
+	m_editContents.SetWindowText(str);
+	idDeclAF::ContentsToString(file->clipMask, str);
+	m_editClipMask.SetWindowText(str);
 	m_linearFriction = file->defaultLinearFriction;
 	m_angularFriction = file->defaultAngularFriction;
 	m_contactFriction = file->defaultContactFriction;
@@ -166,7 +170,7 @@ void DialogAFProperties::LoadFile( idDeclAF *af ) {
 	m_maxMoveTime = file->maxMoveTime;
 	m_linearTolerance = file->noMoveTranslation;
 	m_angularTolerance = file->noMoveRotation;
-	UpdateData( FALSE );
+	UpdateData(FALSE);
 }
 
 /*
@@ -174,22 +178,24 @@ void DialogAFProperties::LoadFile( idDeclAF *af ) {
 DialogAFProperties::SetFile
 ================
 */
-void DialogAFProperties::SaveFile( void ) {
+void DialogAFProperties::SaveFile(void)
+{
 	CString str;
 
-	if ( !file ) {
+	if (!file) {
 		return;
 	}
-	UpdateData( TRUE );
-	m_editModel.GetWindowText( str );
+
+	UpdateData(TRUE);
+	m_editModel.GetWindowText(str);
 	file->model = str;
-	m_editSkin.GetWindowText( str );
+	m_editSkin.GetWindowText(str);
 	file->skin = str;
-	file->selfCollision = ( m_selfCollision != FALSE );
-	m_editContents.GetWindowText( str );
-	file->contents = idDeclAF::ContentsFromString( str );
-	m_editClipMask.GetWindowText( str );
-	file->clipMask = idDeclAF::ContentsFromString( str );
+	file->selfCollision = (m_selfCollision != FALSE);
+	m_editContents.GetWindowText(str);
+	file->contents = idDeclAF::ContentsFromString(str);
+	m_editClipMask.GetWindowText(str);
+	file->clipMask = idDeclAF::ContentsFromString(str);
 	file->defaultLinearFriction = m_linearFriction;
 	file->defaultAngularFriction = m_angularFriction;
 	file->defaultContactFriction = m_contactFriction;
@@ -213,10 +219,12 @@ void DialogAFProperties::SaveFile( void ) {
 DialogAFProperties::UpdateFile
 ================
 */
-void DialogAFProperties::UpdateFile( void ) {
+void DialogAFProperties::UpdateFile(void)
+{
 	SaveFile();
-	if ( file ) {
-		gameEdit->AF_UpdateEntities( file->GetName() );
+
+	if (file) {
+		gameEdit->AF_UpdateEntities(file->GetName());
 	}
 }
 
@@ -225,12 +233,13 @@ void DialogAFProperties::UpdateFile( void ) {
 DialogAFProperties::ClearFile
 ================
 */
-void DialogAFProperties::ClearFile( void ) {
-	m_editModel.SetWindowText( "" );
-	m_editSkin.SetWindowText( "" );
+void DialogAFProperties::ClearFile(void)
+{
+	m_editModel.SetWindowText("");
+	m_editSkin.SetWindowText("");
 	m_selfCollision = false;
-	m_editContents.SetWindowText( "" );
-	m_editClipMask.SetWindowText( "" );
+	m_editContents.SetWindowText("");
+	m_editClipMask.SetWindowText("");
 	m_linearFriction = 0.0f;
 	m_angularFriction = 0.0f;
 	m_contactFriction = 0.0f;
@@ -245,7 +254,7 @@ void DialogAFProperties::ClearFile( void ) {
 	m_maxMoveTime = 0.0f;
 	m_linearTolerance = 0.0f;
 	m_angularTolerance = 0.0f;
-	UpdateData( FALSE );
+	UpdateData(FALSE);
 }
 
 /*
@@ -253,9 +262,10 @@ void DialogAFProperties::ClearFile( void ) {
 DialogAFProperties::OnToolHitTest
 ================
 */
-int DialogAFProperties::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
-	CDialog::OnToolHitTest( point, pTI );
-	return DefaultOnToolHitTest( toolTips, this, point, pTI );
+int DialogAFProperties::OnToolHitTest(CPoint point, TOOLINFO *pTI) const
+{
+	CDialog::OnToolHitTest(point, pTI);
+	return DefaultOnToolHitTest(toolTips, this, point, pTI);
 }
 
 BEGIN_MESSAGE_MAP(DialogAFProperties, CDialog)
@@ -292,219 +302,256 @@ END_MESSAGE_MAP()
 
 // DialogAFProperties message handlers
 
-BOOL DialogAFProperties::OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pResult ) {
-	return DefaultOnToolTipNotify( toolTips, id, pNMHDR, pResult );
+BOOL DialogAFProperties::OnToolTipNotify(UINT id, NMHDR *pNMHDR, LRESULT *pResult)
+{
+	return DefaultOnToolTipNotify(toolTips, id, pNMHDR, pResult);
 }
 
-void DialogAFProperties::OnEnChangeEditModel() {
-	if ( EditControlEnterHit( &m_editModel ) ) {
+void DialogAFProperties::OnEnChangeEditModel()
+{
+	if (EditControlEnterHit(&m_editModel)) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditSkin() {
-	if ( EditControlEnterHit( &m_editSkin ) ) {
+void DialogAFProperties::OnEnChangeEditSkin()
+{
+	if (EditControlEnterHit(&m_editSkin)) {
 		UpdateFile();
 		// reload the .af file
 		AFDialogReloadFile();
 	}
 }
 
-void DialogAFProperties::OnBnClickedCheckSelfcollision() {
+void DialogAFProperties::OnBnClickedCheckSelfcollision()
+{
 	UpdateFile();
-	if ( file && file->bodies.Num() && MessageBox( "Apply to all bodies ?", "Self Collision", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-		for ( int i = 0; i < file->bodies.Num(); i++ ) {
+
+	if (file && file->bodies.Num() && MessageBox("Apply to all bodies ?", "Self Collision", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+		for (int i = 0; i < file->bodies.Num(); i++) {
 			file->bodies[i]->selfCollision = file->selfCollision;
 		}
-		bodyDlg->LoadFile( file );
+
+		bodyDlg->LoadFile(file);
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditContents() {
-	if ( EditControlEnterHit( &m_editContents ) ) {
+void DialogAFProperties::OnEnChangeEditContents()
+{
+	if (EditControlEnterHit(&m_editContents)) {
 		UpdateFile();
-		if ( file && file->bodies.Num() && MessageBox( "Apply to all bodies ?", "Contents", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-			for ( int i = 0; i < file->bodies.Num(); i++ ) {
+
+		if (file && file->bodies.Num() && MessageBox("Apply to all bodies ?", "Contents", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+			for (int i = 0; i < file->bodies.Num(); i++) {
 				file->bodies[i]->contents = file->contents;
 			}
-			bodyDlg->LoadFile( file );
+
+			bodyDlg->LoadFile(file);
 		}
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditClipmask() {
-	if ( EditControlEnterHit( &m_editClipMask ) ) {
+void DialogAFProperties::OnEnChangeEditClipmask()
+{
+	if (EditControlEnterHit(&m_editClipMask)) {
 		UpdateFile();
-		if ( file && file->bodies.Num() && MessageBox( "Apply to all bodies ?", "Clip Mask", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-			for ( int i = 0; i < file->bodies.Num(); i++ ) {
+
+		if (file && file->bodies.Num() && MessageBox("Apply to all bodies ?", "Clip Mask", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+			for (int i = 0; i < file->bodies.Num(); i++) {
 				file->bodies[i]->clipMask = file->clipMask;
 			}
-			bodyDlg->LoadFile( file );
+
+			bodyDlg->LoadFile(file);
 		}
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditLinearfriction() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_LINEARFRICTION ) ) ) {
+void DialogAFProperties::OnEnChangeEditLinearfriction()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_LINEARFRICTION))) {
 		UpdateFile();
-		if ( file && file->bodies.Num() && MessageBox( "Apply to all bodies ?", "Linear Friction", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-			for ( int i = 0; i < file->bodies.Num(); i++ ) {
+
+		if (file && file->bodies.Num() && MessageBox("Apply to all bodies ?", "Linear Friction", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+			for (int i = 0; i < file->bodies.Num(); i++) {
 				file->bodies[i]->linearFriction = file->defaultLinearFriction;
 			}
-			bodyDlg->LoadFile( file );
+
+			bodyDlg->LoadFile(file);
 		}
-	}
-	else {
-		m_linearFriction = EditVerifyFloat( (CEdit *) GetDlgItem( IDC_EDIT_LINEARFRICTION ), false );
+	} else {
+		m_linearFriction = EditVerifyFloat((CEdit *) GetDlgItem(IDC_EDIT_LINEARFRICTION), false);
 	}
 }
 
-void DialogAFProperties::OnDeltaposSpinLinearfriction(NMHDR *pNMHDR, LRESULT *pResult) {
+void DialogAFProperties::OnDeltaposSpinLinearfriction(NMHDR *pNMHDR, LRESULT *pResult)
+{
 	LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
-	m_linearFriction = EditSpinFloat( (CEdit *)GetDlgItem( IDC_EDIT_LINEARFRICTION ), pNMUpDown->iDelta < 0 );
+	m_linearFriction = EditSpinFloat((CEdit *)GetDlgItem(IDC_EDIT_LINEARFRICTION), pNMUpDown->iDelta < 0);
 	UpdateFile();
 	*pResult = 0;
 }
 
-void DialogAFProperties::OnEnChangeEditAngularfriction() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_ANGULARFRICTION ) ) ) {
+void DialogAFProperties::OnEnChangeEditAngularfriction()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_ANGULARFRICTION))) {
 		UpdateFile();
-		if ( file && file->bodies.Num() && MessageBox( "Apply to all bodies ?", "Angular Friction", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-			for ( int i = 0; i < file->bodies.Num(); i++ ) {
+
+		if (file && file->bodies.Num() && MessageBox("Apply to all bodies ?", "Angular Friction", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+			for (int i = 0; i < file->bodies.Num(); i++) {
 				file->bodies[i]->angularFriction = file->defaultAngularFriction;
 			}
-			bodyDlg->LoadFile( file );
+
+			bodyDlg->LoadFile(file);
 		}
-	}
-	else {
-		m_angularFriction = EditVerifyFloat( (CEdit *) GetDlgItem( IDC_EDIT_ANGULARFRICTION ), false );
+	} else {
+		m_angularFriction = EditVerifyFloat((CEdit *) GetDlgItem(IDC_EDIT_ANGULARFRICTION), false);
 	}
 }
 
-void DialogAFProperties::OnDeltaposSpinAngularfriction(NMHDR *pNMHDR, LRESULT *pResult) {
+void DialogAFProperties::OnDeltaposSpinAngularfriction(NMHDR *pNMHDR, LRESULT *pResult)
+{
 	LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
-	m_angularFriction = EditSpinFloat( (CEdit *)GetDlgItem( IDC_EDIT_ANGULARFRICTION ), pNMUpDown->iDelta < 0 );
+	m_angularFriction = EditSpinFloat((CEdit *)GetDlgItem(IDC_EDIT_ANGULARFRICTION), pNMUpDown->iDelta < 0);
 	UpdateFile();
 	*pResult = 0;
 }
 
-void DialogAFProperties::OnEnChangeEditContactfriction() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_CONTACTFRICTION ) ) ) {
+void DialogAFProperties::OnEnChangeEditContactfriction()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_CONTACTFRICTION))) {
 		UpdateFile();
-		if ( file && file->bodies.Num() && MessageBox( "Apply to all bodies ?", "Contact Friction", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-			for ( int i = 0; i < file->bodies.Num(); i++ ) {
+
+		if (file && file->bodies.Num() && MessageBox("Apply to all bodies ?", "Contact Friction", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+			for (int i = 0; i < file->bodies.Num(); i++) {
 				file->bodies[i]->contactFriction = file->defaultContactFriction;
 			}
-			bodyDlg->LoadFile( file );
+
+			bodyDlg->LoadFile(file);
 		}
-	}
-	else {
-		m_contactFriction = EditVerifyFloat( (CEdit *) GetDlgItem( IDC_EDIT_CONTACTFRICTION ), false );
+	} else {
+		m_contactFriction = EditVerifyFloat((CEdit *) GetDlgItem(IDC_EDIT_CONTACTFRICTION), false);
 	}
 }
 
-void DialogAFProperties::OnDeltaposSpinContactfriction(NMHDR *pNMHDR, LRESULT *pResult) {
+void DialogAFProperties::OnDeltaposSpinContactfriction(NMHDR *pNMHDR, LRESULT *pResult)
+{
 	LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
-	m_contactFriction = EditSpinFloat( (CEdit *)GetDlgItem( IDC_EDIT_CONTACTFRICTION ), pNMUpDown->iDelta < 0 );
+	m_contactFriction = EditSpinFloat((CEdit *)GetDlgItem(IDC_EDIT_CONTACTFRICTION), pNMUpDown->iDelta < 0);
 	UpdateFile();
 	*pResult = 0;
 }
 
-void DialogAFProperties::OnEnChangeEditConstraintfriction() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_CONSTRAINTFRICTION ) ) ) {
+void DialogAFProperties::OnEnChangeEditConstraintfriction()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_CONSTRAINTFRICTION))) {
 		UpdateFile();
-		if ( file && file->constraints.Num() && MessageBox( "Apply to all constraints ?", "Constraint Friction", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-			for ( int i = 0; i < file->constraints.Num(); i++ ) {
+
+		if (file && file->constraints.Num() && MessageBox("Apply to all constraints ?", "Constraint Friction", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+			for (int i = 0; i < file->constraints.Num(); i++) {
 				file->constraints[i]->friction = file->defaultConstraintFriction;
 			}
-			constraintDlg->LoadFile( file );
+
+			constraintDlg->LoadFile(file);
 		}
-	}
-	else {
-		EditVerifyFloat( (CEdit *) GetDlgItem( IDC_EDIT_CONSTRAINTFRICTION ), false );
+	} else {
+		EditVerifyFloat((CEdit *) GetDlgItem(IDC_EDIT_CONSTRAINTFRICTION), false);
 	}
 }
 
-void DialogAFProperties::OnDeltaposSpinConstraintfriction(NMHDR *pNMHDR, LRESULT *pResult) {
+void DialogAFProperties::OnDeltaposSpinConstraintfriction(NMHDR *pNMHDR, LRESULT *pResult)
+{
 	LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
-	m_constraintFriction = EditSpinFloat( (CEdit *)GetDlgItem( IDC_EDIT_CONSTRAINTFRICTION ), pNMUpDown->iDelta < 0 );
+	m_constraintFriction = EditSpinFloat((CEdit *)GetDlgItem(IDC_EDIT_CONSTRAINTFRICTION), pNMUpDown->iDelta < 0);
 	UpdateFile();
 	*pResult = 0;
 }
 
-void DialogAFProperties::OnEnChangeEditTotalmass() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_TOTALMASS ) ) ) {
+void DialogAFProperties::OnEnChangeEditTotalmass()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_TOTALMASS))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnDeltaposSpinTotalmass(NMHDR *pNMHDR, LRESULT *pResult) {
+void DialogAFProperties::OnDeltaposSpinTotalmass(NMHDR *pNMHDR, LRESULT *pResult)
+{
 	LPNMUPDOWN pNMUpDown = reinterpret_cast<LPNMUPDOWN>(pNMHDR);
-	m_totalMass = EditSpinFloat( (CEdit *)GetDlgItem( IDC_EDIT_TOTALMASS ), pNMUpDown->iDelta < 0 );
+	m_totalMass = EditSpinFloat((CEdit *)GetDlgItem(IDC_EDIT_TOTALMASS), pNMUpDown->iDelta < 0);
 	UpdateFile();
 	*pResult = 0;
 }
 
-void DialogAFProperties::OnEnChangeEditLinearvelocity() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_LINEARVELOCITY ) ) ) {
+void DialogAFProperties::OnEnChangeEditLinearvelocity()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_LINEARVELOCITY))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditAngularvelocity() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_ANGULARVELOCITY ) ) ) {
+void DialogAFProperties::OnEnChangeEditAngularvelocity()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_ANGULARVELOCITY))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditLinearacceleration() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_LINEARACCELERATION ) ) ) {
+void DialogAFProperties::OnEnChangeEditLinearacceleration()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_LINEARACCELERATION))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditAngularacceleration() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_ANGULARACCELERATION ) ) ) {
+void DialogAFProperties::OnEnChangeEditAngularacceleration()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_ANGULARACCELERATION))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditNomovetime() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_NO_MOVE_TIME ) ) ) {
+void DialogAFProperties::OnEnChangeEditNomovetime()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_NO_MOVE_TIME))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditMinimummovetime() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_MINIMUM_MOVE_TIME ) ) ) {
+void DialogAFProperties::OnEnChangeEditMinimummovetime()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_MINIMUM_MOVE_TIME))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditMaximummovetime() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_MAXIMUM_MOVE_TIME ) ) ) {
+void DialogAFProperties::OnEnChangeEditMaximummovetime()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_MAXIMUM_MOVE_TIME))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditLineartolerance() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_LINEAR_TOLERANCE ) ) ) {
+void DialogAFProperties::OnEnChangeEditLineartolerance()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_LINEAR_TOLERANCE))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnEnChangeEditAngulartolerance() {
-	if ( EditControlEnterHit( (CEdit *) GetDlgItem( IDC_EDIT_ANGULAR_TOLERANCE ) ) ) {
+void DialogAFProperties::OnEnChangeEditAngulartolerance()
+{
+	if (EditControlEnterHit((CEdit *) GetDlgItem(IDC_EDIT_ANGULAR_TOLERANCE))) {
 		UpdateFile();
 	}
 }
 
-void DialogAFProperties::OnBnClickedButtonBrowseModel() {
+void DialogAFProperties::OnBnClickedButtonBrowseModel()
+{
 //	m_editModel.SetWindowText( str );
 //	UpdateFile();
 }
 
-void DialogAFProperties::OnBnClickedButtonBrowseSkin() {
+void DialogAFProperties::OnBnClickedButtonBrowseSkin()
+{
 //	m_editSkin.SetWindowText( str );
 //	UpdateFile();
 	// reload the .af file

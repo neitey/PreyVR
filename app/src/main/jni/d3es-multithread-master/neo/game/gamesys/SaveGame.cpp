@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "framework/BuildVersion.h"
+#include "idlib/precompiled.h"
 #include "framework/DeclSkin.h"
 #include "renderer/ModelManager.h"
 

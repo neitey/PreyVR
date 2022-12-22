@@ -26,9 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/hashing/CRC32.h"
-#include "idlib/LangDict.h"
+#include "idlib/precompiled.h"
 #include "framework/async/AsyncNetwork.h"
 #include "framework/Console.h"
 #include "framework/Game.h"
@@ -2857,7 +2855,7 @@ void idSessionLocal::RunGameTic() {
 		} else {
 			cmd = logCmd.cmd;
 			cmd.ByteSwap();
-			logCmd.consistencyHash = LittleInt( logCmd.consistencyHash );
+			logCmd.consistencyHash = LittleLong( logCmd.consistencyHash );
 		}
 	}
 

@@ -1,6 +1,6 @@
 
+#include "idlib/precompiled.h"
 #include "renderer/tr_local.h"
-#include "sys/platform.h"
 
 extern "C"
 {

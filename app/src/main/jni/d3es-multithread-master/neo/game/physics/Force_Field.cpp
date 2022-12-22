@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "physics/Physics_Player.h"
 #include "physics/Physics_Monster.h"
 #include "WorldSpawn.h"

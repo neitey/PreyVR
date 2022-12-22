@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/containers/HashTable.h"
+#include "idlib/precompiled.h"
 #include "framework/UsercmdGen.h"
 #include "framework/KeyInput.h"
 #include "ui/DeviceContext.h"

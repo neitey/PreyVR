@@ -2,6 +2,7 @@
 Emile Belanger
 GPL3
 */
+#include "idlib/precompiled.h"
 #include "renderer/tr_local.h"
 #include "renderer/VertexCache.h"
 

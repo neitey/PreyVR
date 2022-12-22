@@ -17,8 +17,8 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "proptree.h"
 #include "PropTreeItemCheck.h"
@@ -54,13 +54,12 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CPropTreeItemCheck message handlers
 
-void CPropTreeItemCheck::DrawAttribute(CDC* pDC, const RECT& rc)
+void CPropTreeItemCheck::DrawAttribute(CDC *pDC, const RECT &rc)
 {
 	ASSERT(m_pProp!=NULL);
 
 	// verify the window has been created
-	if (!IsWindow(m_hWnd))
-	{
+	if (!IsWindow(m_hWnd)) {
 		TRACE0("CPropTreeItemCombo::DrawAttribute() - The window has not been created\n");
 		return;
 	}
@@ -70,16 +69,16 @@ void CPropTreeItemCheck::DrawAttribute(CDC* pDC, const RECT& rc)
 	checkRect.right = checkRect.left + CHECK_BOX_SIZE;
 	checkRect.bottom = checkRect.top + CHECK_BOX_SIZE;
 
-	if(!m_bActivated)
+	if (!m_bActivated)
 		pDC->DrawFrameControl(&checkRect, DFC_BUTTON, DFCS_BUTTONCHECK | DFCS_FLAT |(checkState ? DFCS_CHECKED : 0));
 }
 
 void CPropTreeItemCheck::SetCheckState(BOOL state)
- {
-	 checkState = state;
+{
+	checkState = state;
 
-	 SetCheck(checkState ? BST_CHECKED : BST_UNCHECKED);
- }
+	SetCheck(checkState ? BST_CHECKED : BST_UNCHECKED);
+}
 
 
 LPARAM CPropTreeItemCheck::GetItemValue()
@@ -114,9 +113,9 @@ void CPropTreeItemCheck::OnCommit()
 
 void CPropTreeItemCheck::OnActivate(int activateType, CPoint point)
 {
-	if(activateType == CPropTreeItem::ACTIVATE_TYPE_MOUSE) {
+	if (activateType == CPropTreeItem::ACTIVATE_TYPE_MOUSE) {
 		//Check where the user clicked
-		if(point.x < m_rc.left + CHECK_BOX_SIZE) {
+		if (point.x < m_rc.left + CHECK_BOX_SIZE) {
 			SetCheckState(!GetCheckState());
 			CommitChanges();
 		} else {
@@ -130,16 +129,16 @@ void CPropTreeItemCheck::OnActivate(int activateType, CPoint point)
 }
 
 
-bool CPropTreeItemCheck::CreateCheckBox() {
+bool CPropTreeItemCheck::CreateCheckBox()
+{
 	ASSERT(m_pProp!=NULL);
 
 	if (IsWindow(m_hWnd))
 		DestroyWindow();
 
-	DWORD dwStyle = (WS_CHILD|BS_CHECKBOX|BS_NOTIFY|BS_FLAT );
+	DWORD dwStyle = (WS_CHILD|BS_CHECKBOX|BS_NOTIFY|BS_FLAT);
 
-	if (!Create(NULL, dwStyle, CRect(0,0,0,0), m_pProp->GetCtrlParent(), GetCtrlID()))
-	{
+	if (!Create(NULL, dwStyle, CRect(0,0,0,0), m_pProp->GetCtrlParent(), GetCtrlID())) {
 		TRACE0("CPropTreeItemCombo::CreateComboBox() - failed to create combo box\n");
 		return FALSE;
 	}

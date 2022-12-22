@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Session_local.h"
 #include "renderer/Image.h"
 #include "sound/sound.h"

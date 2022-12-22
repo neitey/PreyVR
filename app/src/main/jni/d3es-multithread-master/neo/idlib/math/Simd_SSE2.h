@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MATH_SIMD_SSE2_H__
 #define __MATH_SIMD_SSE2_H__
 
-#include "idlib/math/Simd_SSE.h"
-
 /*
 ===============================================================================
 
@@ -39,21 +37,20 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idSIMD_SSE2 : public idSIMD_SSE {
-public:
-#if defined(__GNUC__) && defined(__SSE2__)
-	using idSIMD_SSE::CmpLT;
+class idSIMD_SSE2 : public idSIMD_SSE
+{
+	public:
+#if defined(MACOS_X) && defined(__i386__)
+		virtual const char *VPCALL GetName(void) const;
+		virtual void VPCALL CmpLT(byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count);
 
-	virtual const char * VPCALL GetName( void ) const;
-	virtual void VPCALL CmpLT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count );
+#elif defined(_WIN32)
+		virtual const char *VPCALL GetName(void) const;
 
-#elif defined(_MSC_VER) && defined(_M_IX86)
-	virtual const char * VPCALL GetName( void ) const;
+		//virtual void VPCALL MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 );
+		//virtual void VPCALL MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n );
 
-	//virtual void VPCALL MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 );
-	//virtual void VPCALL MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n );
-
-	virtual void VPCALL MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples );
+		virtual void VPCALL MixedSoundToSamples(short *samples, const float *mixBuffer, const int numSamples);
 
 #endif
 };

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -34,9 +34,10 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-#include "sys/platform.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "cm/CollisionModel_local.h"
+#include "CollisionModel_local.h"
 
 /*
 ===============================================================================
@@ -59,22 +60,23 @@ CM_RotatePoint
   rotates a point about an arbitrary axis using the tangent of half the rotation angle
 ================
 */
-void CM_RotatePoint( idVec3 &point, const idVec3 &origin, const idVec3 &axis, const float tanHalfAngle ) {
+void CM_RotatePoint(idVec3 &point, const idVec3 &origin, const idVec3 &axis, const float tanHalfAngle)
+{
 	double d, t, s, c;
 	idVec3 proj, v1, v2;
 
 	point -= origin;
-	proj = axis * ( point * axis );
+	proj = axis * (point * axis);
 	v1 = point - proj;
-	v2 = axis.Cross( v1 );
+	v2 = axis.Cross(v1);
 
 	// r = tan( a / 2 );
 	// sin(a) = 2*r/(1+r*r);
 	// cos(a) = (1-r*r)/(1+r*r);
 	t = tanHalfAngle * tanHalfAngle;
-	d = 1.0f / ( 1.0f + t );
+	d = 1.0f / (1.0f + t);
 	s = 2.0f * tanHalfAngle * d;
-	c = ( 1.0f - t ) * d;
+	c = (1.0f - t) * d;
 
 	point = v1 * c - v2 * s + proj + origin;
 }
@@ -86,7 +88,8 @@ CM_RotateEdge
   rotates an edge about an arbitrary axis using the tangent of half the rotation angle
 ================
 */
-void CM_RotateEdge( idVec3 &start, idVec3 &end, const idVec3 &origin, const idVec3 &axis, const float tanHalfAngle ) {
+void CM_RotateEdge(idVec3 &start, idVec3 &end, const idVec3 &origin, const idVec3 &axis, const float tanHalfAngle)
+{
 	double d, t, s, c;
 	idVec3 proj, v1, v2;
 
@@ -94,20 +97,20 @@ void CM_RotateEdge( idVec3 &start, idVec3 &end, const idVec3 &origin, const idVe
 	// sin(a) = 2*r/(1+r*r);
 	// cos(a) = (1-r*r)/(1+r*r);
 	t = tanHalfAngle * tanHalfAngle;
-	d = 1.0f / ( 1.0f + t );
+	d = 1.0f / (1.0f + t);
 	s = 2.0f * tanHalfAngle * d;
-	c = ( 1.0f - t ) * d;
+	c = (1.0f - t) * d;
 
 	start -= origin;
-	proj = axis * ( start * axis );
+	proj = axis * (start * axis);
 	v1 = start - proj;
-	v2 = axis.Cross( v1 );
+	v2 = axis.Cross(v1);
 	start = v1 * c - v2 * s + proj + origin;
 
 	end -= origin;
-	proj = axis * ( end * axis );
+	proj = axis * (end * axis);
 	v1 = end - proj;
-	v2 = axis.Cross( v1 );
+	v2 = axis.Cross(v1);
 	end = v1 * c - v2 * s + proj + origin;
 }
 
@@ -119,61 +122,68 @@ idCollisionModelManagerLocal::CollisionBetweenEdgeBounds
   also calculates the collision point and collision plane normal if the collision occurs between the bounds
 ================
 */
-int idCollisionModelManagerLocal::CollisionBetweenEdgeBounds( cm_traceWork_t *tw, const idVec3 &va, const idVec3 &vb,
-												   const idVec3 &vc, const idVec3 &vd, float tanHalfAngle,
-												   idVec3 &collisionPoint, idVec3 &collisionNormal ) {
+int idCollisionModelManagerLocal::CollisionBetweenEdgeBounds(cm_traceWork_t *tw, const idVec3 &va, const idVec3 &vb,
+                const idVec3 &vc, const idVec3 &vd, float tanHalfAngle,
+                idVec3 &collisionPoint, idVec3 &collisionNormal)
+{
 	float d1, d2, d;
 	idVec3 at, bt, dir, dir1, dir2;
 	idPluecker	pl1, pl2;
 
 	at = va;
 	bt = vb;
-	if ( tanHalfAngle != 0.0f ) {
-		CM_RotateEdge( at, bt, tw->origin, tw->axis, tanHalfAngle );
+
+	if (tanHalfAngle != 0.0f) {
+		CM_RotateEdge(at, bt, tw->origin, tw->axis, tanHalfAngle);
 	}
 
-	dir1 = (at - tw->origin).Cross( tw->axis );
-	dir2 = (bt - tw->origin).Cross( tw->axis );
-	if ( dir1 * dir1 > dir2 * dir2 ) {
+	dir1 = (at - tw->origin).Cross(tw->axis);
+	dir2 = (bt - tw->origin).Cross(tw->axis);
+
+	if (dir1 * dir1 > dir2 * dir2) {
 		dir = dir1;
-	}
-	else {
+	} else {
 		dir = dir2;
 	}
-	if ( tw->angle < 0.0f ) {
+
+	if (tw->angle < 0.0f) {
 		dir = -dir;
 	}
 
-	pl1.FromLine( at, bt );
-	pl2.FromRay( vc, dir );
-	d1 = pl1.PermutedInnerProduct( pl2 );
-	pl2.FromRay( vd, dir );
-	d2 = pl1.PermutedInnerProduct( pl2 );
-	if ( ( d1 > 0.0f && d2 > 0.0f ) || ( d1 < 0.0f && d2 < 0.0f ) ) {
+	pl1.FromLine(at, bt);
+	pl2.FromRay(vc, dir);
+	d1 = pl1.PermutedInnerProduct(pl2);
+	pl2.FromRay(vd, dir);
+	d2 = pl1.PermutedInnerProduct(pl2);
+
+	if ((d1 > 0.0f && d2 > 0.0f) || (d1 < 0.0f && d2 < 0.0f)) {
 		return false;
 	}
 
-	pl1.FromLine( vc, vd );
-	pl2.FromRay( at, dir );
-	d1 = pl1.PermutedInnerProduct( pl2 );
-	pl2.FromRay( bt, dir );
-	d2 = pl1.PermutedInnerProduct( pl2 );
-	if ( ( d1 > 0.0f && d2 > 0.0f ) || ( d1 < 0.0f && d2 < 0.0f ) ) {
+	pl1.FromLine(vc, vd);
+	pl2.FromRay(at, dir);
+	d1 = pl1.PermutedInnerProduct(pl2);
+	pl2.FromRay(bt, dir);
+	d2 = pl1.PermutedInnerProduct(pl2);
+
+	if ((d1 > 0.0f && d2 > 0.0f) || (d1 < 0.0f && d2 < 0.0f)) {
 		return false;
 	}
 
 	// collision point on the edge at-bt
-	dir1 = (vd - vc).Cross( dir );
+	dir1 = (vd - vc).Cross(dir);
 	d = dir1 * vc;
 	d1 = dir1 * at - d;
 	d2 = dir1 * bt - d;
-	if ( d1 == d2 ) {
+
+	if (d1 == d2) {
 		return false;
 	}
-	collisionPoint = at + ( d1 / (d1 - d2) ) * ( bt - at );
+
+	collisionPoint = at + (d1 / (d1 - d2)) * (bt - at);
 
 	// normal is cross product of the rotated edge va-vb and the edge vc-vd
-	collisionNormal.Cross( bt-at, vd-vc );
+	collisionNormal.Cross(bt-at, vd-vc);
 
 	return true;
 }
@@ -185,9 +195,10 @@ idCollisionModelManagerLocal::RotateEdgeThroughEdge
   calculates the tangent of half the rotation angle at which the edges collide
 ================
 */
-int idCollisionModelManagerLocal::RotateEdgeThroughEdge( cm_traceWork_t *tw, const idPluecker &pl1,
-												const idVec3 &vc, const idVec3 &vd,
-												const float minTan, float &tanHalfAngle ) {
+int idCollisionModelManagerLocal::RotateEdgeThroughEdge(cm_traceWork_t *tw, const idPluecker &pl1,
+                const idVec3 &vc, const idVec3 &vd,
+                const float minTan, float &tanHalfAngle)
+{
 	double v0, v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
 	idVec3 ct, dt;
 	idPluecker pl2;
@@ -294,7 +305,7 @@ int idCollisionModelManagerLocal::RotateEdgeThroughEdge( cm_traceWork_t *tw, con
 	ct = (vc - tw->origin) * tw->matrix;
 	dt = (vd - tw->origin) * tw->matrix;
 
-	pl2.FromLine( ct, dt );
+	pl2.FromLine(ct, dt);
 
 	v0 = pl2[0] * pl1[4] + pl2[4] * pl1[0];
 	v1 = pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5];
@@ -303,43 +314,54 @@ int idCollisionModelManagerLocal::RotateEdgeThroughEdge( cm_traceWork_t *tw, con
 	a = v0 - v2;
 	b = v1;
 	c = v0 + v2;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
+
+	if (a == 0.0f) {
+		if (b == 0.0f) {
 			return false;
 		}
-		frac1 = -c / ( 2.0f * b );
+
+		frac1 = -c / (2.0f * b);
 		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
+	} else {
 		d = b * b - c * a;
-		if ( d <= 0.0f ) {
+
+		if (d <= 0.0f) {
 			return false;
 		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
+
+		sqrtd = sqrt(d);
+
+		if (b > 0.0f) {
 			q = - b + sqrtd;
-		}
-		else {
+		} else {
 			q = - b - sqrtd;
 		}
+
 		frac1 = q / a;
+#ifdef _HUMANHEAD
+		if (q == 0.0f) { //HUMANHEAD rww - CUFPF
+			frac2 = 0.0f;
+		}
+		else
+#endif
 		frac2 = c / q;
 	}
 
-	if ( tw->angle < 0.0f ) {
+	if (tw->angle < 0.0f) {
 		frac1 = -frac1;
 		frac2 = -frac2;
 	}
 
 	// get smallest tangent for which a collision occurs
-	if ( frac1 >= minTan && frac1 < tanHalfAngle ) {
+	if (frac1 >= minTan && frac1 < tanHalfAngle) {
 		tanHalfAngle = frac1;
 	}
-	if ( frac2 >= minTan && frac2 < tanHalfAngle ) {
+
+	if (frac2 >= minTan && frac2 < tanHalfAngle) {
 		tanHalfAngle = frac2;
 	}
 
-	if ( tw->angle < 0.0f ) {
+	if (tw->angle < 0.0f) {
 		tanHalfAngle = -tanHalfAngle;
 	}
 
@@ -355,9 +377,10 @@ idCollisionModelManagerLocal::EdgeFurthestFromEdge
   the edges are furthest apart is also calculated
 ================
 */
-int idCollisionModelManagerLocal::EdgeFurthestFromEdge( cm_traceWork_t *tw, const idPluecker &pl1,
-												const idVec3 &vc, const idVec3 &vd,
-												float &tanHalfAngle, float &dir ) {
+int idCollisionModelManagerLocal::EdgeFurthestFromEdge(cm_traceWork_t *tw, const idPluecker &pl1,
+                const idVec3 &vc, const idVec3 &vd,
+                float &tanHalfAngle, float &dir)
+{
 	double v0, v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
 	idVec3 ct, dt;
 	idPluecker pl2;
@@ -391,7 +414,7 @@ int idCollisionModelManagerLocal::EdgeFurthestFromEdge( cm_traceWork_t *tw, cons
 	ct = (vc - tw->origin) * tw->matrix;
 	dt = (vd - tw->origin) * tw->matrix;
 
-	pl2.FromLine( ct, dt );
+	pl2.FromLine(ct, dt);
 
 	v0 = pl2[0] * pl1[4] + pl2[4] * pl1[0];
 	v1 = pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5];
@@ -399,70 +422,72 @@ int idCollisionModelManagerLocal::EdgeFurthestFromEdge( cm_traceWork_t *tw, cons
 
 	// get the direction of motion at the initial position
 	c = v0 + v2;
-	if ( tw->angle > 0.0f ) {
-		if ( c > 0.0f ) {
+
+	if (tw->angle > 0.0f) {
+		if (c > 0.0f) {
 			dir = v1;
-		}
-		else {
+		} else {
 			dir = -v1;
 		}
-	}
-	else {
-		if ( c > 0.0f ) {
+	} else {
+		if (c > 0.0f) {
 			dir = -v1;
-		}
-		else {
+		} else {
 			dir = v1;
 		}
 	}
+
 	// negative direction means the edges move towards each other at the initial position
-	if ( dir <= 0.0f ) {
+	if (dir <= 0.0f) {
 		return true;
 	}
 
 	a = -v1;
 	b = -v2;
 	c = v1;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
+
+	if (a == 0.0f) {
+		if (b == 0.0f) {
 			return false;
 		}
-		frac1 = -c / ( 2.0f * b );
+
+		frac1 = -c / (2.0f * b);
 		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
+	} else {
 		d = b * b - c * a;
-		if ( d <= 0.0f ) {
+
+		if (d <= 0.0f) {
 			return false;
 		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
+
+		sqrtd = sqrt(d);
+
+		if (b > 0.0f) {
 			q = - b + sqrtd;
-		}
-		else {
+		} else {
 			q = - b - sqrtd;
 		}
+
 		frac1 = q / a;
 		frac2 = c / q;
 	}
 
-	if ( tw->angle < 0.0f ) {
+	if (tw->angle < 0.0f) {
 		frac1 = -frac1;
 		frac2 = -frac2;
 	}
 
-	if ( frac1 < 0.0f && frac2 < 0.0f ) {
+	if (frac1 < 0.0f && frac2 < 0.0f) {
 		return false;
 	}
 
-	if ( frac1 > frac2 ) {
+	if (frac1 > frac2) {
 		tanHalfAngle = frac1;
-	}
-	else {
+	} else {
 		tanHalfAngle = frac2;
 	}
 
-	if ( tw->angle < 0.0f ) {
+	if (tw->angle < 0.0f) {
 		tanHalfAngle = -tanHalfAngle;
 	}
 
@@ -474,7 +499,8 @@ int idCollisionModelManagerLocal::EdgeFurthestFromEdge( cm_traceWork_t *tw, cons
 idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon
 ================
 */
-void idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon( cm_traceWork_t *tw, cm_polygon_t *poly, cm_trmEdge_t *trmEdge ) {
+void idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon(cm_traceWork_t *tw, cm_polygon_t *poly, cm_trmEdge_t *trmEdge)
+{
 	int i, j, edgeNum;
 	float f1, f2, startTan, dir, tanHalfAngle;
 	cm_edge_t *edge;
@@ -484,35 +510,35 @@ void idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon( cm_traceWork_t *
 	idBounds bounds;
 
 	// if the trm is convex and the rotation axis intersects the trm
-	if ( tw->isConvex && tw->axisIntersectsTrm ) {
+	if (tw->isConvex && tw->axisIntersectsTrm) {
 		// if both points are behind the polygon the edge cannot collide within a 180 degrees rotation
-		if ( tw->vertices[trmEdge->vertexNum[0]].polygonSide & tw->vertices[trmEdge->vertexNum[1]].polygonSide ) {
+		if (tw->vertices[trmEdge->vertexNum[0]].polygonSide & tw->vertices[trmEdge->vertexNum[1]].polygonSide) {
 			return;
 		}
 	}
 
 	// if the trace model edge rotation bounds do not intersect the polygon bounds
-	if ( !trmEdge->rotationBounds.IntersectsBounds( poly->bounds ) ) {
+	if (!trmEdge->rotationBounds.IntersectsBounds(poly->bounds)) {
 		return;
 	}
 
 	// edge rotation bounds should cross polygon plane
-	if ( trmEdge->rotationBounds.PlaneSide( poly->plane ) != SIDE_CROSS ) {
+	if (trmEdge->rotationBounds.PlaneSide(poly->plane) != SIDE_CROSS) {
 		return;
 	}
 
 	// check edges for a collision
-	for ( i = 0; i < poly->numEdges; i++ ) {
+	for (i = 0; i < poly->numEdges; i++) {
 		edgeNum = poly->edges[i];
 		edge = tw->model->edges + abs(edgeNum);
 
 		// if this edge is already checked
-		if ( edge->checkcount == idCollisionModelManagerLocal::checkCount ) {
+		if (edge->checkcount == idCollisionModelManagerLocal::checkCount) {
 			continue;
 		}
 
 		// can never collide with internal edges
-		if ( edge->internal ) {
+		if (edge->internal) {
 			continue;
 		}
 
@@ -520,95 +546,96 @@ void idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon( cm_traceWork_t *
 		v2 = tw->model->vertices + edge->vertexNum[INTSIGNBITNOTSET(edgeNum)];
 
 		// edge bounds
-		for ( j = 0; j < 3; j++ ) {
-			if ( v1->p[j] > v2->p[j] ) {
+		for (j = 0; j < 3; j++) {
+			if (v1->p[j] > v2->p[j]) {
 				bounds[0][j] = v2->p[j];
 				bounds[1][j] = v1->p[j];
-			}
-			else {
+			} else {
 				bounds[0][j] = v1->p[j];
 				bounds[1][j] = v2->p[j];
 			}
 		}
 
 		// if the trace model edge rotation bounds do not intersect the polygon edge bounds
-		if ( !trmEdge->rotationBounds.IntersectsBounds( bounds ) ) {
+		if (!trmEdge->rotationBounds.IntersectsBounds(bounds)) {
 			continue;
 		}
 
-		f1 = trmEdge->pl.PermutedInnerProduct( tw->polygonEdgePlueckerCache[i] );
+		f1 = trmEdge->pl.PermutedInnerProduct(tw->polygonEdgePlueckerCache[i]);
 
 		// pluecker coordinate for epsilon expanded edge
 		epsDir = edge->normal * (CM_CLIP_EPSILON+CM_PL_RANGE_EPSILON);
-		epsPl.FromLine( tw->model->vertices[edge->vertexNum[0]].p + epsDir,
-						tw->model->vertices[edge->vertexNum[1]].p + epsDir );
+		epsPl.FromLine(tw->model->vertices[edge->vertexNum[0]].p + epsDir,
+		               tw->model->vertices[edge->vertexNum[1]].p + epsDir);
 
-		f2 = trmEdge->pl.PermutedInnerProduct( epsPl );
+		f2 = trmEdge->pl.PermutedInnerProduct(epsPl);
 
 		// if the rotating edge is inbetween the polygon edge and the epsilon expanded edge
-		if ( ( f1 < 0.0f && f2 > 0.0f ) || ( f1 > 0.0f && f2 < 0.0f ) ) {
+		if ((f1 < 0.0f && f2 > 0.0f) || (f1 > 0.0f && f2 < 0.0f)) {
 
-			if ( !EdgeFurthestFromEdge( tw, trmEdge->plzaxis, v1->p, v2->p, startTan, dir ) ) {
+			if (!EdgeFurthestFromEdge(tw, trmEdge->plzaxis, v1->p, v2->p, startTan, dir)) {
 				continue;
 			}
 
-			if ( dir <= 0.0f ) {
+			if (dir <= 0.0f) {
 				// moving towards the polygon edge so stop immediately
 				tanHalfAngle = 0.0f;
-			}
-			else if ( idMath::Fabs( startTan ) >= tw->maxTan ) {
+			} else if (idMath::Fabs(startTan) >= tw->maxTan) {
 				// never going to get beyond the start tangent during the current rotation
 				continue;
-			}
-			else {
+			} else {
 				// collide with the epsilon expanded edge
-				if ( !RotateEdgeThroughEdge(tw, trmEdge->plzaxis, v1->p + epsDir, v2->p + epsDir, idMath::Fabs( startTan ), tanHalfAngle ) ) {
+				if (!RotateEdgeThroughEdge(tw, trmEdge->plzaxis, v1->p + epsDir, v2->p + epsDir, idMath::Fabs(startTan), tanHalfAngle)) {
 					tanHalfAngle = startTan;
 				}
 			}
-		}
-		else {
+		} else {
 			// collide with the epsilon expanded edge
 			epsDir = edge->normal * CM_CLIP_EPSILON;
-			if ( !RotateEdgeThroughEdge(tw, trmEdge->plzaxis, v1->p + epsDir, v2->p + epsDir, 0.0f, tanHalfAngle ) ) {
+
+			if (!RotateEdgeThroughEdge(tw, trmEdge->plzaxis, v1->p + epsDir, v2->p + epsDir, 0.0f, tanHalfAngle)) {
 				continue;
 			}
 		}
 
-		if ( idMath::Fabs( tanHalfAngle ) >= tw->maxTan ) {
+		if (idMath::Fabs(tanHalfAngle) >= tw->maxTan) {
 			continue;
 		}
 
 		// check if the collision is between the edge bounds
-		if ( !CollisionBetweenEdgeBounds( tw, trmEdge->start, trmEdge->end, v1->p, v2->p,
-												tanHalfAngle, collisionPoint, collisionNormal ) ) {
+		if (!CollisionBetweenEdgeBounds(tw, trmEdge->start, trmEdge->end, v1->p, v2->p,
+		                                tanHalfAngle, collisionPoint, collisionNormal)) {
 			continue;
 		}
 
 		// allow rotation if the rotation axis goes through the collisionPoint
-		origin = tw->origin + tw->axis * ( tw->axis * ( collisionPoint - tw->origin ) );
-		if ( ( collisionPoint - origin ).LengthSqr() < ROTATION_AXIS_EPSILON * ROTATION_AXIS_EPSILON ) {
+		origin = tw->origin + tw->axis * (tw->axis * (collisionPoint - tw->origin));
+
+		if ((collisionPoint - origin).LengthSqr() < ROTATION_AXIS_EPSILON * ROTATION_AXIS_EPSILON) {
 			continue;
 		}
 
 		// fill in trace structure
-		tw->maxTan = idMath::Fabs( tanHalfAngle );
+		tw->maxTan = idMath::Fabs(tanHalfAngle);
 		tw->trace.c.normal = collisionNormal;
 		tw->trace.c.normal.Normalize();
 		tw->trace.c.dist = tw->trace.c.normal * v1->p;
+
 		// make sure the collision plane faces the trace model
-		if ( (tw->trace.c.normal * trmEdge->start) - tw->trace.c.dist < 0 ) {
+		if ((tw->trace.c.normal * trmEdge->start) - tw->trace.c.dist < 0) {
 			tw->trace.c.normal = -tw->trace.c.normal;
 			tw->trace.c.dist = -tw->trace.c.dist;
 		}
+
 		tw->trace.c.contents = poly->contents;
 		tw->trace.c.material = poly->material;
 		tw->trace.c.type = CONTACT_EDGE;
 		tw->trace.c.modelFeature = edgeNum;
 		tw->trace.c.trmFeature = trmEdge - tw->edges;
 		tw->trace.c.point = collisionPoint;
+
 		// if no collision can be closer
-		if ( tw->maxTan == 0.0f ) {
+		if (tw->maxTan == 0.0f) {
 			break;
 		}
 	}
@@ -621,8 +648,9 @@ idCollisionModelManagerLocal::RotatePointThroughPlane
   calculates the tangent of half the rotation angle at which the point collides with the plane
 ================
 */
-int idCollisionModelManagerLocal::RotatePointThroughPlane( const cm_traceWork_t *tw, const idVec3 &point, const idPlane &plane,
-													const float angle, const float minTan, float &tanHalfAngle ) {
+int idCollisionModelManagerLocal::RotatePointThroughPlane(const cm_traceWork_t *tw, const idVec3 &point, const idPlane &plane,
+                const float angle, const float minTan, float &tanHalfAngle)
+{
 	double v0, v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
 	idVec3 p, normal;
 
@@ -674,43 +702,48 @@ int idCollisionModelManagerLocal::RotatePointThroughPlane( const cm_traceWork_t 
 	a = v0 - v2;
 	b = v1;
 	c = v0 + v2;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
+
+	if (a == 0.0f) {
+		if (b == 0.0f) {
 			return false;
 		}
-		frac1 = -c / ( 2.0f * b );
+
+		frac1 = -c / (2.0f * b);
 		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
+	} else {
 		d = b * b - c * a;
-		if ( d <= 0.0f ) {
+
+		if (d <= 0.0f) {
 			return false;
 		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
+
+		sqrtd = sqrt(d);
+
+		if (b > 0.0f) {
 			q = - b + sqrtd;
-		}
-		else {
+		} else {
 			q = - b - sqrtd;
 		}
+
 		frac1 = q / a;
 		frac2 = c / q;
 	}
 
-	if ( angle < 0.0f ) {
+	if (angle < 0.0f) {
 		frac1 = -frac1;
 		frac2 = -frac2;
 	}
 
 	// get smallest tangent for which a collision occurs
-	if ( frac1 >= minTan && frac1 < tanHalfAngle ) {
+	if (frac1 >= minTan && frac1 < tanHalfAngle) {
 		tanHalfAngle = frac1;
 	}
-	if ( frac2 >= minTan && frac2 < tanHalfAngle ) {
+
+	if (frac2 >= minTan && frac2 < tanHalfAngle) {
 		tanHalfAngle = frac2;
 	}
 
-	if ( angle < 0.0f ) {
+	if (angle < 0.0f) {
 		tanHalfAngle = -tanHalfAngle;
 	}
 
@@ -726,8 +759,9 @@ idCollisionModelManagerLocal::PointFurthestFromPlane
   the point is furthest away from the plane is also calculated
 ================
 */
-int idCollisionModelManagerLocal::PointFurthestFromPlane( const cm_traceWork_t *tw, const idVec3 &point, const idPlane &plane,
-													const float angle, float &tanHalfAngle, float &dir ) {
+int idCollisionModelManagerLocal::PointFurthestFromPlane(const cm_traceWork_t *tw, const idVec3 &point, const idPlane &plane,
+                const float angle, float &tanHalfAngle, float &dir)
+{
 
 	double v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
 	idVec3 p, normal;
@@ -765,60 +799,63 @@ int idCollisionModelManagerLocal::PointFurthestFromPlane( const cm_traceWork_t *
 	v2 = normal[0] * p[0] + normal[1] * p[1];
 
 	// the point will always start at the front of the plane, therefore v0 + v2 > 0 is always true
-	if ( angle < 0.0f ) {
+	if (angle < 0.0f) {
 		dir = -v1;
-	}
-	else {
+	} else {
 		dir = v1;
 	}
+
 	// negative direction means the point moves towards the plane at the initial position
-	if ( dir <= 0.0f ) {
+	if (dir <= 0.0f) {
 		return true;
 	}
 
 	a = -v1;
 	b = -v2;
 	c = v1;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
+
+	if (a == 0.0f) {
+		if (b == 0.0f) {
 			return false;
 		}
-		frac1 = -c / ( 2.0f * b );
+
+		frac1 = -c / (2.0f * b);
 		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
+	} else {
 		d = b * b - c * a;
-		if ( d <= 0.0f ) {
+
+		if (d <= 0.0f) {
 			return false;
 		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
+
+		sqrtd = sqrt(d);
+
+		if (b > 0.0f) {
 			q = - b + sqrtd;
-		}
-		else {
+		} else {
 			q = - b - sqrtd;
 		}
+
 		frac1 = q / a;
 		frac2 = c / q;
 	}
 
-	if ( angle < 0.0f ) {
+	if (angle < 0.0f) {
 		frac1 = -frac1;
 		frac2 = -frac2;
 	}
 
-	if ( frac1 < 0.0f && frac2 < 0.0f ) {
+	if (frac1 < 0.0f && frac2 < 0.0f) {
 		return false;
 	}
 
-	if ( frac1 > frac2 ) {
+	if (frac1 > frac2) {
 		tanHalfAngle = frac1;
-	}
-	else {
+	} else {
 		tanHalfAngle = frac2;
 	}
 
-	if ( angle < 0.0f ) {
+	if (angle < 0.0f) {
 		tanHalfAngle = -tanHalfAngle;
 	}
 
@@ -830,88 +867,98 @@ int idCollisionModelManagerLocal::PointFurthestFromPlane( const cm_traceWork_t *
 idCollisionModelManagerLocal::RotatePointThroughEpsilonPlane
 ================
 */
-int idCollisionModelManagerLocal::RotatePointThroughEpsilonPlane( const cm_traceWork_t *tw, const idVec3 &point, const idVec3 &endPoint,
-							const idPlane &plane, const float angle, const idVec3 &origin,
-							float &tanHalfAngle, idVec3 &collisionPoint, idVec3 &endDir ) {
+int idCollisionModelManagerLocal::RotatePointThroughEpsilonPlane(const cm_traceWork_t *tw, const idVec3 &point, const idVec3 &endPoint,
+                const idPlane &plane, const float angle, const idVec3 &origin,
+                float &tanHalfAngle, idVec3 &collisionPoint, idVec3 &endDir)
+{
 	float d, dir, startTan;
 	idVec3 vec, startDir;
 	idPlane epsPlane;
 
 	// epsilon expanded plane
 	epsPlane = plane;
-	epsPlane.SetDist( epsPlane.Dist() + CM_CLIP_EPSILON );
+	epsPlane.SetDist(epsPlane.Dist() + CM_CLIP_EPSILON);
 
 	// if the rotation sphere at the rotation origin is too far away from the polygon plane
-	d = epsPlane.Distance( origin );
+	d = epsPlane.Distance(origin);
 	vec = point - origin;
-	if ( d * d > vec * vec  ) {
+
+	if (d * d > vec * vec) {
 		return false;
 	}
 
 	// calculate direction of motion at vertex start position
-	startDir = ( point - origin ).Cross( tw->axis );
-	if ( angle < 0.0f ) {
+	startDir = (point - origin).Cross(tw->axis);
+
+	if (angle < 0.0f) {
 		startDir = -startDir;
 	}
+
 	// if moving away from plane at start position
-	if ( startDir * epsPlane.Normal() >= 0.0f ) {
+	if (startDir * epsPlane.Normal() >= 0.0f) {
 		// if end position is outside epsilon range
-		d = epsPlane.Distance( endPoint );
-		if ( d >= 0.0f ) {
+		d = epsPlane.Distance(endPoint);
+
+		if (d >= 0.0f) {
 			return false;	// no collision
 		}
+
 		// calculate direction of motion at vertex end position
-		endDir = ( endPoint - origin ).Cross( tw->axis );
-		if ( angle < 0.0f ) {
+		endDir = (endPoint - origin).Cross(tw->axis);
+
+		if (angle < 0.0f) {
 			endDir = -endDir;
 		}
+
 		// if also moving away from plane at end position
-		if ( endDir * epsPlane.Normal() > 0.0f ) {
+		if (endDir * epsPlane.Normal() > 0.0f) {
 			return false; // no collision
 		}
 	}
 
 	// if the start position is in the epsilon range
-	d = epsPlane.Distance( point );
-	if ( d <= CM_PL_RANGE_EPSILON ) {
+	d = epsPlane.Distance(point);
+
+	if (d <= CM_PL_RANGE_EPSILON) {
 
 		// calculate tangent of half the rotation for which the vertex is furthest away from the plane
-		if ( !PointFurthestFromPlane( tw, point, plane, angle, startTan, dir ) ) {
+		if (!PointFurthestFromPlane(tw, point, plane, angle, startTan, dir)) {
 			return false;
 		}
 
-		if ( dir <= 0.0f ) {
+		if (dir <= 0.0f) {
 			// moving towards the polygon plane so stop immediately
 			tanHalfAngle = 0.0f;
-		}
-		else if ( idMath::Fabs( startTan ) >= tw->maxTan ) {
+		} else if (idMath::Fabs(startTan) >= tw->maxTan) {
 			// never going to get beyond the start tangent during the current rotation
 			return false;
-		}
-		else {
+		} else {
 			// calculate collision with epsilon expanded plane
-			if ( !RotatePointThroughPlane( tw, point, epsPlane, angle, idMath::Fabs( startTan ), tanHalfAngle ) ) {
+			if (!RotatePointThroughPlane(tw, point, epsPlane, angle, idMath::Fabs(startTan), tanHalfAngle)) {
 				tanHalfAngle = startTan;
 			}
 		}
-	}
-	else {
+	} else {
 		// calculate collision with epsilon expanded plane
-		if ( !RotatePointThroughPlane( tw, point, epsPlane, angle, 0.0f, tanHalfAngle ) ) {
+		if (!RotatePointThroughPlane(tw, point, epsPlane, angle, 0.0f, tanHalfAngle)) {
 			return false;
 		}
 	}
 
 	// calculate collision point
 	collisionPoint = point;
-	if ( tanHalfAngle != 0.0f ) {
-		CM_RotatePoint( collisionPoint, tw->origin, tw->axis, tanHalfAngle );
+
+	if (tanHalfAngle != 0.0f) {
+		CM_RotatePoint(collisionPoint, tw->origin, tw->axis, tanHalfAngle);
 	}
+
 	// calculate direction of motion at collision point
-	endDir = ( collisionPoint - origin ).Cross( tw->axis );
-	if ( angle < 0.0f ) {
+	endDir = (collisionPoint - origin).Cross(tw->axis);
+
+	if (angle < 0.0f) {
 		endDir = -endDir;
 	}
+
 	return true;
 }
 
@@ -920,49 +967,51 @@ int idCollisionModelManagerLocal::RotatePointThroughEpsilonPlane( const cm_trace
 idCollisionModelManagerLocal::RotateTrmVertexThroughPolygon
 ================
 */
-void idCollisionModelManagerLocal::RotateTrmVertexThroughPolygon( cm_traceWork_t *tw, cm_polygon_t *poly, cm_trmVertex_t *v, int vertexNum ) {
+void idCollisionModelManagerLocal::RotateTrmVertexThroughPolygon(cm_traceWork_t *tw, cm_polygon_t *poly, cm_trmVertex_t *v, int vertexNum)
+{
 	int i;
 	float tanHalfAngle;
 	idVec3 endDir, collisionPoint;
 	idPluecker pl;
 
 	// if the trm vertex is behind the polygon plane it cannot collide with the polygon within a 180 degrees rotation
-	if ( tw->isConvex && tw->axisIntersectsTrm && v->polygonSide ) {
+	if (tw->isConvex && tw->axisIntersectsTrm && v->polygonSide) {
 		return;
 	}
 
 	// if the trace model vertex rotation bounds do not intersect the polygon bounds
-	if ( !v->rotationBounds.IntersectsBounds( poly->bounds ) ) {
+	if (!v->rotationBounds.IntersectsBounds(poly->bounds)) {
 		return;
 	}
 
 	// vertex rotation bounds should cross polygon plane
-	if ( v->rotationBounds.PlaneSide( poly->plane ) != SIDE_CROSS ) {
+	if (v->rotationBounds.PlaneSide(poly->plane) != SIDE_CROSS) {
 		return;
 	}
 
 	// rotate the vertex through the epsilon plane
-	if ( !RotatePointThroughEpsilonPlane( tw, v->p, v->endp, poly->plane, tw->angle, v->rotationOrigin,
-											tanHalfAngle, collisionPoint, endDir ) ) {
+	if (!RotatePointThroughEpsilonPlane(tw, v->p, v->endp, poly->plane, tw->angle, v->rotationOrigin,
+	                                    tanHalfAngle, collisionPoint, endDir)) {
 		return;
 	}
 
-	if ( idMath::Fabs( tanHalfAngle ) < tw->maxTan ) {
+	if (idMath::Fabs(tanHalfAngle) < tw->maxTan) {
 		// verify if 'collisionPoint' moving along 'endDir' moves between polygon edges
-		pl.FromRay( collisionPoint, endDir );
-		for ( i = 0; i < poly->numEdges; i++ ) {
-			if ( poly->edges[i] < 0 ) {
-				if ( pl.PermutedInnerProduct( tw->polygonEdgePlueckerCache[i] ) > 0.0f ) {
+		pl.FromRay(collisionPoint, endDir);
+
+		for (i = 0; i < poly->numEdges; i++) {
+			if (poly->edges[i] < 0) {
+				if (pl.PermutedInnerProduct(tw->polygonEdgePlueckerCache[i]) > 0.0f) {
 					return;
 				}
-			}
-			else {
-				if ( pl.PermutedInnerProduct( tw->polygonEdgePlueckerCache[i] ) < 0.0f ) {
+			} else {
+				if (pl.PermutedInnerProduct(tw->polygonEdgePlueckerCache[i]) < 0.0f) {
 					return;
 				}
 			}
 		}
-		tw->maxTan = idMath::Fabs( tanHalfAngle );
+
+		tw->maxTan = idMath::Fabs(tanHalfAngle);
 		// collision plane is the polygon plane
 		tw->trace.c.normal = poly->plane.Normal();
 		tw->trace.c.dist = poly->plane.Dist();
@@ -980,7 +1029,8 @@ void idCollisionModelManagerLocal::RotateTrmVertexThroughPolygon( cm_traceWork_t
 idCollisionModelManagerLocal::RotateVertexThroughTrmPolygon
 ================
 */
-void idCollisionModelManagerLocal::RotateVertexThroughTrmPolygon( cm_traceWork_t *tw, cm_trmPolygon_t *trmpoly, cm_polygon_t *poly, cm_vertex_t *v, idVec3 &rotationOrigin ) {
+void idCollisionModelManagerLocal::RotateVertexThroughTrmPolygon(cm_traceWork_t *tw, cm_trmPolygon_t *trmpoly, cm_polygon_t *poly, cm_vertex_t *v, idVec3 &rotationOrigin)
+{
 	int i, edgeNum;
 	float tanHalfAngle;
 	idVec3 dir, endp, endDir, collisionPoint;
@@ -988,49 +1038,52 @@ void idCollisionModelManagerLocal::RotateVertexThroughTrmPolygon( cm_traceWork_t
 	cm_trmEdge_t *edge;
 
 	// if the polygon vertex is behind the trm plane it cannot collide with the trm polygon within a 180 degrees rotation
-	if ( tw->isConvex && tw->axisIntersectsTrm && trmpoly->plane.Distance( v->p ) < 0.0f ) {
+	if (tw->isConvex && tw->axisIntersectsTrm && trmpoly->plane.Distance(v->p) < 0.0f) {
 		return;
 	}
 
 	// if the model vertex is outside the trm polygon rotation bounds
-	if ( !trmpoly->rotationBounds.ContainsPoint( v->p ) ) {
+	if (!trmpoly->rotationBounds.ContainsPoint(v->p)) {
 		return;
 	}
 
 	// if the rotation axis goes through the polygon vertex
 	dir = v->p - rotationOrigin;
-	if ( dir * dir < ROTATION_AXIS_EPSILON * ROTATION_AXIS_EPSILON ) {
+
+	if (dir * dir < ROTATION_AXIS_EPSILON * ROTATION_AXIS_EPSILON) {
 		return;
 	}
 
 	// calculate vertex end position
 	endp = v->p;
-	tw->modelVertexRotation.RotatePoint( endp );
+	tw->modelVertexRotation.RotatePoint(endp);
 
 	// rotate the vertex through the epsilon plane
-	if ( !RotatePointThroughEpsilonPlane( tw, v->p, endp, trmpoly->plane, -tw->angle, rotationOrigin,
-											tanHalfAngle, collisionPoint, endDir ) ) {
+	if (!RotatePointThroughEpsilonPlane(tw, v->p, endp, trmpoly->plane, -tw->angle, rotationOrigin,
+	                                    tanHalfAngle, collisionPoint, endDir)) {
 		return;
 	}
 
-	if ( idMath::Fabs( tanHalfAngle ) < tw->maxTan ) {
+	if (idMath::Fabs(tanHalfAngle) < tw->maxTan) {
 		// verify if 'collisionPoint' moving along 'endDir' moves between polygon edges
-		pl.FromRay( collisionPoint, endDir );
-		for ( i = 0; i < trmpoly->numEdges; i++ ) {
+		pl.FromRay(collisionPoint, endDir);
+
+		for (i = 0; i < trmpoly->numEdges; i++) {
 			edgeNum = trmpoly->edges[i];
 			edge = tw->edges + abs(edgeNum);
-			if ( edgeNum < 0 ) {
-				if ( pl.PermutedInnerProduct( edge->pl ) > 0.0f ) {
+
+			if (edgeNum < 0) {
+				if (pl.PermutedInnerProduct(edge->pl) > 0.0f) {
 					return;
 				}
-			}
-			else {
-				if ( pl.PermutedInnerProduct( edge->pl ) < 0.0f ) {
+			} else {
+				if (pl.PermutedInnerProduct(edge->pl) < 0.0f) {
 					return;
 				}
 			}
 		}
-		tw->maxTan = idMath::Fabs( tanHalfAngle );
+
+		tw->maxTan = idMath::Fabs(tanHalfAngle);
 		// collision plane is the flipped trm polygon plane
 		tw->trace.c.normal = -trmpoly->plane.Normal();
 		tw->trace.c.dist = tw->trace.c.normal * v->p;
@@ -1050,7 +1103,8 @@ idCollisionModelManagerLocal::RotateTrmThroughPolygon
   returns true if the polygon blocks the complete rotation
 ================
 */
-bool idCollisionModelManagerLocal::RotateTrmThroughPolygon( cm_traceWork_t *tw, cm_polygon_t *p ) {
+bool idCollisionModelManagerLocal::RotateTrmThroughPolygon(cm_traceWork_t *tw, cm_polygon_t *p)
+{
 	int i, j, k, edgeNum;
 	float d;
 	cm_trmVertex_t *bv;
@@ -1061,30 +1115,30 @@ bool idCollisionModelManagerLocal::RotateTrmThroughPolygon( cm_traceWork_t *tw, 
 	idVec3 *rotationOrigin;
 
 	// if already checked this polygon
-	if ( p->checkcount == idCollisionModelManagerLocal::checkCount ) {
+	if (p->checkcount == idCollisionModelManagerLocal::checkCount) {
 		return false;
 	}
+
 	p->checkcount = idCollisionModelManagerLocal::checkCount;
 
 	// if this polygon does not have the right contents behind it
-	if ( !(p->contents & tw->contents) ) {
+	if (!(p->contents & tw->contents)) {
 		return false;
 	}
 
 	// if the the trace bounds do not intersect the polygon bounds
-	if ( !tw->bounds.IntersectsBounds( p->bounds ) ) {
+	if (!tw->bounds.IntersectsBounds(p->bounds)) {
 		return false;
 	}
 
 	// back face culling
-	if ( tw->isConvex ) {
+	if (tw->isConvex) {
 		// if the center of the convex trm is behind the polygon plane
-		if ( p->plane.Distance( tw->start ) < 0.0f ) {
+		if (p->plane.Distance(tw->start) < 0.0f) {
 			// if the rotation axis intersects the trace model
-			if ( tw->axisIntersectsTrm ) {
+			if (tw->axisIntersectsTrm) {
 				return false;
-			}
-			else {
+			} else {
 				// if the direction of motion at the start and end position of the
 				// center of the trm both go towards or away from the polygon plane
 				// or if the intersections of the rotation axis with the expanded heart planes
@@ -1094,111 +1148,121 @@ bool idCollisionModelManagerLocal::RotateTrmThroughPolygon( cm_traceWork_t *tw, 
 	}
 
 	// if the polygon is too far from the first heart plane
-	d = p->bounds.PlaneDistance( tw->heartPlane1 );
-	if ( idMath::Fabs(d) > tw->maxDistFromHeartPlane1 ) {
+	d = p->bounds.PlaneDistance(tw->heartPlane1);
+
+	if (idMath::Fabs(d) > tw->maxDistFromHeartPlane1) {
 		return false;
 	}
 
 	// rotation bounds should cross polygon plane
-	switch( tw->bounds.PlaneSide( p->plane ) ) {
+	switch (tw->bounds.PlaneSide(p->plane)) {
 		case PLANESIDE_CROSS:
 			break;
 		case PLANESIDE_FRONT:
-			if ( tw->model->isConvex ) {
+
+			if (tw->model->isConvex) {
 				tw->quickExit = true;
 				return true;
 			}
+
 		default:
 			return false;
 	}
 
-	for ( i = 0; i < tw->numVerts; i++ ) {
+	for (i = 0; i < tw->numVerts; i++) {
 		bv = tw->vertices + i;
 		// calculate polygon side this vertex is on
-		d = p->plane.Distance( bv->p );
-		bv->polygonSide = FLOATSIGNBITSET( d );
+		d = p->plane.Distance(bv->p);
+		bv->polygonSide = FLOATSIGNBITSET(d);
 	}
 
-	for ( i = 0; i < p->numEdges; i++ ) {
+	for (i = 0; i < p->numEdges; i++) {
 		edgeNum = p->edges[i];
 		e = tw->model->edges + abs(edgeNum);
 		v = tw->model->vertices + e->vertexNum[INTSIGNBITSET(edgeNum)];
 
 		// pluecker coordinate for edge
-		tw->polygonEdgePlueckerCache[i].FromLine( tw->model->vertices[e->vertexNum[0]].p,
-													tw->model->vertices[e->vertexNum[1]].p );
+		tw->polygonEdgePlueckerCache[i].FromLine(tw->model->vertices[e->vertexNum[0]].p,
+		                tw->model->vertices[e->vertexNum[1]].p);
 
 		// calculate rotation origin projected into rotation plane through the vertex
-		tw->polygonRotationOriginCache[i] = tw->origin + tw->axis * ( tw->axis * ( v->p - tw->origin ) );
+		tw->polygonRotationOriginCache[i] = tw->origin + tw->axis * (tw->axis * (v->p - tw->origin));
 	}
+
 	// copy first to last so we can easily cycle through
 	tw->polygonRotationOriginCache[p->numEdges] = tw->polygonRotationOriginCache[0];
 
 	// fast point rotation
-	if ( tw->pointTrace ) {
-		RotateTrmVertexThroughPolygon( tw, p, &tw->vertices[0], 0 );
-	}
-	else {
+	if (tw->pointTrace) {
+		RotateTrmVertexThroughPolygon(tw, p, &tw->vertices[0], 0);
+	} else {
 		// rotate trm vertices through polygon
-		for ( i = 0; i < tw->numVerts; i++ ) {
+		for (i = 0; i < tw->numVerts; i++) {
 			bv = tw->vertices + i;
-			if ( bv->used ) {
-				RotateTrmVertexThroughPolygon( tw, p, bv, i );
+
+			if (bv->used) {
+				RotateTrmVertexThroughPolygon(tw, p, bv, i);
 			}
 		}
 
 		// rotate trm edges through polygon
-		for ( i = 1; i <= tw->numEdges; i++ ) {
+		for (i = 1; i <= tw->numEdges; i++) {
 			be = tw->edges + i;
-			if ( be->used ) {
-				RotateTrmEdgeThroughPolygon( tw, p, be );
+
+			if (be->used) {
+				RotateTrmEdgeThroughPolygon(tw, p, be);
 			}
 		}
 
 		// rotate all polygon vertices through the trm
-		for ( i = 0; i < p->numEdges; i++ ) {
+		for (i = 0; i < p->numEdges; i++) {
 			edgeNum = p->edges[i];
 			e = tw->model->edges + abs(edgeNum);
 
-			if ( e->checkcount == idCollisionModelManagerLocal::checkCount ) {
+			if (e->checkcount == idCollisionModelManagerLocal::checkCount) {
 				continue;
 			}
+
 			// set edge check count
 			e->checkcount = idCollisionModelManagerLocal::checkCount;
+
 			// can never collide with internal edges
-			if ( e->internal ) {
+			if (e->internal) {
 				continue;
 			}
+
 			// got to check both vertices because we skip internal edges
-			for ( k = 0; k < 2; k++ ) {
+			for (k = 0; k < 2; k++) {
 
 				v = tw->model->vertices + e->vertexNum[k ^ INTSIGNBITSET(edgeNum)];
 
 				// if this vertex is already checked
-				if ( v->checkcount == idCollisionModelManagerLocal::checkCount ) {
+				if (v->checkcount == idCollisionModelManagerLocal::checkCount) {
 					continue;
 				}
+
 				// set vertex check count
 				v->checkcount = idCollisionModelManagerLocal::checkCount;
 
 				// if the vertex is outside the trm rotation bounds
-				if ( !tw->bounds.ContainsPoint( v->p ) ) {
+				if (!tw->bounds.ContainsPoint(v->p)) {
 					continue;
 				}
 
 				rotationOrigin = &tw->polygonRotationOriginCache[i+k];
 
-				for ( j = 0; j < tw->numPolys; j++ ) {
+				for (j = 0; j < tw->numPolys; j++) {
 					bp = tw->polys + j;
-					if ( bp->used ) {
-						RotateVertexThroughTrmPolygon( tw, bp, p, v, *rotationOrigin );
+
+					if (bp->used) {
+						RotateVertexThroughTrmPolygon(tw, bp, p, v, *rotationOrigin);
 					}
 				}
 			}
 		}
 	}
 
-	return ( tw->maxTan == 0.0f );
+	return (tw->maxTan == 0.0f);
 }
 
 /*
@@ -1208,35 +1272,34 @@ idCollisionModelManagerLocal::BoundsForRotation
   only for rotations < 180 degrees
 ================
 */
-void idCollisionModelManagerLocal::BoundsForRotation( const idVec3 &origin, const idVec3 &axis, const idVec3 &start, const idVec3 &end, idBounds &bounds ) {
+void idCollisionModelManagerLocal::BoundsForRotation(const idVec3 &origin, const idVec3 &axis, const idVec3 &start, const idVec3 &end, idBounds &bounds)
+{
 	int i;
 	float radiusSqr;
 	idVec3 v1, v2;
 
-	radiusSqr = ( start - origin ).LengthSqr();
-	v1 = ( start - origin ).Cross( axis );
-	v2 = ( end - origin ).Cross( axis );
+	radiusSqr = (start - origin).LengthSqr();
+	v1 = (start - origin).Cross(axis);
+	v2 = (end - origin).Cross(axis);
 
-	for ( i = 0; i < 3; i++ ) {
+	for (i = 0; i < 3; i++) {
 		// if the derivative changes sign along this axis during the rotation from start to end
-		if ( ( v1[i] > 0.0f && v2[i] < 0.0f ) || ( v1[i] < 0.0f && v2[i] > 0.0f ) ) {
-			if ( ( 0.5f * (start[i] + end[i]) - origin[i] ) > 0.0f ) {
-				bounds[0][i] = Min( start[i], end[i] );
-				bounds[1][i] = origin[i] + idMath::Sqrt( radiusSqr * ( 1.0f - axis[i] * axis[i] ) );
+		if ((v1[i] > 0.0f && v2[i] < 0.0f) || (v1[i] < 0.0f && v2[i] > 0.0f)) {
+			if ((0.5f *(start[i] + end[i]) - origin[i]) > 0.0f) {
+				bounds[0][i] = Min(start[i], end[i]);
+				bounds[1][i] = origin[i] + idMath::Sqrt(radiusSqr * (1.0f - axis[i] * axis[i]));
+			} else {
+				bounds[0][i] = origin[i] - idMath::Sqrt(radiusSqr * (1.0f - axis[i] * axis[i]));
+				bounds[1][i] = Max(start[i], end[i]);
 			}
-			else {
-				bounds[0][i] = origin[i] - idMath::Sqrt( radiusSqr * ( 1.0f - axis[i] * axis[i] ) );
-				bounds[1][i] = Max( start[i], end[i] );
-			}
-		}
-		else if ( start[i] > end[i] ) {
+		} else if (start[i] > end[i]) {
 			bounds[0][i] = end[i];
 			bounds[1][i] = start[i];
-		}
-		else {
+		} else {
 			bounds[0][i] = start[i];
 			bounds[1][i] = end[i];
 		}
+
 		// expand for epsilons
 		bounds[0][i] -= CM_BOX_EPSILON;
 		bounds[1][i] += CM_BOX_EPSILON;
@@ -1248,10 +1311,11 @@ void idCollisionModelManagerLocal::BoundsForRotation( const idVec3 &origin, cons
 idCollisionModelManagerLocal::Rotation180
 ================
 */
-void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &rorg, const idVec3 &axis,
-										const float startAngle, const float endAngle, const idVec3 &start,
-										const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
-										cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) {
+void idCollisionModelManagerLocal::Rotation180(trace_t *results, const idVec3 &rorg, const idVec3 &axis,
+                const float startAngle, const float endAngle, const idVec3 &start,
+                const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
+                cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis)
+{
 	int i, j, edgeNum;
 	float d, maxErr, initialTan;
 	bool model_rotated, trm_rotated;
@@ -1262,13 +1326,14 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	cm_trmPolygon_t *poly;
 	cm_trmEdge_t *edge;
 	cm_trmVertex_t *vert;
-	ALIGN16( static cm_traceWork_t tw );
+	ALIGN16(static cm_traceWork_t tw);
 
-	if ( model < 0 || model > MAX_SUBMODELS || model > idCollisionModelManagerLocal::maxModels ) {
+	if (model < 0 || model > MAX_SUBMODELS || model > idCollisionModelManagerLocal::maxModels) {
 		common->Printf("idCollisionModelManagerLocal::Rotation180: invalid model handle\n");
 		return;
 	}
-	if ( !idCollisionModelManagerLocal::models[model] ) {
+
+	if (!idCollisionModelManagerLocal::models[model]) {
 		common->Printf("idCollisionModelManagerLocal::Rotation180: invalid model\n");
 		return;
 	}
@@ -1285,40 +1350,41 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	tw.axisIntersectsTrm = false;
 	tw.quickExit = false;
 	tw.angle = endAngle - startAngle;
-	assert( tw.angle > -180.0f && tw.angle < 180.0f );
-	tw.angle = idMath::ClampFloat(-180.0f, 180.0f, tw.angle); // DG: enforce it for the rare cases the assert would trigger
-	tw.maxTan = initialTan = idMath::Fabs( tan( ( idMath::PI / 360.0f ) * tw.angle ) );
+	assert(tw.angle > -180.0f && tw.angle < 180.0f);
+	tw.maxTan = initialTan = idMath::Fabs(tan((idMath::PI / 360.0f) * tw.angle));
 	tw.model = idCollisionModelManagerLocal::models[model];
 	tw.start = start - modelOrigin;
 	// rotation axis, axis is assumed to be normalized
 	tw.axis = axis;
-	assert( tw.axis[0] * tw.axis[0] + tw.axis[1] * tw.axis[1] + tw.axis[2] * tw.axis[2] > 0.99f );
+	assert(tw.axis[0] * tw.axis[0] + tw.axis[1] * tw.axis[1] + tw.axis[2] * tw.axis[2] > 0.99f);
 	// rotation origin projected into rotation plane through tw.start
 	tw.origin = rorg - modelOrigin;
-	d = (tw.axis * tw.origin) - ( tw.axis * tw.start );
+	d = (tw.axis * tw.origin) - (tw.axis * tw.start);
 	tw.origin = tw.origin - d * tw.axis;
 	// radius of rotation
-	tw.radius = ( tw.start - tw.origin ).Length();
+	tw.radius = (tw.start - tw.origin).Length();
 	// maximum error of the circle approximation traced through the axial BSP tree
 	d = tw.radius * tw.radius - (CIRCLE_APPROXIMATION_LENGTH*CIRCLE_APPROXIMATION_LENGTH*0.25f);
-	if ( d > 0.0f ) {
-		maxErr = tw.radius - idMath::Sqrt( d );
+
+	if (d > 0.0f) {
+		maxErr = tw.radius - idMath::Sqrt(d);
 	} else {
 		maxErr = tw.radius;
 	}
 
 	model_rotated = modelAxis.IsRotated();
-	if ( model_rotated ) {
+
+	if (model_rotated) {
 		invModelAxis = modelAxis.Transpose();
 		tw.axis *= invModelAxis;
 		tw.origin *= invModelAxis;
 	}
 
-	startRotation.Set( tw.origin, tw.axis, startAngle );
-	endRotation.Set( tw.origin, tw.axis, endAngle );
+	startRotation.Set(tw.origin, tw.axis, startAngle);
+	endRotation.Set(tw.origin, tw.axis, endAngle);
 
 	// create matrix which rotates the rotation axis to the z-axis
-	tw.axis.NormalVectors( vr, vup );
+	tw.axis.NormalVectors(vr, vup);
 	tw.matrix[0][0] = vr[0];
 	tw.matrix[1][0] = vr[1];
 	tw.matrix[2][0] = vr[2];
@@ -1330,29 +1396,32 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	tw.matrix[2][2] = tw.axis[2];
 
 	// if optimized point trace
-	if ( !trm || ( trm->bounds[1][0] - trm->bounds[0][0] <= 0.0f &&
-					trm->bounds[1][1] - trm->bounds[0][1] <= 0.0f &&
-					trm->bounds[1][2] - trm->bounds[0][2] <= 0.0f ) ) {
+	if (!trm || (trm->bounds[1][0] - trm->bounds[0][0] <= 0.0f &&
+	             trm->bounds[1][1] - trm->bounds[0][1] <= 0.0f &&
+	             trm->bounds[1][2] - trm->bounds[0][2] <= 0.0f)) {
 
-		if ( model_rotated ) {
+		if (model_rotated) {
 			// rotate trace instead of model
 			tw.start *= invModelAxis;
 		}
+
 		tw.end = tw.start;
+
 		// if we start at a specific angle
-		if ( startAngle != 0.0f ) {
-			startRotation.RotatePoint( tw.start );
+		if (startAngle != 0.0f) {
+			startRotation.RotatePoint(tw.start);
 		}
+
 		// calculate end position of rotation
-		endRotation.RotatePoint( tw.end );
+		endRotation.RotatePoint(tw.end);
 
 		// calculate rotation origin projected into rotation plane through the vertex
 		tw.numVerts = 1;
 		tw.vertices[0].p = tw.start;
 		tw.vertices[0].endp = tw.end;
 		tw.vertices[0].used = true;
-		tw.vertices[0].rotationOrigin = tw.origin + tw.axis * ( tw.axis * ( tw.vertices[0].p - tw.origin ) );
-		BoundsForRotation( tw.vertices[0].rotationOrigin, tw.axis, tw.start, tw.end, tw.vertices[0].rotationBounds );
+		tw.vertices[0].rotationOrigin = tw.origin + tw.axis * (tw.axis * (tw.vertices[0].p - tw.origin));
+		BoundsForRotation(tw.vertices[0].rotationOrigin, tw.axis, tw.start, tw.end, tw.vertices[0].rotationBounds);
 		// rotation bounds
 		tw.bounds = tw.vertices[0].rotationBounds;
 		tw.numEdges = tw.numPolys = 0;
@@ -1364,124 +1433,139 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 		tw.extents[0] = tw.extents[1] = tw.extents[2] = maxErr + CM_BOX_EPSILON;
 
 		// setup rotation heart plane
-		tw.heartPlane1.SetNormal( tw.axis );
-		tw.heartPlane1.FitThroughPoint( tw.start );
+		tw.heartPlane1.SetNormal(tw.axis);
+		tw.heartPlane1.FitThroughPoint(tw.start);
 		tw.maxDistFromHeartPlane1 = CM_BOX_EPSILON;
 
 		// trace through the model
-		idCollisionModelManagerLocal::TraceThroughModel( &tw );
+		idCollisionModelManagerLocal::TraceThroughModel(&tw);
 
 		// store results
 		*results = tw.trace;
 		results->endpos = start;
-		if ( tw.maxTan == initialTan ) {
+
+		if (tw.maxTan == initialTan) {
 			results->fraction = 1.0f;
 		} else {
-			results->fraction = idMath::Fabs( atan( tw.maxTan ) * ( 2.0f * 180.0f / idMath::PI ) / tw.angle );
+			results->fraction = idMath::Fabs(atan(tw.maxTan) * (2.0f * 180.0f / idMath::PI) / tw.angle);
 		}
-		assert( results->fraction <= 1.0f );
-		endRotation.Set( rorg, axis, startAngle + (endAngle-startAngle) * results->fraction );
-		endRotation.RotatePoint( results->endpos );
+
+		assert(results->fraction <= 1.0f);
+		endRotation.Set(rorg, axis, startAngle + (endAngle-startAngle) * results->fraction);
+		endRotation.RotatePoint(results->endpos);
 		results->endAxis.Identity();
 
-		if ( results->fraction < 1.0f ) {
+		if (results->fraction < 1.0f) {
 			// rotate trace plane normal if there was a collision with a rotated model
-			if ( model_rotated ) {
+			if (model_rotated) {
 				results->c.normal *= modelAxis;
 				results->c.point *= modelAxis;
 			}
+
 			results->c.point += modelOrigin;
 			results->c.dist += modelOrigin * results->c.normal;
 		}
+
 		return;
 	}
 
 	tw.pointTrace = false;
 
 	// setup trm structure
-	idCollisionModelManagerLocal::SetupTrm( &tw, trm );
+	idCollisionModelManagerLocal::SetupTrm(&tw, trm);
 
 	trm_rotated = trmAxis.IsRotated();
 
 	// calculate vertex positions
-	if ( trm_rotated ) {
-		for ( i = 0; i < tw.numVerts; i++ ) {
+	if (trm_rotated) {
+		for (i = 0; i < tw.numVerts; i++) {
 			// rotate trm around the start position
 			tw.vertices[i].p *= trmAxis;
 		}
 	}
-	for ( i = 0; i < tw.numVerts; i++ ) {
+
+	for (i = 0; i < tw.numVerts; i++) {
 		// set trm at start position
 		tw.vertices[i].p += tw.start;
 	}
-	if ( model_rotated ) {
-		for ( i = 0; i < tw.numVerts; i++ ) {
+
+	if (model_rotated) {
+		for (i = 0; i < tw.numVerts; i++) {
 			tw.vertices[i].p *= invModelAxis;
 		}
 	}
-	for ( i = 0; i < tw.numVerts; i++ ) {
+
+	for (i = 0; i < tw.numVerts; i++) {
 		tw.vertices[i].endp = tw.vertices[i].p;
 	}
+
 	// if we start at a specific angle
-	if ( startAngle != 0.0f ) {
-		for ( i = 0; i < tw.numVerts; i++ ) {
-			startRotation.RotatePoint( tw.vertices[i].p );
+	if (startAngle != 0.0f) {
+		for (i = 0; i < tw.numVerts; i++) {
+			startRotation.RotatePoint(tw.vertices[i].p);
 		}
 	}
-	for ( i = 0; i < tw.numVerts; i++ ) {
+
+	for (i = 0; i < tw.numVerts; i++) {
 		// end position of vertex
-		endRotation.RotatePoint( tw.vertices[i].endp );
+		endRotation.RotatePoint(tw.vertices[i].endp);
 	}
 
 	// add offset to start point
-	if ( trm_rotated ) {
+	if (trm_rotated) {
 		tw.start += trm->offset * trmAxis;
 	} else {
 		tw.start += trm->offset;
 	}
+
 	// if the model is rotated
-	if ( model_rotated ) {
+	if (model_rotated) {
 		// rotate trace instead of model
 		tw.start *= invModelAxis;
 	}
+
 	tw.end = tw.start;
+
 	// if we start at a specific angle
-	if ( startAngle != 0.0f ) {
-		startRotation.RotatePoint( tw.start );
+	if (startAngle != 0.0f) {
+		startRotation.RotatePoint(tw.start);
 	}
+
 	// calculate end position of rotation
-	endRotation.RotatePoint( tw.end );
+	endRotation.RotatePoint(tw.end);
 
 	// setup trm vertices
-	for ( vert = tw.vertices, i = 0; i < tw.numVerts; i++, vert++ ) {
+	for (vert = tw.vertices, i = 0; i < tw.numVerts; i++, vert++) {
 		// calculate rotation origin projected into rotation plane through the vertex
-		vert->rotationOrigin = tw.origin + tw.axis * ( tw.axis * ( vert->p - tw.origin ) );
+		vert->rotationOrigin = tw.origin + tw.axis * (tw.axis * (vert->p - tw.origin));
 		// calculate rotation bounds for this vertex
-		BoundsForRotation( vert->rotationOrigin, tw.axis, vert->p, vert->endp, vert->rotationBounds );
+		BoundsForRotation(vert->rotationOrigin, tw.axis, vert->p, vert->endp, vert->rotationBounds);
 		// if the rotation axis goes through the vertex then the vertex is not used
-		d = ( vert->p - vert->rotationOrigin ).LengthSqr();
-		if ( d > ROTATION_AXIS_EPSILON * ROTATION_AXIS_EPSILON ) {
+		d = (vert->p - vert->rotationOrigin).LengthSqr();
+
+		if (d > ROTATION_AXIS_EPSILON * ROTATION_AXIS_EPSILON) {
 			vert->used = true;
 		}
 	}
 
 	// setup trm edges
-	for ( edge = tw.edges + 1, i = 1; i <= tw.numEdges; i++, edge++ ) {
+	for (edge = tw.edges + 1, i = 1; i <= tw.numEdges; i++, edge++) {
 		// if the rotation axis goes through both the edge vertices then the edge is not used
-		if ( tw.vertices[edge->vertexNum[0]].used | tw.vertices[edge->vertexNum[1]].used ) {
+		if (tw.vertices[edge->vertexNum[0]].used | tw.vertices[edge->vertexNum[1]].used) {
 			edge->used = true;
 		}
+
 		// edge start, end and pluecker coordinate
 		edge->start = tw.vertices[edge->vertexNum[0]].p;
 		edge->end = tw.vertices[edge->vertexNum[1]].p;
-		edge->pl.FromLine( edge->start, edge->end );
+		edge->pl.FromLine(edge->start, edge->end);
 		// pluecker coordinate for edge being rotated about the z-axis
-		at = ( edge->start - tw.origin ) * tw.matrix;
-		bt = ( edge->end - tw.origin ) * tw.matrix;
-		edge->plzaxis.FromLine( at, bt );
+		at = (edge->start - tw.origin) * tw.matrix;
+		bt = (edge->end - tw.origin) * tw.matrix;
+		edge->plzaxis.FromLine(at, bt);
 		// get edge rotation bounds from the rotation bounds of both vertices
 		edge->rotationBounds = tw.vertices[edge->vertexNum[0]].rotationBounds;
-		edge->rotationBounds.AddBounds( tw.vertices[edge->vertexNum[1]].rotationBounds );
+		edge->rotationBounds.AddBounds(tw.vertices[edge->vertexNum[1]].rotationBounds);
 		// used to calculate if the rotation axis intersects the trm
 		edge->bitNum = 0;
 	}
@@ -1489,73 +1573,82 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	tw.bounds.Clear();
 
 	// rotate trm polygon planes
-	if ( trm_rotated & model_rotated ) {
+	if (trm_rotated & model_rotated) {
 		tmpAxis = trmAxis * invModelAxis;
-		for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ ) {
+
+		for (poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++) {
 			poly->plane *= tmpAxis;
 		}
-	} else if ( trm_rotated ) {
-		for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ ) {
+	} else if (trm_rotated) {
+		for (poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++) {
 			poly->plane *= trmAxis;
 		}
-	} else if ( model_rotated ) {
-		for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ ) {
+	} else if (model_rotated) {
+		for (poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++) {
 			poly->plane *= invModelAxis;
 		}
 	}
 
 	// setup trm polygons
-	for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ ) {
+	for (poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++) {
 		poly->used = true;
 		// set trm polygon plane distance
-		poly->plane.FitThroughPoint( tw.edges[abs(poly->edges[0])].start );
+		poly->plane.FitThroughPoint(tw.edges[abs(poly->edges[0])].start);
 		// get polygon bounds from edge bounds
 		poly->rotationBounds.Clear();
-		for ( j = 0; j < poly->numEdges; j++ ) {
+
+		for (j = 0; j < poly->numEdges; j++) {
 			// add edge rotation bounds to polygon rotation bounds
-			edge = &tw.edges[abs( poly->edges[j] )];
-			poly->rotationBounds.AddBounds( edge->rotationBounds );
+			edge = &tw.edges[abs(poly->edges[j])];
+			poly->rotationBounds.AddBounds(edge->rotationBounds);
 		}
+
 		// get trace bounds from polygon bounds
-		tw.bounds.AddBounds( poly->rotationBounds );
+		tw.bounds.AddBounds(poly->rotationBounds);
 	}
 
 	// extents including the maximum error of the circle approximation traced through the axial BSP tree
-	for ( i = 0; i < 3; i++ ) {
+	for (i = 0; i < 3; i++) {
 		tw.size[0][i] = tw.bounds[0][i] - tw.start[i];
 		tw.size[1][i] = tw.bounds[1][i] - tw.start[i];
-		if ( idMath::Fabs( tw.size[0][i] ) > idMath::Fabs( tw.size[1][i] ) ) {
-			tw.extents[i] = idMath::Fabs( tw.size[0][i] ) + maxErr + CM_BOX_EPSILON;
+
+		if (idMath::Fabs(tw.size[0][i]) > idMath::Fabs(tw.size[1][i])) {
+			tw.extents[i] = idMath::Fabs(tw.size[0][i]) + maxErr + CM_BOX_EPSILON;
 		} else {
-			tw.extents[i] = idMath::Fabs( tw.size[1][i] ) + maxErr + CM_BOX_EPSILON;
+			tw.extents[i] = idMath::Fabs(tw.size[1][i]) + maxErr + CM_BOX_EPSILON;
 		}
 	}
 
 	// for back-face culling
-	if ( tw.isConvex ) {
-		if ( tw.start == tw.origin ) {
+	if (tw.isConvex) {
+		if (tw.start == tw.origin) {
 			tw.axisIntersectsTrm = true;
 		} else {
 			// determine if the rotation axis intersects the trm
-			plaxis.FromRay( tw.origin, tw.axis );
-			for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ ) {
+			plaxis.FromRay(tw.origin, tw.axis);
+
+			for (poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++) {
 				// back face cull polygons
-				if ( poly->plane.Normal() * tw.axis > 0.0f ) {
+				if (poly->plane.Normal() * tw.axis > 0.0f) {
 					continue;
 				}
+
 				// test if the axis goes between the polygon edges
-				for ( j = 0; j < poly->numEdges; j++ ) {
+				for (j = 0; j < poly->numEdges; j++) {
 					edgeNum = poly->edges[j];
 					edge = tw.edges + abs(edgeNum);
-					if ( !(edge->bitNum & 2) ) {
-						d = plaxis.PermutedInnerProduct( edge->pl );
-						edge->bitNum = FLOATSIGNBITSET( d ) | 2;
+
+					if (!(edge->bitNum & 2)) {
+						d = plaxis.PermutedInnerProduct(edge->pl);
+						edge->bitNum = FLOATSIGNBITSET(d) | 2;
 					}
-					if ( ( edge->bitNum ^ INTSIGNBITSET( edgeNum ) ) & 1 ) {
+
+					if ((edge->bitNum ^ INTSIGNBITSET(edgeNum)) & 1) {
 						break;
 					}
 				}
-				if ( j >= poly->numEdges ) {
+
+				if (j >= poly->numEdges) {
 					tw.axisIntersectsTrm = true;
 					break;
 				}
@@ -1564,42 +1657,48 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	}
 
 	// setup rotation heart plane
-	tw.heartPlane1.SetNormal( tw.axis );
-	tw.heartPlane1.FitThroughPoint( tw.start );
+	tw.heartPlane1.SetNormal(tw.axis);
+	tw.heartPlane1.FitThroughPoint(tw.start);
 	tw.maxDistFromHeartPlane1 = 0.0f;
-	for ( i = 0; i < tw.numVerts; i++ ) {
-		d = idMath::Fabs( tw.heartPlane1.Distance( tw.vertices[i].p ) );
-		if ( d > tw.maxDistFromHeartPlane1 ) {
+
+	for (i = 0; i < tw.numVerts; i++) {
+		d = idMath::Fabs(tw.heartPlane1.Distance(tw.vertices[i].p));
+
+		if (d > tw.maxDistFromHeartPlane1) {
 			tw.maxDistFromHeartPlane1 = d;
 		}
 	}
+
 	tw.maxDistFromHeartPlane1 += CM_BOX_EPSILON;
 
 	// inverse rotation to rotate model vertices towards trace model
-	tw.modelVertexRotation.Set( tw.origin, tw.axis, -tw.angle );
+	tw.modelVertexRotation.Set(tw.origin, tw.axis, -tw.angle);
 
 	// trace through the model
-	idCollisionModelManagerLocal::TraceThroughModel( &tw );
+	idCollisionModelManagerLocal::TraceThroughModel(&tw);
 
 	// store results
 	*results = tw.trace;
 	results->endpos = start;
-	if ( tw.maxTan == initialTan ) {
+
+	if (tw.maxTan == initialTan) {
 		results->fraction = 1.0f;
 	} else {
-		results->fraction = idMath::Fabs( atan( tw.maxTan ) * ( 2.0f * 180.0f / idMath::PI ) / tw.angle );
+		results->fraction = idMath::Fabs(atan(tw.maxTan) * (2.0f * 180.0f / idMath::PI) / tw.angle);
 	}
-	assert( results->fraction <= 1.0f );
-	endRotation.Set( rorg, axis, startAngle + (endAngle-startAngle) * results->fraction );
-	endRotation.RotatePoint( results->endpos );
+
+	assert(results->fraction <= 1.0f);
+	endRotation.Set(rorg, axis, startAngle + (endAngle-startAngle) * results->fraction);
+	endRotation.RotatePoint(results->endpos);
 	results->endAxis = trmAxis * endRotation.ToMat3();
 
-	if ( results->fraction < 1.0f ) {
+	if (results->fraction < 1.0f) {
 		// rotate trace plane normal if there was a collision with a rotated model
-		if ( model_rotated ) {
+		if (model_rotated) {
 			results->c.normal *= modelAxis;
 			results->c.point *= modelAxis;
 		}
+
 		results->c.point += modelOrigin;
 		results->c.dist += modelOrigin * results->c.normal;
 	}
@@ -1610,62 +1709,97 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 idCollisionModelManagerLocal::Rotation
 ================
 */
-void idCollisionModelManagerLocal::Rotation( trace_t *results, const idVec3 &start, const idRotation &rotation,
-										const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
-										cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) {
+#ifdef _DEBUG
+static int entered = 0;
+#endif
+
+void idCollisionModelManagerLocal::Rotation(trace_t *results, const idVec3 &start, const idRotation &rotation,
+                const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
+                cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis)
+{
 	idVec3 tmp;
 	float maxa, stepa, a, lasta;
 
-	assert( ((byte *)&start) < ((byte *)results) || ((byte *)&start) > (((byte *)results) + sizeof( trace_t )) );
-	assert( ((byte *)&trmAxis) < ((byte *)results) || ((byte *)&trmAxis) > (((byte *)results) + sizeof( trace_t )) );
+	assert(((byte *)&start) < ((byte *)results) || ((byte *)&start) > (((byte *)results) + sizeof(trace_t)));
+	assert(((byte *)&trmAxis) < ((byte *)results) || ((byte *)&trmAxis) > (((byte *)results) + sizeof(trace_t)));
 
-	memset( results, 0, sizeof( *results ) );
+	memset(results, 0, sizeof(*results));
 
 	// if special position test
-	if ( rotation.GetAngle() == 0.0f ) {
-		idCollisionModelManagerLocal::ContentsTrm( results, start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
+	if (rotation.GetAngle() == 0.0f) {
+		idCollisionModelManagerLocal::ContentsTrm(results, start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
 		return;
 	}
 
-	if ( rotation.GetAngle() >= 180.0f || rotation.GetAngle() <= -180.0f) {
-		if ( rotation.GetAngle() >= 360.0f ) {
+#ifdef _DEBUG
+	bool startsolid = false;
+
+	// test whether or not stuck to begin with
+	if (cm_debugCollision.GetBool()) {
+		if (!entered) {
+			entered = 1;
+
+			// if already messed up to begin with
+			if (idCollisionModelManagerLocal::Contents(start, trm, trmAxis, -1, model, modelOrigin, modelAxis) & contentMask) {
+				startsolid = true;
+			}
+
+			entered = 0;
+		}
+	}
+
+#endif
+
+	if (rotation.GetAngle() >= 180.0f || rotation.GetAngle() <= -180.0f) {
+		if (rotation.GetAngle() >= 360.0f) {
 			maxa = 360.0f;
 			stepa = 120.0f;			// three steps strictly < 180 degrees
-		} else if ( rotation.GetAngle() <= -360.0f ) {
+		} else if (rotation.GetAngle() <= -360.0f) {
 			maxa = -360.0f;
 			stepa = -120.0f;		// three steps strictly < 180 degrees
 		} else {
 			maxa = rotation.GetAngle();
 			stepa = rotation.GetAngle() * 0.5f;	// two steps strictly < 180 degrees
 		}
-		for ( lasta = 0.0f, a = stepa; fabs( a ) < fabs( maxa ) + 1.0f; lasta = a, a += stepa ) {
+
+		for (lasta = 0.0f, a = stepa; fabs(a) < fabs(maxa) + 1.0f; lasta = a, a += stepa) {
 			// partial rotation
-			idCollisionModelManagerLocal::Rotation180( results, rotation.GetOrigin(), rotation.GetVec(), lasta, a, start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
+			idCollisionModelManagerLocal::Rotation180(results, rotation.GetOrigin(), rotation.GetVec(), lasta, a, start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
+
 			// if there is a collision
-			if ( results->fraction < 1.0f ) {
+			if (results->fraction < 1.0f) {
 				// fraction of total rotation
 				results->fraction = (lasta + stepa * results->fraction) / rotation.GetAngle();
 				return;
 			}
 		}
+
 		results->fraction = 1.0f;
 		return;
 	}
 
-	idCollisionModelManagerLocal::Rotation180( results, rotation.GetOrigin(), rotation.GetVec(), 0.0f, rotation.GetAngle(), start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
+	idCollisionModelManagerLocal::Rotation180(results, rotation.GetOrigin(), rotation.GetVec(), 0.0f, rotation.GetAngle(), start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
 
 #ifdef _DEBUG
-	// test for collisions
-	if ( cm_debugCollision.GetBool() ) {
-		// if the trm is stuck in the model
-		if ( idCollisionModelManagerLocal::Contents( results->endpos, trm, results->endAxis, -1, model, modelOrigin, modelAxis ) & contentMask ) {
-			trace_t tr;
 
-			// test where the trm is stuck in the model
-			idCollisionModelManagerLocal::Contents( results->endpos, trm, results->endAxis, -1, model, modelOrigin, modelAxis );
-			// re-run collision detection to find out where it failed
-			idCollisionModelManagerLocal::Rotation( &tr, start, rotation, trm, trmAxis, contentMask, model, modelOrigin, modelAxis );
+	// test for missed collisions
+	if (cm_debugCollision.GetBool()) {
+		if (!entered) {
+			entered = 1;
+
+			// if the trm is stuck in the model
+			if (idCollisionModelManagerLocal::Contents(results->endpos, trm, results->endAxis, -1, model, modelOrigin, modelAxis) & contentMask) {
+				trace_t tr;
+
+				// test where the trm is stuck in the model
+				idCollisionModelManagerLocal::Contents(results->endpos, trm, results->endAxis, -1, model, modelOrigin, modelAxis);
+				// re-run collision detection to find out where it failed
+				idCollisionModelManagerLocal::Rotation(&tr, start, rotation, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
+			}
+
+			entered = 0;
 		}
 	}
+
 #endif
 }

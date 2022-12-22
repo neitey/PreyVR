@@ -26,8 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#include "idlib/precompiled.h"
 #include <gamesys/SysCvar.h>
-#include "sys/platform.h"
 #include "framework/UsercmdGen.h"
 #include "physics/Physics.h"
 

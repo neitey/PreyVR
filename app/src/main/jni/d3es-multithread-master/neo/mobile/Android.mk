@@ -24,7 +24,7 @@ LOCAL_CPPFLAGS += -Wno-sign-compare \
                   -Wno-switch \
                   -Wno-format-security \
 
-LOCAL_CPPFLAGS += -DD3ES -DENGINE_NAME=\"d3es\"
+LOCAL_CPPFLAGS += -DD3ES -DENGINE_NAME=\"d3es\" -D_K_CLANG
 
 LOCAL_CPPFLAGS += -DNO_LIGHT
 
@@ -151,6 +151,7 @@ src_dmap = \
 	tools/compilers/dmap/tritools.cpp \
 	tools/compilers/dmap/ubrush.cpp \
 	tools/compilers/dmap/usurface.cpp \
+	tools/compilers/dmap/optimize_gcc.cpp \
 
 
 
@@ -265,6 +266,8 @@ src_idlib = \
 	idlib/Base64.cpp \
 	idlib/Timer.cpp \
 	idlib/Heap.cpp \
+	idlib/bv/Frustum_gcc.cpp \
+    idlib/precompiled.cpp \
 
 
 src_sys_base = \

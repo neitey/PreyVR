@@ -1,3 +1,27 @@
+# This is an attempt to bring more idTech4A++ games into VR.
+
+The work is based on this project: https://github.com/glKarin/com.n0n3m4.diii4a (last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/214c12e55661c3d07d3796f72b9f2366302f3b93)
+
+As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I try to merge it together.
+
+Current status of the work (in `Doom3Quest/app/src/main/jni/d3es-multithread-master/neo/`):
+
+* cm - merged
+* framework - TODO
+* game - TODO: this will be per game different
+* idlib - merged
+* MayaImport - merged
+* renderer - DO NOT MERGE, backport
+* sound - TODO
+* sys - TODO
+* tools - merged
+* TypeInfo - merged
+* ui - TODO
+
+
+# Original README
+
+
 ![Doom3Quest Banner](https://github.com/DrBeef/Doom3Quest/blob/master/assets/firelogo.jpg)
 ===
 

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,44 +26,41 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "tools/edit_gui_common.h"
-
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "GEApp.h"
 #include "GEKeyValueModifier.h"
 
-rvGEKeyValueModifier::rvGEKeyValueModifier ( const char* name, idWindow* window, const char* key, const char* value ) :
-	rvGEModifier ( name, window ),
-	mKey ( key ),
-	mValue ( value )
+rvGEKeyValueModifier::rvGEKeyValueModifier(const char *name, idWindow *window, const char *key, const char *value) :
+	rvGEModifier(name, window),
+	mKey(key),
+	mValue(value)
 {
-	mUndoValue = mWrapper->GetStateDict().GetString ( mKey );
+	mUndoValue = mWrapper->GetStateDict().GetString(mKey);
 }
 
-bool rvGEKeyValueModifier::Apply ( void )
+bool rvGEKeyValueModifier::Apply(void)
 {
-	if ( mValue.Length ( ) )
-	{
-		mWrapper->SetStateKey ( mKey, mValue );
-	}
-	else
-	{
-		mWrapper->DeleteStateKey ( mKey );
+	if (mValue.Length()) {
+		mWrapper->SetStateKey(mKey, mValue);
+	} else {
+		mWrapper->DeleteStateKey(mKey);
 	}
 
 	return true;
 }
 
-bool rvGEKeyValueModifier::Undo ( void )
+bool rvGEKeyValueModifier::Undo(void)
 {
-	mWrapper->SetStateKey ( mKey, mValue );
+	mWrapper->SetStateKey(mKey, mValue);
 
 	return true;
 }
 
-bool rvGEKeyValueModifier::Merge ( rvGEModifier* mergebase )
+bool rvGEKeyValueModifier::Merge(rvGEModifier *mergebase)
 {
-	rvGEKeyValueModifier* merge = (rvGEKeyValueModifier*) mergebase;
+	rvGEKeyValueModifier *merge = (rvGEKeyValueModifier *) mergebase;
 
 	mValue = merge->mValue;
 

@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-
+#include "idlib/precompiled.h"
 #include "physics/Force.h"
 
 CLASS_DECLARATION( idClass, idForce )

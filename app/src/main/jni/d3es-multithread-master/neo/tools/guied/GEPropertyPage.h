@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,21 +31,29 @@ If you have questions concerning this license or the applicable additional terms
 
 class rvGEPropertyPage
 {
-public:
+	public:
 
-	rvGEPropertyPage ( );
+		rvGEPropertyPage();
 
-	virtual bool	Init			( void ) { return true; }
-	virtual bool	Apply			( void ) { return true; }
-	virtual bool	SetActive		( void ) { return true; }
-	virtual bool	KillActive		( void ) { return true; }
-	virtual int		HandleMessage	( UINT msg, WPARAM wParam, LPARAM lParam );
+		virtual bool	Init(void) {
+			return true;
+		}
+		virtual bool	Apply(void) {
+			return true;
+		}
+		virtual bool	SetActive(void) {
+			return true;
+		}
+		virtual bool	KillActive(void) {
+			return true;
+		}
+		virtual int		HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 
-	static INT_PTR CALLBACK WndProc ( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam );
+		static INT_PTR CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-protected:
+	protected:
 
-	HWND		mPage;
+		HWND		mPage;
 };
 
 #endif // GEPROPERTYPAGE_H_

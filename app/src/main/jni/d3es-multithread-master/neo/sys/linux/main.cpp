@@ -34,11 +34,12 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <SDL_main.h>
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Licensee.h"
 #include "framework/FileSystem.h"
 #include "sys/posix/posix_public.h"
 #include "sys/sys_local.h"
+#include "config.h"
 
 #include <locale.h>
 
@@ -152,6 +153,126 @@ void Sys_Shutdown( void ) {
 	Posix_Shutdown();
 }
 
+
+/*
+===============
+Sys_GetClockticks
+===============
+*/
+double Sys_GetClockTicks(void)
+{
+#if defined( __i386__ )
+	unsigned long lo, hi;
+
+	__asm__ __volatile__(
+	        "push %%ebx\n"			\
+	        "xor %%eax,%%eax\n"		\
+	        "cpuid\n"					\
+	        "rdtsc\n"					\
+	        "mov %%eax,%0\n"			\
+	        "mov %%edx,%1\n"			\
+	        "pop %%ebx\n"
+	        : "=r"(lo), "=r"(hi));
+	return (double) lo + (double) 0xFFFFFFFF * hi;
+#else
+#warning unsupported CPU
+	return 0;
+#endif
+}
+
+/*
+===============
+MeasureClockTicks
+===============
+*/
+double MeasureClockTicks(void)
+{
+	double t0, t1;
+
+	t0 = Sys_GetClockTicks();
+	Sys_Sleep(1000);
+	t1 = Sys_GetClockTicks();
+	return t1 - t0;
+}
+
+/*
+===============
+Sys_ClockTicksPerSecond
+===============
+*/
+double Sys_ClockTicksPerSecond(void)
+{
+	static bool		init = false;
+	static double	ret;
+
+	int		fd, len, pos, end;
+	char	buf[ 4096 ];
+
+	if (init) {
+		return ret;
+	}
+
+#if defined(__ANDROID__)
+	fd = open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", O_RDONLY);
+#else
+	fd = open("/proc/cpuinfo", O_RDONLY);
+#endif
+
+	if (fd == -1) {
+		//common->Printf("couldn't read /proc/cpuinfo\n");
+		ret = MeasureClockTicks();
+		init = true;
+		//common->Printf("measured CPU frequency: %g MHz\n", ret / 1000000.0);
+		return ret;
+	}
+
+	len = read(fd, buf, 4096);
+	close(fd);
+
+#if defined(__ANDROID__)
+	if (len > 0) {
+		ret = atof(buf);
+		common->Printf("/proc/cpuinfo CPU frequency: %g MHz", ret / 1000.0);
+		ret *= 1000;
+		init = true;
+		return ret;
+	}
+#else
+	pos = 0;
+
+	while (pos < len) {
+		if (!idStr::Cmpn(buf + pos, "cpu MHz", 7)) {
+			pos = strchr(buf + pos, ':') - buf + 2;
+			end = strchr(buf + pos, '\n') - buf;
+
+			if (pos < len && end < len) {
+				buf[end] = '\0';
+				ret = atof(buf + pos);
+			} else {
+				common->Printf("failed parsing /proc/cpuinfo\n");
+				ret = MeasureClockTicks();
+				init = true;
+				common->Printf("measured CPU frequency: %g MHz\n", ret / 1000000.0);
+				return ret;
+			}
+
+			common->Printf("/proc/cpuinfo CPU frequency: %g MHz\n", ret);
+			ret *= 1000000;
+			init = true;
+			return ret;
+		}
+
+		pos = strchr(buf + pos, '\n') - buf + 1;
+	}
+#endif
+
+	common->Printf("failed parsing /proc/cpuinfo\n");
+	ret = MeasureClockTicks();
+	init = true;
+	common->Printf("measured CPU frequency: %g MHz\n", ret / 1000000.0);
+	return ret;
+}
+
 /*
 ================
 Sys_GetSystemRam
@@ -238,6 +359,77 @@ void Sys_DoStartProcess( const char *exeName, bool dofork ) {
 		// terminate
 		_exit( 0 );
 	}
+}
+
+/*
+===============
+Sys_GetProcessorString
+===============
+*/
+const char *Sys_GetProcessorString(void)
+{
+	return "generic";
+}
+
+
+/*
+==================
+Sys_GetCallStack
+==================
+*/
+void Sys_GetCallStack(address_t *callStack, const int callStackSize)
+{
+	for (int i = 0; i < callStackSize; i++) {
+		callStack[i] = 0;
+	}
+}
+
+/*
+==================
+Sys_GetCallStackStr
+==================
+*/
+const char *Sys_GetCallStackStr(const address_t *callStack, const int callStackSize)
+{
+	return "";
+}
+
+/*
+==================
+Sys_GetCallStackStr
+==================
+*/
+const char *Sys_GetCallStackCurStr(int depth)
+{
+	return "";
+}
+
+/*
+==================
+Sys_GetCallStackCurAddressStr
+==================
+*/
+const char 	*Sys_GetCallStackCurAddressStr(int depth)
+{
+	return "";
+}
+
+/*
+==================
+Sys_ShutdownSymbols
+==================
+*/
+void Sys_ShutdownSymbols(void)
+{
+}
+
+/*
+===============
+Sys_FPU_EnableExceptions
+===============
+*/
+void Sys_FPU_EnableExceptions(int exceptions)
+{
 }
 
 /*

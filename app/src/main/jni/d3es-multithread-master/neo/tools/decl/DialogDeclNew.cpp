@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "tools/edit_gui_common.h"
-
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "../../sys/win32/rc/DeclEditor_resource.h"
 
@@ -60,7 +60,7 @@ IMPLEMENT_DYNAMIC(DialogDeclNew, CDialog)
 DialogDeclNew::DialogDeclNew
 ================
 */
-DialogDeclNew::DialogDeclNew( CWnd* pParent /*=NULL*/ )
+DialogDeclNew::DialogDeclNew(CWnd *pParent /*=NULL*/)
 	: CDialog(DialogDeclNew::IDD, pParent)
 	, declTree(NULL)
 	, newDecl(NULL)
@@ -72,7 +72,8 @@ DialogDeclNew::DialogDeclNew( CWnd* pParent /*=NULL*/ )
 DialogDeclNew::~DialogDeclNew
 ================
 */
-DialogDeclNew::~DialogDeclNew() {
+DialogDeclNew::~DialogDeclNew()
+{
 }
 
 /*
@@ -80,7 +81,8 @@ DialogDeclNew::~DialogDeclNew() {
 DialogDeclNew::DoDataExchange
 ================
 */
-void DialogDeclNew::DoDataExchange(CDataExchange* pDX) {
+void DialogDeclNew::DoDataExchange(CDataExchange *pDX)
+{
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(DialogDeclNew)
 	DDX_Control(pDX, IDC_DECLNEW_COMBO_NEW_TYPE, typeList);
@@ -97,12 +99,14 @@ void DialogDeclNew::DoDataExchange(CDataExchange* pDX) {
 DialogDeclNew::InitTypeList
 ================
 */
-void DialogDeclNew::InitTypeList( void ) {
+void DialogDeclNew::InitTypeList(void)
+{
 	int i;
 
 	typeList.ResetContent();
-	for ( i = 0; i < declManager->GetNumDeclTypes(); i++ ) {
-		typeList.AddString( declManager->GetDeclNameFromType( (declType_t)i ) );
+
+	for (i = 0; i < declManager->GetNumDeclTypes(); i++) {
+		typeList.AddString(declManager->GetDeclNameFromType((declType_t)i));
 	}
 }
 
@@ -111,20 +115,21 @@ void DialogDeclNew::InitTypeList( void ) {
 DialogDeclNew::OnInitDialog
 ================
 */
-BOOL DialogDeclNew::OnInitDialog()  {
+BOOL DialogDeclNew::OnInitDialog()
+{
 
 	CDialog::OnInitDialog();
 
 	InitTypeList();
 
-	SetSafeComboBoxSelection( &typeList, defaultType.c_str(), -1 );
-	nameEdit.SetWindowText( defaultName.c_str() );
-	fileEdit.SetWindowText( defaultFile.c_str() );
+	SetSafeComboBoxSelection(&typeList, defaultType.c_str(), -1);
+	nameEdit.SetWindowText(defaultName.c_str());
+	fileEdit.SetWindowText(defaultFile.c_str());
 
-	EnableToolTips( TRUE );
+	EnableToolTips(TRUE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-				  // EXCEPTION: OCX Property Pages should return FALSE
+	// EXCEPTION: OCX Property Pages should return FALSE
 }
 
 
@@ -147,8 +152,9 @@ END_MESSAGE_MAP()
 DialogDeclNew::OnActivate
 ================
 */
-void DialogDeclNew::OnActivate( UINT nState, CWnd *pWndOther, BOOL bMinimized ) {
-	CDialog::OnActivate( nState, pWndOther, bMinimized );
+void DialogDeclNew::OnActivate(UINT nState, CWnd *pWndOther, BOOL bMinimized)
+{
+	CDialog::OnActivate(nState, pWndOther, bMinimized);
 }
 
 /*
@@ -156,8 +162,9 @@ void DialogDeclNew::OnActivate( UINT nState, CWnd *pWndOther, BOOL bMinimized ) 
 DialogDeclNew::OnToolTipNotify
 ================
 */
-BOOL DialogDeclNew::OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pResult ) {
-	return DefaultOnToolTipNotify( toolTips, id, pNMHDR, pResult );
+BOOL DialogDeclNew::OnToolTipNotify(UINT id, NMHDR *pNMHDR, LRESULT *pResult)
+{
+	return DefaultOnToolTipNotify(toolTips, id, pNMHDR, pResult);
 }
 
 /*
@@ -165,8 +172,9 @@ BOOL DialogDeclNew::OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pResult ) 
 DialogDeclNew::OnSetFocus
 ================
 */
-void DialogDeclNew::OnSetFocus( CWnd *pOldWnd ) {
-	CDialog::OnSetFocus( pOldWnd );
+void DialogDeclNew::OnSetFocus(CWnd *pOldWnd)
+{
+	CDialog::OnSetFocus(pOldWnd);
 }
 
 /*
@@ -174,7 +182,8 @@ void DialogDeclNew::OnSetFocus( CWnd *pOldWnd ) {
 DialogDeclNew::OnDestroy
 ================
 */
-void DialogDeclNew::OnDestroy() {
+void DialogDeclNew::OnDestroy()
+{
 	return CDialog::OnDestroy();
 }
 
@@ -183,43 +192,75 @@ void DialogDeclNew::OnDestroy() {
 DialogDeclNew::OnBnClickedFile
 ================
 */
-void DialogDeclNew::OnBnClickedFile() {
+void DialogDeclNew::OnBnClickedFile()
+{
 	CString typeName, folder, ext;
 	idStr path;
 	const char *errorTitle = "Error selecting file.";
 
-	if ( GetSafeComboBoxSelection( &typeList, typeName, -1 ) == -1 ) {
-		MessageBox( "Select a declaration type first.", errorTitle, MB_OK );
+	if (GetSafeComboBoxSelection(&typeList, typeName, -1) == -1) {
+		MessageBox("Select a declaration type first.", errorTitle, MB_OK);
 		return;
 	}
 
-	declType_t type = declManager->GetDeclTypeFromName( typeName );
-	if ( type >= declManager->GetNumDeclTypes() ) {
-		MessageBox( "Unknown declaration type.", errorTitle, MB_OK | MB_ICONERROR );
+	declType_t type = declManager->GetDeclTypeFromName(typeName);
+
+	if (type >= declManager->GetNumDeclTypes()) {
+		MessageBox("Unknown declaration type.", errorTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	switch( type ) {
-		// FIXME: SteelStorm2 has a _v1 suffix for materials, def and fx - why?
-		case DECL_TABLE:		folder = "materials";	ext = "(*.mtr)|*.mtr|(*.*)|*.*||";					break;
-		case DECL_MATERIAL:		folder = "materials";	ext = "(*.mtr)|*.mtr|(*.*)|*.*||";					break;
-		case DECL_SKIN:			folder = "skins";		ext = "(*.skin)|*.skin|(*.*)|*.*||";				break;
-		case DECL_SOUND:		folder = "sound";		ext = "(*.sndshd|*.sndshd|(*.*)|*.*||";				break;
-		case DECL_ENTITYDEF:	folder = "def";			ext = "(*.def)|*.def|(*.decl)|*.decl|(*.*)|*.*||";	break;
-		case DECL_MODELDEF:		folder = "def";			ext = "(*.def)|*.def|(*.*)|*.*||";					break;
-		case DECL_FX:			folder = "fx";			ext = "(*.fx)|*.fx|(*.*)|*.*||";					break;
-		case DECL_PARTICLE:		folder = "particles";	ext = "(*.prt)|*.prt|(*.*)|*.*||";					break;
-		case DECL_AF:			folder = "af";			ext = "(*.af)|*.af|(*.*)|*.*||";					break;
-		default:				folder = "def";			ext = "(*.decl)|*.decl|(*.*)|*.*||";				break;
+	switch (type) {
+		case DECL_TABLE:
+			folder = "materials";
+			ext = "(*.mtr)|*.mtr|(*.*)|*.*||";
+			break;
+		case DECL_MATERIAL:
+			folder = "materials";
+			ext = "(*.mtr)|*.mtr|(*.*)|*.*||";
+			break;
+		case DECL_SKIN:
+			folder = "skins";
+			ext = "(*.skin)|*.skin|(*.*)|*.*||";
+			break;
+		case DECL_SOUND:
+			folder = "sound";
+			ext = "(*.sndshd|*.sndshd|(*.*)|*.*||";
+			break;
+		case DECL_ENTITYDEF:
+			folder = "def";
+			ext = "(*.def)|*.def|(*.decl)|*.decl|(*.*)|*.*||";
+			break;
+		case DECL_MODELDEF:
+			folder = "def";
+			ext = "(*.def)|*.def|(*.*)|*.*||";
+			break;
+		case DECL_FX:
+			folder = "fx";
+			ext = "(*.fx)|*.fx|(*.*)|*.*||";
+			break;
+		case DECL_PARTICLE:
+			folder = "particles";
+			ext = "(*.prt)|*.prt|(*.*)|*.*||";
+			break;
+		case DECL_AF:
+			folder = "af";
+			ext = "(*.af)|*.af|(*.*)|*.*||";
+			break;
+		default:
+			folder = "def";
+			ext = "(*.decl)|*.decl|(*.*)|*.*||";
+			break;
 	}
 
-	path = fileSystem->RelativePathToOSPath( folder );
+	path = fileSystem->RelativePathToOSPath(folder);
 	path += "\\*";
 
-	CFileDialog dlgFile( TRUE, "decl", path, 0, ext, this );
-	if ( dlgFile.DoModal() == IDOK ) {
-		path = fileSystem->OSPathToRelativePath( dlgFile.m_ofn.lpstrFile );
-		fileEdit.SetWindowText( path );
+	CFileDialog dlgFile(TRUE, "decl", path, 0, ext, this);
+
+	if (dlgFile.DoModal() == IDOK) {
+		path = fileSystem->OSPathToRelativePath(dlgFile.m_ofn.lpstrFile);
+		fileEdit.SetWindowText(path);
 	}
 }
 
@@ -228,44 +269,48 @@ void DialogDeclNew::OnBnClickedFile() {
 DialogDeclNew::OnBnClickedOk
 ================
 */
-void DialogDeclNew::OnBnClickedOk() {
+void DialogDeclNew::OnBnClickedOk()
+{
 	CString typeName, declName, fileName;
 	const char *errorTitle = "Error creating declaration.";
 
-	if ( !declTree ) {
-		MessageBox( "No declaration tree available.", errorTitle, MB_OK | MB_ICONERROR );
+	if (!declTree) {
+		MessageBox("No declaration tree available.", errorTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	if ( GetSafeComboBoxSelection( &typeList, typeName, -1 ) == -1 ) {
-		MessageBox( "No declaration type selected.", errorTitle, MB_OK | MB_ICONERROR );
+	if (GetSafeComboBoxSelection(&typeList, typeName, -1) == -1) {
+		MessageBox("No declaration type selected.", errorTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	nameEdit.GetWindowText( declName );
-	if ( declName.GetLength() == 0 ) {
-		MessageBox( "No declaration name specified.", errorTitle, MB_OK | MB_ICONERROR );
+	nameEdit.GetWindowText(declName);
+
+	if (declName.GetLength() == 0) {
+		MessageBox("No declaration name specified.", errorTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	fileEdit.GetWindowText( fileName );
-	if ( fileName.GetLength() == 0 ) {
-		MessageBox( "No file name specified.", errorTitle, MB_OK | MB_ICONERROR );
+	fileEdit.GetWindowText(fileName);
+
+	if (fileName.GetLength() == 0) {
+		MessageBox("No file name specified.", errorTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	if ( declTree->FindItem( idStr( typeName + "/" + declName ) ) ) {
-		MessageBox( "Declaration already exists.", errorTitle, MB_OK | MB_ICONERROR );
+	if (declTree->FindItem(idStr(typeName + "/" + declName))) {
+		MessageBox("Declaration already exists.", errorTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	declType_t type = declManager->GetDeclTypeFromName( typeName );
-	if ( type >= declManager->GetNumDeclTypes() ) {
-		MessageBox( "Unknown declaration type.", errorTitle, MB_OK | MB_ICONERROR );
+	declType_t type = declManager->GetDeclTypeFromName(typeName);
+
+	if (type >= declManager->GetNumDeclTypes()) {
+		MessageBox("Unknown declaration type.", errorTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	newDecl = declManager->CreateNewDecl( type, declName, fileName );
+	newDecl = declManager->CreateNewDecl(type, declName, fileName);
 
 	OnOK();
 }
@@ -275,6 +320,7 @@ void DialogDeclNew::OnBnClickedOk() {
 DialogDeclNew::OnBnClickedCancel
 ================
 */
-void DialogDeclNew::OnBnClickedCancel() {
+void DialogDeclNew::OnBnClickedCancel()
+{
 	OnCancel();
 }

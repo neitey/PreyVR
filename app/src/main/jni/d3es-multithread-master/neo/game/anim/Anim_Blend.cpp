@@ -26,10 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/containers/BinSearch.h"
-#include "idlib/geometry/JointTransform.h"
-#include "idlib/math/Quat.h"
+#include "idlib/precompiled.h"
 #include "renderer/ModelManager.h"
 
 #include "gamesys/SysCvar.h"

@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/math/Interpolate.h"
+#include "idlib/precompiled.h"
 #include "framework/Game.h"
 #include "renderer/VertexCache.h"
 #include "renderer/RenderWorld_local.h"

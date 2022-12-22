@@ -31,7 +31,7 @@ Various utility objects and functions.
 
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "renderer/ModelManager.h"
 
 #include "gamesys/SysCvar.h"

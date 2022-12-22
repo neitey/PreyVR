@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/LangDict.h"
+#include "idlib/precompiled.h"
 #include "framework/async/AsyncNetwork.h"
 #include "framework/Licensee.h"
 #include "framework/Common.h"

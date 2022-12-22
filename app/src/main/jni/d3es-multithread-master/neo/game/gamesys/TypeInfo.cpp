@@ -30,13 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #define private		public
 #define protected	public
 
-#include "sys/platform.h"
-#include "idlib/containers/LinkList.h"
-#include "idlib/containers/StaticList.h"
-#include "idlib/math/Quat.h"
-#include "idlib/math/Interpolate.h"
-#include "idlib/bv/Bounds.h"
-#include "idlib/Lexer.h"
+#include "idlib/precompiled.h"
 #include "framework/Common.h"
 #include "framework/FileSystem.h"
 

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -47,17 +47,22 @@ idBinSearch_GreaterEqual
 ====================
 */
 template< class type >
-ID_INLINE int idBinSearch_Less( const type *array, const int arraySize, const type &value ) {
+ID_INLINE int idBinSearch_Less(const type *array, const int arraySize, const type &value)
+{
 	int len = arraySize;
 	int mid = len;
 	int offset = 0;
-	while( mid > 0 ) {
+
+	while (mid > 0) {
 		mid = len >> 1;
-		if ( array[offset+mid] < value ) {
+
+		if (array[offset+mid] < value) {
 			offset += mid;
 		}
+
 		len -= mid;
 	}
+
 	return offset;
 }
 
@@ -69,17 +74,22 @@ idBinSearch_GreaterEqual
 ====================
 */
 template< class type >
-ID_INLINE int idBinSearch_LessEqual( const type *array, const int arraySize, const type &value ) {
+ID_INLINE int idBinSearch_LessEqual(const type *array, const int arraySize, const type &value)
+{
 	int len = arraySize;
 	int mid = len;
 	int offset = 0;
-	while( mid > 0 ) {
+
+	while (mid > 0) {
 		mid = len >> 1;
-		if ( array[offset+mid] <= value ) {
+
+		if (array[offset+mid] <= value) {
 			offset += mid;
 		}
+
 		len -= mid;
 	}
+
 	return offset;
 }
 
@@ -91,21 +101,26 @@ idBinSearch_Greater
 ====================
 */
 template< class type >
-ID_INLINE int idBinSearch_Greater( const type *array, const int arraySize, const type &value ) {
+ID_INLINE int idBinSearch_Greater(const type *array, const int arraySize, const type &value)
+{
 	int len = arraySize;
 	int mid = len;
 	int offset = 0;
 	int res = 0;
-	while( mid > 0 ) {
+
+	while (mid > 0) {
 		mid = len >> 1;
-		if ( array[offset+mid] > value ) {
+
+		if (array[offset+mid] > value) {
 			res = 0;
 		} else {
 			offset += mid;
 			res = 1;
 		}
+
 		len -= mid;
 	}
+
 	return offset+res;
 }
 
@@ -117,21 +132,26 @@ idBinSearch_GreaterEqual
 ====================
 */
 template< class type >
-ID_INLINE int idBinSearch_GreaterEqual( const type *array, const int arraySize, const type &value ) {
+ID_INLINE int idBinSearch_GreaterEqual(const type *array, const int arraySize, const type &value)
+{
 	int len = arraySize;
 	int mid = len;
 	int offset = 0;
 	int res = 0;
-	while( mid > 0 ) {
+
+	while (mid > 0) {
 		mid = len >> 1;
-		if ( array[offset+mid] >= value ) {
+
+		if (array[offset+mid] >= value) {
 			res = 0;
 		} else {
 			offset += mid;
 			res = 1;
 		}
+
 		len -= mid;
 	}
+
 	return offset+res;
 }
 

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __TIMER_H__
 #define __TIMER_H__
 
-#include "idlib/containers/StrList.h"
-#include "idlib/Lib.h"
-#include "sys/sys_public.h"
-
 /*
 ===============================================================================
 
@@ -41,29 +37,34 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idTimer {
-public:
-					idTimer( void );
-					idTimer( unsigned int ms );
-					~idTimer( void );
+class idTimer
+{
+	public:
+		idTimer(void);
+		idTimer(double clockTicks);
+		~idTimer(void);
 
-	idTimer			operator+( const idTimer &t ) const;
-	idTimer			operator-( const idTimer &t ) const;
-	idTimer &		operator+=( const idTimer &t );
-	idTimer &		operator-=( const idTimer &t );
+		idTimer			operator+(const idTimer &t) const;
+		idTimer			operator-(const idTimer &t) const;
+		idTimer 		&operator+=(const idTimer &t);
+		idTimer 		&operator-=(const idTimer &t);
 
-	void			Start( void );
-	void			Stop( void );
-	void			Clear( void );
-	unsigned int	Milliseconds( void ) const;
+		void			Start(void);
+		void			Stop(void);
+		void			Clear(void);
+		double			ClockTicks(void) const;
+		double			Milliseconds(void) const;
 
-private:
-	enum			{
-						TS_STARTED,
-						TS_STOPPED
-					} state;
-	unsigned int	start;
-	unsigned int	ms;
+	private:
+		static double	base;
+		enum			{
+			TS_STARTED,
+			TS_STOPPED
+		} state;
+		double			start;
+		double			clockTicks;
+
+		void			InitBaseClockTicks(void) const;
 };
 
 /*
@@ -71,9 +72,10 @@ private:
 idTimer::idTimer
 =================
 */
-ID_INLINE idTimer::idTimer( void ) {
+ID_INLINE idTimer::idTimer(void)
+{
 	state = TS_STOPPED;
-	ms = 0;
+	clockTicks = 0.0;
 }
 
 /*
@@ -81,9 +83,10 @@ ID_INLINE idTimer::idTimer( void ) {
 idTimer::idTimer
 =================
 */
-ID_INLINE idTimer::idTimer( unsigned int _ms ) {
+ID_INLINE idTimer::idTimer(double _clockTicks)
+{
 	state = TS_STOPPED;
-	ms = _ms;
+	clockTicks = _clockTicks;
 }
 
 /*
@@ -91,7 +94,8 @@ ID_INLINE idTimer::idTimer( unsigned int _ms ) {
 idTimer::~idTimer
 =================
 */
-ID_INLINE idTimer::~idTimer( void ) {
+ID_INLINE idTimer::~idTimer(void)
+{
 }
 
 /*
@@ -99,9 +103,10 @@ ID_INLINE idTimer::~idTimer( void ) {
 idTimer::operator+
 =================
 */
-ID_INLINE idTimer idTimer::operator+( const idTimer &t ) const {
-	assert( state == TS_STOPPED && t.state == TS_STOPPED );
-	return idTimer( ms + t.ms );
+ID_INLINE idTimer idTimer::operator+(const idTimer &t) const
+{
+	assert(state == TS_STOPPED && t.state == TS_STOPPED);
+	return idTimer(clockTicks + t.clockTicks);
 }
 
 /*
@@ -109,9 +114,10 @@ ID_INLINE idTimer idTimer::operator+( const idTimer &t ) const {
 idTimer::operator-
 =================
 */
-ID_INLINE idTimer idTimer::operator-( const idTimer &t ) const {
-	assert( state == TS_STOPPED && t.state == TS_STOPPED );
-	return idTimer( ms - t.ms );
+ID_INLINE idTimer idTimer::operator-(const idTimer &t) const
+{
+	assert(state == TS_STOPPED && t.state == TS_STOPPED);
+	return idTimer(clockTicks - t.clockTicks);
 }
 
 /*
@@ -119,9 +125,10 @@ ID_INLINE idTimer idTimer::operator-( const idTimer &t ) const {
 idTimer::operator+=
 =================
 */
-ID_INLINE idTimer &idTimer::operator+=( const idTimer &t ) {
-	assert( state == TS_STOPPED && t.state == TS_STOPPED );
-	ms += t.ms;
+ID_INLINE idTimer &idTimer::operator+=(const idTimer &t)
+{
+	assert(state == TS_STOPPED && t.state == TS_STOPPED);
+	clockTicks += t.clockTicks;
 	return *this;
 }
 
@@ -130,9 +137,10 @@ ID_INLINE idTimer &idTimer::operator+=( const idTimer &t ) {
 idTimer::operator-=
 =================
 */
-ID_INLINE idTimer &idTimer::operator-=( const idTimer &t ) {
-	assert( state == TS_STOPPED && t.state == TS_STOPPED );
-	ms -= t.ms;
+ID_INLINE idTimer &idTimer::operator-=(const idTimer &t)
+{
+	assert(state == TS_STOPPED && t.state == TS_STOPPED);
+	clockTicks -= t.clockTicks;
 	return *this;
 }
 
@@ -141,10 +149,11 @@ ID_INLINE idTimer &idTimer::operator-=( const idTimer &t ) {
 idTimer::Start
 =================
 */
-ID_INLINE void idTimer::Start( void ) {
-	assert( state == TS_STOPPED );
+ID_INLINE void idTimer::Start(void)
+{
+	assert(state == TS_STOPPED);
 	state = TS_STARTED;
-	start = idLib::sys->GetMilliseconds();
+	start = idLib::sys->GetClockTicks();
 }
 
 /*
@@ -152,9 +161,19 @@ ID_INLINE void idTimer::Start( void ) {
 idTimer::Stop
 =================
 */
-ID_INLINE void idTimer::Stop( void ) {
-	assert( state == TS_STARTED );
-	ms += idLib::sys->GetMilliseconds() - start;
+ID_INLINE void idTimer::Stop(void)
+{
+	assert(state == TS_STARTED);
+	clockTicks += idLib::sys->GetClockTicks() - start;
+
+	if (base < 0.0) {
+		InitBaseClockTicks();
+	}
+
+	if (clockTicks > base) {
+		clockTicks -= base;
+	}
+
 	state = TS_STOPPED;
 }
 
@@ -163,8 +182,20 @@ ID_INLINE void idTimer::Stop( void ) {
 idTimer::Clear
 =================
 */
-ID_INLINE void idTimer::Clear( void ) {
-	ms = 0;
+ID_INLINE void idTimer::Clear(void)
+{
+	clockTicks = 0.0;
+}
+
+/*
+=================
+idTimer::ClockTicks
+=================
+*/
+ID_INLINE double idTimer::ClockTicks(void) const
+{
+	assert(state == TS_STOPPED);
+	return clockTicks;
 }
 
 /*
@@ -172,9 +203,10 @@ ID_INLINE void idTimer::Clear( void ) {
 idTimer::Milliseconds
 =================
 */
-ID_INLINE unsigned int idTimer::Milliseconds( void ) const {
-	assert( state == TS_STOPPED );
-	return ms;
+ID_INLINE double idTimer::Milliseconds(void) const
+{
+	assert(state == TS_STOPPED);
+	return clockTicks / (idLib::sys->ClockTicksPerSecond() * 0.001);
 }
 
 
@@ -186,22 +218,23 @@ ID_INLINE unsigned int idTimer::Milliseconds( void ) const {
 ===============================================================================
 */
 
-class idTimerReport {
-public:
-					idTimerReport( void );
-					~idTimerReport( void );
+class idTimerReport
+{
+	public:
+		idTimerReport(void);
+		~idTimerReport(void);
 
-	void			SetReportName( const char *name );
-	int				AddReport( const char *name );
-	void			Clear( void );
-	void			Reset( void );
-	void			PrintReport( void );
-	void			AddTime( const char *name, idTimer *time );
+		void			SetReportName(const char *name);
+		int				AddReport(const char *name);
+		void			Clear(void);
+		void			Reset(void);
+		void			PrintReport(void);
+		void			AddTime(const char *name, idTimer *time);
 
-private:
-	idList<idTimer*>timers;
-	idStrList		names;
-	idStr			reportName;
+	private:
+		idList<idTimer *>timers;
+		idStrList		names;
+		idStr			reportName;
 };
 
 #endif /* !__TIMER_H__ */

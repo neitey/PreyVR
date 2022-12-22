@@ -30,7 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/FileSystem.h"
 
 #include "sound/snd_local.h"

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -34,60 +34,71 @@ If you have questions concerning this license or the applicable additional terms
 
 // DialogDeclNew dialog
 
-class DialogDeclNew : public CDialog {
+class DialogDeclNew : public CDialog
+{
 
-	DECLARE_DYNAMIC(DialogDeclNew)
+		DECLARE_DYNAMIC(DialogDeclNew)
 
-public:
-						DialogDeclNew( CWnd* pParent = NULL );   // standard constructor
-	virtual				~DialogDeclNew();
+	public:
+		DialogDeclNew(CWnd *pParent = NULL);     // standard constructor
+		virtual				~DialogDeclNew();
 
-	void				SetDeclTree( CPathTreeCtrl *tree ) { declTree = tree; }
-	void				SetDefaultType( const char *type ) { defaultType = type; }
-	void				SetDefaultName( const char *name ) { defaultName = name; }
-	void				SetDefaultFile( const char *file ) { defaultFile = file; }
-	idDecl *			GetNewDecl( void ) const { return newDecl; }
+		void				SetDeclTree(CPathTreeCtrl *tree) {
+			declTree = tree;
+		}
+		void				SetDefaultType(const char *type) {
+			defaultType = type;
+		}
+		void				SetDefaultName(const char *name) {
+			defaultName = name;
+		}
+		void				SetDefaultFile(const char *file) {
+			defaultFile = file;
+		}
+		idDecl 			*GetNewDecl(void) const {
+			return newDecl;
+		}
 
-	//{{AFX_VIRTUAL(DialogDeclNew)
-	virtual BOOL		OnInitDialog();
-	virtual void		DoDataExchange( CDataExchange* pDX );    // DDX/DDV support
-	//}}AFX_VIRTUAL
+		//{{AFX_VIRTUAL(DialogDeclNew)
+		virtual BOOL		OnInitDialog();
+		virtual void		DoDataExchange(CDataExchange *pDX);      // DDX/DDV support
+		//}}AFX_VIRTUAL
 
-protected:
-	//{{AFX_MSG(DialogDeclNew)
-	afx_msg BOOL		OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pResult );
-	afx_msg void		OnSetFocus( CWnd *pOldWnd );
-	afx_msg void		OnDestroy();
-	afx_msg void		OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
-	afx_msg void		OnBnClickedFile();
-	afx_msg void		OnBnClickedOk();
-	afx_msg void		OnBnClickedCancel();
-	//}}AFX_MSG
+	protected:
+		//{{AFX_MSG(DialogDeclNew)
+		afx_msg BOOL		OnToolTipNotify(UINT id, NMHDR *pNMHDR, LRESULT *pResult);
+		afx_msg void		OnSetFocus(CWnd *pOldWnd);
+		afx_msg void		OnDestroy();
+		afx_msg void		OnActivate(UINT nState, CWnd *pWndOther, BOOL bMinimized);
+		afx_msg void		OnBnClickedFile();
+		afx_msg void		OnBnClickedOk();
+		afx_msg void		OnBnClickedCancel();
+		//}}AFX_MSG
 
-	DECLARE_MESSAGE_MAP()
+		DECLARE_MESSAGE_MAP()
 
-private:
+	private:
 
-	//{{AFX_DATA(DialogDeclNew)
-	enum				{ IDD = IDD_DIALOG_DECLNEW };
-	CComboBox			typeList;
-	CEdit				nameEdit;
-	CEdit				fileEdit;
-	CButton				fileButton;
-	CButton				okButton;
-	CButton				cancelButton;
-	//}}AFX_DATA
+		//{{AFX_DATA(DialogDeclNew)
+		enum				{ IDD = IDD_DIALOG_DECLNEW };
+		CComboBox			typeList;
+		CEdit				nameEdit;
+		CEdit				fileEdit;
+		CButton				fileButton;
+		CButton				okButton;
+		CButton				cancelButton;
+		//}}AFX_DATA
 
-	static toolTip_t	toolTips[];
+		static toolTip_t	toolTips[];
 
-	CPathTreeCtrl *		declTree;
-	idStr				defaultType;
-	idStr				defaultName;
-	idStr				defaultFile;
-	idDecl *			newDecl;
+		CPathTreeCtrl 		*declTree;
+		idStr				defaultType;
+		idStr				defaultName;
+		idStr				defaultFile;
+		idDecl 			*newDecl;
 
-private:
-	void				InitTypeList( void );
+	private:
+		void				InitTypeList(void);
 };
 
 #endif /* !__DIALOGDECLNEW_H__ */

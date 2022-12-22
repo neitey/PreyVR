@@ -99,9 +99,7 @@ The file was renamed from unzip.c to unzip.cpp so we can use C++ functions from 
 
 #else // 0
 // use doom3 headers
-#include "sys/platform.h"
-#include "idlib/Heap.h"
-#include "idlib/Lib.h"
+#include "idlib/precompiled.h"
 
 // we don't need crypt support
 #define NOUNCRYPT 1

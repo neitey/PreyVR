@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,17 +26,15 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/containers/PlaneSet.h"
-#include "idlib/MapFile.h"
-#include "cm/CollisionModel.h"
-#include "renderer/tr_local.h"
+#include "../../../renderer/tr_local.h"
+
 
 typedef struct primitive_s {
 	struct primitive_s *next;
 
 	// only one of these will be non-NULL
-	struct bspbrush_s *	brush;
-	struct mapTri_s *	tris;
+	struct bspbrush_s 	*brush;
+	struct mapTri_s 	*tris;
 } primitive_t;
 
 
@@ -46,24 +44,24 @@ typedef struct {
 } uArea_t;
 
 typedef struct {
-	idMapEntity *		mapEntity;		// points into mapFile_t data
+	idMapEntity 		*mapEntity;		// points into mapFile_t data
 
 	idVec3				origin;
-	primitive_t *		primitives;
-	struct tree_s *		tree;
+	primitive_t 		*primitives;
+	struct tree_s 		*tree;
 
 	int					numAreas;
-	uArea_t *			areas;
+	uArea_t 			*areas;
 } uEntity_t;
 
 
 // chains of mapTri_t are the general unit of processing
 typedef struct mapTri_s {
-	struct mapTri_s *	next;
+	struct mapTri_s 	*next;
 
-	const idMaterial *	material;
-	void *				mergeGroup;		// we want to avoid merging triangles
-											// from different fixed groups, like guiSurfs and mirrors
+	const idMaterial 	*material;
+	void 				*mergeGroup;		// we want to avoid merging triangles
+	// from different fixed groups, like guiSurfs and mirrors
 	int					planeNum;			// not set universally, just in some areas
 
 	idDrawVert			v[3];
@@ -74,7 +72,7 @@ typedef struct mapTri_s {
 
 typedef struct {
 	int					width, height;
-	idDrawVert *		verts;
+	idDrawVert 		*verts;
 } mesh_t;
 
 
@@ -85,16 +83,16 @@ typedef struct {
 typedef struct parseMesh_s {
 	struct parseMesh_s *next;
 	mesh_t				mesh;
-	const idMaterial *	material;
+	const idMaterial 	*material;
 } parseMesh_t;
 
 typedef struct bspface_s {
-	struct bspface_s *	next;
+	struct bspface_s 	*next;
 	int					planenum;
 	bool				portal;			// all portals will be selected before
-										// any non-portals
+	// any non-portals
 	bool				checked;		// used by SelectSplitPlaneNum()
-	idWinding *			w;
+	idWinding 			*w;
 } bspface_t;
 
 typedef struct {
@@ -104,22 +102,22 @@ typedef struct {
 typedef struct side_s {
 	int					planenum;
 
-	const idMaterial *	material;
+	const idMaterial 	*material;
 	textureVectors_t	texVec;
 
-	idWinding *			winding;		// only clipped to the other sides of the brush
-	idWinding *			visibleHull;	// also clipped to the solid parts of the world
+	idWinding 			*winding;		// only clipped to the other sides of the brush
+	idWinding 			*visibleHull;	// also clipped to the solid parts of the world
 } side_t;
 
 
 typedef struct bspbrush_s {
-	struct bspbrush_s *	next;
-	struct bspbrush_s *	original;	// chopped up brushes will reference the originals
+	struct bspbrush_s 	*next;
+	struct bspbrush_s 	*original;	// chopped up brushes will reference the originals
 
 	int					entitynum;			// editor numbering for messages
 	int					brushnum;			// editor numbering for messages
 
-	const idMaterial *	contentShader;	// one face's shader will determine the volume attributes
+	const idMaterial 	*contentShader;	// one face's shader will determine the volume attributes
 
 	int					contents;
 	bool				opaque;
@@ -132,7 +130,7 @@ typedef struct bspbrush_s {
 
 
 typedef struct drawSurfRef_s {
-	struct drawSurfRef_s *	nextRef;
+	struct drawSurfRef_s 	*nextRef;
 	int						outputNumber;
 } drawSurfRef_t;
 
@@ -140,25 +138,25 @@ typedef struct drawSurfRef_s {
 typedef struct node_s {
 	// both leafs and nodes
 	int					planenum;	// -1 = leaf node
-	struct node_s *		parent;
+	struct node_s 		*parent;
 	idBounds			bounds;		// valid after portalization
 
 	// nodes only
-	side_t *			side;		// the side that created the node
-	struct node_s *		children[2];
+	side_t 			*side;		// the side that created the node
+	struct node_s 		*children[2];
 	int					nodeNumber;	// set after pruning
 
 	// leafs only
 	bool				opaque;		// view can never be inside
 
-	uBrush_t *			brushlist;	// fragments of all brushes in this leaf
-									// needed for FindSideForPortal
+	uBrush_t 			*brushlist;	// fragments of all brushes in this leaf
+	// needed for FindSideForPortal
 
 	int					area;		// determined by flood filling up to areaportals
 	int					occupied;	// 1 or greater can reach entity
-	uEntity_t *			occupant;	// for leak file testing
+	uEntity_t 			*occupant;	// for leak file testing
 
-	struct uPortal_s *	portals;	// also on nodes during construction
+	struct uPortal_s 	*portals;	// also on nodes during construction
 } node_t;
 
 
@@ -196,18 +194,18 @@ typedef struct optimizeGroup_s {
 	bool				smoothed;				// curves will never merge with brushes
 	int					planeNum;
 	int					areaNum;
-	const idMaterial *	material;
+	const idMaterial 	*material;
 	int					numGroupLights;
-	mapLight_t *		groupLights[MAX_GROUP_LIGHTS];	// lights effecting this list
-	void *				mergeGroup;		// if this differs (guiSurfs, mirrors, etc), the
-										// groups will not be combined into model surfaces
-										// after optimization
+	mapLight_t 		*groupLights[MAX_GROUP_LIGHTS];	// lights effecting this list
+	void 				*mergeGroup;		// if this differs (guiSurfs, mirrors, etc), the
+	// groups will not be combined into model surfaces
+	// after optimization
 	textureVectors_t	texVec;
 
 	bool				surfaceEmited;
 
-	mapTri_t *			triList;
-	mapTri_t *			regeneratedTris;	// after each island optimization
+	mapTri_t 			*triList;
+	mapTri_t 			*regeneratedTris;	// after each island optimization
 	idVec3				axis[2];			// orthogonal to the plane, so optimization can be 2D
 } optimizeGroup_t;
 
@@ -245,7 +243,7 @@ typedef struct {
 
 	int			entityNum;
 
-	idList<mapLight_t*>	mapLights;
+	idList<mapLight_t *>	mapLights;
 
 	bool	verbose;
 
@@ -272,7 +270,7 @@ typedef struct {
 
 extern dmapGlobals_t dmapGlobals;
 
-int FindFloatPlane( const idPlane &plane, bool *fixedDegeneracies = NULL );
+int FindFloatPlane(const idPlane &plane, bool *fixedDegeneracies = NULL);
 
 
 //=============================================================================
@@ -288,47 +286,47 @@ int FindFloatPlane( const idPlane &plane, bool *fixedDegeneracies = NULL );
 #define	PSIDE_BOTH			(PSIDE_FRONT|PSIDE_BACK)
 #define	PSIDE_FACING		4
 
-int	CountBrushList (uBrush_t *brushes);
-uBrush_t *AllocBrush (int numsides);
-void FreeBrush (uBrush_t *brushes);
-void FreeBrushList (uBrush_t *brushes);
-uBrush_t *CopyBrush (uBrush_t *brush);
-void DrawBrushList (uBrush_t *brush);
-void PrintBrush (uBrush_t *brush);
-bool BoundBrush (uBrush_t *brush);
-bool CreateBrushWindings (uBrush_t *brush);
-uBrush_t	*BrushFromBounds( const idBounds &bounds );
-float BrushVolume (uBrush_t *brush);
-void WriteBspBrushMap( const char *name, uBrush_t *list );
+int	CountBrushList(uBrush_t *brushes);
+uBrush_t *AllocBrush(int numsides);
+void FreeBrush(uBrush_t *brushes);
+void FreeBrushList(uBrush_t *brushes);
+uBrush_t *CopyBrush(uBrush_t *brush);
+void DrawBrushList(uBrush_t *brush);
+void PrintBrush(uBrush_t *brush);
+bool BoundBrush(uBrush_t *brush);
+bool CreateBrushWindings(uBrush_t *brush);
+uBrush_t	*BrushFromBounds(const idBounds &bounds);
+float BrushVolume(uBrush_t *brush);
+void WriteBspBrushMap(const char *name, uBrush_t *list);
 
-void FilterBrushesIntoTree( uEntity_t *e );
+void FilterBrushesIntoTree(uEntity_t *e);
 
-void SplitBrush( uBrush_t *brush, int planenum, uBrush_t **front, uBrush_t **back);
-node_t *AllocNode( void );
+void SplitBrush(uBrush_t *brush, int planenum, uBrush_t **front, uBrush_t **back);
+node_t *AllocNode(void);
 
 
 //=============================================================================
 
 // map.cpp
 
-bool		LoadDMapFile( const char *filename );
-void		FreeOptimizeGroupList( optimizeGroup_t *groups );
-void		FreeDMapFile( void );
+bool 		LoadDMapFile(const char *filename);
+void		FreeOptimizeGroupList(optimizeGroup_t *groups);
+void		FreeDMapFile(void);
 
 //=============================================================================
 
 // draw.cpp -- draw debug views either directly, or through glserv.exe
 
-void Draw_ClearWindow( void );
-void DrawWinding( const idWinding *w );
-void DrawAuxWinding( const idWinding *w );
+void Draw_ClearWindow(void);
+void DrawWinding(const idWinding *w);
+void DrawAuxWinding(const idWinding *w);
 
-void DrawLine( idVec3 v1, idVec3 v2, int color );
+void DrawLine(idVec3 v1, idVec3 v2, int color);
 
-void GLS_BeginScene( void );
-void GLS_Winding( const idWinding *w, int code );
-void GLS_Triangle( const mapTri_t *tri, int code );
-void GLS_EndScene( void );
+void GLS_BeginScene(void);
+void GLS_Winding(const idWinding *w, int code);
+void GLS_Triangle(const mapTri_t *tri, int code);
+void GLS_EndScene(void);
 
 
 
@@ -346,62 +344,62 @@ typedef struct {
 extern	interAreaPortal_t interAreaPortals[MAX_INTER_AREA_PORTALS];
 extern	int					numInterAreaPortals;
 
-bool FloodEntities( tree_t *tree );
-void FillOutside( uEntity_t *e );
-void FloodAreas( uEntity_t *e );
-void MakeTreePortals( tree_t *tree );
-void FreePortal( uPortal_t *p );
+bool FloodEntities(tree_t *tree);
+void FillOutside(uEntity_t *e);
+void FloodAreas(uEntity_t *e);
+void MakeTreePortals(tree_t *tree);
+void FreePortal(uPortal_t *p);
 
 //=============================================================================
 
 // glfile.cpp -- write a debug file to be viewd with glview.exe
 
-void OutputWinding( idWinding *w, idFile *glview );
-void WriteGLView( tree_t *tree, char *source );
+void OutputWinding(idWinding *w, idFile *glview);
+void WriteGLView(tree_t *tree, char *source);
 
 //=============================================================================
 
 // leakfile.cpp
 
-void LeakFile( tree_t *tree );
+void LeakFile(tree_t *tree);
 
 //=============================================================================
 
 // facebsp.cpp
 
-tree_t *AllocTree( void );
+tree_t *AllocTree(void);
 
-void FreeTree( tree_t *tree );
+void FreeTree(tree_t *tree);
 
-void FreeTree_r( node_t *node );
-void FreeTreePortals_r( node_t *node );
+void FreeTree_r(node_t *node);
+void FreeTreePortals_r(node_t *node);
 
 
-bspface_t	*MakeStructuralBspFaceList( primitive_t *list );
-bspface_t	*MakeVisibleBspFaceList( primitive_t *list );
-tree_t		*FaceBSP( bspface_t *list );
+bspface_t	*MakeStructuralBspFaceList(primitive_t *list);
+bspface_t	*MakeVisibleBspFaceList(primitive_t *list);
+tree_t		*FaceBSP(bspface_t *list);
 
 //=============================================================================
 
 // surface.cpp
 
-mapTri_t *CullTrisInOpaqueLeafs( mapTri_t *triList, tree_t *tree );
-void	ClipSidesByTree( uEntity_t *e );
-void	SplitTrisToSurfaces( mapTri_t *triList, tree_t *tree );
-void	PutPrimitivesInAreas( uEntity_t *e );
-void	Prelight( uEntity_t *e );
+mapTri_t *CullTrisInOpaqueLeafs(mapTri_t *triList, tree_t *tree);
+void	ClipSidesByTree(uEntity_t *e);
+void	SplitTrisToSurfaces(mapTri_t *triList, tree_t *tree);
+void	PutPrimitivesInAreas(uEntity_t *e);
+void	Prelight(uEntity_t *e);
 
 //=============================================================================
 
 // tritjunction.cpp
 
-struct hashVert_s	*GetHashVert( idVec3 &v );
-void	HashTriangles( optimizeGroup_t *groupList );
-void	FreeTJunctionHash( void );
-int		CountGroupListTris( const optimizeGroup_t *groupList );
-void	FixEntityTjunctions( uEntity_t *e );
-void	FixAreaGroupsTjunctions( optimizeGroup_t *groupList );
-void	FixGlobalTjunctions( uEntity_t *e );
+struct hashVert_s	*GetHashVert(idVec3 &v);
+void	HashTriangles(optimizeGroup_t *groupList);
+void	FreeTJunctionHash(void);
+int		CountGroupListTris(const optimizeGroup_t *groupList);
+void	FixEntityTjunctions(uEntity_t *e);
+void	FixAreaGroupsTjunctions(optimizeGroup_t *groupList);
+void	FixGlobalTjunctions(uEntity_t *e);
 
 //=============================================================================
 
@@ -445,43 +443,43 @@ typedef struct {
 } optIsland_t;
 
 
-void	OptimizeEntity( uEntity_t *e );
-void	OptimizeGroupList( optimizeGroup_t *groupList );
+void	OptimizeEntity(uEntity_t *e);
+void	OptimizeGroupList(optimizeGroup_t *groupList);
 
 //=============================================================================
 
 // tritools.cpp
 
-mapTri_t	*AllocTri( void );
-void		FreeTri( mapTri_t *tri );
-int			CountTriList( const mapTri_t *list );
-mapTri_t	*MergeTriLists( mapTri_t *a, mapTri_t *b );
-mapTri_t	*CopyTriList( const mapTri_t *a );
-void		FreeTriList( mapTri_t *a );
-mapTri_t	*CopyMapTri( const mapTri_t *tri );
-float		MapTriArea( const mapTri_t *tri );
-mapTri_t	*RemoveBadTris( const mapTri_t *tri );
-void		BoundTriList( const mapTri_t *list, idBounds &b );
-void		DrawTri( const mapTri_t *tri );
-void		FlipTriList( mapTri_t *tris );
-void		TriVertsFromOriginal( mapTri_t *tri, const mapTri_t *original );
-void		PlaneForTri( const mapTri_t *tri, idPlane &plane );
-idWinding	*WindingForTri( const mapTri_t *tri );
-mapTri_t	*WindingToTriList( const idWinding *w, const mapTri_t *originalTri );
-void		ClipTriList( const mapTri_t *list, const idPlane &plane, float epsilon, mapTri_t **front, mapTri_t **back );
+mapTri_t	*AllocTri(void);
+void		FreeTri(mapTri_t *tri);
+int			CountTriList(const mapTri_t *list);
+mapTri_t	*MergeTriLists(mapTri_t *a, mapTri_t *b);
+mapTri_t	*CopyTriList(const mapTri_t *a);
+void		FreeTriList(mapTri_t *a);
+mapTri_t	*CopyMapTri(const mapTri_t *tri);
+float		MapTriArea(const mapTri_t *tri);
+mapTri_t	*RemoveBadTris(const mapTri_t *tri);
+void		BoundTriList(const mapTri_t *list, idBounds &b);
+void		DrawTri(const mapTri_t *tri);
+void		FlipTriList(mapTri_t *tris);
+void		TriVertsFromOriginal(mapTri_t *tri, const mapTri_t *original);
+void		PlaneForTri(const mapTri_t *tri, idPlane &plane);
+idWinding	*WindingForTri(const mapTri_t *tri);
+mapTri_t	*WindingToTriList(const idWinding *w, const mapTri_t *originalTri);
+void		ClipTriList(const mapTri_t *list, const idPlane &plane, float epsilon, mapTri_t **front, mapTri_t **back);
 
 //=============================================================================
 
 // output.cpp
 
-srfTriangles_t	*ShareMapTriVerts( const mapTri_t *tris );
-void WriteOutputFile( void );
+srfTriangles_t	*ShareMapTriVerts(const mapTri_t *tris);
+void WriteOutputFile(void);
 
 //=============================================================================
 
 // shadowopt.cpp
 
-srfTriangles_t *CreateLightShadow( optimizeGroup_t *shadowerGroups, const mapLight_t *light );
-void		FreeBeamTree( struct beamTree_s *beamTree );
+srfTriangles_t *CreateLightShadow(optimizeGroup_t *shadowerGroups, const mapLight_t *light);
+void		FreeBeamTree(struct beamTree_s *beamTree);
 
-void		CarveTriByBeamTree( const struct beamTree_s *beamTree, const mapTri_t *tri, mapTri_t **lit, mapTri_t **unLit );
+void		CarveTriByBeamTree(const struct beamTree_s *beamTree, const mapTri_t *tri, mapTri_t **lit, mapTri_t **unLit);

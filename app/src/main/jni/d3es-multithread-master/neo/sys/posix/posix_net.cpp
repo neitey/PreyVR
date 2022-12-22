@@ -42,7 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <net/if.h>
 #include <ifaddrs.h>
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Common.h"
 #include "framework/CVarSystem.h"
 #include "sys/sys_public.h"

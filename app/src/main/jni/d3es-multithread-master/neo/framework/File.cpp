@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Unzip.h"
 #include "framework/FileSystem.h"
 
@@ -310,7 +310,7 @@ int idFile::WriteFloatString( const char *fmt, ... ) {
  */
 int idFile::ReadInt( int &value ) {
 	int result = Read( &value, sizeof( value ) );
-	value = LittleInt(value);
+	value = LittleLong(value);
 	return result;
 }
 
@@ -321,7 +321,7 @@ int idFile::ReadInt( int &value ) {
  */
 int idFile::ReadUnsignedInt( unsigned int &value ) {
 	int result = Read( &value, sizeof( value ) );
-	value = LittleInt(value);
+	value = LittleLong(value);
 	return result;
 }
 
@@ -466,7 +466,7 @@ int idFile::ReadMat3( idMat3 &mat ) {
  =================
  */
 int idFile::WriteInt( const int value ) {
-	int v = LittleInt(value);
+	int v = LittleLong(value);
 	return Write( &v, sizeof( v ) );
 }
 
@@ -476,7 +476,7 @@ int idFile::WriteInt( const int value ) {
  =================
  */
 int idFile::WriteUnsignedInt( const unsigned int value ) {
-	unsigned int v = LittleInt(value);
+	unsigned int v = LittleLong(value);
 	return Write( &v, sizeof( v ) );
 }
 

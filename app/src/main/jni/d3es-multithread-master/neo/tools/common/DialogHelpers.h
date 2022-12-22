@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,75 +31,70 @@ If you have questions concerning this license or the applicable additional terms
 
 class rvDialogItem
 {
-public:
+	public:
 
-	HWND	mWindow;
-	int		mID;
+		HWND	mWindow;
+		int		mID;
 
-	rvDialogItem ( int id ) { mID = id; }
+		rvDialogItem(int id) {
+			mID = id;
+		}
 
-	void Cache ( HWND parent )
-	{
-		mWindow = GetDlgItem ( parent, mID );
-	}
+		void Cache(HWND parent) {
+			mWindow = GetDlgItem(parent, mID);
+		}
 
-	void Check ( bool checked )
-	{
-		SendMessage ( mWindow, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0 );
-	}
+		void Check(bool checked) {
+			SendMessage(mWindow, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
+		}
 
-	void Enable ( bool enable )
-	{
-		EnableWindow ( mWindow, enable );
-	}
+		void Enable(bool enable) {
+			EnableWindow(mWindow, enable);
+		}
 
-	bool IsChecked ( void )
-	{
-		return SendMessage ( mWindow, BM_GETCHECK, 0, 0 ) == BST_CHECKED ? true : false;
-	}
+		bool IsChecked(void) {
+			return SendMessage(mWindow, BM_GETCHECK, 0, 0) == BST_CHECKED ? true : false;
+		}
 
-	void SetText ( const char* text )
-	{
-		SetWindowText ( mWindow, text );
-	}
+		void SetText(const char *text) {
+			SetWindowText(mWindow, text);
+		}
 
-	void GetText ( idStr& out )
-	{
-		char text[4096];
-		GetWindowText ( mWindow, text, 4095 );
-		out = text;
-	}
+		void GetText(idStr &out) {
+			char text[4096];
+			GetWindowText(mWindow, text, 4095);
+			out = text;
+		}
 
-	float GetFloat ( void )
-	{
-		idStr text;
-		GetText ( text );
-		return atof( text );
-	}
+		float GetFloat(void) {
+			idStr text;
+			GetText(text);
+			return atof(text);
+		}
 
-	void SetFloat ( float f )
-	{
-		SetText ( va("%g", f ) );
-	}
+		void SetFloat(float f) {
+			SetText(va("%g", f));
+		}
 
-	operator HWND( void ) const { return mWindow; }
+		operator HWND(void) const {
+			return mWindow;
+		}
 };
 
 class rvDialogItemContainer
 {
-protected:
+	protected:
 
-	void Cache ( HWND parent, int count )
-	{
-		int				i;
-		unsigned char*	ptr;
+		void Cache(HWND parent, int count) {
+			int				i;
+			unsigned char	*ptr;
 
-		ptr = (unsigned char*)this;
-		for ( i = 0; i < count; i ++, ptr += sizeof(rvDialogItem) )
-		{
-			((rvDialogItem*)ptr)->Cache ( parent );
+			ptr = (unsigned char *)this;
+
+			for (i = 0; i < count; i ++, ptr += sizeof(rvDialogItem)) {
+				((rvDialogItem *)ptr)->Cache(parent);
+			}
 		}
-	}
 };
 
 #define DIALOGITEM_BEGIN(name)									\

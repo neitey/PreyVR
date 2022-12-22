@@ -2,8 +2,8 @@
 //
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 
 #include "PropTreeView.h"
@@ -13,7 +13,7 @@
 IMPLEMENT_DYNCREATE(CPropTreeView, CFormView)
 
 CPropTreeView::CPropTreeView()
-: CFormView((LPCTSTR) NULL)
+	: CFormView((LPCTSTR) NULL)
 {
 }
 
@@ -30,9 +30,9 @@ END_MESSAGE_MAP()
 
 // CPropTreeView drawing
 
-void CPropTreeView::OnDraw(CDC* pDC)
+void CPropTreeView::OnDraw(CDC *pDC)
 {
-	CDocument* pDoc = GetDocument();
+	CDocument *pDoc = GetDocument();
 	// TODO: add draw code here
 }
 
@@ -45,7 +45,7 @@ void CPropTreeView::AssertValid() const
 	CView::AssertValid();
 }
 
-void CPropTreeView::Dump(CDumpContext& dc) const
+void CPropTreeView::Dump(CDumpContext &dc) const
 {
 	CView::Dump(dc);
 }
@@ -53,14 +53,14 @@ void CPropTreeView::Dump(CDumpContext& dc) const
 
 
 BOOL CPropTreeView::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName,
-					   DWORD dwStyle, const RECT& rect, CWnd* pParentWnd,
-					   UINT nID, CCreateContext* pContext)
+                           DWORD dwStyle, const RECT &rect, CWnd *pParentWnd,
+                           UINT nID, CCreateContext *pContext)
 {
 	// create the view window itself
 	m_pCreateContext = pContext;
+
 	if (!CView::Create(lpszClassName, lpszWindowName,
-		dwStyle, rect, pParentWnd,  nID, pContext))
-	{
+	                   dwStyle, rect, pParentWnd,  nID, pContext)) {
 		return FALSE;
 	}
 
@@ -90,10 +90,10 @@ int CPropTreeView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CPropTreeView::OnSize(UINT nType, int cx, int cy)
 {
-		CView::OnSize(nType, cx, cy);
+	CView::OnSize(nType, cx, cy);
 
-		if (::IsWindow(m_Tree.GetSafeHwnd()))
-			m_Tree.SetWindowPos(NULL, -1, -1, cx, cy, SWP_NOMOVE|SWP_NOZORDER);
+	if (::IsWindow(m_Tree.GetSafeHwnd()))
+		m_Tree.SetWindowPos(NULL, -1, -1, cx, cy, SWP_NOMOVE|SWP_NOZORDER);
 }
 
 

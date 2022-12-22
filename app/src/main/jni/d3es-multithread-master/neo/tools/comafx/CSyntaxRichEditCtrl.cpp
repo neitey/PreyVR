@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "tools/edit_gui_common.h"
-
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "CSyntaxRichEditCtrl.h"
 
@@ -83,7 +83,8 @@ END_MESSAGE_MAP()
 CSyntaxRichEditCtrl::CSyntaxRichEditCtrl
 ================
 */
-CSyntaxRichEditCtrl::CSyntaxRichEditCtrl( void ) {
+CSyntaxRichEditCtrl::CSyntaxRichEditCtrl(void)
+{
 	m_TextDoc = NULL;
 	keyWords = defaultKeyWords;
 	keyWordColors = NULL;
@@ -115,7 +116,8 @@ CSyntaxRichEditCtrl::CSyntaxRichEditCtrl( void ) {
 CSyntaxRichEditCtrl::~CSyntaxRichEditCtrl
 ================
 */
-CSyntaxRichEditCtrl::~CSyntaxRichEditCtrl( void ) {
+CSyntaxRichEditCtrl::~CSyntaxRichEditCtrl(void)
+{
 	FreeKeyWordsFromFile();
 	delete m_pchTip;
 	delete m_pwchTip;
@@ -127,38 +129,40 @@ CSyntaxRichEditCtrl::~CSyntaxRichEditCtrl( void ) {
 CSyntaxRichEditCtrl::InitFont
 ================
 */
-void CSyntaxRichEditCtrl::InitFont( void ) {
+void CSyntaxRichEditCtrl::InitFont(void)
+{
 	LOGFONT lf;
 	CFont font;
 	PARAFORMAT pf;
 	int logx, tabSize;
 
 	// set the font
-	memset( &lf, 0, sizeof( lf ) );
+	memset(&lf, 0, sizeof(lf));
 	lf.lfHeight = FONT_HEIGHT * 10;
 	lf.lfWidth = FONT_WIDTH * 10;
 	lf.lfCharSet = ANSI_CHARSET;
 	lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
-	strcpy( lf.lfFaceName, FONT_NAME );
-	font.CreatePointFontIndirect( &lf );
+	strcpy(lf.lfFaceName, FONT_NAME);
+	font.CreatePointFontIndirect(&lf);
 
-	SetFont( &font );
+	SetFont(&font);
 
 	// get the tab size in twips
-	logx = ::GetDeviceCaps( GetDC()->GetSafeHdc(), LOGPIXELSX );
+	logx = ::GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSX);
 	tabSize = TAB_SIZE * FONT_WIDTH * 1440 / logx;
 
 	// set the tabs
-	memset( &pf, 0, sizeof( PARAFORMAT ) );
-	pf.cbSize = sizeof( PARAFORMAT );
+	memset(&pf, 0, sizeof(PARAFORMAT));
+	pf.cbSize = sizeof(PARAFORMAT);
 	pf.dwMask = PFM_TABSTOPS;
-	for ( pf.cTabCount = 0; pf.cTabCount < MAX_TAB_STOPS; pf.cTabCount++ ) {
+
+	for (pf.cTabCount = 0; pf.cTabCount < MAX_TAB_STOPS; pf.cTabCount++) {
 		pf.rgxTabs[pf.cTabCount] = pf.cTabCount * tabSize;
 	}
 
-	SetParaFormat( pf );
+	SetParaFormat(pf);
 
-	memset( &defaultCharFormat, 0, sizeof( defaultCharFormat ) );
+	memset(&defaultCharFormat, 0, sizeof(defaultCharFormat));
 	defaultCharFormat.dwMask = CFM_CHARSET | CFM_FACE | CFM_SIZE | CFM_BOLD | CFM_COLOR | CFM_PROTECTED | CFM_BACKCOLOR;
 	defaultCharFormat.yHeight = FONT_HEIGHT * 20;
 	defaultCharFormat.bCharSet = ANSI_CHARSET;
@@ -166,10 +170,10 @@ void CSyntaxRichEditCtrl::InitFont( void ) {
 	defaultCharFormat.crTextColor = SRE_COLOR_BLACK;
 	defaultCharFormat.crBackColor = DEFAULT_BACK_COLOR;
 	defaultCharFormat.dwEffects = CFE_PROTECTED;
-	strcpy( defaultCharFormat.szFaceName, FONT_NAME );
-	defaultCharFormat.cbSize = sizeof( defaultCharFormat );
+	strcpy(defaultCharFormat.szFaceName, FONT_NAME);
+	defaultCharFormat.cbSize = sizeof(defaultCharFormat);
 
-	SetDefaultCharFormat( defaultCharFormat );
+	SetDefaultCharFormat(defaultCharFormat);
 
 	defaultColor = SRE_COLOR_BLACK;
 	singleLineCommentColor = SRE_COLOR_DARK_GREEN;
@@ -182,10 +186,10 @@ void CSyntaxRichEditCtrl::InitFont( void ) {
 	tom::ITextRange *irange;
 	tom::ITextFont *ifont;
 
-	m_TextDoc->Range( 0, 0, &irange );
-	irange->get_Font( &ifont );
+	m_TextDoc->Range(0, 0, &irange);
+	irange->get_Font(&ifont);
 
-	ifont->get_Duplicate( &m_DefaultFont );
+	ifont->get_Duplicate(&m_DefaultFont);
 
 	ifont->Release();
 	irange->Release();
@@ -196,8 +200,9 @@ void CSyntaxRichEditCtrl::InitFont( void ) {
 CSyntaxRichEditCtrl::SetCharType
 ================
 */
-void CSyntaxRichEditCtrl::SetCharType( int first, int last, int type ) {
-	for ( int i = first; i <= last; i++ ) {
+void CSyntaxRichEditCtrl::SetCharType(int first, int last, int type)
+{
+	for (int i = first; i <= last; i++) {
 		charType[i] = type;
 	}
 }
@@ -207,17 +212,18 @@ void CSyntaxRichEditCtrl::SetCharType( int first, int last, int type ) {
 CSyntaxRichEditCtrl::InitSyntaxHighlighting
 ================
 */
-void CSyntaxRichEditCtrl::InitSyntaxHighlighting( void ) {
-	SetCharType( 0x00, 0xFF, CT_PUNCTUATION );
-	SetCharType( '\0', ' ', CT_WHITESPACE );
-	SetCharType( '/', '/', CT_COMMENT );
-	SetCharType( '\"', '\"', CT_STRING );
-	SetCharType( '\'', '\'', CT_LITERAL );
-	SetCharType( 'a', 'z', CT_NAME );
-	SetCharType( 'A', 'Z', CT_NAME );
-	SetCharType( '_', '_', CT_NAME );
-	SetCharType( '#', '#', CT_NAME );
-	SetCharType( '0', '9', CT_NUMBER );
+void CSyntaxRichEditCtrl::InitSyntaxHighlighting(void)
+{
+	SetCharType(0x00, 0xFF, CT_PUNCTUATION);
+	SetCharType('\0', ' ', CT_WHITESPACE);
+	SetCharType('/', '/', CT_COMMENT);
+	SetCharType('\"', '\"', CT_STRING);
+	SetCharType('\'', '\'', CT_LITERAL);
+	SetCharType('a', 'z', CT_NAME);
+	SetCharType('A', 'Z', CT_NAME);
+	SetCharType('_', '_', CT_NAME);
+	SetCharType('#', '#', CT_NAME);
+	SetCharType('0', '9', CT_NUMBER);
 }
 
 /*
@@ -225,12 +231,14 @@ void CSyntaxRichEditCtrl::InitSyntaxHighlighting( void ) {
 CSyntaxRichEditCtrl::Init
 ================
 */
-void CSyntaxRichEditCtrl::Init( void ) {
+void CSyntaxRichEditCtrl::Init(void)
+{
 
 	// get the Rich Edit ITextDocument to use the wonky TOM interface
 	IRichEditOle *ire = GetIRichEditOle();
 	IUnknown *iu = (IUnknown *)ire;
-	if ( iu == NULL || iu->QueryInterface( tom::IID_ITextDocument, (void**) &m_TextDoc ) != S_OK ) {
+
+	if (iu == NULL || iu->QueryInterface(tom::IID_ITextDocument, (void **) &m_TextDoc) != S_OK) {
 		m_TextDoc = NULL;
 	}
 
@@ -238,20 +246,20 @@ void CSyntaxRichEditCtrl::Init( void ) {
 
 	InitSyntaxHighlighting();
 
-	SetEventMask( GetEventMask() | ENM_CHANGE | ENM_KEYEVENTS | ENM_MOUSEEVENTS | ENM_PROTECTED );	// ENM_SCROLLEVENTS
+	SetEventMask(GetEventMask() | ENM_CHANGE | ENM_KEYEVENTS | ENM_MOUSEEVENTS | ENM_PROTECTED);	// ENM_SCROLLEVENTS
 
-	EnableToolTips( TRUE );
+	EnableToolTips(TRUE);
 
 	// create auto complete list box
-	CRect rect( 0, 0, AUTOCOMPLETE_WIDTH, AUTOCOMPLETE_HEIGHT );
-	autoCompleteListBox.Create( WS_DLGFRAME | WS_VISIBLE | WS_VSCROLL | LBS_SORT | LBS_NOTIFY, rect, this, IDC_LISTBOX_AUTOCOMPLETE );
-	autoCompleteListBox.SetFont( GetParent()->GetFont() );
-	autoCompleteListBox.ShowWindow( FALSE );
+	CRect rect(0, 0, AUTOCOMPLETE_WIDTH, AUTOCOMPLETE_HEIGHT);
+	autoCompleteListBox.Create(WS_DLGFRAME | WS_VISIBLE | WS_VSCROLL | LBS_SORT | LBS_NOTIFY, rect, this, IDC_LISTBOX_AUTOCOMPLETE);
+	autoCompleteListBox.SetFont(GetParent()->GetFont());
+	autoCompleteListBox.ShowWindow(FALSE);
 
 	// create function parameter tool tip
-	funcParmToolTip.Create( WS_VISIBLE | WS_BORDER, rect, this, IDC_EDITBOX_FUNCPARMS );
-	funcParmToolTip.SetFont( GetParent()->GetFont() );
-	funcParmToolTip.ShowWindow( FALSE );
+	funcParmToolTip.Create(WS_VISIBLE | WS_BORDER, rect, this, IDC_EDITBOX_FUNCPARMS);
+	funcParmToolTip.SetFont(GetParent()->GetFont());
+	funcParmToolTip.ShowWindow(FALSE);
 }
 
 /*
@@ -259,29 +267,34 @@ void CSyntaxRichEditCtrl::Init( void ) {
 CSyntaxRichEditCtrl::FindKeyWord
 ================
 */
-ID_INLINE int CSyntaxRichEditCtrl::FindKeyWord( const char *keyWord, int length ) const {
+ID_INLINE int CSyntaxRichEditCtrl::FindKeyWord(const char *keyWord, int length) const
+{
 	int i, hash;
 
-	if ( caseSensitive ) {
-		hash = idStr::Hash( keyWord, length );
+	if (caseSensitive) {
+		hash = idStr::Hash(keyWord, length);
 	} else {
-		hash = idStr::IHash( keyWord, length );
+		hash = idStr::IHash(keyWord, length);
 	}
-	for ( i = keyWordHash.First( hash ); i != -1; i = keyWordHash.Next( i ) ) {
-		if ( length != keyWordLengths[i] ) {
+
+	for (i = keyWordHash.First(hash); i != -1; i = keyWordHash.Next(i)) {
+		if (length != keyWordLengths[i]) {
 			continue;
 		}
-		if ( caseSensitive ) {
-			if ( idStr::Cmpn( keyWords[i].keyWord, keyWord, length ) != 0 ) {
+
+		if (caseSensitive) {
+			if (idStr::Cmpn(keyWords[i].keyWord, keyWord, length) != 0) {
 				continue;
 			}
 		} else {
-			if ( idStr::Icmpn( keyWords[i].keyWord, keyWord, length ) != 0 ) {
+			if (idStr::Icmpn(keyWords[i].keyWord, keyWord, length) != 0) {
 				continue;
 			}
 		}
+
 		return i;
 	}
+
 	return -1;
 }
 
@@ -290,36 +303,39 @@ ID_INLINE int CSyntaxRichEditCtrl::FindKeyWord( const char *keyWord, int length 
 CSyntaxRichEditCtrl::SetKeyWords
 ================
 */
-void CSyntaxRichEditCtrl::SetKeyWords( const keyWord_t kws[] ) {
+void CSyntaxRichEditCtrl::SetKeyWords(const keyWord_t kws[])
+{
 	int i, numKeyWords, hash;
 
 	keyWords = kws;
 
-	for ( numKeyWords = 0; keyWords[numKeyWords].keyWord; numKeyWords++ ) {
+	for (numKeyWords = 0; keyWords[numKeyWords].keyWord; numKeyWords++) {
 	}
 
 	delete keyWordColors;
 	keyWordColors = new COLORREF[numKeyWords];
 
-	for ( i = 0; i < numKeyWords; i++ ) {
+	for (i = 0; i < numKeyWords; i++) {
 		keyWordColors[i] = keyWords[i].color;
 	}
 
 	delete keyWordLengths;
 	keyWordLengths = new int[numKeyWords];
 
-	for ( i = 0; i < numKeyWords; i++ ) {
-		keyWordLengths[i] = idStr::Length( keyWords[i].keyWord );
+	for (i = 0; i < numKeyWords; i++) {
+		keyWordLengths[i] = idStr::Length(keyWords[i].keyWord);
 	}
 
-	keyWordHash.Clear( 1024, 1024 );
-	for ( i = 0; i < numKeyWords; i++ ) {
-		if ( caseSensitive ) {
-			hash = idStr::Hash( keyWords[i].keyWord, keyWordLengths[i] );
+	keyWordHash.Clear(1024, 1024);
+
+	for (i = 0; i < numKeyWords; i++) {
+		if (caseSensitive) {
+			hash = idStr::Hash(keyWords[i].keyWord, keyWordLengths[i]);
 		} else {
-			hash = idStr::IHash( keyWords[i].keyWord, keyWordLengths[i] );
+			hash = idStr::IHash(keyWords[i].keyWord, keyWordLengths[i]);
 		}
-		keyWordHash.Add( hash, i );
+
+		keyWordHash.Add(hash, i);
 	}
 }
 
@@ -328,53 +344,56 @@ void CSyntaxRichEditCtrl::SetKeyWords( const keyWord_t kws[] ) {
 CSyntaxRichEditCtrl::LoadKeyWordsFromFile
 ================
 */
-bool CSyntaxRichEditCtrl::LoadKeyWordsFromFile( const char *fileName ) {
+bool CSyntaxRichEditCtrl::LoadKeyWordsFromFile(const char *fileName)
+{
 	idParser src;
 	idToken token, name, description;
 	byte red, green, blue;
 	keyWord_t keyword;
 
-	if ( !src.LoadFile( fileName ) ) {
+	if (!src.LoadFile(fileName)) {
 		return false;
 	}
 
 	FreeKeyWordsFromFile();
 
-	while( src.ReadToken( &token ) ) {
-		if ( token.Icmp( "keywords" ) == 0 ) {
-			src.ExpectTokenString( "{" );
-			while( src.ReadToken( &token ) ) {
-				if ( token == "}" ) {
+	while (src.ReadToken(&token)) {
+		if (token.Icmp("keywords") == 0) {
+			src.ExpectTokenString("{");
+
+			while (src.ReadToken(&token)) {
+				if (token == "}") {
 					break;
 				}
-				if ( token == "{" ) {
+
+				if (token == "{") {
 
 					// parse name
-					src.ExpectTokenType( TT_STRING, 0, &name );
-					src.ExpectTokenString( "," );
+					src.ExpectTokenType(TT_STRING, 0, &name);
+					src.ExpectTokenString(",");
 
 					// parse color
-					src.ExpectTokenString( "(" );
-					src.ExpectTokenType( TT_NUMBER, TT_INTEGER, &token );
+					src.ExpectTokenString("(");
+					src.ExpectTokenType(TT_NUMBER, TT_INTEGER, &token);
 					red = token.GetIntValue();
-					src.ExpectTokenString( "," );
-					src.ExpectTokenType( TT_NUMBER, TT_INTEGER, &token );
+					src.ExpectTokenString(",");
+					src.ExpectTokenType(TT_NUMBER, TT_INTEGER, &token);
 					green = token.GetIntValue();
-					src.ExpectTokenString( "," );
-					src.ExpectTokenType( TT_NUMBER, TT_INTEGER, &token );
+					src.ExpectTokenString(",");
+					src.ExpectTokenType(TT_NUMBER, TT_INTEGER, &token);
 					blue = token.GetIntValue();
-					src.ExpectTokenString( ")" );
-					src.ExpectTokenString( "," );
+					src.ExpectTokenString(")");
+					src.ExpectTokenString(",");
 
 					// parse description
-					src.ExpectTokenType( TT_STRING, 0, &description );
-					src.ExpectTokenString( "}" );
+					src.ExpectTokenType(TT_STRING, 0, &description);
+					src.ExpectTokenString("}");
 
-					keyword.keyWord = Mem_CopyString( name );
-					keyword.color = RGB( red, green, blue );
-					keyword.description = Mem_CopyString( description );
+					keyword.keyWord = Mem_CopyString(name);
+					keyword.color = RGB(red, green, blue);
+					keyword.description = Mem_CopyString(description);
 
-					keyWordsFromFile.Append( keyword );
+					keyWordsFromFile.Append(keyword);
 				}
 			}
 		} else {
@@ -383,11 +402,11 @@ bool CSyntaxRichEditCtrl::LoadKeyWordsFromFile( const char *fileName ) {
 	}
 
 	keyword.keyWord = NULL;
-	keyword.color = RGB( 255, 255, 255 );
+	keyword.color = RGB(255, 255, 255);
 	keyword.description = NULL;
-	keyWordsFromFile.Append( keyword );
+	keyWordsFromFile.Append(keyword);
 
-	SetKeyWords( keyWordsFromFile.Ptr() );
+	SetKeyWords(keyWordsFromFile.Ptr());
 
 	return true;
 }
@@ -397,11 +416,13 @@ bool CSyntaxRichEditCtrl::LoadKeyWordsFromFile( const char *fileName ) {
 CSyntaxRichEditCtrl::FreeKeyWordsFromFile
 ================
 */
-void CSyntaxRichEditCtrl::FreeKeyWordsFromFile( void ) {
-	for ( int i = 0; i < keyWordsFromFile.Num(); i++ ) {
-		Mem_Free( const_cast<char *>( keyWordsFromFile[i].keyWord ) );
-		Mem_Free( const_cast<char *>( keyWordsFromFile[i].description ) );
+void CSyntaxRichEditCtrl::FreeKeyWordsFromFile(void)
+{
+	for (int i = 0; i < keyWordsFromFile.Num(); i++) {
+		Mem_Free(const_cast<char *>(keyWordsFromFile[i].keyWord));
+		Mem_Free(const_cast<char *>(keyWordsFromFile[i].description));
 	}
+
 	keyWordsFromFile.Clear();
 }
 
@@ -410,7 +431,8 @@ void CSyntaxRichEditCtrl::FreeKeyWordsFromFile( void ) {
 CSyntaxRichEditCtrl::SetDefaultColor
 ================
 */
-void CSyntaxRichEditCtrl::SetDefaultColor( const COLORREF color ) {
+void CSyntaxRichEditCtrl::SetDefaultColor(const COLORREF color)
+{
 	defaultColor = color;
 }
 
@@ -419,7 +441,8 @@ void CSyntaxRichEditCtrl::SetDefaultColor( const COLORREF color ) {
 CSyntaxRichEditCtrl::SetCommentColor
 ================
 */
-void CSyntaxRichEditCtrl::SetCommentColor( const COLORREF color ) {
+void CSyntaxRichEditCtrl::SetCommentColor(const COLORREF color)
+{
 	singleLineCommentColor = color;
 	multiLineCommentColor = color;
 }
@@ -429,9 +452,11 @@ void CSyntaxRichEditCtrl::SetCommentColor( const COLORREF color ) {
 CSyntaxRichEditCtrl::SetStringColor
 ================
 */
-void CSyntaxRichEditCtrl::SetStringColor( const COLORREF color, const COLORREF altColor ) {
+void CSyntaxRichEditCtrl::SetStringColor(const COLORREF color, const COLORREF altColor)
+{
 	stringColor[0] = color;
-	if ( altColor == -1 ) {
+
+	if (altColor == -1) {
 		stringColor[1] = color;
 	} else {
 		stringColor[1] = altColor;
@@ -443,7 +468,8 @@ void CSyntaxRichEditCtrl::SetStringColor( const COLORREF color, const COLORREF a
 CSyntaxRichEditCtrl::SetLiteralColor
 ================
 */
-void CSyntaxRichEditCtrl::SetLiteralColor( const COLORREF color ) {
+void CSyntaxRichEditCtrl::SetLiteralColor(const COLORREF color)
+{
 	literalColor = color;
 }
 
@@ -452,7 +478,8 @@ void CSyntaxRichEditCtrl::SetLiteralColor( const COLORREF color ) {
 CSyntaxRichEditCtrl::SetObjectMemberCallback
 ================
 */
-void CSyntaxRichEditCtrl::SetObjectMemberCallback( objectMemberCallback_t callback ) {
+void CSyntaxRichEditCtrl::SetObjectMemberCallback(objectMemberCallback_t callback)
+{
 	GetObjectMembers = callback;
 }
 
@@ -461,7 +488,8 @@ void CSyntaxRichEditCtrl::SetObjectMemberCallback( objectMemberCallback_t callba
 CSyntaxRichEditCtrl::SetFunctionParmCallback
 ================
 */
-void CSyntaxRichEditCtrl::SetFunctionParmCallback( toolTipCallback_t callback ) {
+void CSyntaxRichEditCtrl::SetFunctionParmCallback(toolTipCallback_t callback)
+{
 	GetFunctionParms = callback;
 }
 
@@ -470,7 +498,8 @@ void CSyntaxRichEditCtrl::SetFunctionParmCallback( toolTipCallback_t callback ) 
 CSyntaxRichEditCtrl::SetToolTipCallback
 ================
 */
-void CSyntaxRichEditCtrl::SetToolTipCallback( toolTipCallback_t callback ) {
+void CSyntaxRichEditCtrl::SetToolTipCallback(toolTipCallback_t callback)
+{
 	GetToolTip = callback;
 }
 
@@ -479,7 +508,8 @@ void CSyntaxRichEditCtrl::SetToolTipCallback( toolTipCallback_t callback ) {
 CSyntaxRichEditCtrl::SetCaseSensitive
 ================
 */
-void CSyntaxRichEditCtrl::SetCaseSensitive( bool caseSensitive ) {
+void CSyntaxRichEditCtrl::SetCaseSensitive(bool caseSensitive)
+{
 	this->caseSensitive = caseSensitive;
 }
 
@@ -488,7 +518,8 @@ void CSyntaxRichEditCtrl::SetCaseSensitive( bool caseSensitive ) {
 CSyntaxRichEditCtrl::AllowPathNames
 ================
 */
-void CSyntaxRichEditCtrl::AllowPathNames( bool allow ) {
+void CSyntaxRichEditCtrl::AllowPathNames(bool allow)
+{
 	allowPathNames = allow;
 }
 
@@ -497,7 +528,8 @@ void CSyntaxRichEditCtrl::AllowPathNames( bool allow ) {
 CSyntaxRichEditCtrl::EnableKeyWordAutoCompletion
 ================
 */
-void CSyntaxRichEditCtrl::EnableKeyWordAutoCompletion( bool enable ) {
+void CSyntaxRichEditCtrl::EnableKeyWordAutoCompletion(bool enable)
+{
 	keyWordAutoCompletion = enable;
 }
 
@@ -506,31 +538,38 @@ void CSyntaxRichEditCtrl::EnableKeyWordAutoCompletion( bool enable ) {
 CSyntaxRichEditCtrl::GetVisibleRange
 ================
 */
-CHARRANGE CSyntaxRichEditCtrl::GetVisibleRange( void ) const {
+CHARRANGE CSyntaxRichEditCtrl::GetVisibleRange(void) const
+{
 	RECT rectArea;
 	int firstLine, lastLine;
 	CHARRANGE range;
 
 	firstLine = GetFirstVisibleLine();
-	GetClientRect( &rectArea );
-	lastLine = firstLine + ( rectArea.bottom / ( defaultCharFormat.yHeight / 20 ) );
+	GetClientRect(&rectArea);
+	lastLine = firstLine + (rectArea.bottom / (defaultCharFormat.yHeight / 20));
 
-	if ( lastLine >= GetLineCount() ) {
+	if (lastLine >= GetLineCount()) {
 		lastLine = GetLineCount() - 1;
 	}
-	range.cpMin = LineIndex( firstLine );
-	if ( range.cpMin < 0 ) {
+
+	range.cpMin = LineIndex(firstLine);
+
+	if (range.cpMin < 0) {
 		range.cpMin = 0;
 	}
-	range.cpMax = LineIndex( lastLine );
-	if ( range.cpMax == -1 ) {
-		range.cpMax = range.cpMin + LineLength( range.cpMin );
+
+	range.cpMax = LineIndex(lastLine);
+
+	if (range.cpMax == -1) {
+		range.cpMax = range.cpMin + LineLength(range.cpMin);
 	} else {
-		range.cpMax += LineLength( range.cpMax );
+		range.cpMax += LineLength(range.cpMax);
 	}
-	if ( range.cpMax >= GetTextLength() ) {
+
+	if (range.cpMax >= GetTextLength()) {
 		range.cpMax = GetTextLength() - 1;
 	}
+
 	return range;
 }
 
@@ -539,16 +578,17 @@ CHARRANGE CSyntaxRichEditCtrl::GetVisibleRange( void ) const {
 CSyntaxRichEditCtrl::SetDefaultFont
 ================
 */
-void CSyntaxRichEditCtrl::SetDefaultFont( int startCharIndex, int endCharIndex ) {
+void CSyntaxRichEditCtrl::SetDefaultFont(int startCharIndex, int endCharIndex)
+{
 	tom::ITextRange *range;
 
 	updateSyntaxHighlighting = false;
 
-	m_TextDoc->Range( startCharIndex, endCharIndex, &range );
+	m_TextDoc->Range(startCharIndex, endCharIndex, &range);
 
-	m_TextDoc->Undo( tom::tomSuspend, NULL );
-	range->put_Font( m_DefaultFont );
-	m_TextDoc->Undo( tom::tomResume, NULL );
+	m_TextDoc->Undo(tom::tomSuspend, NULL);
+	range->put_Font(m_DefaultFont);
+	m_TextDoc->Undo(tom::tomResume, NULL);
 
 	range->Release();
 
@@ -560,27 +600,28 @@ void CSyntaxRichEditCtrl::SetDefaultFont( int startCharIndex, int endCharIndex )
 CSyntaxRichEditCtrl::SetColor
 ================
 */
-void CSyntaxRichEditCtrl::SetColor( int startCharIndex, int endCharIndex, COLORREF foreColor, COLORREF backColor, bool bold ) {
+void CSyntaxRichEditCtrl::SetColor(int startCharIndex, int endCharIndex, COLORREF foreColor, COLORREF backColor, bool bold)
+{
 	tom::ITextRange *range;
 	tom::ITextFont *font;
 	long prop;
 
 	updateSyntaxHighlighting = false;
 
-	m_TextDoc->Range( startCharIndex, endCharIndex, &range );
-	range->get_Font( &font );
+	m_TextDoc->Range(startCharIndex, endCharIndex, &range);
+	range->get_Font(&font);
 
-	m_TextDoc->Undo( tom::tomSuspend, &prop );
-	font->put_ForeColor( foreColor );
-	m_TextDoc->Undo( tom::tomResume, &prop );
+	m_TextDoc->Undo(tom::tomSuspend, &prop);
+	font->put_ForeColor(foreColor);
+	m_TextDoc->Undo(tom::tomResume, &prop);
 
-	m_TextDoc->Undo( tom::tomSuspend, &prop );
-	font->put_BackColor( backColor );
-	m_TextDoc->Undo( tom::tomResume, &prop );
+	m_TextDoc->Undo(tom::tomSuspend, &prop);
+	font->put_BackColor(backColor);
+	m_TextDoc->Undo(tom::tomResume, &prop);
 
-	m_TextDoc->Undo( tom::tomSuspend, &prop );
-	font->put_Bold( bold ? tom::tomTrue : tom::tomFalse );
-	m_TextDoc->Undo( tom::tomResume, &prop );
+	m_TextDoc->Undo(tom::tomSuspend, &prop);
+	font->put_Bold(bold ? tom::tomTrue : tom::tomFalse);
+	m_TextDoc->Undo(tom::tomResume, &prop);
 
 	font->Release();
 	range->Release();
@@ -593,15 +634,16 @@ void CSyntaxRichEditCtrl::SetColor( int startCharIndex, int endCharIndex, COLORR
 CSyntaxRichEditCtrl::GetForeColor
 ================
 */
-COLORREF CSyntaxRichEditCtrl::GetForeColor( int charIndex ) const {
+COLORREF CSyntaxRichEditCtrl::GetForeColor(int charIndex) const
+{
 	tom::ITextRange *range;
 	tom::ITextFont *font;
 	long foreColor;
 
-	m_TextDoc->Range( charIndex, charIndex, &range );
-	range->get_Font( &font );
+	m_TextDoc->Range(charIndex, charIndex, &range);
+	range->get_Font(&font);
 
-	font->get_BackColor( &foreColor );
+	font->get_BackColor(&foreColor);
 
 	font->Release();
 	range->Release();
@@ -614,15 +656,16 @@ COLORREF CSyntaxRichEditCtrl::GetForeColor( int charIndex ) const {
 CSyntaxRichEditCtrl::GetBackColor
 ================
 */
-COLORREF CSyntaxRichEditCtrl::GetBackColor( int charIndex ) const {
+COLORREF CSyntaxRichEditCtrl::GetBackColor(int charIndex) const
+{
 	tom::ITextRange *range;
 	tom::ITextFont *font;
 	long backColor;
 
-	m_TextDoc->Range( charIndex, charIndex, &range );
-	range->get_Font( &font );
+	m_TextDoc->Range(charIndex, charIndex, &range);
+	range->get_Font(&font);
 
-	font->get_BackColor( &backColor );
+	font->get_BackColor(&backColor);
 
 	font->Release();
 	range->Release();
@@ -637,36 +680,38 @@ CSyntaxRichEditCtrl::HighlightSyntax
   Update the syntax highlighting for the given character range.
 ================
 */
-void CSyntaxRichEditCtrl::HighlightSyntax( int startCharIndex, int endCharIndex ) {
+void CSyntaxRichEditCtrl::HighlightSyntax(int startCharIndex, int endCharIndex)
+{
 	int c, t, line, charIndex, textLength, syntaxStart, keyWordLength, keyWordIndex;
 	const char *keyWord;
 	CHARRANGE visRange;
 	CString text;
 
 	// get text length
-	GetTextRange( 0, GetTextLength(), text );
+	GetTextRange(0, GetTextLength(), text);
 	textLength = text.GetLength();
 
 	// make sure the indexes are within bounds
-	if ( startCharIndex < 0 ) {
+	if (startCharIndex < 0) {
 		startCharIndex = 0;
 	}
-	if ( endCharIndex < 0 ) {
+
+	if (endCharIndex < 0) {
 		endCharIndex = textLength - 1;
-	} else if ( endCharIndex >= textLength ) {
+	} else if (endCharIndex >= textLength) {
 		endCharIndex = textLength - 1;
 	}
 
 	// move the start index to the beginning of the line
-	for ( ; startCharIndex > 0; startCharIndex-- ) {
-		if ( idStr::CharIsNewLine( text[startCharIndex-1] ) ) {
+	for (; startCharIndex > 0; startCharIndex--) {
+		if (idStr::CharIsNewLine(text[startCharIndex-1])) {
 			break;
 		}
 	}
 
 	// move the end index to the end of the line
-	for ( ; endCharIndex < textLength - 1; endCharIndex++ ) {
-		if ( idStr::CharIsNewLine( text[endCharIndex+1] ) ) {
+	for (; endCharIndex < textLength - 1; endCharIndex++) {
+		if (idStr::CharIsNewLine(text[endCharIndex+1])) {
 			break;
 		}
 	}
@@ -675,24 +720,26 @@ void CSyntaxRichEditCtrl::HighlightSyntax( int startCharIndex, int endCharIndex 
 	visRange = GetVisibleRange();
 
 	// never update beyond the visible range
-	if ( startCharIndex < visRange.cpMin ) {
-		SetColor( startCharIndex, visRange.cpMin - 1, SRE_COLOR_BLACK, INVALID_BACK_COLOR, false );
+	if (startCharIndex < visRange.cpMin) {
+		SetColor(startCharIndex, visRange.cpMin - 1, SRE_COLOR_BLACK, INVALID_BACK_COLOR, false);
 		startCharIndex = visRange.cpMin;
 	}
-	if ( visRange.cpMax < endCharIndex ) {
-		SetColor( visRange.cpMax, endCharIndex, SRE_COLOR_BLACK, INVALID_BACK_COLOR, false );
+
+	if (visRange.cpMax < endCharIndex) {
+		SetColor(visRange.cpMax, endCharIndex, SRE_COLOR_BLACK, INVALID_BACK_COLOR, false);
 		endCharIndex = visRange.cpMax;
-		if ( endCharIndex >= textLength ) {
+
+		if (endCharIndex >= textLength) {
 			endCharIndex = textLength - 1;
 		}
 	}
 
 	// test if the start index is inside a multi-line comment
-	if ( startCharIndex > 0 ) {
+	if (startCharIndex > 0) {
 		// multi-line comments have a slightly different background color
-		if ( GetBackColor( startCharIndex-1 ) == MULTILINE_COMMENT_BACK_COLOR ) {
-			for( ; startCharIndex > 0; startCharIndex-- ) {
-				if ( text[startCharIndex] == '/' && text[startCharIndex+1] == '*' ) {
+		if (GetBackColor(startCharIndex-1) == MULTILINE_COMMENT_BACK_COLOR) {
+			for (; startCharIndex > 0; startCharIndex--) {
+				if (text[startCharIndex] == '/' && text[startCharIndex+1] == '*') {
 					break;
 				}
 			}
@@ -700,11 +747,11 @@ void CSyntaxRichEditCtrl::HighlightSyntax( int startCharIndex, int endCharIndex 
 	}
 
 	// test if the end index is inside a multi-line comment
-	if ( endCharIndex < textLength - 1 ) {
+	if (endCharIndex < textLength - 1) {
 		// multi-line comments have a slightly different background color
-		if ( GetBackColor( endCharIndex+1 ) == MULTILINE_COMMENT_BACK_COLOR ) {
-			for( endCharIndex++; endCharIndex < textLength - 1; endCharIndex++ ) {
-				if ( text[endCharIndex-1] == '*' && text[endCharIndex] == '/' ) {
+		if (GetBackColor(endCharIndex+1) == MULTILINE_COMMENT_BACK_COLOR) {
+			for (endCharIndex++; endCharIndex < textLength - 1; endCharIndex++) {
+				if (text[endCharIndex-1] == '*' && text[endCharIndex] == '/') {
 					break;
 				}
 			}
@@ -716,76 +763,93 @@ void CSyntaxRichEditCtrl::HighlightSyntax( int startCharIndex, int endCharIndex 
 	stringColorIndex = 0;
 
 	// set the default color
-	SetDefaultFont( startCharIndex, endCharIndex + 1 );
+	SetDefaultFont(startCharIndex, endCharIndex + 1);
 
 	// syntax based colors
-	for( charIndex = startCharIndex; charIndex <= endCharIndex; charIndex++ ) {
+	for (charIndex = startCharIndex; charIndex <= endCharIndex; charIndex++) {
 
 		t = charType[text[charIndex]];
-		switch( t ) {
+
+		switch (t) {
 			case CT_WHITESPACE: {
-				if ( idStr::CharIsNewLine( text[charIndex] ) ) {
+				if (idStr::CharIsNewLine(text[charIndex])) {
 					line++;
 				}
+
 				break;
 			}
 			case CT_COMMENT: {
 				c = text[charIndex+1];
-				if ( c == '/' ) {
+
+				if (c == '/') {
 					// single line comment
 					syntaxStart = charIndex;
-					for ( charIndex += 2; charIndex < textLength; charIndex++ ) {
-						if ( idStr::CharIsNewLine( text[charIndex] ) ) {
+
+					for (charIndex += 2; charIndex < textLength; charIndex++) {
+						if (idStr::CharIsNewLine(text[charIndex])) {
 							break;
 						}
 					}
-					SetColor( syntaxStart, charIndex + 1, singleLineCommentColor, DEFAULT_BACK_COLOR, false );
-				} else if ( c == '*' ) {
+
+					SetColor(syntaxStart, charIndex + 1, singleLineCommentColor, DEFAULT_BACK_COLOR, false);
+				} else if (c == '*') {
 					// multi-line comment
 					syntaxStart = charIndex;
-					for ( charIndex += 2; charIndex < textLength; charIndex++ ) {
-						if ( text[charIndex] == '*' && text[charIndex+1] == '/' ) {
+
+					for (charIndex += 2; charIndex < textLength; charIndex++) {
+						if (text[charIndex] == '*' && text[charIndex+1] == '/') {
 							break;
 						}
 					}
+
 					charIndex++;
-					SetColor( syntaxStart, charIndex + 1, multiLineCommentColor, MULTILINE_COMMENT_BACK_COLOR, false );
+					SetColor(syntaxStart, charIndex + 1, multiLineCommentColor, MULTILINE_COMMENT_BACK_COLOR, false);
 				}
+
 				break;
 			}
 			case CT_STRING: {
-				if ( line != stringColorLine ) {
+				if (line != stringColorLine) {
 					stringColorLine = line;
 					stringColorIndex = 0;
 				}
+
 				syntaxStart = charIndex;
-				for ( charIndex++; charIndex < textLength; charIndex++ ) {
+
+				for (charIndex++; charIndex < textLength; charIndex++) {
 					c = text[charIndex];
-					if ( charType[c] == CT_STRING && text[charIndex-1] != '\\' ) {
+
+					if (charType[c] == CT_STRING && text[charIndex-1] != '\\') {
 						break;
 					}
-					if ( idStr::CharIsNewLine( c ) ) {
+
+					if (idStr::CharIsNewLine(c)) {
 						line++;
 						break;
 					}
 				}
-				SetColor( syntaxStart, charIndex + 1, stringColor[stringColorIndex], DEFAULT_BACK_COLOR, false );
+
+				SetColor(syntaxStart, charIndex + 1, stringColor[stringColorIndex], DEFAULT_BACK_COLOR, false);
 				stringColorIndex ^= 1;
 				break;
 			}
 			case CT_LITERAL: {
 				syntaxStart = charIndex;
-				for ( charIndex++; charIndex < textLength; charIndex++ ) {
+
+				for (charIndex++; charIndex < textLength; charIndex++) {
 					c = text[charIndex];
-					if ( charType[c] == CT_LITERAL && text[charIndex-1] != '\\' ) {
+
+					if (charType[c] == CT_LITERAL && text[charIndex-1] != '\\') {
 						break;
 					}
-					if ( idStr::CharIsNewLine( c ) ) {
+
+					if (idStr::CharIsNewLine(c)) {
 						line++;
 						break;
 					}
 				}
-				SetColor( syntaxStart, charIndex + 1, literalColor, DEFAULT_BACK_COLOR, false );
+
+				SetColor(syntaxStart, charIndex + 1, literalColor, DEFAULT_BACK_COLOR, false);
 				break;
 			}
 			case CT_NUMBER: {
@@ -794,21 +858,26 @@ void CSyntaxRichEditCtrl::HighlightSyntax( int startCharIndex, int endCharIndex 
 			case CT_NAME: {
 				syntaxStart = charIndex;
 				keyWord = ((const char *)text) + charIndex;
-				for ( charIndex++; charIndex < textLength; charIndex++ ) {
+
+				for (charIndex++; charIndex < textLength; charIndex++) {
 					c = text[charIndex];
 					t = charType[c];
-					if ( t != CT_NAME && t != CT_NUMBER ) {
+
+					if (t != CT_NAME && t != CT_NUMBER) {
 						// allow path names
-						if ( !allowPathNames || ( c != '/' && c != '\\' && c != '.' ) ) {
+						if (!allowPathNames || (c != '/' && c != '\\' && c != '.')) {
 							break;
 						}
 					}
 				}
+
 				keyWordLength = charIndex - syntaxStart;
-				keyWordIndex = FindKeyWord( keyWord, keyWordLength );
-				if ( keyWordIndex != -1 ) {
-					SetColor( syntaxStart, syntaxStart + keyWordLength, keyWordColors[keyWordIndex], DEFAULT_BACK_COLOR, false );
+				keyWordIndex = FindKeyWord(keyWord, keyWordLength);
+
+				if (keyWordIndex != -1) {
+					SetColor(syntaxStart, syntaxStart + keyWordLength, keyWordColors[keyWordIndex], DEFAULT_BACK_COLOR, false);
 				}
+
 				break;
 			}
 			case CT_PUNCTUATION: {
@@ -828,36 +897,42 @@ CSyntaxRichEditCtrl::UpdateVisibleRange
   Updates the visible character range if it is not yet properly highlighted.
 ================
 */
-void CSyntaxRichEditCtrl::UpdateVisibleRange( void ) {
+void CSyntaxRichEditCtrl::UpdateVisibleRange(void)
+{
 	CHARRANGE visRange;
 	tom::ITextRange *range;
 	tom::ITextFont *font;
 	long backColor;
 	bool update = false;
 
-	if ( !updateSyntaxHighlighting ) {
+	if (!updateSyntaxHighlighting) {
 		return;
 	}
 
 	visRange = GetVisibleRange();
 
-	m_TextDoc->Range( visRange.cpMin, visRange.cpMax, &range );
-	range->get_End( &visRange.cpMax );
+	m_TextDoc->Range(visRange.cpMin, visRange.cpMax, &range);
+	range->get_End(&visRange.cpMax);
 
-	range->get_Font( &font );
+	range->get_Font(&font);
 
-	range->SetRange( visRange.cpMin, visRange.cpMin );
-	while( 1 ) {
-		range->get_Start( &visRange.cpMin );
-		if ( visRange.cpMin >= visRange.cpMax ) {
+	range->SetRange(visRange.cpMin, visRange.cpMin);
+
+	while (1) {
+		range->get_Start(&visRange.cpMin);
+
+		if (visRange.cpMin >= visRange.cpMax) {
 			break;
 		}
-		font->get_BackColor( &backColor );
-		if ( backColor == INVALID_BACK_COLOR ) {
+
+		font->get_BackColor(&backColor);
+
+		if (backColor == INVALID_BACK_COLOR) {
 			update = true;
 			break;
 		}
-		if ( range->Move( tom::tomCharFormat, 1, NULL ) != S_OK ) {
+
+		if (range->Move(tom::tomCharFormat, 1, NULL) != S_OK) {
 			break;
 		}
 	}
@@ -865,8 +940,8 @@ void CSyntaxRichEditCtrl::UpdateVisibleRange( void ) {
 	font->Release();
 	range->Release();
 
-	if ( update ) {
-		HighlightSyntax( visRange.cpMin, visRange.cpMax - 1 );
+	if (update) {
+		HighlightSyntax(visRange.cpMin, visRange.cpMax - 1);
 	}
 }
 
@@ -875,22 +950,25 @@ void CSyntaxRichEditCtrl::UpdateVisibleRange( void ) {
 CSyntaxRichEditCtrl::GetCursorPos
 ================
 */
-void CSyntaxRichEditCtrl::GetCursorPos( int &line, int &column, int &character ) const {
+void CSyntaxRichEditCtrl::GetCursorPos(int &line, int &column, int &character) const
+{
 	long start, end;
 	char buffer[MAX_STRING_CHARS];
 
-	GetSel( start, end );
-	line = LineFromChar( start );
-	start -= LineIndex( line );
-	GetLine( line, buffer, sizeof( buffer ) );
-	for ( column = 1, character = 0; character < start; character++ ) {
-		if ( idStr::CharIsTab( buffer[character] ) ) {
+	GetSel(start, end);
+	line = LineFromChar(start);
+	start -= LineIndex(line);
+	GetLine(line, buffer, sizeof(buffer));
+
+	for (column = 1, character = 0; character < start; character++) {
+		if (idStr::CharIsTab(buffer[character])) {
 			column += TAB_SIZE;
 			column -= column % TAB_SIZE;
 		} else {
 			column++;
 		}
 	}
+
 	character++;
 }
 
@@ -899,8 +977,9 @@ void CSyntaxRichEditCtrl::GetCursorPos( int &line, int &column, int &character )
 CSyntaxRichEditCtrl::GetText
 ================
 */
-void CSyntaxRichEditCtrl::GetText( idStr &text ) const {
-	GetText( text, 0, GetTextLength() );
+void CSyntaxRichEditCtrl::GetText(idStr &text) const
+{
+	GetText(text, 0, GetTextLength());
 }
 
 /*
@@ -908,16 +987,17 @@ void CSyntaxRichEditCtrl::GetText( idStr &text ) const {
 CSyntaxRichEditCtrl::GetText
 ================
 */
-void CSyntaxRichEditCtrl::GetText( idStr &text, int startCharIndex, int endCharIndex ) const {
+void CSyntaxRichEditCtrl::GetText(idStr &text, int startCharIndex, int endCharIndex) const
+{
 	tom::ITextRange *range;
 	BSTR bstr;
 	USES_CONVERSION;
 
-	m_TextDoc->Range( startCharIndex, endCharIndex, &range );
-	range->get_Text( &bstr );
-	text = W2A( bstr );
+	m_TextDoc->Range(startCharIndex, endCharIndex, &range);
+	range->get_Text(&bstr);
+	text = W2A(bstr);
 	range->Release();
-	text.StripTrailingOnce( "\r" );		// remove last carriage return which is always added to a tom::ITextRange
+	text.StripTrailingOnce("\r");		// remove last carriage return which is always added to a tom::ITextRange
 }
 
 /*
@@ -925,10 +1005,11 @@ void CSyntaxRichEditCtrl::GetText( idStr &text, int startCharIndex, int endCharI
 CSyntaxRichEditCtrl::SetText
 ================
 */
-void CSyntaxRichEditCtrl::SetText( const char *text ) {
-	SetSel( 0, -1 );
-	ReplaceSel( text, FALSE );
-	SetSel( 0, 0 );
+void CSyntaxRichEditCtrl::SetText(const char *text)
+{
+	SetSel(0, -1);
+	ReplaceSel(text, FALSE);
+	SetSel(0, 0);
 }
 
 /*
@@ -936,43 +1017,44 @@ void CSyntaxRichEditCtrl::SetText( const char *text ) {
 CSyntaxRichEditCtrl::FindNext
 ================
 */
-bool CSyntaxRichEditCtrl::FindNext( const char *find, bool matchCase, bool matchWholeWords, bool searchForward ) {
+bool CSyntaxRichEditCtrl::FindNext(const char *find, bool matchCase, bool matchWholeWords, bool searchForward)
+{
 	long selStart, selEnd, flags, search, length, start;
 	tom::ITextRange *range;
 
-	if ( find[0] == '\0' ) {
+	if (find[0] == '\0') {
 		return false;
 	}
 
-	GetSel( selStart, selEnd );
+	GetSel(selStart, selEnd);
 
 	flags = 0;
 	flags |= matchCase ? tom::tomMatchCase : 0;
 	flags |= matchWholeWords ? tom::tomMatchWord : 0;
 
-	if ( searchForward ) {
-		m_TextDoc->Range( selEnd, GetTextLength(), &range );
+	if (searchForward) {
+		m_TextDoc->Range(selEnd, GetTextLength(), &range);
 		search = GetTextLength() - selEnd;
 	} else {
-		m_TextDoc->Range( 0, selStart, &range );
+		m_TextDoc->Range(0, selStart, &range);
 		search = -selStart;
 	}
 
-	if ( range->FindShit( A2BSTR(find), search, flags, &length ) == S_OK ) {
+	if (range->FindShit(A2BSTR(find), search, flags, &length) == S_OK) {
 
-		m_TextDoc->Freeze( NULL );
+		m_TextDoc->Freeze(NULL);
 
-		range->get_Start( &start );
+		range->get_Start(&start);
 		range->Release();
 
-		SetSel( start, start + length );
+		SetSel(start, start + length);
 
-		int line = Max( (int) LineFromChar( start ) - 5, 0 );
-		LineScroll( line - GetFirstVisibleLine(), 0 );
+		int line = Max((int) LineFromChar(start) - 5, 0);
+		LineScroll(line - GetFirstVisibleLine(), 0);
 
 		UpdateVisibleRange();
 
-		m_TextDoc->Unfreeze( NULL );
+		m_TextDoc->Unfreeze(NULL);
 		return true;
 	} else {
 		range->Release();
@@ -985,37 +1067,39 @@ bool CSyntaxRichEditCtrl::FindNext( const char *find, bool matchCase, bool match
 CSyntaxRichEditCtrl::ReplaceAll
 ================
 */
-int CSyntaxRichEditCtrl::ReplaceAll( const char *find, const char *replace, bool matchCase, bool matchWholeWords ) {
+int CSyntaxRichEditCtrl::ReplaceAll(const char *find, const char *replace, bool matchCase, bool matchWholeWords)
+{
 	long selStart, selEnd, flags, search, length, start;
 	int numReplaced;
 	tom::ITextRange *range;
-	CComBSTR bstr( find );
+	CComBSTR bstr(find);
 
-	if ( find[0] == '\0' ) {
+	if (find[0] == '\0') {
 		return 0;
 	}
 
-	m_TextDoc->Freeze( NULL );
+	m_TextDoc->Freeze(NULL);
 
-	GetSel( selStart, selEnd );
+	GetSel(selStart, selEnd);
 
 	flags = 0;
 	flags |= matchCase ? tom::tomMatchCase : 0;
 	flags |= matchWholeWords ? tom::tomMatchWord : 0;
 
-	m_TextDoc->Range( 0, GetTextLength(), &range );
+	m_TextDoc->Range(0, GetTextLength(), &range);
 	search = GetTextLength();
 
 	numReplaced = 0;
-	while( range->FindShit( bstr, search, flags, &length ) == S_OK ) {
-		range->get_Start( &start );
-		ReplaceText( start, start + length, replace );
+
+	while (range->FindShit(bstr, search, flags, &length) == S_OK) {
+		range->get_Start(&start);
+		ReplaceText(start, start + length, replace);
 		numReplaced++;
 	}
 
 	range->Release();
 
-	m_TextDoc->Unfreeze( NULL );
+	m_TextDoc->Unfreeze(NULL);
 
 	return numReplaced;
 }
@@ -1025,12 +1109,13 @@ int CSyntaxRichEditCtrl::ReplaceAll( const char *find, const char *replace, bool
 CSyntaxRichEditCtrl::ReplaceText
 ================
 */
-void CSyntaxRichEditCtrl::ReplaceText( int startCharIndex, int endCharIndex, const char *replace ) {
+void CSyntaxRichEditCtrl::ReplaceText(int startCharIndex, int endCharIndex, const char *replace)
+{
 	tom::ITextRange *range;
-	CComBSTR bstr( replace );
+	CComBSTR bstr(replace);
 
-	m_TextDoc->Range( startCharIndex, endCharIndex, &range );
-	range->put_Text( bstr );
+	m_TextDoc->Range(startCharIndex, endCharIndex, &range);
+	range->put_Text(bstr);
 	range->Release();
 }
 
@@ -1039,18 +1124,20 @@ void CSyntaxRichEditCtrl::ReplaceText( int startCharIndex, int endCharIndex, con
 CSyntaxRichEditCtrl::AutoCompleteInsertText
 ================
 */
-void CSyntaxRichEditCtrl::AutoCompleteInsertText( void ) {
+void CSyntaxRichEditCtrl::AutoCompleteInsertText(void)
+{
 	long selStart, selEnd;
 	int index;
 
 	index = autoCompleteListBox.GetCurSel();
-	if ( index >= 0 ) {
+
+	if (index >= 0) {
 		CString text;
-		autoCompleteListBox.GetText( index, text );
-		GetSel( selStart, selEnd );
+		autoCompleteListBox.GetText(index, text);
+		GetSel(selStart, selEnd);
 		selStart = autoCompleteStart;
-		SetSel( selStart, selEnd );
-		ReplaceSel( text, TRUE );
+		SetSel(selStart, selEnd);
+		ReplaceSel(text, TRUE);
 	}
 }
 
@@ -1059,16 +1146,18 @@ void CSyntaxRichEditCtrl::AutoCompleteInsertText( void ) {
 CSyntaxRichEditCtrl::AutoCompleteUpdate
 ================
 */
-void CSyntaxRichEditCtrl::AutoCompleteUpdate( void ) {
+void CSyntaxRichEditCtrl::AutoCompleteUpdate(void)
+{
 	long selStart, selEnd;
 	int index;
 	idStr text;
 
-	GetSel( selStart, selEnd );
-	GetText( text, autoCompleteStart, selStart );
-	index = autoCompleteListBox.FindString( -1, text );
-	if ( index >= 0 && index < autoCompleteListBox.GetCount() ) {
-		autoCompleteListBox.SetCurSel( index );
+	GetSel(selStart, selEnd);
+	GetText(text, autoCompleteStart, selStart);
+	index = autoCompleteListBox.FindString(-1, text);
+
+	if (index >= 0 && index < autoCompleteListBox.GetCount()) {
+		autoCompleteListBox.SetCurSel(index);
 	}
 }
 
@@ -1077,24 +1166,27 @@ void CSyntaxRichEditCtrl::AutoCompleteUpdate( void ) {
 CSyntaxRichEditCtrl::AutoCompleteShow
 ================
 */
-void CSyntaxRichEditCtrl::AutoCompleteShow( int charIndex ) {
+void CSyntaxRichEditCtrl::AutoCompleteShow(int charIndex)
+{
 	CPoint point;
 	CRect rect;
 
 	autoCompleteStart = charIndex;
-	point = PosFromChar( charIndex );
-	GetClientRect( rect );
-	if ( point.y < rect.bottom - AUTOCOMPLETE_OFFSET - AUTOCOMPLETE_HEIGHT ) {
+	point = PosFromChar(charIndex);
+	GetClientRect(rect);
+
+	if (point.y < rect.bottom - AUTOCOMPLETE_OFFSET - AUTOCOMPLETE_HEIGHT) {
 		rect.top = point.y + AUTOCOMPLETE_OFFSET;
 		rect.bottom = point.y + AUTOCOMPLETE_OFFSET + AUTOCOMPLETE_HEIGHT;
 	} else {
 		rect.top = point.y - AUTOCOMPLETE_HEIGHT;
 		rect.bottom = point.y;
 	}
+
 	rect.left = point.x;
 	rect.right = point.x + AUTOCOMPLETE_WIDTH;
-	autoCompleteListBox.MoveWindow( &rect );
-	autoCompleteListBox.ShowWindow( TRUE );
+	autoCompleteListBox.MoveWindow(&rect);
+	autoCompleteListBox.ShowWindow(TRUE);
 	AutoCompleteUpdate();
 }
 
@@ -1103,9 +1195,10 @@ void CSyntaxRichEditCtrl::AutoCompleteShow( int charIndex ) {
 CSyntaxRichEditCtrl::AutoCompleteHide
 ================
 */
-void CSyntaxRichEditCtrl::AutoCompleteHide( void ) {
+void CSyntaxRichEditCtrl::AutoCompleteHide(void)
+{
 	autoCompleteStart = -1;
-	autoCompleteListBox.ShowWindow( FALSE );
+	autoCompleteListBox.ShowWindow(FALSE);
 }
 
 /*
@@ -1113,27 +1206,30 @@ void CSyntaxRichEditCtrl::AutoCompleteHide( void ) {
 CSyntaxRichEditCtrl::ToolTipShow
 ================
 */
-void CSyntaxRichEditCtrl::ToolTipShow( int charIndex, const char *string ) {
+void CSyntaxRichEditCtrl::ToolTipShow(int charIndex, const char *string)
+{
 	CPoint point, p1, p2;
 	CRect rect;
 
 	funcParmToolTipStart = charIndex;
-	funcParmToolTip.SetWindowText( string );
-	p1 = funcParmToolTip.PosFromChar( 0 );
-	p2 = funcParmToolTip.PosFromChar( strlen( string ) - 1 );
-	point = PosFromChar( charIndex );
-	GetClientRect( rect );
-	if ( point.y < rect.bottom - FUNCPARMTOOLTIP_OFFSET - FUNCPARMTOOLTIP_HEIGHT ) {
+	funcParmToolTip.SetWindowText(string);
+	p1 = funcParmToolTip.PosFromChar(0);
+	p2 = funcParmToolTip.PosFromChar(strlen(string) - 1);
+	point = PosFromChar(charIndex);
+	GetClientRect(rect);
+
+	if (point.y < rect.bottom - FUNCPARMTOOLTIP_OFFSET - FUNCPARMTOOLTIP_HEIGHT) {
 		rect.top = point.y + FUNCPARMTOOLTIP_OFFSET;
 		rect.bottom = point.y + FUNCPARMTOOLTIP_OFFSET + FUNCPARMTOOLTIP_HEIGHT;
 	} else {
 		rect.top = point.y - FUNCPARMTOOLTIP_HEIGHT;
 		rect.bottom = point.y;
 	}
+
 	rect.left = point.x;
 	rect.right = point.x + FUNCPARMTOOLTIP_WIDTH + p2.x - p1.x;
-	funcParmToolTip.MoveWindow( &rect );
-	funcParmToolTip.ShowWindow( TRUE );
+	funcParmToolTip.MoveWindow(&rect);
+	funcParmToolTip.ShowWindow(TRUE);
 }
 
 /*
@@ -1141,9 +1237,10 @@ void CSyntaxRichEditCtrl::ToolTipShow( int charIndex, const char *string ) {
 CSyntaxRichEditCtrl::ToolTipHide
 ================
 */
-void CSyntaxRichEditCtrl::ToolTipHide( void ) {
+void CSyntaxRichEditCtrl::ToolTipHide(void)
+{
 	funcParmToolTipStart = -1;
-	funcParmToolTip.ShowWindow( FALSE );
+	funcParmToolTip.ShowWindow(FALSE);
 }
 
 /*
@@ -1151,31 +1248,34 @@ void CSyntaxRichEditCtrl::ToolTipHide( void ) {
 CSyntaxRichEditCtrl::BracedSectionStart
 ================
 */
-bool CSyntaxRichEditCtrl::BracedSectionStart( char braceStartChar, char braceEndChar ) {
+bool CSyntaxRichEditCtrl::BracedSectionStart(char braceStartChar, char braceEndChar)
+{
 	long selStart, selEnd;
 	int brace, i;
 	idStr text;
 
-	GetSel( selStart, selEnd );
-	GetText( text, 0, GetTextLength() );
+	GetSel(selStart, selEnd);
+	GetText(text, 0, GetTextLength());
 
-	for ( brace = 1, i = selStart; i < text.Length(); i++ ) {
-		if ( text[i] == braceStartChar ) {
+	for (brace = 1, i = selStart; i < text.Length(); i++) {
+		if (text[i] == braceStartChar) {
 			brace++;
-		} else if ( text[i] == braceEndChar ) {
+		} else if (text[i] == braceEndChar) {
 			brace--;
-			if ( brace == 0 ) {
+
+			if (brace == 0) {
 				break;
 			}
 		}
 	}
-	if ( brace == 0 ) {
+
+	if (brace == 0) {
 		bracedSection[0] = selStart - 1;
 		bracedSection[1] = i;
 		BracedSectionShow();
 	}
 
-	return ( brace == 0 );
+	return (brace == 0);
 }
 
 /*
@@ -1183,33 +1283,35 @@ bool CSyntaxRichEditCtrl::BracedSectionStart( char braceStartChar, char braceEnd
 CSyntaxRichEditCtrl::BracedSectionEnd
 ================
 */
-bool CSyntaxRichEditCtrl::BracedSectionEnd( char braceStartChar, char braceEndChar ) {
+bool CSyntaxRichEditCtrl::BracedSectionEnd(char braceStartChar, char braceEndChar)
+{
 	long selStart, selEnd;
 	int brace, i;
 	idStr text;
 
-	GetSel( selStart, selEnd );
-	GetText( text, 0, GetTextLength() );
+	GetSel(selStart, selEnd);
+	GetText(text, 0, GetTextLength());
 
-	for ( brace = 1, i = Min( selStart-2, (long)text.Length()-1 ); i >= 0; i-- ) {
-		if ( text[i] == braceStartChar ) {
+	for (brace = 1, i = Min(selStart-2, (long)text.Length()-1); i >= 0; i--) {
+		if (text[i] == braceStartChar) {
 			brace--;
-			if ( brace == 0 ) {
+
+			if (brace == 0) {
 				break;
 			}
-		} else if ( text[i] == braceEndChar ) {
+		} else if (text[i] == braceEndChar) {
 			brace++;
 		}
 	}
 
-	if ( brace == 0 ) {
+	if (brace == 0) {
 		bracedSection[0] = i;
 		bracedSection[1] = selStart - 1;
 		BracedSectionAdjustEndTabs();
 		BracedSectionShow();
 	}
 
-	return ( brace == 0 );
+	return (brace == 0);
 }
 
 /*
@@ -1217,34 +1319,38 @@ bool CSyntaxRichEditCtrl::BracedSectionEnd( char braceStartChar, char braceEndCh
 CSyntaxRichEditCtrl::BracedSectionAdjustEndTabs
 ================
 */
-void CSyntaxRichEditCtrl::BracedSectionAdjustEndTabs( void ) {
+void CSyntaxRichEditCtrl::BracedSectionAdjustEndTabs(void)
+{
 	int line, lineIndex, length, column, numTabs, i;
 	char buffer[1024];
 	idStr text;
 
-	line = LineFromChar( bracedSection[0] );
-	length = GetLine( line, buffer, sizeof( buffer ) );
-	for ( numTabs = 0; numTabs < length; numTabs++ ) {
-		if ( !idStr::CharIsTab( buffer[numTabs] ) ) {
+	line = LineFromChar(bracedSection[0]);
+	length = GetLine(line, buffer, sizeof(buffer));
+
+	for (numTabs = 0; numTabs < length; numTabs++) {
+		if (!idStr::CharIsTab(buffer[numTabs])) {
 			break;
 		}
-		text.Append( '\t' );
+
+		text.Append('\t');
 	}
 
-	line = LineFromChar( bracedSection[1] );
-	lineIndex = LineIndex( line );
-	length = GetLine( line, buffer, sizeof( buffer ) );
+	line = LineFromChar(bracedSection[1]);
+	lineIndex = LineIndex(line);
+	length = GetLine(line, buffer, sizeof(buffer));
 	column = bracedSection[1] - lineIndex;
-	for ( i = 0; i < column; i++ ) {
-		if ( charType[buffer[i]] != CT_WHITESPACE ) {
+
+	for (i = 0; i < column; i++) {
+		if (charType[buffer[i]] != CT_WHITESPACE) {
 			return;
 		}
 	}
 
-	ReplaceText( lineIndex, lineIndex + column, text );
+	ReplaceText(lineIndex, lineIndex + column, text);
 
 	bracedSection[1] += numTabs - column;
-	SetSel( bracedSection[1]+1, bracedSection[1]+1 );
+	SetSel(bracedSection[1]+1, bracedSection[1]+1);
 }
 
 /*
@@ -1252,10 +1358,11 @@ void CSyntaxRichEditCtrl::BracedSectionAdjustEndTabs( void ) {
 CSyntaxRichEditCtrl::BracedSectionShow
 ================
 */
-void CSyntaxRichEditCtrl::BracedSectionShow( void ) {
-	for ( int i = 0; i < 2; i++ ) {
-		if ( bracedSection[i] >= 0 ) {
-			SetColor( bracedSection[i], bracedSection[i] + 1, braceHighlightColor, DEFAULT_BACK_COLOR, true );
+void CSyntaxRichEditCtrl::BracedSectionShow(void)
+{
+	for (int i = 0; i < 2; i++) {
+		if (bracedSection[i] >= 0) {
+			SetColor(bracedSection[i], bracedSection[i] + 1, braceHighlightColor, DEFAULT_BACK_COLOR, true);
 		}
 	}
 }
@@ -1265,10 +1372,11 @@ void CSyntaxRichEditCtrl::BracedSectionShow( void ) {
 CSyntaxRichEditCtrl::BracedSectionHide
 ================
 */
-void CSyntaxRichEditCtrl::BracedSectionHide( void ) {
-	for ( int i = 0; i < 2; i++ ) {
-		if ( bracedSection[i] >= 0 ) {
-			SetColor( bracedSection[i], bracedSection[i] + 1, defaultColor, DEFAULT_BACK_COLOR, false );
+void CSyntaxRichEditCtrl::BracedSectionHide(void)
+{
+	for (int i = 0; i < 2; i++) {
+		if (bracedSection[i] >= 0) {
+			SetColor(bracedSection[i], bracedSection[i] + 1, defaultColor, DEFAULT_BACK_COLOR, false);
 			bracedSection[i] = -1;
 		}
 	}
@@ -1279,28 +1387,33 @@ void CSyntaxRichEditCtrl::BracedSectionHide( void ) {
 CSyntaxRichEditCtrl::GetNameBeforeCurrentSelection
 ================
 */
-bool CSyntaxRichEditCtrl::GetNameBeforeCurrentSelection( CString &name, int &charIndex ) const {
+bool CSyntaxRichEditCtrl::GetNameBeforeCurrentSelection(CString &name, int &charIndex) const
+{
 	long selStart, selEnd;
 	int line, column, length;
 	char buffer[1024];
 
-	GetSel( selStart, selEnd );
+	GetSel(selStart, selEnd);
 	charIndex = selStart;
-	line = LineFromChar( selStart );
-	length = GetLine( line, buffer, sizeof( buffer ) );
-	column = selStart - LineIndex( line ) - 1;
+	line = LineFromChar(selStart);
+	length = GetLine(line, buffer, sizeof(buffer));
+	column = selStart - LineIndex(line) - 1;
+
 	do {
 		buffer[column--] = '\0';
-	} while( charType[buffer[column]] == CT_WHITESPACE );
-	for ( length = 0; length < column; length++ ) {
-		if ( charType[buffer[column-length-1]] != CT_NAME ) {
+	} while (charType[buffer[column]] == CT_WHITESPACE);
+
+	for (length = 0; length < column; length++) {
+		if (charType[buffer[column-length-1]] != CT_NAME) {
 			break;
 		}
 	}
-	if ( length > 0 ) {
+
+	if (length > 0) {
 		name = buffer + column - length;
 		return true;
 	}
+
 	return false;
 }
 
@@ -1309,31 +1422,34 @@ bool CSyntaxRichEditCtrl::GetNameBeforeCurrentSelection( CString &name, int &cha
 CSyntaxRichEditCtrl::GetNameForMousePosition
 ================
 */
-bool CSyntaxRichEditCtrl::GetNameForMousePosition( idStr &name ) const {
+bool CSyntaxRichEditCtrl::GetNameForMousePosition(idStr &name) const
+{
 	int charIndex, startCharIndex, endCharIndex, type;
 	idStr text;
 
-	charIndex = CharFromPos( mousePoint );
+	charIndex = CharFromPos(mousePoint);
 
-	for ( startCharIndex = charIndex; startCharIndex > 0; startCharIndex-- ) {
-		GetText( text, startCharIndex - 1, startCharIndex );
+	for (startCharIndex = charIndex; startCharIndex > 0; startCharIndex--) {
+		GetText(text, startCharIndex - 1, startCharIndex);
 		type = charType[text[0]];
-		if ( type != CT_NAME && type != CT_NUMBER ) {
+
+		if (type != CT_NAME && type != CT_NUMBER) {
 			break;
 		}
 	}
 
-	for ( endCharIndex = charIndex; endCharIndex < GetTextLength(); endCharIndex++ ) {
-		GetText( text, endCharIndex, endCharIndex + 1 );
+	for (endCharIndex = charIndex; endCharIndex < GetTextLength(); endCharIndex++) {
+		GetText(text, endCharIndex, endCharIndex + 1);
 		type = charType[text[0]];
-		if ( type != CT_NAME && type != CT_NUMBER ) {
+
+		if (type != CT_NAME && type != CT_NUMBER) {
 			break;
 		}
 	}
 
-	GetText( name, startCharIndex, endCharIndex );
+	GetText(name, startCharIndex, endCharIndex);
 
-	return ( endCharIndex > startCharIndex );
+	return (endCharIndex > startCharIndex);
 }
 
 /*
@@ -1341,15 +1457,16 @@ bool CSyntaxRichEditCtrl::GetNameForMousePosition( idStr &name ) const {
 CSyntaxRichEditCtrl::GoToLine
 ================
 */
-void CSyntaxRichEditCtrl::GoToLine( int line ) {
+void CSyntaxRichEditCtrl::GoToLine(int line)
+{
 
-	int index = LineIndex( line );
+	int index = LineIndex(line);
 
-	m_TextDoc->Freeze( NULL );
+	m_TextDoc->Freeze(NULL);
 
-	SetSel( index, index );
+	SetSel(index, index);
 
-	m_TextDoc->Unfreeze( NULL );
+	m_TextDoc->Unfreeze(NULL);
 
 	UpdateVisibleRange();
 
@@ -1361,14 +1478,15 @@ void CSyntaxRichEditCtrl::GoToLine( int line ) {
 CSyntaxRichEditCtrl::OnToolHitTest
 ================
 */
-int CSyntaxRichEditCtrl::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
-	CRichEditCtrl::OnToolHitTest( point, pTI );
+int CSyntaxRichEditCtrl::OnToolHitTest(CPoint point, TOOLINFO *pTI) const
+{
+	CRichEditCtrl::OnToolHitTest(point, pTI);
 
 	pTI->hwnd = GetSafeHwnd();
 	pTI->uId = (UINT_PTR)GetSafeHwnd();
 	pTI->uFlags |= TTF_IDISHWND;
 	pTI->lpszText = LPSTR_TEXTCALLBACK;
-	pTI->rect = CRect( point, point );
+	pTI->rect = CRect(point, point);
 	pTI->rect.right += 100;
 	pTI->rect.bottom += 20;
 	return pTI->uId;
@@ -1379,22 +1497,23 @@ int CSyntaxRichEditCtrl::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
 CSyntaxRichEditCtrl::OnToolTipNotify
 ================
 */
-BOOL CSyntaxRichEditCtrl::OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pResult ) {
-	TOOLTIPTEXTA* pTTTA = (TOOLTIPTEXTA*)pNMHDR;
-	TOOLTIPTEXTW* pTTTW = (TOOLTIPTEXTW*)pNMHDR;
+BOOL CSyntaxRichEditCtrl::OnToolTipNotify(UINT id, NMHDR *pNMHDR, LRESULT *pResult)
+{
+	TOOLTIPTEXTA *pTTTA = (TOOLTIPTEXTA *)pNMHDR;
+	TOOLTIPTEXTW *pTTTW = (TOOLTIPTEXTW *)pNMHDR;
 
 	*pResult = 0;
 
 	idStr name;
 
-	if ( GetNameForMousePosition( name ) ) {
+	if (GetNameForMousePosition(name)) {
 		CString toolTip;
 
-		if ( GetToolTip == NULL || !GetToolTip( name, toolTip ) ) {
+		if (GetToolTip == NULL || !GetToolTip(name, toolTip)) {
 
-			int keyWordIndex = FindKeyWord( name, name.Length() );
+			int keyWordIndex = FindKeyWord(name, name.Length());
 
-			if ( keyWordIndex != -1 && keyWords[keyWordIndex].description[0] != '\0' ) {
+			if (keyWordIndex != -1 && keyWords[keyWordIndex].description[0] != '\0') {
 				toolTip = keyWords[keyWordIndex].description;
 			} else {
 				toolTip = name.c_str();
@@ -1404,39 +1523,44 @@ BOOL CSyntaxRichEditCtrl::OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pRes
 		AFX_MODULE_THREAD_STATE *state = AfxGetModuleThreadState();
 
 		// set max tool tip width to enable multi-line tool tips using "\r\n" for line breaks
-		state->m_pToolTip->SetMaxTipWidth( 500 );
+		state->m_pToolTip->SetMaxTipWidth(500);
 
 		// set the number of milliseconds after which the tool tip automatically disappears
-		state->m_pToolTip->SetDelayTime( TTDT_AUTOPOP, 5000 + toolTip.GetLength() * 50 );
+		state->m_pToolTip->SetDelayTime(TTDT_AUTOPOP, 5000 + toolTip.GetLength() * 50);
 
 #ifndef _UNICODE
-		if( pNMHDR->code == TTN_NEEDTEXTA ) {
+
+		if (pNMHDR->code == TTN_NEEDTEXTA) {
 			delete m_pchTip;
 			m_pchTip = new TCHAR[toolTip.GetLength() + 2];
-			lstrcpyn( m_pchTip, toolTip, toolTip.GetLength() + 1 );
-			pTTTW->lpszText = (WCHAR*)m_pchTip;
+			lstrcpyn(m_pchTip, toolTip, toolTip.GetLength() + 1);
+			pTTTW->lpszText = (WCHAR *)m_pchTip;
 		} else {
 			delete m_pwchTip;
 			m_pwchTip = new WCHAR[toolTip.GetLength() + 2];
-			_mbstowcsz( m_pwchTip, toolTip, toolTip.GetLength() + 1 );
-			pTTTW->lpszText = (WCHAR*)m_pwchTip;
+			_mbstowcsz(m_pwchTip, toolTip, toolTip.GetLength() + 1);
+			pTTTW->lpszText = (WCHAR *)m_pwchTip;
 		}
+
 #else
-		if( pNMHDR->code == TTN_NEEDTEXTA ) {
+
+		if (pNMHDR->code == TTN_NEEDTEXTA) {
 			delete m_pchTip;
 			m_pchTip = new TCHAR[toolTip.GetLength() + 2];
-			_wcstombsz( m_pchTip, toolTip, toolTip.GetLength() + 1 );
+			_wcstombsz(m_pchTip, toolTip, toolTip.GetLength() + 1);
 			pTTTA->lpszText = (LPTSTR)m_pchTip;
 		} else {
 			delete m_pwchTip;
 			m_pwchTip = new WCHAR[toolTip.GetLength() + 2];
-			lstrcpyn( m_pwchTip, toolTip, toolTip.GetLength() + 1 );
+			lstrcpyn(m_pwchTip, toolTip, toolTip.GetLength() + 1);
 			pTTTA->lpszText = (LPTSTR) m_pwchTip;
 		}
+
 #endif
 
 		return TRUE;
 	}
+
 	return FALSE;
 }
 
@@ -1445,7 +1569,8 @@ BOOL CSyntaxRichEditCtrl::OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pRes
 CSyntaxRichEditCtrl::OnGetDlgCode
 ================
 */
-UINT CSyntaxRichEditCtrl::OnGetDlgCode() {
+UINT CSyntaxRichEditCtrl::OnGetDlgCode()
+{
 	// get all keys, including tabs
 	return DLGC_WANTALLKEYS | DLGC_WANTARROWS | DLGC_WANTCHARS | DLGC_WANTMESSAGE | DLGC_WANTTAB;
 }
@@ -1455,42 +1580,43 @@ UINT CSyntaxRichEditCtrl::OnGetDlgCode() {
 CSyntaxRichEditCtrl::OnKeyDown
 ================
 */
-void CSyntaxRichEditCtrl::OnKeyDown( UINT nKey, UINT nRepCnt, UINT nFlags ) {
+void CSyntaxRichEditCtrl::OnKeyDown(UINT nKey, UINT nRepCnt, UINT nFlags)
+{
 
-	if ( m_TextDoc == NULL ) {
+	if (m_TextDoc == NULL) {
 		return;
 	}
 
-	if ( autoCompleteStart >= 0 ) {
+	if (autoCompleteStart >= 0) {
 		int sel;
 
-		switch( nKey ) {
+		switch (nKey) {
 			case VK_UP: {		// up arrow
-				sel = Max( 0, autoCompleteListBox.GetCurSel() - 1 );
-				autoCompleteListBox.SetCurSel( sel );
+				sel = Max(0, autoCompleteListBox.GetCurSel() - 1);
+				autoCompleteListBox.SetCurSel(sel);
 				return;
 			}
 			case VK_DOWN: {		// down arrow
-				sel = Min( autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() + 1 );
-				autoCompleteListBox.SetCurSel( sel );
+				sel = Min(autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() + 1);
+				autoCompleteListBox.SetCurSel(sel);
 				return;
 			}
 			case VK_PRIOR: {	// page up key
-				sel = Max( 0, autoCompleteListBox.GetCurSel() - 10 );
-				autoCompleteListBox.SetCurSel( sel );
+				sel = Max(0, autoCompleteListBox.GetCurSel() - 10);
+				autoCompleteListBox.SetCurSel(sel);
 				return;
 			}
 			case VK_NEXT: {		// page down key
-				sel = Min( autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() + 10 );
-				autoCompleteListBox.SetCurSel( sel );
+				sel = Min(autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() + 10);
+				autoCompleteListBox.SetCurSel(sel);
 				return;
 			}
 			case VK_HOME: {		// home key
-				autoCompleteListBox.SetCurSel( 0 );
+				autoCompleteListBox.SetCurSel(0);
 				return;
 			}
 			case VK_END: {
-				autoCompleteListBox.SetCurSel( autoCompleteListBox.GetCount() - 1 );
+				autoCompleteListBox.SetCurSel(autoCompleteListBox.GetCount() - 1);
 				return;
 			}
 			case VK_RETURN:		// enter key
@@ -1510,49 +1636,54 @@ void CSyntaxRichEditCtrl::OnKeyDown( UINT nKey, UINT nRepCnt, UINT nFlags ) {
 
 	BracedSectionHide();
 
-	switch( nKey ) {
+	switch (nKey) {
 		case VK_TAB: {		// multi-line tabs
 			long selStart, selEnd;
 
-			GetSel( selStart, selEnd );
+			GetSel(selStart, selEnd);
 
 			// if multiple lines are selected add tabs to, or remove tabs from all of them
-			if ( selEnd > selStart ) {
+			if (selEnd > selStart) {
 				CString text;
 
 				text = GetSelText();
 
-				if ( GetAsyncKeyState( VK_SHIFT ) & 0x8000 ) {
-					if ( idStr::CharIsTab( text[0] ) ) {
-						text.Delete( 0, 1 );
+				if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
+					if (idStr::CharIsTab(text[0])) {
+						text.Delete(0, 1);
 					}
-					for ( int i = 0; i < text.GetLength() - 2; i++ ) {
-						if ( idStr::CharIsNewLine( text[i] ) ) {
+
+					for (int i = 0; i < text.GetLength() - 2; i++) {
+						if (idStr::CharIsNewLine(text[i])) {
 							do {
 								i++;
-							} while( idStr::CharIsNewLine( text[i] ) );
-							if ( idStr::CharIsTab( text[i] ) ) {
-								text.Delete( i, 1 );
+							} while (idStr::CharIsNewLine(text[i]));
+
+							if (idStr::CharIsTab(text[i])) {
+								text.Delete(i, 1);
 							}
 						}
 					}
 				} else {
-					text.Insert( 0, '\t' );
-					for ( int i = 0; i < text.GetLength() - 1; i++ ) {
-						if ( idStr::CharIsNewLine( text[i] ) ) {
+					text.Insert(0, '\t');
+
+					for (int i = 0; i < text.GetLength() - 1; i++) {
+						if (idStr::CharIsNewLine(text[i])) {
 							do {
 								i++;
-							} while( idStr::CharIsNewLine( text[i] ) );
-							text.Insert( i, '\t' );
+							} while (idStr::CharIsNewLine(text[i]));
+
+							text.Insert(i, '\t');
 						}
 					}
 				}
 
-				ReplaceSel( text, TRUE );
-				SetSel( selStart, selStart + text.GetLength() );
+				ReplaceSel(text, TRUE);
+				SetSel(selStart, selStart + text.GetLength());
 			} else {
-				ReplaceSel( "\t", TRUE );
+				ReplaceSel("\t", TRUE);
 			}
+
 			return;
 		}
 		case VK_RETURN: {	// auto-indentation
@@ -1561,39 +1692,45 @@ void CSyntaxRichEditCtrl::OnKeyDown( UINT nKey, UINT nRepCnt, UINT nFlags ) {
 			char buffer[1024];
 			idStr text;
 
-			GetSel( selStart, selEnd );
-			line = LineFromChar( selStart );
-			length = GetLine( line, buffer, sizeof( buffer ) );
-			for ( numTabs = 0; numTabs < length; numTabs++ ) {
-				if ( !idStr::CharIsTab( buffer[numTabs] ) ) {
+			GetSel(selStart, selEnd);
+			line = LineFromChar(selStart);
+			length = GetLine(line, buffer, sizeof(buffer));
+
+			for (numTabs = 0; numTabs < length; numTabs++) {
+				if (!idStr::CharIsTab(buffer[numTabs])) {
 					break;
 				}
 			}
+
 			bool first = true;
-			for ( i = numTabs; i < length; i++ ) {
-				if ( buffer[i] == '{' ) {
+
+			for (i = numTabs; i < length; i++) {
+				if (buffer[i] == '{') {
 					numTabs++;
 					first = false;
-				} else if ( buffer[i] == '}' && !first ) {
+				} else if (buffer[i] == '}' && !first) {
 					numTabs--;
 				}
 			}
+
 			text = "\r\n";
-			for ( i = 0; i < numTabs; i++ ) {
-				text.Append( '\t' );
+
+			for (i = 0; i < numTabs; i++) {
+				text.Append('\t');
 			}
-			ReplaceSel( text, TRUE );
+
+			ReplaceSel(text, TRUE);
 			return;
 		}
 	}
 
-	m_TextDoc->Freeze( NULL );
+	m_TextDoc->Freeze(NULL);
 
-	CRichEditCtrl::OnKeyDown( nKey, nRepCnt, nFlags );
+	CRichEditCtrl::OnKeyDown(nKey, nRepCnt, nFlags);
 
 	UpdateVisibleRange();
 
-	m_TextDoc->Unfreeze( NULL );
+	m_TextDoc->Unfreeze(NULL);
 }
 
 /*
@@ -1601,28 +1738,31 @@ void CSyntaxRichEditCtrl::OnKeyDown( UINT nKey, UINT nRepCnt, UINT nFlags ) {
 CSyntaxRichEditCtrl::OnChar
 ================
 */
-void CSyntaxRichEditCtrl::OnChar( UINT nChar, UINT nRepCnt, UINT nFlags ) {
+void CSyntaxRichEditCtrl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
 
-	if ( nChar == VK_TAB ) {
+	if (nChar == VK_TAB) {
 		return;	// tab is handle in OnKeyDown
 	}
 
-	CRichEditCtrl::OnChar( nChar, nRepCnt, nFlags );
+	CRichEditCtrl::OnChar(nChar, nRepCnt, nFlags);
 
 	// if the auto-complete list box is up
-	if ( autoCompleteStart >= 0 ) {
+	if (autoCompleteStart >= 0) {
 		long selStart, selEnd;
 
-		if ( charType[nChar] == CT_NAME ) {
+		if (charType[nChar] == CT_NAME) {
 			AutoCompleteUpdate();
 			return;
-		} else if ( nChar == VK_BACK ) {
-			GetSel( selStart, selEnd );
-			if ( selStart > autoCompleteStart ) {
+		} else if (nChar == VK_BACK) {
+			GetSel(selStart, selEnd);
+
+			if (selStart > autoCompleteStart) {
 				AutoCompleteUpdate();
 			} else {
 				AutoCompleteHide();
 			}
+
 			return;
 		} else {
 			AutoCompleteHide();
@@ -1630,86 +1770,95 @@ void CSyntaxRichEditCtrl::OnChar( UINT nChar, UINT nRepCnt, UINT nFlags ) {
 	}
 
 	// if the function parameter tool tip is up
-	if ( funcParmToolTipStart >= 0 ) {
+	if (funcParmToolTipStart >= 0) {
 		long selStart, selEnd;
 
-		if ( nChar == ')' || nChar == VK_ESCAPE ) {
+		if (nChar == ')' || nChar == VK_ESCAPE) {
 			ToolTipHide();
-		} else if ( nChar == VK_BACK ) {
-			GetSel( selStart, selEnd );
-			if ( selStart < funcParmToolTipStart ) {
+		} else if (nChar == VK_BACK) {
+			GetSel(selStart, selEnd);
+
+			if (selStart < funcParmToolTipStart) {
 				ToolTipHide();
 			}
 		}
 	}
 
 	// show keyword auto-completion
-	if ( keyWordAutoCompletion && charType[nChar] == CT_NAME && funcParmToolTipStart < 0 ) {
+	if (keyWordAutoCompletion && charType[nChar] == CT_NAME && funcParmToolTipStart < 0) {
 		long selStart, selEnd;
 		int line, column, length, i;
 		char buffer[1024];
 
-		GetSel( selStart, selEnd );
-		line = LineFromChar( selStart );
-		length = GetLine( line, buffer, sizeof( buffer ) );
-		column = selStart - LineIndex( line );
-		if ( column <= 1 || charType[buffer[column-2]] == CT_WHITESPACE ) {
-			if ( column >= length-1 || charType[buffer[column]] == CT_WHITESPACE ) {
+		GetSel(selStart, selEnd);
+		line = LineFromChar(selStart);
+		length = GetLine(line, buffer, sizeof(buffer));
+		column = selStart - LineIndex(line);
+
+		if (column <= 1 || charType[buffer[column-2]] == CT_WHITESPACE) {
+			if (column >= length-1 || charType[buffer[column]] == CT_WHITESPACE) {
 
 				autoCompleteListBox.ResetContent();
-				for ( i = 0; keyWords[i].keyWord; i++ ) {
-					autoCompleteListBox.AddString( keyWords[i].keyWord );
+
+				for (i = 0; keyWords[i].keyWord; i++) {
+					autoCompleteListBox.AddString(keyWords[i].keyWord);
 				}
-				AutoCompleteShow( selStart - 1 );
+
+				AutoCompleteShow(selStart - 1);
 			}
 		}
+
 		return;
 	}
 
 	// highlight braced sections
-	if ( nChar == '{' ) {
-		BracedSectionStart( '{', '}' );
-	} else if ( nChar == '}' ) {
-		BracedSectionEnd( '{', '}' );
-	} else if ( nChar == '(' ) {
-		BracedSectionStart( '(', ')' );
-	} else if ( nChar == ')' ) {
-		BracedSectionEnd( '(', ')' );
-	} else if ( nChar == '[' ) {
-		BracedSectionStart( '[', ']' );
-	} else if ( nChar == ']' ) {
-		BracedSectionEnd( '[', ']' );
-	} else if ( nChar == '<' ) {
-		BracedSectionStart( '<', '>' );
-	} else if ( nChar == '>' ) {
-		BracedSectionEnd( '<', '>' );
+	if (nChar == '{') {
+		BracedSectionStart('{', '}');
+	} else if (nChar == '}') {
+		BracedSectionEnd('{', '}');
+	} else if (nChar == '(') {
+		BracedSectionStart('(', ')');
+	} else if (nChar == ')') {
+		BracedSectionEnd('(', ')');
+	} else if (nChar == '[') {
+		BracedSectionStart('[', ']');
+	} else if (nChar == ']') {
+		BracedSectionEnd('[', ']');
+	} else if (nChar == '<') {
+		BracedSectionStart('<', '>');
+	} else if (nChar == '>') {
+		BracedSectionEnd('<', '>');
 	}
 
 	// show object member auto-completion
-	if ( nChar == '.' && GetObjectMembers && funcParmToolTipStart < 0 ) {
+	if (nChar == '.' && GetObjectMembers && funcParmToolTipStart < 0) {
 		int charIndex;
 		CString name;
 
-		if ( GetNameBeforeCurrentSelection( name, charIndex ) ) {
+		if (GetNameBeforeCurrentSelection(name, charIndex)) {
 			autoCompleteListBox.ResetContent();
-			if ( GetObjectMembers( name, autoCompleteListBox ) ) {
-				AutoCompleteShow( charIndex );
+
+			if (GetObjectMembers(name, autoCompleteListBox)) {
+				AutoCompleteShow(charIndex);
 			}
 		}
+
 		return;
 	}
 
 	// show function parameter tool tip
-	if ( nChar == '(' && GetFunctionParms ) {
+	if (nChar == '(' && GetFunctionParms) {
 		int charIndex;
 		CString name;
 
-		if ( GetNameBeforeCurrentSelection( name, charIndex ) ) {
+		if (GetNameBeforeCurrentSelection(name, charIndex)) {
 			CString parmString;
-			if ( GetFunctionParms( name, parmString ) ) {
-				ToolTipShow( charIndex, parmString );
+
+			if (GetFunctionParms(name, parmString)) {
+				ToolTipShow(charIndex, parmString);
 			}
 		}
+
 		return;
 	}
 }
@@ -1719,15 +1868,16 @@ void CSyntaxRichEditCtrl::OnChar( UINT nChar, UINT nRepCnt, UINT nFlags ) {
 CSyntaxRichEditCtrl::OnLButtonDown
 ================
 */
-void CSyntaxRichEditCtrl::OnLButtonDown( UINT nFlags, CPoint point ) {
+void CSyntaxRichEditCtrl::OnLButtonDown(UINT nFlags, CPoint point)
+{
 
-	if ( autoCompleteStart >= 0 ) {
+	if (autoCompleteStart >= 0) {
 		AutoCompleteHide();
 	}
 
 	BracedSectionHide();
 
-	CRichEditCtrl::OnLButtonDown( nFlags, point );
+	CRichEditCtrl::OnLButtonDown(nFlags, point);
 }
 
 /*
@@ -1735,26 +1885,28 @@ void CSyntaxRichEditCtrl::OnLButtonDown( UINT nFlags, CPoint point ) {
 CSyntaxRichEditCtrl::OnMouseWheel
 ================
 */
-BOOL CSyntaxRichEditCtrl::OnMouseWheel( UINT nFlags, short zDelta, CPoint pt ) {
-	if ( autoCompleteStart >= 0 ) {
+BOOL CSyntaxRichEditCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+	if (autoCompleteStart >= 0) {
 		int sel;
 
-		if ( zDelta > 0  ) {
-			sel = Max( 0, autoCompleteListBox.GetCurSel() - ( zDelta / WHEEL_DELTA ) );
+		if (zDelta > 0) {
+			sel = Max(0, autoCompleteListBox.GetCurSel() - (zDelta / WHEEL_DELTA));
 		} else {
-			sel = Min( autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() - ( zDelta / WHEEL_DELTA ) );
+			sel = Min(autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() - (zDelta / WHEEL_DELTA));
 		}
-		autoCompleteListBox.SetCurSel( sel );
+
+		autoCompleteListBox.SetCurSel(sel);
 		return TRUE;
 	}
 
-	m_TextDoc->Freeze( NULL );
+	m_TextDoc->Freeze(NULL);
 
-	LineScroll( -3 * ( (int) zDelta ) / WHEEL_DELTA, 0 );
+	LineScroll(-3 *((int) zDelta) / WHEEL_DELTA, 0);
 
 	UpdateVisibleRange();
 
-	m_TextDoc->Unfreeze( NULL );
+	m_TextDoc->Unfreeze(NULL);
 
 	return TRUE;
 }
@@ -1764,17 +1916,18 @@ BOOL CSyntaxRichEditCtrl::OnMouseWheel( UINT nFlags, short zDelta, CPoint pt ) {
 CSyntaxRichEditCtrl::OnMouseMove
 ================
 */
-void CSyntaxRichEditCtrl::OnMouseMove( UINT nFlags, CPoint point ) {
-	CRichEditCtrl::OnMouseMove( nFlags, point );
+void CSyntaxRichEditCtrl::OnMouseMove(UINT nFlags, CPoint point)
+{
+	CRichEditCtrl::OnMouseMove(nFlags, point);
 
-	if ( point != mousePoint ) {
+	if (point != mousePoint) {
 		mousePoint = point;
 
 		// remove tool tip and activate the tool tip control, otherwise
 		// tool tips stop working until the mouse moves over another window first
 		AFX_MODULE_THREAD_STATE *state = AfxGetModuleThreadState();
 		state->m_pToolTip->Pop();
-		state->m_pToolTip->Activate( TRUE );
+		state->m_pToolTip->Activate(TRUE);
 	}
 }
 
@@ -1783,12 +1936,13 @@ void CSyntaxRichEditCtrl::OnMouseMove( UINT nFlags, CPoint point ) {
 CSyntaxRichEditCtrl::OnSize
 ================
 */
-void CSyntaxRichEditCtrl::OnSize( UINT nType, int cx, int cy ) {
-	m_TextDoc->Freeze( NULL );
+void CSyntaxRichEditCtrl::OnSize(UINT nType, int cx, int cy)
+{
+	m_TextDoc->Freeze(NULL);
 
-	CRichEditCtrl::OnSize( nType, cx, cy );
+	CRichEditCtrl::OnSize(nType, cx, cy);
 
-	m_TextDoc->Unfreeze( NULL );
+	m_TextDoc->Unfreeze(NULL);
 
 	UpdateVisibleRange();
 }
@@ -1798,16 +1952,17 @@ void CSyntaxRichEditCtrl::OnSize( UINT nType, int cx, int cy ) {
 CSyntaxRichEditCtrl::OnVScroll
 ================
 */
-void CSyntaxRichEditCtrl::OnVScroll( UINT nSBCode, UINT nPos, CScrollBar* pScrollBar ) {
-	m_TextDoc->Freeze( NULL );
+void CSyntaxRichEditCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
+{
+	m_TextDoc->Freeze(NULL);
 
-	CRichEditCtrl::OnVScroll( nSBCode, nPos, pScrollBar );
+	CRichEditCtrl::OnVScroll(nSBCode, nPos, pScrollBar);
 
 	SetFocus();
 
 	UpdateVisibleRange();
 
-	m_TextDoc->Unfreeze( NULL );
+	m_TextDoc->Unfreeze(NULL);
 }
 
 /*
@@ -1815,20 +1970,21 @@ void CSyntaxRichEditCtrl::OnVScroll( UINT nSBCode, UINT nPos, CScrollBar* pScrol
 CSyntaxRichEditCtrl::OnProtected
 ================
 */
-void CSyntaxRichEditCtrl::OnProtected( NMHDR *pNMHDR, LRESULT *pResult ) {
-	ENPROTECTED* pEP = (ENPROTECTED*)pNMHDR;
+void CSyntaxRichEditCtrl::OnProtected(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	ENPROTECTED *pEP = (ENPROTECTED *)pNMHDR;
 
 	*pResult = 0;
 
 	updateRange = pEP->chrg;
 
-	switch( pEP->msg ) {
+	switch (pEP->msg) {
 		case WM_MOUSEMOVE: {
 			break;
 		}
 		case WM_SETTEXT: {
 			updateRange.cpMin = pEP->chrg.cpMin;
-			updateRange.cpMax = pEP->chrg.cpMin + strlen( (LPCTSTR) pEP->lParam );
+			updateRange.cpMax = pEP->chrg.cpMin + strlen((LPCTSTR) pEP->lParam);
 			break;
 		}
 		case WM_CUT: {
@@ -1857,25 +2013,26 @@ void CSyntaxRichEditCtrl::OnProtected( NMHDR *pNMHDR, LRESULT *pResult ) {
 CSyntaxRichEditCtrl::OnChange
 ================
 */
-void CSyntaxRichEditCtrl::OnChange() {
+void CSyntaxRichEditCtrl::OnChange()
+{
 	long selStart, selEnd;
 
-	if ( !updateSyntaxHighlighting ) {
+	if (!updateSyntaxHighlighting) {
 		return;
 	}
 
-	GetSel( selStart, selEnd );
-	selStart = Min( selStart, updateRange.cpMin );
-	selEnd = Max( selEnd, updateRange.cpMax );
+	GetSel(selStart, selEnd);
+	selStart = Min(selStart, updateRange.cpMin);
+	selEnd = Max(selEnd, updateRange.cpMax);
 
-	HighlightSyntax( selStart, selEnd );
+	HighlightSyntax(selStart, selEnd);
 
 	// send EN_CHANGE notification to parent window
 	NMHDR pNMHDR;
 	pNMHDR.hwndFrom = GetSafeHwnd();
 	pNMHDR.idFrom = GetDlgCtrlID();
 	pNMHDR.code = EN_CHANGE;
-	GetParent()->SendMessage( WM_NOTIFY, ( EN_CHANGE << 16 ) | GetDlgCtrlID(), (LPARAM)&pNMHDR );
+	GetParent()->SendMessage(WM_NOTIFY, (EN_CHANGE << 16) | GetDlgCtrlID(), (LPARAM)&pNMHDR);
 }
 
 /*
@@ -1883,7 +2040,8 @@ void CSyntaxRichEditCtrl::OnChange() {
 CSyntaxRichEditCtrl::OnAutoCompleteListBoxChange
 ================
 */
-void CSyntaxRichEditCtrl::OnAutoCompleteListBoxChange() {
+void CSyntaxRichEditCtrl::OnAutoCompleteListBoxChange()
+{
 	// steal focus back from the auto-complete list box
 	SetFocus();
 }
@@ -1893,7 +2051,8 @@ void CSyntaxRichEditCtrl::OnAutoCompleteListBoxChange() {
 CSyntaxRichEditCtrl::OnAutoCompleteListBoxDblClk
 ================
 */
-void CSyntaxRichEditCtrl::OnAutoCompleteListBoxDblClk() {
+void CSyntaxRichEditCtrl::OnAutoCompleteListBoxDblClk()
+{
 	// steal focus back from the auto-complete list box
 	SetFocus();
 

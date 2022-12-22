@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,8 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifndef __TOKEN_H__
 #define __TOKEN_H__
-
-#include "idlib/Str.h"
 
 /*
 ===============================================================================
@@ -70,97 +68,131 @@ If you have questions concerning this license or the applicable additional terms
 // punctuation sub type is the punctuation id
 // name sub type is the length of the name
 
-class idToken : public idStr {
+#ifdef _RAVEN
+class Lexer;
+#endif
 
-	friend class idParser;
-	friend class idLexer;
+class idToken : public idStr
+{
 
-public:
-	int				type;								// token type
-	int				subtype;							// token sub type
-	int				line;								// line in script the token was on
-	int				linesCrossed;						// number of lines crossed in white space before token
-	int				flags;								// token flags, used for recursive defines
+		friend class idParser;
+		friend class idLexer;
+#ifdef _RAVEN
+// RAVEN BEGIN
+// jsinger: added to allow Lexer direct access to token internals as well
+	friend class Lexer;
+// RAVEN END
+#endif
 
-public:
-					idToken( void );
-					idToken( const idToken *token );
-					~idToken( void );
+	public:
+		int				type;								// token type
+		int				subtype;							// token sub type
+		int				line;								// line in script the token was on
+		int				linesCrossed;						// number of lines crossed in white space before token
+		int				flags;								// token flags, used for recursive defines
 
-	void			operator=( const idStr& text );
-	void			operator=( const char *text );
+	public:
+		idToken(void);
+		idToken(const idToken *token);
+		~idToken(void);
 
-	double			GetDoubleValue( void );				// double value of TT_NUMBER
-	float			GetFloatValue( void );				// float value of TT_NUMBER
-	unsigned int	GetUnsignedIntValue( void );		// unsigned int value of TT_NUMBER
-	int				GetIntValue( void );				// int value of TT_NUMBER
-	int				WhiteSpaceBeforeToken( void ) const;// returns length of whitespace before token
-	void			ClearTokenWhiteSpace( void );		// forget whitespace before token
+		void			operator=(const idStr &text);
+		void			operator=(const char *text);
 
-	void			NumberValue( void );				// calculate values for a TT_NUMBER
+		double			GetDoubleValue(void);				// double value of TT_NUMBER
+		float			GetFloatValue(void);				// float value of TT_NUMBER
+		unsigned/* 64long */ int	GetUnsignedLongValue(void);		// unsigned int 64long value of TT_NUMBER
+		int				GetIntValue(void);				// int value of TT_NUMBER
+		int				WhiteSpaceBeforeToken(void) const;  // returns length of whitespace before token
+		void			ClearTokenWhiteSpace(void);		// forget whitespace before token
 
-private:
-	unsigned int	intvalue;							// integer value
-	double			floatvalue;							// floating point value
-	const char *	whiteSpaceStart_p;					// start of white space before token, only used by idLexer
-	const char *	whiteSpaceEnd_p;					// end of white space before token, only used by idLexer
-	idToken *		next;								// next token in chain, only used by idParser
+		void			NumberValue(void);				// calculate values for a TT_NUMBER
 
-	void			AppendDirty( const char a );		// append character without adding trailing zero
+	private:
+		unsigned/* 64long */ int	intvalue;							// integer value
+		double			floatvalue;							// floating point value
+		const char 	*whiteSpaceStart_p;					// start of white space before token, only used by idLexer
+		const char 	*whiteSpaceEnd_p;					// end of white space before token, only used by idLexer
+		idToken 		*next;								// next token in chain, only used by idParser
+
+		void			AppendDirty(const char a);		// append character without adding trailing zero
 };
 
-ID_INLINE idToken::idToken( void ) {
+ID_INLINE idToken::idToken(void)
+{
 }
 
-ID_INLINE idToken::idToken( const idToken *token ) {
+ID_INLINE idToken::idToken(const idToken *token)
+{
 	*this = *token;
 }
 
-ID_INLINE idToken::~idToken( void ) {
+ID_INLINE idToken::~idToken(void)
+{
 }
 
-ID_INLINE void idToken::operator=( const char *text) {
+ID_INLINE void idToken::operator=(const char *text)
+{
 	*static_cast<idStr *>(this) = text;
 }
 
-ID_INLINE void idToken::operator=( const idStr& text ) {
+ID_INLINE void idToken::operator=(const idStr &text)
+{
 	*static_cast<idStr *>(this) = text;
 }
 
-ID_INLINE double idToken::GetDoubleValue( void ) {
-	if ( type != TT_NUMBER ) {
+ID_INLINE double idToken::GetDoubleValue(void)
+{
+	if (type != TT_NUMBER) {
 		return 0.0;
 	}
-	if ( !(subtype & TT_VALUESVALID) ) {
+
+	if (!(subtype & TT_VALUESVALID)) {
 		NumberValue();
 	}
+
 	return floatvalue;
 }
 
-ID_INLINE float idToken::GetFloatValue( void ) {
+ID_INLINE float idToken::GetFloatValue(void)
+{
 	return (float) GetDoubleValue();
 }
 
-ID_INLINE unsigned int	idToken::GetUnsignedIntValue( void ) {
-	if ( type != TT_NUMBER ) {
+ID_INLINE unsigned/* 64long */ int	idToken::GetUnsignedLongValue(void)
+{
+	if (type != TT_NUMBER) {
 		return 0;
 	}
-	if ( !(subtype & TT_VALUESVALID) ) {
+
+	if (!(subtype & TT_VALUESVALID)) {
 		NumberValue();
 	}
+
 	return intvalue;
 }
 
-ID_INLINE int idToken::GetIntValue( void ) {
-	return (int) GetUnsignedIntValue();
+ID_INLINE int idToken::GetIntValue(void)
+{
+	return (int) GetUnsignedLongValue();
 }
 
-ID_INLINE int idToken::WhiteSpaceBeforeToken( void ) const {
-	return ( whiteSpaceEnd_p > whiteSpaceStart_p );
+ID_INLINE int idToken::WhiteSpaceBeforeToken(void) const
+{
+	return (whiteSpaceEnd_p > whiteSpaceStart_p);
 }
 
-ID_INLINE void idToken::AppendDirty( const char a ) {
-	EnsureAlloced( len + 2, true );
+ID_INLINE void idToken::AppendDirty(const char a)
+{
+	EnsureAlloced(len + 2, true);
+#ifdef _RAVEN // change \ to /
+// RAVEN BEGIN
+// jscott: I hate slashes nearly as much as KRABS
+	if( a == '\\' )
+		data[len++] = '/';
+	else
+// RAVEN END
+#endif
 	data[len++] = a;
 }
 

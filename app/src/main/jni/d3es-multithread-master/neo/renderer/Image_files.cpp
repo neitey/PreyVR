@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 
 #include "renderer/tr_local.h"
 
@@ -234,33 +234,33 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 
 	bmpHeader.id[0] = *buf_p++;
 	bmpHeader.id[1] = *buf_p++;
-	bmpHeader.fileSize = LittleInt( * ( int * ) buf_p );
+	bmpHeader.fileSize = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.reserved0 = LittleInt( * ( int * ) buf_p );
+	bmpHeader.reserved0 = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.bitmapDataOffset = LittleInt( * ( int * ) buf_p );
+	bmpHeader.bitmapDataOffset = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.bitmapHeaderSize = LittleInt( * ( int * ) buf_p );
+	bmpHeader.bitmapHeaderSize = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.width = LittleInt( * ( int * ) buf_p );
+	bmpHeader.width = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.height = LittleInt( * ( int * ) buf_p );
+	bmpHeader.height = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
 	bmpHeader.planes = LittleShort( * ( short * ) buf_p );
 	buf_p += 2;
 	bmpHeader.bitsPerPixel = LittleShort( * ( short * ) buf_p );
 	buf_p += 2;
-	bmpHeader.compression = LittleInt( * ( int * ) buf_p );
+	bmpHeader.compression = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.bitmapDataSize = LittleInt( * ( int * ) buf_p );
+	bmpHeader.bitmapDataSize = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.hRes = LittleInt( * ( int * ) buf_p );
+	bmpHeader.hRes = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.vRes = LittleInt( * ( int * ) buf_p );
+	bmpHeader.vRes = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.colors = LittleInt( * ( int * ) buf_p );
+	bmpHeader.colors = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
-	bmpHeader.importantColors = LittleInt( * ( int * ) buf_p );
+	bmpHeader.importantColors = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
 
 	memcpy( bmpHeader.palette, buf_p, sizeof( bmpHeader.palette ) );

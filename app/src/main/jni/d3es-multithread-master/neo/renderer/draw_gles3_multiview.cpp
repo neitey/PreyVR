@@ -16,7 +16,7 @@
 */
 
 #include <GLES3/gl3.h>
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "renderer/VertexCache.h"
 
 #include "tr_local.h"

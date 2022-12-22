@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,19 +26,20 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "../precompiled.h"
+#pragma hdrstop
 
-#include "idlib/geometry/DrawVert.h"
 
 /*
 =============
 idDrawVert::Normalize
 =============
 */
-void idDrawVert::Normalize( void ) {
+void idDrawVert::Normalize(void)
+{
 	normal.Normalize();
-	tangents[1].Cross( normal, tangents[0] );
+	tangents[1].Cross(normal, tangents[0]);
 	tangents[1].Normalize();
-	tangents[0].Cross( tangents[1], normal );
+	tangents[0].Cross(tangents[1], normal);
 	tangents[0].Normalize();
 }

@@ -18,9 +18,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/Str.h"
-#include "idlib/LangDict.h"
+#include "idlib/precompiled.h"
 #include "framework/Common.h"
 #include "framework/File.h"
 #include "framework/UsercmdGen.h"

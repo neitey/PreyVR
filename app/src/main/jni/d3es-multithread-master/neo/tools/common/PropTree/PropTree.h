@@ -67,7 +67,7 @@
 
 class CPropTree;
 
-typedef BOOL (CALLBACK* ENUMPROPITEMPROC)(CPropTree*, CPropTreeItem*, LPARAM);
+typedef BOOL (CALLBACK *ENUMPROPITEMPROC)(CPropTree *, CPropTreeItem *, LPARAM);
 
 void InitPropTree(HINSTANCE hInstance);
 
@@ -85,10 +85,9 @@ void InitPropTree(HINSTANCE hInstance);
 #define HTBUTTON					(HTPROPFIRST + 5)
 
 // CPropTree WM_NOTIFY notification structure
-typedef struct _NMPROPTREE
-{
+typedef struct _NMPROPTREE {
 	NMHDR			hdr;
-	CPropTreeItem*	pItem;
+	CPropTreeItem	*pItem;
 } NMPROPTREE, *PNMPROPTREE, FAR *LPNMPROPTREE;
 
 // CPropTree specific Notification Codes
@@ -111,175 +110,175 @@ typedef struct _NMPROPTREE
 class PROPTREE_API CPropTree : public CWnd
 {
 // Construction
-public:
-	CPropTree();
-	virtual ~CPropTree();
+	public:
+		CPropTree();
+		virtual ~CPropTree();
 
-	BOOL Create(DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID);
+		BOOL Create(DWORD dwStyle, const RECT &rect, CWnd *pParentWnd, UINT nID);
 
 // Attributes/Operations
-public:
-	static CFont* GetNormalFont();
-	static CFont* GetBoldFont();
+	public:
+		static CFont *GetNormalFont();
+		static CFont *GetBoldFont();
 
-	// Returns the root item of the tree
-	CPropTreeItem* GetRootItem();
+		// Returns the root item of the tree
+		CPropTreeItem *GetRootItem();
 
-	// Returns the focused item or NULL for none
-	CPropTreeItem* GetFocusedItem();
+		// Returns the focused item or NULL for none
+		CPropTreeItem *GetFocusedItem();
 
-	// Enumerates an item and all its child items
-	BOOL EnumItems(CPropTreeItem* pItem, ENUMPROPITEMPROC proc, LPARAM lParam = 0L);
+		// Enumerates an item and all its child items
+		BOOL EnumItems(CPropTreeItem *pItem, ENUMPROPITEMPROC proc, LPARAM lParam = 0L);
 
-	// Insert a created CPropTreeItem into the control
-	CPropTreeItem* InsertItem(CPropTreeItem* pItem, CPropTreeItem* pParent = NULL);
+		// Insert a created CPropTreeItem into the control
+		CPropTreeItem *InsertItem(CPropTreeItem *pItem, CPropTreeItem *pParent = NULL);
 
-	// Delete an item and ALL its children
-	void DeleteItem(CPropTreeItem* pItem);
+		// Delete an item and ALL its children
+		void DeleteItem(CPropTreeItem *pItem);
 
-	// Delete all items from the tree
-	void DeleteAllItems();
+		// Delete all items from the tree
+		void DeleteAllItems();
 
-	// Return the splitter position
-	LONG GetColumn();
+		// Return the splitter position
+		LONG GetColumn();
 
-	// Set the splitter position
-	void SetColumn(LONG nColumn);
+		// Set the splitter position
+		void SetColumn(LONG nColumn);
 
-	// Sets the focused item
-	void SetFocusedItem(CPropTreeItem* pItem);
+		// Sets the focused item
+		void SetFocusedItem(CPropTreeItem *pItem);
 
-	// Show or hide the info text
-	void ShowInfoText(BOOL bShow = TRUE);
+		// Show or hide the info text
+		void ShowInfoText(BOOL bShow = TRUE);
 
-	// Returns TRUE if the item is visible (its parent is expanded)
-	BOOL IsItemVisible(CPropTreeItem* pItem);
+		// Returns TRUE if the item is visible (its parent is expanded)
+		BOOL IsItemVisible(CPropTreeItem *pItem);
 
-	// Ensures that an item is visible
-	void EnsureVisible(CPropTreeItem* pItem);
+		// Ensures that an item is visible
+		void EnsureVisible(CPropTreeItem *pItem);
 
-	// do a hit test on the control (returns a HTxxxx code)
-	LONG HitTest(const POINT& pt);
+		// do a hit test on the control (returns a HTxxxx code)
+		LONG HitTest(const POINT &pt);
 
-	// find an item by a location
-	CPropTreeItem* FindItem(const POINT& pt);
+		// find an item by a location
+		CPropTreeItem *FindItem(const POINT &pt);
 
-	// find an item by item id
-	CPropTreeItem* FindItem(UINT nCtrlID);
+		// find an item by item id
+		CPropTreeItem *FindItem(UINT nCtrlID);
 
-protected:
-	// Actual tree control
-	CPropTreeList	m_List;
+	protected:
+		// Actual tree control
+		CPropTreeList	m_List;
 
-	// Descriptive control
-	CPropTreeInfo	m_Info;
+		// Descriptive control
+		CPropTreeInfo	m_Info;
 
-	// TRUE to show info control
-	BOOL			m_bShowInfo;
+		// TRUE to show info control
+		BOOL			m_bShowInfo;
 
-	// Height of the info control
-	LONG			m_nInfoHeight;
+		// Height of the info control
+		LONG			m_nInfoHeight;
 
-	// Root level tree item
-	CPropTreeItem	m_Root;
+		// Root level tree item
+		CPropTreeItem	m_Root;
 
-	// Linked list of visible items
-	CPropTreeItem*	m_pVisbleList;
+		// Linked list of visible items
+		CPropTreeItem	*m_pVisbleList;
 
-	// Pointer to the focused item (selected)
-	CPropTreeItem*	m_pFocus;
+		// Pointer to the focused item (selected)
+		CPropTreeItem	*m_pFocus;
 
-	// PropTree scroll position. x = splitter position, y = vscroll position
-	CPoint			m_Origin;
+		// PropTree scroll position. x = splitter position, y = vscroll position
+		CPoint			m_Origin;
 
-	// auto generated last created ID
-	UINT			m_nLastUID;
+		// auto generated last created ID
+		UINT			m_nLastUID;
 
-	// Number of CPropTree controls in the current application
-	static UINT		s_nInstanceCount;
+		// Number of CPropTree controls in the current application
+		static UINT		s_nInstanceCount;
 
-	static CFont*	s_pNormalFont;
-	static CFont*	s_pBoldFont;
+		static CFont	*s_pNormalFont;
+		static CFont	*s_pBoldFont;
 
-	BOOL			m_bDisableInput;
+		BOOL			m_bDisableInput;
 
-	// Used for enumeration
-	static CPropTreeItem*	s_pFound;
+		// Used for enumeration
+		static CPropTreeItem	*s_pFound;
 
-public:
-	//
-	// functions used by CPropTreeItem (you normally dont need to call these directly)
-	//
+	public:
+		//
+		// functions used by CPropTreeItem (you normally dont need to call these directly)
+		//
 
-	void AddToVisibleList(CPropTreeItem* pItem);
-	void ClearVisibleList();
+		void AddToVisibleList(CPropTreeItem *pItem);
+		void ClearVisibleList();
 
-	void SetOriginOffset(LONG nOffset);
-	void UpdatedItems();
-	void UpdateMoveAllItems();
-	void RefreshItems(CPropTreeItem* pItem = NULL);
+		void SetOriginOffset(LONG nOffset);
+		void UpdatedItems();
+		void UpdateMoveAllItems();
+		void RefreshItems(CPropTreeItem *pItem = NULL);
 
-	// enable or disable tree input
-	void DisableInput(BOOL bDisable = TRUE);
-	BOOL IsDisableInput();
+		// enable or disable tree input
+		void DisableInput(BOOL bDisable = TRUE);
+		BOOL IsDisableInput();
 
-	BOOL IsSingleSelection();
+		BOOL IsSingleSelection();
 
-	CPropTreeItem* GetVisibleList();
-	CWnd* GetCtrlParent();
+		CPropTreeItem *GetVisibleList();
+		CWnd *GetCtrlParent();
 
-	const POINT& GetOrigin();
+		const POINT &GetOrigin();
 
-	void SelectItems(CPropTreeItem* pItem, BOOL bSelect = TRUE);
+		void SelectItems(CPropTreeItem *pItem, BOOL bSelect = TRUE);
 
-	// Focus on the first visible item
-	CPropTreeItem *FocusFirst();
+		// Focus on the first visible item
+		CPropTreeItem *FocusFirst();
 
-	// Focus on the last visible item
-	CPropTreeItem *FocusLast();
+		// Focus on the last visible item
+		CPropTreeItem *FocusLast();
 
-	// Focus on the previous item
-	CPropTreeItem *FocusPrev();
+		// Focus on the previous item
+		CPropTreeItem *FocusPrev();
 
-	// Focus on the next item
-	CPropTreeItem *FocusNext();
+		// Focus on the next item
+		CPropTreeItem *FocusNext();
 
-	LRESULT SendNotify(UINT nNotifyCode, CPropTreeItem* pItem = NULL);
+		LRESULT SendNotify(UINT nNotifyCode, CPropTreeItem *pItem = NULL);
 
-protected:
-	// Resize the child windows to fit the exact dimensions the CPropTree control
-	void ResizeChildWindows(int cx, int cy);
+	protected:
+		// Resize the child windows to fit the exact dimensions the CPropTree control
+		void ResizeChildWindows(int cx, int cy);
 
-	// Initialize global resources, brushes, fonts, etc.
-	void InitGlobalResources();
+		// Initialize global resources, brushes, fonts, etc.
+		void InitGlobalResources();
 
-	// Free global resources, brushes, fonts, etc.
-	void FreeGlobalResources();
+		// Free global resources, brushes, fonts, etc.
+		void FreeGlobalResources();
 
-	// Recursive version of DeleteItem
-	void Delete(CPropTreeItem* pItem);
+		// Recursive version of DeleteItem
+		void Delete(CPropTreeItem *pItem);
 
 // Overrides
-	// ClassWizard generated virtual function overrides
-	//{{AFX_VIRTUAL(CPropTree)
-	//}}AFX_VIRTUAL
+		// ClassWizard generated virtual function overrides
+		//{{AFX_VIRTUAL(CPropTree)
+		//}}AFX_VIRTUAL
 
 // Implementation
-private:
-	static BOOL CALLBACK EnumFindItem(CPropTree* pProp, CPropTreeItem* pItem, LPARAM lParam);
-	static BOOL CALLBACK EnumSelectAll(CPropTree*, CPropTreeItem* pItem, LPARAM lParam);
-	static BOOL CALLBACK EnumMoveAll(CPropTree*, CPropTreeItem* pItem, LPARAM);
-	static BOOL CALLBACK EnumRefreshAll(CPropTree*, CPropTreeItem* pItem, LPARAM);
+	private:
+		static BOOL CALLBACK EnumFindItem(CPropTree *pProp, CPropTreeItem *pItem, LPARAM lParam);
+		static BOOL CALLBACK EnumSelectAll(CPropTree *, CPropTreeItem *pItem, LPARAM lParam);
+		static BOOL CALLBACK EnumMoveAll(CPropTree *, CPropTreeItem *pItem, LPARAM);
+		static BOOL CALLBACK EnumRefreshAll(CPropTree *, CPropTreeItem *pItem, LPARAM);
 
-	// Generated message map functions
-protected:
-	//{{AFX_MSG(CPropTree)
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg void OnEnable(BOOL bEnable);
-	afx_msg void OnSysColorChange();
-	//}}AFX_MSG
-	DECLARE_MESSAGE_MAP()
+		// Generated message map functions
+	protected:
+		//{{AFX_MSG(CPropTree)
+		afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+		afx_msg void OnSize(UINT nType, int cx, int cy);
+		afx_msg void OnEnable(BOOL bEnable);
+		afx_msg void OnSysColorChange();
+		//}}AFX_MSG
+		DECLARE_MESSAGE_MAP()
 };
 
 /////////////////////////////////////////////////////////////////////////////

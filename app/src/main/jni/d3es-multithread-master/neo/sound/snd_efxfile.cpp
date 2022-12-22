@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/math/Math.h"
+#include "idlib/precompiled.h"
 
 #include "sound/snd_local.h"
 
@@ -245,7 +244,7 @@ bool idEFXFile::ReadEffect( idLexer &src, idSoundEffect *effect ) {
 			efxf(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, src.ParseFloat());
 		} else if ( token == "flags" ) {
 			src.ReadTokenOnLine( &token );
-			unsigned int flags = token.GetUnsignedIntValue();
+			unsigned int flags = token.GetUnsignedLongValue();
 
 			efxi(AL_EAXREVERB_DECAY_HFLIMIT, (flags & 0x20) ? AL_TRUE : AL_FALSE);
 			// the other SCALE flags have no equivalent in efx

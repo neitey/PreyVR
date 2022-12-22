@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,9 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "tools/edit_gui_common.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-
+#include "../../game/game.h"
 #include "../../sys/win32/win_local.h"
 #include "../../sys/win32/rc/common_resource.h"
 #include "../../sys/win32/rc/Radiant_resource.h"
@@ -112,7 +113,7 @@ const int StageEnableID[] = {
 	IDC_CHECK_ENTITYCOLOR,
 };
 
-const int StageIDCount = sizeof( StageEnableID ) / sizeof ( const int );
+const int StageIDCount = sizeof(StageEnableID) / sizeof(const int);
 
 const int EditEnableID[] = {
 	IDC_BUTTON_XDN,
@@ -126,7 +127,7 @@ const int EditEnableID[] = {
 	IDC_BUTTON_BROWSECOLOR_ENTITY
 };
 
-const int EditIDCount = sizeof ( EditEnableID ) / sizeof ( const int );
+const int EditIDCount = sizeof(EditEnableID) / sizeof(const int);
 
 
 CDialogParticleEditor *g_ParticleDialog = NULL;
@@ -137,21 +138,22 @@ CDialogParticleEditor *g_ParticleDialog = NULL;
 ParticleEditorInit
 ================
 */
-void ParticleEditorInit( const idDict *spawnArgs ) {
+void ParticleEditorInit(const idDict *spawnArgs)
+{
 
-	if ( renderSystem->IsFullScreen() ) {
-		common->Printf( "Cannot run the particle editor in fullscreen mode.\n"
-			"Set r_fullscreen to 0 and vid_restart.\n" );
+	if (renderSystem->IsFullScreen()) {
+		common->Printf("Cannot run the particle editor in fullscreen mode.\n"
+		               "Set r_fullscreen to 0 and vid_restart.\n");
 		return;
 	}
 
-	if ( g_ParticleDialog == NULL ) {
+	if (g_ParticleDialog == NULL) {
 		InitAfx();
 		g_ParticleDialog = new CDialogParticleEditor();
 	}
 
-	if ( g_ParticleDialog->GetSafeHwnd() == NULL) {
-		g_ParticleDialog->Create( IDD_DIALOG_PARTICLE_EDITOR );
+	if (g_ParticleDialog->GetSafeHwnd() == NULL) {
+		g_ParticleDialog->Create(IDD_DIALOG_PARTICLE_EDITOR);
 		/*
 		// FIXME: restore position
 		CRect rct;
@@ -161,17 +163,17 @@ void ParticleEditorInit( const idDict *spawnArgs ) {
 
 	idKeyInput::ClearStates();
 
-	g_ParticleDialog->ShowWindow( SW_SHOW );
+	g_ParticleDialog->ShowWindow(SW_SHOW);
 	g_ParticleDialog->SetFocus();
 
-	if ( spawnArgs ) {
-		idStr str = spawnArgs->GetString( "model" );
+	if (spawnArgs) {
+		idStr str = spawnArgs->GetString("model");
 		str.StripFileExtension();
-		g_ParticleDialog->SelectParticle( str );
-		g_ParticleDialog->SetParticleVisualization( static_cast<int>( CDialogParticleEditor::SELECTED ) );
+		g_ParticleDialog->SelectParticle(str);
+		g_ParticleDialog->SetParticleVisualization(static_cast<int>(CDialogParticleEditor::SELECTED));
 	}
 
-	cvarSystem->SetCVarBool( "r_useCachedDynamicModels", false );
+	cvarSystem->SetCVarBool("r_useCachedDynamicModels", false);
 }
 
 
@@ -180,16 +182,17 @@ void ParticleEditorInit( const idDict *spawnArgs ) {
 ParticleEditorRun
 ================
 */
-void ParticleEditorRun( void ) {
+void ParticleEditorRun(void)
+{
 #if _MSC_VER >= 1300
 	MSG *msg = AfxGetCurrentMessage();			// TODO Robert fix me!!
 #else
 	MSG *msg = &m_msgCur;
 #endif
 
-	while( ::PeekMessage(msg, NULL, NULL, NULL, PM_NOREMOVE) ) {
+	while (::PeekMessage(msg, NULL, NULL, NULL, PM_NOREMOVE)) {
 		// pump message
-		if ( !AfxGetApp()->PumpMessage() ) {
+		if (!AfxGetApp()->PumpMessage()) {
 		}
 	}
 }
@@ -199,7 +202,8 @@ void ParticleEditorRun( void ) {
 ParticleEditorShutdown
 ================
 */
-void ParticleEditorShutdown( void ) {
+void ParticleEditorShutdown(void)
+{
 	delete g_ParticleDialog;
 	g_ParticleDialog = NULL;
 }
@@ -208,7 +212,7 @@ void ParticleEditorShutdown( void ) {
 // CDialogParticleEditor dialog
 
 IMPLEMENT_DYNAMIC(CDialogParticleEditor, CDialog)
-CDialogParticleEditor::CDialogParticleEditor(CWnd* pParent /*=NULL*/)
+CDialogParticleEditor::CDialogParticleEditor(CWnd *pParent /*=NULL*/)
 	: CDialog(CDialogParticleEditor::IDD, pParent)
 	, matName(_T(""))
 	, animFrames(_T(""))
@@ -258,18 +262,20 @@ CDialogParticleEditor::CDialogParticleEditor(CWnd* pParent /*=NULL*/)
 	mapModified = false;
 }
 
-CDialogParticleEditor::~CDialogParticleEditor() {
+CDialogParticleEditor::~CDialogParticleEditor()
+{
 }
 
-void CDialogParticleEditor::DoDataExchange(CDataExchange* pDX) {
+void CDialogParticleEditor::DoDataExchange(CDataExchange *pDX)
+{
 	CDialog::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_EDIT_DEPTHHACK, depthHack);
 	DDX_Check(pDX, IDC_CHECK_WORLDGRAVITY, worldGravity);
 	DDX_Check(pDX, IDC_CHECK_ENTITYCOLOR, entityColor);
 	DDX_Control(pDX, IDC_COMBO_PARTICLES, comboParticle);
 	DDX_Control(pDX, IDC_LIST_STAGES, listStages);
-	DDX_Text(pDX, IDC_COMBO_CUSTOMPATH, customPath );
-	DDX_Text(pDX, IDC_EDIT_CUSTOMPARMS, customParms );
+	DDX_Text(pDX, IDC_COMBO_CUSTOMPATH, customPath);
+	DDX_Text(pDX, IDC_EDIT_CUSTOMPARMS, customParms);
 	DDX_Text(pDX, IDC_EDIT_MATERIAL, matName);
 	DDX_Text(pDX, IDC_EDIT_ANIMFRAMES, animFrames);
 	DDX_Text(pDX, IDC_EDIT_ANIMRATE, animRate);
@@ -378,42 +384,54 @@ END_MESSAGE_MAP()
 
 // CDialogParticleEditor message handlers
 
-void CDialogParticleEditor::OnBnClickedParticleMode() {
+void CDialogParticleEditor::OnBnClickedParticleMode()
+{
 	particleMode = !particleMode;
-	cvarSystem->SetCVarInteger( "g_editEntityMode", ( particleMode ) ? 4 : 0 );
+	cvarSystem->SetCVarInteger("g_editEntityMode", (particleMode) ? 4 : 0);
 	EnableEditControls();
 }
 
 
-void CDialogParticleEditor::OnBnClickedButtonSaveAs() {
+void CDialogParticleEditor::OnBnClickedButtonSaveAs()
+{
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
+
 	DialogName dlg("New Particle");
+
 	if (dlg.DoModal() == IDOK) {
-		if ( declManager->FindType( DECL_PARTICLE, dlg.m_strName, false ) ) {
-			MessageBox( "Particle already exists!", "Particle exists", MB_OK );
+		if (declManager->FindType(DECL_PARTICLE, dlg.m_strName, false)) {
+			MessageBox("Particle already exists!", "Particle exists", MB_OK);
 			return;
 		}
-		CFileDialog dlgSave( TRUE, "prt", NULL, OFN_CREATEPROMPT, "Particle Files (*.prt)|*.prt||All Files (*.*)|*.*||", AfxGetMainWnd() );
-		if ( dlgSave.DoModal() == IDOK ) {
+
+		CFileDialog dlgSave(TRUE, "prt", NULL, OFN_CREATEPROMPT, "Particle Files (*.prt)|*.prt||All Files (*.*)|*.*||", AfxGetMainWnd());
+
+		if (dlgSave.DoModal() == IDOK) {
 			idStr fileName;
-			fileName = fileSystem->OSPathToRelativePath( dlgSave.m_ofn.lpstrFile );
-			idDeclParticle *decl = dynamic_cast<idDeclParticle*>( declManager->CreateNewDecl( DECL_PARTICLE, dlg.m_strName, fileName ) );
-			if ( decl ) {
-				decl->stages.DeleteContents( true );
+			fileName = fileSystem->OSPathToRelativePath(dlgSave.m_ofn.lpstrFile);
+			idDeclParticle *decl = dynamic_cast<idDeclParticle *>(declManager->CreateNewDecl(DECL_PARTICLE, dlg.m_strName, fileName));
+
+			if (decl) {
+				decl->stages.DeleteContents(true);
 				decl->depthHack = idp->depthHack;
-				for ( int i = 0; i < idp->stages.Num(); i++ ) {
+
+				for (int i = 0; i < idp->stages.Num(); i++) {
 					idParticleStage *stage = new idParticleStage();
 					*stage = *idp->stages[i];
-					decl->stages.Append( stage );
+					decl->stages.Append(stage);
 				}
+
 				EnumParticles();
-				int index = comboParticle.FindStringExact( -1, dlg.m_strName );
-				if ( index >= 0 ) {
-					comboParticle.SetCurSel( index );
+				int index = comboParticle.FindStringExact(-1, dlg.m_strName);
+
+				if (index >= 0) {
+					comboParticle.SetCurSel(index);
 				}
+
 				OnBnClickedButtonSave();
 				OnCbnSelchangeComboParticles();
 				OnBnClickedButtonUpdate();
@@ -423,407 +441,488 @@ void CDialogParticleEditor::OnBnClickedButtonSaveAs() {
 }
 
 
-void CDialogParticleEditor::OnBnClickedButtonSaveParticles() {
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "saveParticles" );
-	CWnd *wnd = GetDlgItem( IDC_BUTTON_SAVE_PARTICLEENTITIES );
-	if ( wnd ) {
-		wnd->EnableWindow( FALSE );
+void CDialogParticleEditor::OnBnClickedButtonSaveParticles()
+{
+	cmdSystem->BufferCommandText(CMD_EXEC_NOW, "saveParticles");
+	CWnd *wnd = GetDlgItem(IDC_BUTTON_SAVE_PARTICLEENTITIES);
+
+	if (wnd) {
+		wnd->EnableWindow(FALSE);
 	}
 }
 
-void CDialogParticleEditor::OnBnClickedButtonAddstage() {
+void CDialogParticleEditor::OnBnClickedButtonAddstage()
+{
 	AddStage();
 }
 
-void CDialogParticleEditor::OnBnClickedButtonRemovestage() {
+void CDialogParticleEditor::OnBnClickedButtonRemovestage()
+{
 	RemoveStage();
 }
 
-void CDialogParticleEditor::OnBnClickedButtonBrowsematerial() {
-	CPreviewDlg matDlg( this );
-	matDlg.SetMode(CPreviewDlg::MATERIALS, "particles" );
-	matDlg.SetDisablePreview( true );
-	if ( matDlg.DoModal() == IDOK ) {
+void CDialogParticleEditor::OnBnClickedButtonBrowsematerial()
+{
+	CPreviewDlg matDlg(this);
+	matDlg.SetMode(CPreviewDlg::MATERIALS, "particles");
+	matDlg.SetDisablePreview(true);
+
+	if (matDlg.DoModal() == IDOK) {
 		matName = matDlg.mediaName;
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
 	}
 }
 
-void CDialogParticleEditor::OnBnClickedButtonBrowsecolor() {
+void CDialogParticleEditor::OnBnClickedButtonBrowsecolor()
+{
 	int r, g, b;
 	float ob;
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
+
 	r = ps->color.x * 255.0f;
 	g = ps->color.y * 255.0f;
 	b = ps->color.z * 255.0f;
 	ob = 1.0f;
-	if ( DoNewColor( &r, &g, &b, &ob ) ) {
-		color.Format( "%f %f %f %f", (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f );
+
+	if (DoNewColor(&r, &g, &b, &ob)) {
+		color.Format("%f %f %f %f", (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f);
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
 	}
 }
 
-void CDialogParticleEditor::OnBnClickedButtonBrowseEntitycolor() {
+void CDialogParticleEditor::OnBnClickedButtonBrowseEntitycolor()
+{
 	int r, g, b;
 	float ob;
-	idList<idEntity*> list;
+	idList<idEntity *> list;
 	idDict dict2;
 	idStr str;
-	list.SetNum( 128 );
-	int count = gameEdit->GetSelectedEntities( list.Ptr(), list.Num() );
-	list.SetNum( count );
+	list.SetNum(128);
+	int count = gameEdit->GetSelectedEntities(list.Ptr(), list.Num());
+	list.SetNum(count);
 
-	if ( count ) {
-		const idDict *dict = gameEdit->EntityGetSpawnArgs( list[0] );
-		if ( dict ) {
-			idVec3 clr = dict->GetVector( "_color", "1 1 1" );
+	if (count) {
+		const idDict *dict = gameEdit->EntityGetSpawnArgs(list[0]);
+
+		if (dict) {
+			idVec3 clr = dict->GetVector("_color", "1 1 1");
 			r = clr.x * 255.0f;
 			g = clr.y * 255.0f;
 			b = clr.z * 255.0f;
 			ob = 1.0f;
-			if ( DoNewColor( &r, &g, &b, &ob ) ) {
-				for ( int i = 0; i < count; i++ ) {
-					dict = gameEdit->EntityGetSpawnArgs( list[i] );
-					const char *name = dict->GetString( "name" );
-					idEntity *ent = gameEdit->FindEntity( name );
-					if ( ent ) {
-						gameEdit->EntitySetColor( ent, idVec3( (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f ) );
-						str = va( "%f %f %f", (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f );
+
+			if (DoNewColor(&r, &g, &b, &ob)) {
+				for (int i = 0; i < count; i++) {
+					dict = gameEdit->EntityGetSpawnArgs(list[i]);
+					const char *name = dict->GetString("name");
+					idEntity *ent = gameEdit->FindEntity(name);
+
+					if (ent) {
+						gameEdit->EntitySetColor(ent, idVec3((float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f));
+						str = va("%f %f %f", (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f);
 						dict2.Clear();
-						dict2.Set( "_color", str );
-						gameEdit->EntityChangeSpawnArgs( ent, &dict2 );
-						gameEdit->MapSetEntityKeyVal( name, "_color",  str );
+						dict2.Set("_color", str);
+						gameEdit->EntityChangeSpawnArgs(ent, &dict2);
+						gameEdit->MapSetEntityKeyVal(name, "_color",  str);
 					}
 				}
 			}
 		}
-		CWnd *wnd = GetDlgItem( IDC_BUTTON_SAVE_PARTICLEENTITIES );
-		if ( wnd ) {
-			wnd->EnableWindow( TRUE );
+
+		CWnd *wnd = GetDlgItem(IDC_BUTTON_SAVE_PARTICLEENTITIES);
+
+		if (wnd) {
+			wnd->EnableWindow(TRUE);
 		}
 	}
 
 }
 
-void CDialogParticleEditor::OnBnClickedButtonBrowsefadecolor() {
+void CDialogParticleEditor::OnBnClickedButtonBrowsefadecolor()
+{
 	int r, g, b;
 	float ob;
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
+
 	r = ps->fadeColor.x * 255.0f;
 	g = ps->fadeColor.y * 255.0f;
 	b = ps->fadeColor.z * 255.0f;
 	ob = 1.0f;
-	if ( DoNewColor( &r, &g, &b, &ob ) ) {
-		fadeColor.Format( "%f %f %f %f", (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f );
+
+	if (DoNewColor(&r, &g, &b, &ob)) {
+		fadeColor.Format("%f %f %f %f", (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f);
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
 	}
 }
 
-void CDialogParticleEditor::OnBnClickedButtonUpdate() {
-	UpdateData( TRUE );
+void CDialogParticleEditor::OnBnClickedButtonUpdate()
+{
+	UpdateData(TRUE);
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 }
 
-void CDialogParticleEditor::SelectParticle( const char *name ) {
-	int index = comboParticle.FindString( 0, name );
-	if ( index >= 0 ) {
-		comboParticle.SetCurSel( index );
+void CDialogParticleEditor::SelectParticle(const char *name)
+{
+	int index = comboParticle.FindString(0, name);
+
+	if (index >= 0) {
+		comboParticle.SetCurSel(index);
 		UpdateParticleData();
 	}
 }
 
-idDeclParticle *CDialogParticleEditor::GetCurParticle() {
+idDeclParticle *CDialogParticleEditor::GetCurParticle()
+{
 	int sel = comboParticle.GetCurSel();
-	if ( sel == CB_ERR ) {
+
+	if (sel == CB_ERR) {
 		return NULL;
 	}
-	int index = comboParticle.GetItemData( sel );
-	return static_cast<idDeclParticle *>( const_cast<idDecl *>( declManager->DeclByIndex( DECL_PARTICLE, index ) ) );
+
+	int index = comboParticle.GetItemData(sel);
+	return static_cast<idDeclParticle *>(const_cast<idDecl *>(declManager->DeclByIndex(DECL_PARTICLE, index)));
 }
 
-void CDialogParticleEditor::UpdateParticleData() {
+void CDialogParticleEditor::UpdateParticleData()
+{
 
 	listStages.ResetContent();
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
-	for ( int i = 0; i < idp->stages.Num(); i++ ) {
-		int index = listStages.AddString( va( "stage %i", i ) );
-		if ( index >= 0 ) {
-			listStages.SetItemData( index, i );
+
+	for (int i = 0; i < idp->stages.Num(); i++) {
+		int index = listStages.AddString(va("stage %i", i));
+
+		if (index >= 0) {
+			listStages.SetItemData(index, i);
 		}
 	}
-	listStages.SetCurSel( 0 );
+
+	listStages.SetCurSel(0);
 	OnLbnSelchangeListStages();
-	CWnd *wnd = GetDlgItem( IDC_STATIC_INFILE );
-	if ( wnd ) {
-		wnd->SetWindowText( va( "Particle file: %s", idp->GetFileName() ) );
+	CWnd *wnd = GetDlgItem(IDC_STATIC_INFILE);
+
+	if (wnd) {
+		wnd->SetWindowText(va("Particle file: %s", idp->GetFileName()));
 	}
 
 	SetParticleView();
 }
 
-void CDialogParticleEditor::OnCbnSelchangeComboParticles() {
+void CDialogParticleEditor::OnCbnSelchangeComboParticles()
+{
 	UpdateParticleData();
 }
 
 
-void CDialogParticleEditor::OnCbnSelchangeComboPath() {
+void CDialogParticleEditor::OnCbnSelchangeComboPath()
+{
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::UpdateControlInfo() {
-	CWnd *wnd = GetDlgItem( IDC_EDIT_RINGOFFSET );
-	if ( wnd ) {
-		wnd->EnableWindow( distribution == 2 );
+void CDialogParticleEditor::UpdateControlInfo()
+{
+	CWnd *wnd = GetDlgItem(IDC_EDIT_RINGOFFSET);
+
+	if (wnd) {
+		wnd->EnableWindow(distribution == 2);
 	}
-	wnd = GetDlgItem( IDC_STATIC_DIRPARM );
-	if ( wnd ) {
-		wnd->SetWindowText( (direction == 0 ) ? "Angle" : "Upward Bias" );
+
+	wnd = GetDlgItem(IDC_STATIC_DIRPARM);
+
+	if (wnd) {
+		wnd->SetWindowText((direction == 0) ? "Angle" : "Upward Bias");
 	}
-	wnd = GetDlgItem( IDC_EDIT_ORIENTATIONPARM1 );
-	if ( wnd ) {
-		wnd->EnableWindow( orientation == 1 );
+
+	wnd = GetDlgItem(IDC_EDIT_ORIENTATIONPARM1);
+
+	if (wnd) {
+		wnd->EnableWindow(orientation == 1);
 	}
-	wnd = GetDlgItem( IDC_EDIT_ORIENTATIONPARM2 );
-	if ( wnd ) {
-		wnd->EnableWindow( orientation == 1 );
+
+	wnd = GetDlgItem(IDC_EDIT_ORIENTATIONPARM2);
+
+	if (wnd) {
+		wnd->EnableWindow(orientation == 1);
 	}
 
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
-	sliderBunching.SetValuePos( ps->spawnBunching );
-	sliderFadeIn.SetValuePos( ps->fadeInFraction );
-	sliderFadeOut.SetValuePos( ps->fadeOutFraction );
-	sliderFadeFraction.SetValuePos( ps->fadeIndexFraction );
-	sliderCount.SetValuePos( ps->totalParticles );
-	sliderTime.SetValuePos( ps->particleLife );
-	sliderGravity.SetValuePos( ps->gravity );
-	sliderSpeedFrom.SetValuePos( ps->speed.from );
-	sliderSpeedTo.SetValuePos( ps->speed.to );
-	sliderRotationFrom.SetValuePos( ps->rotationSpeed.from );
-	sliderRotationTo.SetValuePos( ps->rotationSpeed.to );
-	sliderSizeFrom.SetValuePos( ps->size.from );
-	sliderSizeTo.SetValuePos( ps->size.to );
-	sliderAspectFrom.SetValuePos( ps->aspect.from );
-	sliderAspectTo.SetValuePos( ps->aspect.to );
+
+	sliderBunching.SetValuePos(ps->spawnBunching);
+	sliderFadeIn.SetValuePos(ps->fadeInFraction);
+	sliderFadeOut.SetValuePos(ps->fadeOutFraction);
+	sliderFadeFraction.SetValuePos(ps->fadeIndexFraction);
+	sliderCount.SetValuePos(ps->totalParticles);
+	sliderTime.SetValuePos(ps->particleLife);
+	sliderGravity.SetValuePos(ps->gravity);
+	sliderSpeedFrom.SetValuePos(ps->speed.from);
+	sliderSpeedTo.SetValuePos(ps->speed.to);
+	sliderRotationFrom.SetValuePos(ps->rotationSpeed.from);
+	sliderRotationTo.SetValuePos(ps->rotationSpeed.to);
+	sliderSizeFrom.SetValuePos(ps->size.from);
+	sliderSizeTo.SetValuePos(ps->size.to);
+	sliderAspectFrom.SetValuePos(ps->aspect.from);
+	sliderAspectTo.SetValuePos(ps->aspect.to);
 }
 
-void CDialogParticleEditor::OnBnClickedRadioRect() {
+void CDialogParticleEditor::OnBnClickedRadioRect()
+{
 	distribution = 0;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioSphere() {
+void CDialogParticleEditor::OnBnClickedRadioSphere()
+{
 	distribution = 2;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioCylinder() {
+void CDialogParticleEditor::OnBnClickedRadioCylinder()
+{
 	distribution = 1;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioCone() {
+void CDialogParticleEditor::OnBnClickedRadioCone()
+{
 	direction = 0;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioOutward() {
+void CDialogParticleEditor::OnBnClickedRadioOutward()
+{
 	direction = 1;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioView() {
+void CDialogParticleEditor::OnBnClickedRadioView()
+{
 	orientation = 0;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioAimed() {
+void CDialogParticleEditor::OnBnClickedRadioAimed()
+{
 	orientation = 1;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioX() {
+void CDialogParticleEditor::OnBnClickedRadioX()
+{
 	orientation = 2;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioY() {
+void CDialogParticleEditor::OnBnClickedRadioY()
+{
 	orientation = 3;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedRadioZ() {
+void CDialogParticleEditor::OnBnClickedRadioZ()
+{
 	orientation = 4;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnBnClickedDoom() {
+void CDialogParticleEditor::OnBnClickedDoom()
+{
 	::SetFocus(win32.hWnd);
 }
 
 
-void CDialogParticleEditor::OnBnClickedTestModel() {
+void CDialogParticleEditor::OnBnClickedTestModel()
+{
 	visualization = TESTMODEL;
 	SetParticleView();
 }
 
-void CDialogParticleEditor::OnBnClickedImpact() {
+void CDialogParticleEditor::OnBnClickedImpact()
+{
 	visualization = IMPACT;
 	SetParticleView();
 }
 
-void CDialogParticleEditor::OnBnClickedMuzzle(){
+void CDialogParticleEditor::OnBnClickedMuzzle()
+{
 	visualization = MUZZLE;
 	SetParticleView();
 }
 
-void CDialogParticleEditor::OnBnClickedFlight() {
+void CDialogParticleEditor::OnBnClickedFlight()
+{
 	visualization = FLIGHT;
 	SetParticleView();
 }
 
-void CDialogParticleEditor::OnBnClickedSelected() {
+void CDialogParticleEditor::OnBnClickedSelected()
+{
 	visualization = SELECTED;
 	SetParticleView();
 }
 
-void CDialogParticleEditor::SetParticleVisualization( int i ) {
+void CDialogParticleEditor::SetParticleVisualization(int i)
+{
 	visualization = i;
 	SetParticleView();
 }
 
-void CDialogParticleEditor::SetParticleView() {
+void CDialogParticleEditor::SetParticleView()
+{
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "testmodel" );
+
+	cmdSystem->BufferCommandText(CMD_EXEC_NOW, "testmodel");
 	idStr str;
-	switch ( visualization ) {
+
+	switch (visualization) {
 		case TESTMODEL :
 			str = idp->GetName();
-			str.SetFileExtension( ".prt" );
-			cmdSystem->BufferCommandText( CMD_EXEC_NOW, va("testmodel %s\n", str.c_str() ) );
-		break;
+			str.SetFileExtension(".prt");
+			cmdSystem->BufferCommandText(CMD_EXEC_NOW, va("testmodel %s\n", str.c_str()));
+			break;
 		case IMPACT :
 			str = idp->GetName();
-			str.SetFileExtension( ".prt" );
-			cvarSystem->SetCVarInteger( "g_testParticle", TEST_PARTICLE_IMPACT );
-			cvarSystem->SetCVarString( "g_testParticleName", str );
-		break;
+			str.SetFileExtension(".prt");
+			cvarSystem->SetCVarInteger("g_testParticle", TEST_PARTICLE_IMPACT);
+			cvarSystem->SetCVarString("g_testParticleName", str);
+			break;
 		case MUZZLE :
 			str = idp->GetName();
-			str.SetFileExtension( ".prt" );
-			cvarSystem->SetCVarInteger( "g_testParticle", TEST_PARTICLE_MUZZLE );
-			cvarSystem->SetCVarString( "g_testParticleName", str );
-		break;
+			str.SetFileExtension(".prt");
+			cvarSystem->SetCVarInteger("g_testParticle", TEST_PARTICLE_MUZZLE);
+			cvarSystem->SetCVarString("g_testParticleName", str);
+			break;
 		case FLIGHT :
 			str = idp->GetName();
-			str.SetFileExtension( ".prt" );
-			cvarSystem->SetCVarInteger( "g_testParticle", TEST_PARTICLE_FLIGHT );
-			cvarSystem->SetCVarString( "g_testParticleName", str );
-		break;
+			str.SetFileExtension(".prt");
+			cvarSystem->SetCVarInteger("g_testParticle", TEST_PARTICLE_FLIGHT);
+			cvarSystem->SetCVarString("g_testParticleName", str);
+			break;
 		case SELECTED :
 			str = idp->GetName();
-			str.SetFileExtension( ".prt" );
-			cvarSystem->SetCVarInteger( "g_testParticle", TEST_PARTICLE_FLIGHT );
-			SetSelectedModel( str );
-		break;
+			str.SetFileExtension(".prt");
+			cvarSystem->SetCVarInteger("g_testParticle", TEST_PARTICLE_FLIGHT);
+			SetSelectedModel(str);
+			break;
 	}
 }
 
-void CDialogParticleEditor::SetSelectedModel( const char *val ) {
-	idList<idEntity*> list;
+void CDialogParticleEditor::SetSelectedModel(const char *val)
+{
+	idList<idEntity *> list;
 	idMat3 axis;
 
-	list.SetNum( 128 );
-	int count = gameEdit->GetSelectedEntities( list.Ptr(), list.Num() );
-	list.SetNum( count );
+	list.SetNum(128);
+	int count = gameEdit->GetSelectedEntities(list.Ptr(), list.Num());
+	list.SetNum(count);
 
-	if ( count ) {
-		for ( int i = 0; i < count; i++ ) {
-			const idDict *dict = gameEdit->EntityGetSpawnArgs( list[i] );
-			if ( dict == NULL ) {
+	if (count) {
+		for (int i = 0; i < count; i++) {
+			const idDict *dict = gameEdit->EntityGetSpawnArgs(list[i]);
+
+			if (dict == NULL) {
 				continue;
 			}
-			const char *name = dict->GetString( "name" );
-			gameEdit->EntitySetModel( list[i], val );
-			gameEdit->EntityUpdateVisuals( list[i] );
-			gameEdit->EntityGetAxis( list[i], axis );
-			vectorControl.SetidAxis( axis );
-			gameEdit->MapSetEntityKeyVal( name, "model", val );
+
+			const char *name = dict->GetString("name");
+
+			gameEdit->EntitySetModel(list[i], val);
+
+			gameEdit->EntityUpdateVisuals(list[i]);
+
+			gameEdit->EntityGetAxis(list[i], axis);
+
+			vectorControl.SetidAxis(axis);
+
+			gameEdit->MapSetEntityKeyVal(name, "model", val);
 		}
-		CWnd *wnd = GetDlgItem( IDC_BUTTON_SAVE_PARTICLEENTITIES );
-		if ( wnd ) {
-			wnd->EnableWindow( TRUE );
+
+		CWnd *wnd = GetDlgItem(IDC_BUTTON_SAVE_PARTICLEENTITIES);
+
+		if (wnd) {
+			wnd->EnableWindow(TRUE);
 		}
 	}
 }
 
 
-void CDialogParticleEditor::OnBnClickedButtonHidestage() {
+void CDialogParticleEditor::OnBnClickedButtonHidestage()
+{
 	HideStage();
 }
 
-void CDialogParticleEditor::OnBnClickedButtonShowstage() {
+void CDialogParticleEditor::OnBnClickedButtonShowstage()
+{
 	ShowStage();
 }
 
 
-void CDialogParticleEditor::OnBnClickedWorldGravity() {
+void CDialogParticleEditor::OnBnClickedWorldGravity()
+{
 	worldGravity = !worldGravity;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 }
 
-void CDialogParticleEditor::OnBnClickedEntityColor() {
+void CDialogParticleEditor::OnBnClickedEntityColor()
+{
 	entityColor = !entityColor;
 	DlgVarsToCurStage();
 	CurStageToDlgVars();
 }
 
 
-void CDialogParticleEditor::AddStage() {
+void CDialogParticleEditor::AddStage()
+{
 
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
 
@@ -831,92 +930,112 @@ void CDialogParticleEditor::AddStage() {
 
 	if ((GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
 		idParticleStage *source = GetCurStage();
-		if ( source == NULL ) {
+
+		if (source == NULL) {
 			delete stage;
 			return;
 		}
+
 		*stage = *source;
 	} else {
 		stage->Default();
 	}
-	int newIndex = idp->stages.Append( stage );
-	int index = listStages.AddString( va( "stage %i", newIndex ) );
-	listStages.SetCurSel( index );
-	listStages.SetItemData( index, newIndex );
+
+	int newIndex = idp->stages.Append(stage);
+	int index = listStages.AddString(va("stage %i", newIndex));
+	listStages.SetCurSel(index);
+	listStages.SetItemData(index, newIndex);
 	ShowCurrentStage();
 	EnableStageControls();
 }
 
-void CDialogParticleEditor::RemoveStage() {
+void CDialogParticleEditor::RemoveStage()
+{
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
 
-	if ( MessageBox( "Are you sure you want to remove this stage?", "Remove Stage", MB_YESNO | MB_ICONQUESTION ) != IDYES ) {
+	if (MessageBox("Are you sure you want to remove this stage?", "Remove Stage", MB_YESNO | MB_ICONQUESTION) != IDYES) {
 		return;
 	}
 
 	int index = listStages.GetCurSel();
-	if ( index >= 0 ) {
-		int newIndex = listStages.GetItemData( index );
-		if ( newIndex >= 0 && newIndex < idp->stages.Num() ) {
-			idp->stages.RemoveIndex( newIndex );
-			index += ( index >= 1 ) ? -1 : 1;
-			newIndex = comboParticle.FindStringExact( -1, idp->GetName() );
+
+	if (index >= 0) {
+		int newIndex = listStages.GetItemData(index);
+
+		if (newIndex >= 0 && newIndex < idp->stages.Num()) {
+			idp->stages.RemoveIndex(newIndex);
+			index += (index >= 1) ? -1 : 1;
+			newIndex = comboParticle.FindStringExact(-1, idp->GetName());
 			EnumParticles();
-			if ( newIndex >= 0 ) {
-				comboParticle.SetCurSel( newIndex );
+
+			if (newIndex >= 0) {
+				comboParticle.SetCurSel(newIndex);
 			}
+
 			OnCbnSelchangeComboParticles();
-			listStages.SetCurSel( index );
+			listStages.SetCurSel(index);
 			ShowCurrentStage();
 		}
 	}
+
 	EnableStageControls();
 }
 
-void CDialogParticleEditor::ShowStage() {
+void CDialogParticleEditor::ShowStage()
+{
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
+
 	ps->hidden = false;
 	int index = listStages.GetCurSel();
-	int newIndex = listStages.GetItemData( index );
-	listStages.DeleteString ( index );
-	listStages.InsertString( index, va("stage %i", index ) );
-	listStages.SetItemData( index, newIndex );
-	listStages.SetCurSel( index );
+	int newIndex = listStages.GetItemData(index);
+	listStages.DeleteString(index);
+	listStages.InsertString(index, va("stage %i", index));
+	listStages.SetItemData(index, newIndex);
+	listStages.SetCurSel(index);
 	EnableStageControls();
 }
 
-void CDialogParticleEditor::HideStage() {
+void CDialogParticleEditor::HideStage()
+{
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
+
 	ps->hidden = true;
 	int index = listStages.GetCurSel();
-	int newIndex = listStages.GetItemData( index );
-	listStages.DeleteString ( index );
-	listStages.InsertString( index, va("stage %i (H) ", index ) );
-	listStages.SetItemData( index, newIndex );
-	listStages.SetCurSel( index );
+	int newIndex = listStages.GetItemData(index);
+	listStages.DeleteString(index);
+	listStages.InsertString(index, va("stage %i (H) ", index));
+	listStages.SetItemData(index, newIndex);
+	listStages.SetCurSel(index);
 	EnableStageControls();
 }
 
-idParticleStage *CDialogParticleEditor::GetCurStage() {
+idParticleStage *CDialogParticleEditor::GetCurStage()
+{
 	idDeclParticle *idp = GetCurParticle();
 	int sel = listStages.GetCurSel();
-	int index = listStages.GetItemData( sel );
-	if ( idp == NULL || sel == LB_ERR || index >= idp->stages.Num() ) {
+	int index = listStages.GetItemData(sel);
+
+	if (idp == NULL || sel == LB_ERR || index >= idp->stages.Num()) {
 		return NULL;
 	}
+
 	return idp->stages[index];
 }
 
-void CDialogParticleEditor::ClearDlgVars() {
+void CDialogParticleEditor::ClearDlgVars()
+{
 	matName = "";
 	animFrames = "";
 	animRate = "";
@@ -957,172 +1076,195 @@ void CDialogParticleEditor::ClearDlgVars() {
 	randomDistribution = TRUE;
 	initialAngle = "";
 	customDesc = "";
-	UpdateData( FALSE );
+	UpdateData(FALSE);
 }
 
-void CDialogParticleEditor::CurStageToDlgVars() {
+void CDialogParticleEditor::CurStageToDlgVars()
+{
 
 	// go ahead and get the two system vars too
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
 
-	depthHack = va( "%.3f", idp->depthHack );
+	depthHack = va("%.3f", idp->depthHack);
 
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
+
 	matName = ps->material->GetName();
-	animFrames = va( "%i", ps->animationFrames );
-	animRate = va( "%i", ps->animationRate );
+	animFrames = va("%i", ps->animationFrames);
+	animRate = va("%i", ps->animationRate);
 	color = ps->color.ToString();
 	fadeColor = ps->fadeColor.ToString();
-	fadeIn = va( "%.3f", ps->fadeInFraction );
-	fadeOut = va( "%.3f", ps->fadeOutFraction );
-	fadeFraction = va( "%.3f", ps->fadeIndexFraction );
-	count = va( "%i", ps->totalParticles );
-	time = va( "%.3f", ps->particleLife );
-	timeOffset = va( "%.3f", ps->timeOffset );
-	deadTime = va( "%.3f", ps->deadTime );
-	gravity = va( "%.3f", ps->gravity );
-	bunching = va( "%.3f", ps->spawnBunching );
-	offset = ps->offset.ToString( 0 );
-	xSize = va( "%.3f", ps->distributionParms[0] );
-	ySize = va( "%.3f", ps->distributionParms[1] );
-	zSize = va( "%.3f", ps->distributionParms[2] );
-	ringOffset = va( "%.3f", ps->distributionParms[3] );
-	directionParm = va( "%.3f", ps->directionParms[0] );
+	fadeIn = va("%.3f", ps->fadeInFraction);
+	fadeOut = va("%.3f", ps->fadeOutFraction);
+	fadeFraction = va("%.3f", ps->fadeIndexFraction);
+	count = va("%i", ps->totalParticles);
+	time = va("%.3f", ps->particleLife);
+	timeOffset = va("%.3f", ps->timeOffset);
+	deadTime = va("%.3f", ps->deadTime);
+	gravity = va("%.3f", ps->gravity);
+	bunching = va("%.3f", ps->spawnBunching);
+	offset = ps->offset.ToString(0);
+	xSize = va("%.3f", ps->distributionParms[0]);
+	ySize = va("%.3f", ps->distributionParms[1]);
+	zSize = va("%.3f", ps->distributionParms[2]);
+	ringOffset = va("%.3f", ps->distributionParms[3]);
+	directionParm = va("%.3f", ps->directionParms[0]);
 	direction = ps->directionType;
 	orientation = ps->orientation;
 	distribution = ps->distributionType;
-	speedFrom = va( "%.3f", ps->speed.from );
-	speedTo = va( "%.3f", ps->speed.to );
-	rotationFrom = va( "%.3f", ps->rotationSpeed.from );
-	rotationTo = va( "%.3f", ps->rotationSpeed.to );
-	sizeFrom = va( "%.3f", ps->size.from );
-	sizeTo = va( "%.3f", ps->size.to );
-	aspectFrom = va( "%.3f", ps->aspect.from );
-	aspectTo = va( "%.3f", ps->aspect.to );
-	trails = va( "%f", ps->orientationParms[0] );
-	trailTime = va( "%.3f", ps->orientationParms[1] );
-	cycles = va( "%.3f", ps->cycles );
+	speedFrom = va("%.3f", ps->speed.from);
+	speedTo = va("%.3f", ps->speed.to);
+	rotationFrom = va("%.3f", ps->rotationSpeed.from);
+	rotationTo = va("%.3f", ps->rotationSpeed.to);
+	sizeFrom = va("%.3f", ps->size.from);
+	sizeTo = va("%.3f", ps->size.to);
+	aspectFrom = va("%.3f", ps->aspect.from);
+	aspectTo = va("%.3f", ps->aspect.to);
+	trails = va("%f", ps->orientationParms[0]);
+	trailTime = va("%.3f", ps->orientationParms[1]);
+	cycles = va("%.3f", ps->cycles);
 	customPath = ps->GetCustomPathName();
 	customParms = "";
 	customDesc = ps->GetCustomPathDesc();
-	if ( ps->customPathType != PPATH_STANDARD ) {
-		for ( int i = 0; i < ps->NumCustomPathParms(); i++ ) {
-			customParms += va( "%.1f ", ps->customPathParms[i] );
+
+	if (ps->customPathType != PPATH_STANDARD) {
+		for (int i = 0; i < ps->NumCustomPathParms(); i++) {
+			customParms += va("%.1f ", ps->customPathParms[i]);
 		}
 	}
+
 	worldGravity = ps->worldGravity;
-	initialAngle = va( "%.3f", ps->initialAngle );
-	boundsExpansion = va( "%.3f", ps->boundsExpansion );
+	initialAngle = va("%.3f", ps->initialAngle);
+	boundsExpansion = va("%.3f", ps->boundsExpansion);
 	randomDistribution = ps->randomDistribution;
 	entityColor = ps->entityColor;
-	UpdateData( FALSE );
+	UpdateData(FALSE);
 }
 
-void CDialogParticleEditor::DlgVarsToCurStage() {
+void CDialogParticleEditor::DlgVarsToCurStage()
+{
 
 	// go ahead and set the two system vars too
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
-	idp->depthHack = atof( depthHack );
+
+	idp->depthHack = atof(depthHack);
 
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
-	ps->material = declManager->FindMaterial( matName );
-	ps->animationFrames = atoi( animFrames );
-	ps->animationRate = atoi( animRate );
-	sscanf( color, "%f %f %f %f", &ps->color.x, &ps->color.y, &ps->color.z, &ps->color.w );
-	sscanf( fadeColor, "%f %f %f %f", &ps->fadeColor.x, &ps->fadeColor.y, &ps->fadeColor.z, &ps->fadeColor.w );
-	ps->fadeInFraction = atof( fadeIn );
-	ps->fadeOutFraction = atof( fadeOut );
-	ps->fadeIndexFraction = atof( fadeFraction );
-	ps->totalParticles = atoi( count );
-	ps->particleLife = atof( time );
-	ps->timeOffset = atof( timeOffset );
-	ps->deadTime = atof( deadTime );
-	ps->gravity = atof( gravity );
-	ps->spawnBunching = atof( bunching );
-	sscanf( offset, "%f %f %f", &ps->offset.x, &ps->offset.y, &ps->offset.z );
-	ps->distributionParms[0] = atof( xSize );
-	ps->distributionParms[1] = atof( ySize );
-	ps->distributionParms[2] = atof( zSize );
-	ps->distributionParms[3] = atof( ringOffset );
-	ps->directionParms[0] = atof( directionParm );
-	ps->directionType = static_cast<prtDirection_t>( direction );
-	ps->orientation = static_cast<prtOrientation_t>( orientation );
-	ps->distributionType = static_cast<prtDistribution_t>( distribution );
-	ps->speed.from = atof( speedFrom );
-	ps->speed.to = atof( speedTo );
-	ps->rotationSpeed.from = atof( rotationFrom );
-	ps->rotationSpeed.to = atof( rotationTo );
-	ps->size.from = atof( sizeFrom );
-	ps->size.to = atof( sizeTo );
-	ps->aspect.from = atof( aspectFrom );
-	ps->aspect.to = atof( aspectTo );
-	ps->orientationParms[0] = atof( trails );
-	ps->orientationParms[1] = atof( trailTime );
-	ps->worldGravity = ( worldGravity == TRUE );
-	ps->cycles = atof( cycles );
-	ps->cycleMsec = ( ps->particleLife + ps->deadTime ) * 1000;
 
-	sscanf( customParms, "%f %f %f %f %f %f %f %f", &ps->customPathParms[0], &ps->customPathParms[1], &ps->customPathParms[2],
-		   &ps->customPathParms[3], &ps->customPathParms[4], &ps->customPathParms[5],
-		   &ps->customPathParms[6], &ps->customPathParms[7] );
+	ps->material = declManager->FindMaterial(matName);
+	ps->animationFrames = atoi(animFrames);
+	ps->animationRate = atoi(animRate);
+	sscanf(color, "%f %f %f %f", &ps->color.x, &ps->color.y, &ps->color.z, &ps->color.w);
+	sscanf(fadeColor, "%f %f %f %f", &ps->fadeColor.x, &ps->fadeColor.y, &ps->fadeColor.z, &ps->fadeColor.w);
+	ps->fadeInFraction = atof(fadeIn);
+	ps->fadeOutFraction = atof(fadeOut);
+	ps->fadeIndexFraction = atof(fadeFraction);
+	ps->totalParticles = atoi(count);
+	ps->particleLife = atof(time);
+	ps->timeOffset = atof(timeOffset);
+	ps->deadTime = atof(deadTime);
+	ps->gravity = atof(gravity);
+	ps->spawnBunching = atof(bunching);
+	sscanf(offset, "%f %f %f", &ps->offset.x, &ps->offset.y, &ps->offset.z);
+	ps->distributionParms[0] = atof(xSize);
+	ps->distributionParms[1] = atof(ySize);
+	ps->distributionParms[2] = atof(zSize);
+	ps->distributionParms[3] = atof(ringOffset);
+	ps->directionParms[0] = atof(directionParm);
+	ps->directionType = static_cast<prtDirection_t>(direction);
+	ps->orientation = static_cast<prtOrientation_t>(orientation);
+	ps->distributionType = static_cast<prtDistribution_t>(distribution);
+	ps->speed.from = atof(speedFrom);
+	ps->speed.to = atof(speedTo);
+	ps->rotationSpeed.from = atof(rotationFrom);
+	ps->rotationSpeed.to = atof(rotationTo);
+	ps->size.from = atof(sizeFrom);
+	ps->size.to = atof(sizeTo);
+	ps->aspect.from = atof(aspectFrom);
+	ps->aspect.to = atof(aspectTo);
+	ps->orientationParms[0] = atof(trails);
+	ps->orientationParms[1] = atof(trailTime);
+	ps->worldGravity = (worldGravity == TRUE);
+	ps->cycles = atof(cycles);
+	ps->cycleMsec = (ps->particleLife + ps->deadTime) * 1000;
 
-	ps->SetCustomPathType( customPath );
+	sscanf(customParms, "%f %f %f %f %f %f %f %f", &ps->customPathParms[0], &ps->customPathParms[1], &ps->customPathParms[2],
+	       &ps->customPathParms[3], &ps->customPathParms[4], &ps->customPathParms[5],
+	       &ps->customPathParms[6], &ps->customPathParms[7]);
 
-	ps->initialAngle = atof( initialAngle );
-	ps->boundsExpansion = atof( boundsExpansion );
-	ps->randomDistribution = ( randomDistribution != FALSE );
-	ps->entityColor = ( entityColor == TRUE );
+	ps->SetCustomPathType(customPath);
+
+	ps->initialAngle = atof(initialAngle);
+	ps->boundsExpansion = atof(boundsExpansion);
+	ps->randomDistribution = (randomDistribution != FALSE);
+	ps->entityColor = (entityColor == TRUE);
 
 }
 
-void CDialogParticleEditor::ShowCurrentStage() {
+void CDialogParticleEditor::ShowCurrentStage()
+{
 	ClearDlgVars();
 	idParticleStage *ps = GetCurStage();
-	if ( ps == NULL ) {
+
+	if (ps == NULL) {
 		return;
 	}
+
 	CurStageToDlgVars();
 	UpdateControlInfo();
 }
 
-void CDialogParticleEditor::OnLbnSelchangeListStages() {
+void CDialogParticleEditor::OnLbnSelchangeListStages()
+{
 	ShowCurrentStage();
 	EnableStageControls();
 }
 
-void CDialogParticleEditor::OnBnClickedButtonNew() {
+void CDialogParticleEditor::OnBnClickedButtonNew()
+{
 	DialogName dlg("New Particle");
+
 	if (dlg.DoModal() == IDOK) {
-		CFileDialog dlgSave( TRUE, "prt", NULL, OFN_CREATEPROMPT, "Particle Files (*.prt)|*.prt||All Files (*.*)|*.*||", AfxGetMainWnd() );
-		if ( dlgSave.DoModal() == IDOK ) {
-			if ( declManager->FindType( DECL_PARTICLE, dlg.m_strName, false ) ) {
-				MessageBox( "Particle already exists!", "Particle exists", MB_OK );
+		CFileDialog dlgSave(TRUE, "prt", NULL, OFN_CREATEPROMPT, "Particle Files (*.prt)|*.prt||All Files (*.*)|*.*||", AfxGetMainWnd());
+
+		if (dlgSave.DoModal() == IDOK) {
+			if (declManager->FindType(DECL_PARTICLE, dlg.m_strName, false)) {
+				MessageBox("Particle already exists!", "Particle exists", MB_OK);
 				return;
 			}
+
 			idStr fileName;
-			fileName = fileSystem->OSPathToRelativePath( dlgSave.m_ofn.lpstrFile );
-			idDecl *decl = declManager->CreateNewDecl( DECL_PARTICLE, dlg.m_strName, fileName );
-			if ( decl ) {
-				if ( MessageBox( "Copy current particle?", "Copy current", MB_YESNO | MB_ICONQUESTION ) == IDYES ) {
-					MessageBox( "Copy current particle not implemented yet.. Stay tuned" );
+			fileName = fileSystem->OSPathToRelativePath(dlgSave.m_ofn.lpstrFile);
+			idDecl *decl = declManager->CreateNewDecl(DECL_PARTICLE, dlg.m_strName, fileName);
+
+			if (decl) {
+				if (MessageBox("Copy current particle?", "Copy current", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+					MessageBox("Copy current particle not implemented yet.. Stay tuned");
 				}
+
 				EnumParticles();
-				int index = comboParticle.FindStringExact( -1, dlg.m_strName );
-				if ( index >= 0 ) {
-					comboParticle.SetCurSel( index );
+				int index = comboParticle.FindStringExact(-1, dlg.m_strName);
+
+				if (index >= 0) {
+					comboParticle.SetCurSel(index);
 				}
+
 				OnBnClickedButtonSave();
 				OnCbnSelchangeComboParticles();
 			}
@@ -1130,19 +1272,22 @@ void CDialogParticleEditor::OnBnClickedButtonNew() {
 	}
 }
 
-void CDialogParticleEditor::OnBnClickedButtonSave() {
+void CDialogParticleEditor::OnBnClickedButtonSave()
+{
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
 
-	if ( strstr( idp->GetFileName(), "implicit" ) ) {
+	if (strstr(idp->GetFileName(), "implicit")) {
 		// defaulted, need to choose a file
-		CFileDialog dlgSave( FALSE, "prt", NULL, OFN_OVERWRITEPROMPT, "Particle Files (*.prt)|*.prt||All Files (*.*)|*.*||", AfxGetMainWnd() );
-		if ( dlgSave.DoModal() == IDOK ) {
+		CFileDialog dlgSave(FALSE, "prt", NULL, OFN_OVERWRITEPROMPT, "Particle Files (*.prt)|*.prt||All Files (*.*)|*.*||", AfxGetMainWnd());
+
+		if (dlgSave.DoModal() == IDOK) {
 			idStr fileName;
-			fileName = fileSystem->OSPathToRelativePath( dlgSave.m_ofn.lpstrFile );
-			idp->Save( fileName );
+			fileName = fileSystem->OSPathToRelativePath(dlgSave.m_ofn.lpstrFile);
+			idp->Save(fileName);
 			EnumParticles();
 		}
 	} else {
@@ -1151,255 +1296,283 @@ void CDialogParticleEditor::OnBnClickedButtonSave() {
 
 }
 
-void CDialogParticleEditor::EnumParticles() {
+void CDialogParticleEditor::EnumParticles()
+{
 	CWaitCursor cursor;
 	comboParticle.ResetContent();
-	for ( int i = 0; i < declManager->GetNumDecls( DECL_PARTICLE ); i++ ) {
-		const idDecl *idp = declManager->DeclByIndex( DECL_PARTICLE, i );
-		int index = comboParticle.AddString( idp->GetName() );
-		if ( index >= 0 ) {
-			comboParticle.SetItemData( index, i );
+
+	for (int i = 0; i < declManager->GetNumDecls(DECL_PARTICLE); i++) {
+		const idDecl *idp = declManager->DeclByIndex(DECL_PARTICLE, i);
+		int index = comboParticle.AddString(idp->GetName());
+
+		if (index >= 0) {
+			comboParticle.SetItemData(index, i);
 		}
 	}
-	comboParticle.SetCurSel( 0 );
+
+	comboParticle.SetCurSel(0);
 	OnCbnSelchangeComboParticles();
 }
 
-void CDialogParticleEditor::OnDestroy() {
+void CDialogParticleEditor::OnDestroy()
+{
 	com_editors &= ~EDITOR_PARTICLE;
 	return CDialog::OnDestroy();
 }
 
-void VectorCallBack( idQuat rotation ) {
-	if ( g_ParticleDialog && g_ParticleDialog->GetSafeHwnd() ) {
-		g_ParticleDialog->SetVectorControlUpdate( rotation );
+void VectorCallBack(idQuat rotation)
+{
+	if (g_ParticleDialog && g_ParticleDialog->GetSafeHwnd()) {
+		g_ParticleDialog->SetVectorControlUpdate(rotation);
 	}
 }
 
-void CDialogParticleEditor::SetVectorControlUpdate( idQuat rotation ) {
-	if ( particleMode ) {
-		idList<idEntity*> list;
+void CDialogParticleEditor::SetVectorControlUpdate(idQuat rotation)
+{
+	if (particleMode) {
+		idList<idEntity *> list;
 
-		list.SetNum( 128 );
-		int count = gameEdit->GetSelectedEntities( list.Ptr(), list.Num() );
-		list.SetNum( count );
+		list.SetNum(128);
+		int count = gameEdit->GetSelectedEntities(list.Ptr(), list.Num());
+		list.SetNum(count);
 
-		if ( count ) {
-			for ( int i = 0; i < count; i++ ) {
-				const idDict *dict = gameEdit->EntityGetSpawnArgs( list[i] );
-				if ( dict == NULL ) {
+		if (count) {
+			for (int i = 0; i < count; i++) {
+				const idDict *dict = gameEdit->EntityGetSpawnArgs(list[i]);
+
+				if (dict == NULL) {
 					continue;
 				}
-				const char *name = dict->GetString( "name" );
-				gameEdit->EntitySetAxis( list[i], rotation.ToMat3() );
-				gameEdit->EntityUpdateVisuals( list[i] );
-				gameEdit->MapSetEntityKeyVal( name, "rotation", rotation.ToMat3().ToString() );
+
+				const char *name = dict->GetString("name");
+
+				gameEdit->EntitySetAxis(list[i], rotation.ToMat3());
+
+				gameEdit->EntityUpdateVisuals(list[i]);
+
+				gameEdit->MapSetEntityKeyVal(name, "rotation", rotation.ToMat3().ToString());
 			}
-			CWnd *wnd = GetDlgItem( IDC_BUTTON_SAVE_PARTICLEENTITIES );
-			if ( wnd ) {
-				wnd->EnableWindow( TRUE );
+
+			CWnd *wnd = GetDlgItem(IDC_BUTTON_SAVE_PARTICLEENTITIES);
+
+			if (wnd) {
+				wnd->EnableWindow(TRUE);
 			}
 		}
 	}
 }
 
-BOOL CDialogParticleEditor::OnInitDialog() {
+BOOL CDialogParticleEditor::OnInitDialog()
+{
 
 	com_editors |= EDITOR_PARTICLE;
 
-	particleMode = ( cvarSystem->GetCVarInteger( "g_editEntityMode" ) == 4 );
+	particleMode = (cvarSystem->GetCVarInteger("g_editEntityMode") == 4);
 	mapModified = false;
 
 	CDialog::OnInitDialog();
 
-	sliderBunching.SetRange( 0, 20 );
-	sliderBunching.SetValueRange( 0.0f, 1.0f );
-	sliderFadeIn.SetRange( 0, 20 );
-	sliderFadeIn.SetValueRange( 0.0f, 1.0f );
-	sliderFadeOut.SetRange( 0, 20 );
-	sliderFadeOut.SetValueRange( 0.0f, 1.0f );
-	sliderCount.SetRange( 0, 1024 );
-	sliderCount.SetValueRange( 0, 4096 );
-	sliderTime.SetRange( 0, 200 );
-	sliderTime.SetValueRange( 0.0f, 10.0f );
-	sliderGravity.SetRange( 0, 600 );
-	sliderGravity.SetValueRange( -300.0f, 300.0f );
-	sliderSpeedFrom.SetRange( 0, 600 );
-	sliderSpeedFrom.SetValueRange( -300.0f, 300.0f );
-	sliderSpeedTo.SetRange( 0, 600 );
-	sliderSpeedTo.SetValueRange( -300.0f, 300.0f );
-	sliderRotationFrom.SetRange( 0, 100 );
-	sliderRotationFrom.SetValueRange( 0.0f, 100.0f );
-	sliderRotationTo.SetRange( 0, 100 );
-	sliderRotationTo.SetValueRange( 0.0f, 100.0f );
-	sliderSizeFrom.SetRange( 0, 256 );
-	sliderSizeFrom.SetValueRange( 0.0f, 128.0f );
-	sliderSizeTo.SetRange( 0, 256 );
-	sliderSizeTo.SetValueRange( 0.0f, 128.0f );
-	sliderAspectFrom.SetRange( 0, 256 );
-	sliderAspectFrom.SetValueRange( 0.0f, 128.0f );
-	sliderAspectTo.SetRange( 0, 256 );
-	sliderAspectTo.SetValueRange( 0.0f, 128.0f );
-	sliderFadeFraction.SetRange( 0, 20 );
-	sliderFadeFraction.SetValueRange( 0.0f, 1.0f );
+	sliderBunching.SetRange(0, 20);
+	sliderBunching.SetValueRange(0.0f, 1.0f);
+	sliderFadeIn.SetRange(0, 20);
+	sliderFadeIn.SetValueRange(0.0f, 1.0f);
+	sliderFadeOut.SetRange(0, 20);
+	sliderFadeOut.SetValueRange(0.0f, 1.0f);
+	sliderCount.SetRange(0, 1024);
+	sliderCount.SetValueRange(0, 4096);
+	sliderTime.SetRange(0, 200);
+	sliderTime.SetValueRange(0.0f, 10.0f);
+	sliderGravity.SetRange(0, 600);
+	sliderGravity.SetValueRange(-300.0f, 300.0f);
+	sliderSpeedFrom.SetRange(0, 600);
+	sliderSpeedFrom.SetValueRange(-300.0f, 300.0f);
+	sliderSpeedTo.SetRange(0, 600);
+	sliderSpeedTo.SetValueRange(-300.0f, 300.0f);
+	sliderRotationFrom.SetRange(0, 100);
+	sliderRotationFrom.SetValueRange(0.0f, 100.0f);
+	sliderRotationTo.SetRange(0, 100);
+	sliderRotationTo.SetValueRange(0.0f, 100.0f);
+	sliderSizeFrom.SetRange(0, 256);
+	sliderSizeFrom.SetValueRange(0.0f, 128.0f);
+	sliderSizeTo.SetRange(0, 256);
+	sliderSizeTo.SetValueRange(0.0f, 128.0f);
+	sliderAspectFrom.SetRange(0, 256);
+	sliderAspectFrom.SetValueRange(0.0f, 128.0f);
+	sliderAspectTo.SetRange(0, 256);
+	sliderAspectTo.SetValueRange(0.0f, 128.0f);
+	sliderFadeFraction.SetRange(0, 20);
+	sliderFadeFraction.SetValueRange(0.0f, 1.0f);
 
 	EnumParticles();
 	SetParticleView();
 
-	toolTipCtrl.Create( this );
-	toolTipCtrl.Activate( TRUE );
+	toolTipCtrl.Create(this);
+	toolTipCtrl.Activate(TRUE);
 
-	CWnd* wnd = GetWindow( GW_CHILD );
+	CWnd *wnd = GetWindow(GW_CHILD);
 	CString str;
-	while ( wnd ) {
-		if ( str.LoadString( wnd->GetDlgCtrlID() ) ) {
-			toolTipCtrl.AddTool( wnd, str );
+
+	while (wnd) {
+		if (str.LoadString(wnd->GetDlgCtrlID())) {
+			toolTipCtrl.AddTool(wnd, str);
 		}
-		wnd = wnd->GetWindow( GW_HWNDNEXT );
+
+		wnd = wnd->GetWindow(GW_HWNDNEXT);
 	}
 
-	wnd = GetDlgItem( IDC_BUTTON_SAVE_PARTICLEENTITIES );
-	if ( wnd ) {
-		wnd->EnableWindow( FALSE );
+	wnd = GetDlgItem(IDC_BUTTON_SAVE_PARTICLEENTITIES);
+
+	if (wnd) {
+		wnd->EnableWindow(FALSE);
 	}
+
 	EnableEditControls();
 
-	vectorControl.SetVectorChangingCallback( VectorCallBack );
+	vectorControl.SetVectorChangingCallback(VectorCallBack);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
 }
 
-void CDialogParticleEditor::OnHScroll( UINT nSBCode, UINT nPos, CScrollBar* pScrollBar ) {
-	CDialog::OnHScroll( nSBCode, nPos, pScrollBar );
+void CDialogParticleEditor::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
+{
+	CDialog::OnHScroll(nSBCode, nPos, pScrollBar);
+	CSliderCtrl *ctrl = dynamic_cast< CSliderCtrl * >(pScrollBar);
 
-	// DG: from SteelStorm2:
-	// Something funky is going on with the RTTI.  The dynamic_cast even to a CRangeSlider*
-	// was not happening correctly.  Whatever is getting to this callback from the CRangeSlider
-	// must not be one of the basic slider types or even a CRangeSlider.  What is weird is the
-	// objects coming in have the same addresses as the various CRangeSliders on the dlg, so they
-	// should cast correctly.  Turns out it does not matter because once the addresses matche up
-	// this code just uses the dlg member reference so all I need is for the address check to
-	// go through correctly.
-	CRangeSlider* ctrl = (CRangeSlider*)pScrollBar;
-	if ( !ctrl ) {
+	if (!ctrl) {
 		return;
 	}
-	if ( ctrl == &sliderBunching ) {
+
+	if (ctrl == &sliderBunching) {
 		// handle bunching
-		bunching = va( "%.3f", sliderBunching.GetValue() );
+		bunching = va("%.3f", sliderBunching.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderFadeIn ) {
-		fadeIn = va( "%.3f", sliderFadeIn.GetValue() );
+	} else if (ctrl == &sliderFadeIn) {
+		fadeIn = va("%.3f", sliderFadeIn.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderFadeOut ) {
-		fadeOut = va( "%.3f", sliderFadeOut.GetValue() );
+	} else if (ctrl == &sliderFadeOut) {
+		fadeOut = va("%.3f", sliderFadeOut.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderFadeFraction ) {
-		fadeFraction = va( "%.3f", sliderFadeFraction.GetValue() );
+	} else if (ctrl == &sliderFadeFraction) {
+		fadeFraction = va("%.3f", sliderFadeFraction.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderCount ) {
-		count = va( "%i", (int)sliderCount.GetValue() );
+	} else if (ctrl == &sliderCount) {
+		count = va("%i", (int)sliderCount.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderTime ) {
-		time = va( "%.3f", sliderTime.GetValue() );
+	} else if (ctrl == &sliderTime) {
+		time = va("%.3f", sliderTime.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderGravity ) {
-		gravity = va( "%.3f", sliderGravity.GetValue() );
+	} else if (ctrl == &sliderGravity) {
+		gravity = va("%.3f", sliderGravity.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderSpeedFrom ) {
-		speedFrom = va( "%.3f", sliderSpeedFrom.GetValue() );
+	} else if (ctrl == &sliderSpeedFrom) {
+		speedFrom = va("%.3f", sliderSpeedFrom.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderSpeedTo ) {
-		speedTo = va( "%.3f", sliderSpeedTo.GetValue() );
+	} else if (ctrl == &sliderSpeedTo) {
+		speedTo = va("%.3f", sliderSpeedTo.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderRotationFrom ) {
-		rotationFrom = va( "%.3f", sliderRotationFrom.GetValue() );
+	} else if (ctrl == &sliderRotationFrom) {
+		rotationFrom = va("%.3f", sliderRotationFrom.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderRotationTo ) {
-		rotationTo = va( "%.3f", sliderRotationTo.GetValue() );
+	} else if (ctrl == &sliderRotationTo) {
+		rotationTo = va("%.3f", sliderRotationTo.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderSizeFrom ) {
-		sizeFrom = va( "%.3f", sliderSizeFrom.GetValue() );
+	} else if (ctrl == &sliderSizeFrom) {
+		sizeFrom = va("%.3f", sliderSizeFrom.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderSizeTo ) {
-		sizeTo = va( "%.3f", sliderSizeTo.GetValue() );
+	} else if (ctrl == &sliderSizeTo) {
+		sizeTo = va("%.3f", sliderSizeTo.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderAspectFrom ) {
-		aspectFrom = va( "%.3f", sliderAspectFrom.GetValue() );
+	} else if (ctrl == &sliderAspectFrom) {
+		aspectFrom = va("%.3f", sliderAspectFrom.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
-	} else if ( ctrl == &sliderAspectTo ) {
-		aspectTo = va( "%.3f", sliderAspectTo.GetValue() );
+	} else if (ctrl == &sliderAspectTo) {
+		aspectTo = va("%.3f", sliderAspectTo.GetValue());
 		DlgVarsToCurStage();
 		CurStageToDlgVars();
 	}
 }
 
 
-BOOL CDialogParticleEditor::PreTranslateMessage(MSG *pMsg) {
-	if ( pMsg->message >= WM_MOUSEFIRST && pMsg->message <= WM_MOUSELAST ) {
-		toolTipCtrl.RelayEvent( pMsg );
+BOOL CDialogParticleEditor::PreTranslateMessage(MSG *pMsg)
+{
+	if (pMsg->message >= WM_MOUSEFIRST && pMsg->message <= WM_MOUSELAST) {
+		toolTipCtrl.RelayEvent(pMsg);
 	}
+
 	return CDialog::PreTranslateMessage(pMsg);
 }
 
-void CDialogParticleEditor::EnableStageControls() {
+void CDialogParticleEditor::EnableStageControls()
+{
 	idParticleStage *stage = GetCurStage();
-	bool b = ( stage && stage->hidden ) ? false : true;
-	for ( int i = 0; i < StageIDCount; i++ ) {
-		CWnd *wnd = GetDlgItem( StageEnableID[ i ] );
-		if ( wnd ) {
-			wnd->EnableWindow( b );
+	bool b = (stage && stage->hidden) ? false : true;
+
+	for (int i = 0; i < StageIDCount; i++) {
+		CWnd *wnd = GetDlgItem(StageEnableID[ i ]);
+
+		if (wnd) {
+			wnd->EnableWindow(b);
 		}
 	}
 }
 
-void CDialogParticleEditor::EnableEditControls() {
-	for ( int i = 0; i < EditIDCount; i++ ) {
-		CWnd *wnd = GetDlgItem( EditEnableID[ i ] );
-		if ( wnd ) {
-			wnd->EnableWindow( particleMode );
+void CDialogParticleEditor::EnableEditControls()
+{
+	for (int i = 0; i < EditIDCount; i++) {
+		CWnd *wnd = GetDlgItem(EditEnableID[ i ]);
+
+		if (wnd) {
+			wnd->EnableWindow(particleMode);
 		}
 	}
 }
 
-void CDialogParticleEditor::UpdateSelectedOrigin( float x, float y, float z ) {
-	idList<idEntity*> list;
+void CDialogParticleEditor::UpdateSelectedOrigin(float x, float y, float z)
+{
+	idList<idEntity *> list;
 	idVec3 origin;
 	idVec3 vec(x, y, z);
 
-	list.SetNum( 128 );
-	int count = gameEdit->GetSelectedEntities( list.Ptr(), list.Num() );
-	list.SetNum( count );
+	list.SetNum(128);
+	int count = gameEdit->GetSelectedEntities(list.Ptr(), list.Num());
+	list.SetNum(count);
 
-	if ( count ) {
-		for ( int i = 0; i < count; i++ ) {
-			const idDict *dict = gameEdit->EntityGetSpawnArgs( list[i] );
-			if ( dict == NULL ) {
+	if (count) {
+		for (int i = 0; i < count; i++) {
+			const idDict *dict = gameEdit->EntityGetSpawnArgs(list[i]);
+
+			if (dict == NULL) {
 				continue;
 			}
-			const char *name = dict->GetString( "name" );
-			gameEdit->EntityTranslate( list[i], vec );
-			gameEdit->EntityUpdateVisuals( list[i] );
-			gameEdit->MapEntityTranslate( name, vec );
+
+			const char *name = dict->GetString("name");
+
+			gameEdit->EntityTranslate(list[i], vec);
+
+			gameEdit->EntityUpdateVisuals(list[i]);
+
+			gameEdit->MapEntityTranslate(name, vec);
 		}
-		CWnd *wnd = GetDlgItem( IDC_BUTTON_SAVE_PARTICLEENTITIES );
-		if ( wnd ) {
-			wnd->EnableWindow( TRUE );
+
+		CWnd *wnd = GetDlgItem(IDC_BUTTON_SAVE_PARTICLEENTITIES);
+
+		if (wnd) {
+			wnd->EnableWindow(TRUE);
 		}
 	}
 }
@@ -1443,34 +1616,39 @@ void CDialogParticleEditor::OnBtnDrop()
 	idDict		args;
 	idAngles	viewAngles;
 
-	if ( !gameEdit->PlayerIsValid() ) {
+	if (!gameEdit->PlayerIsValid()) {
 		return;
 	}
 
-	gameEdit->PlayerGetViewAngles( viewAngles );
-	gameEdit->PlayerGetEyePosition( org );
+	gameEdit->PlayerGetViewAngles(viewAngles);
+	gameEdit->PlayerGetEyePosition(org);
 
-	org += idAngles( 0, viewAngles.yaw, 0 ).ToForward() * 80 + idVec3( 0, 0, 1 );
+	org += idAngles(0, viewAngles.yaw, 0).ToForward() * 80 + idVec3(0, 0, 1);
 	args.Set("origin", org.ToString());
 	args.Set("classname", "func_emitter");
-	args.Set("angle", va( "%f", viewAngles.yaw + 180 ));
+	args.Set("angle", va("%f", viewAngles.yaw + 180));
 
 	idDeclParticle *idp = GetCurParticle();
-	if ( idp == NULL ) {
+
+	if (idp == NULL) {
 		return;
 	}
+
 	idStr str = idp->GetName();
-	str.SetFileExtension( ".prt" );
+	str.SetFileExtension(".prt");
 
 	args.Set("model", str);
 
-	idStr name = gameEdit->GetUniqueEntityName( "func_emitter" );
+	idStr name = gameEdit->GetUniqueEntityName("func_emitter");
 	bool nameValid = false;
+
 	while (!nameValid) {
 		DialogName dlg("Name Particle", this);
 		dlg.m_strName = name;
+
 		if (dlg.DoModal() == IDOK) {
-			idEntity *gameEnt = gameEdit->FindEntity( dlg.m_strName );
+			idEntity *gameEnt = gameEdit->FindEntity(dlg.m_strName);
+
 			if (gameEnt) {
 				if (MessageBox("Please choose another name", "Duplicate Entity Name!", MB_OKCANCEL) == IDCANCEL) {
 					return;
@@ -1485,14 +1663,15 @@ void CDialogParticleEditor::OnBtnDrop()
 	args.Set("name", name.c_str());
 
 	idEntity *ent = NULL;
-	gameEdit->SpawnEntityDef( args, &ent );
+	gameEdit->SpawnEntityDef(args, &ent);
+
 	if (ent) {
-		gameEdit->EntityUpdateChangeableSpawnArgs( ent, NULL );
+		gameEdit->EntityUpdateChangeableSpawnArgs(ent, NULL);
 		gameEdit->ClearEntitySelection();
-		gameEdit->AddSelectedEntity( ent );
+		gameEdit->AddSelectedEntity(ent);
 	}
 
-	gameEdit->MapAddEntity( &args );
+	gameEdit->MapAddEntity(&args);
 }
 
 void CDialogParticleEditor::OnOK()

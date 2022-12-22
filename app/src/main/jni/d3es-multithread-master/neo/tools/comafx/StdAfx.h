@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <afxcmn.h>			// MFC support for Windows Common Controls
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
-void InitAfx( void );
+void InitAfx(void);
 
 // tool tips
 typedef struct toolTip_s {
@@ -50,17 +50,17 @@ typedef struct toolTip_s {
 	char *tip;
 } toolTip_t;
 
-int DefaultOnToolHitTest( const toolTip_t *toolTips, const CDialog *dialog, CPoint point, TOOLINFO* pTI );
-BOOL DefaultOnToolTipNotify( const toolTip_t *toolTips, UINT id, NMHDR *pNMHDR, LRESULT *pResult );
+int DefaultOnToolHitTest(const toolTip_t *toolTips, const CDialog *dialog, CPoint point, TOOLINFO *pTI);
+BOOL DefaultOnToolTipNotify(const toolTip_t *toolTips, UINT id, NMHDR *pNMHDR, LRESULT *pResult);
 
 // edit control
-bool EditControlEnterHit( CEdit *edit );
-float EditVerifyFloat( CEdit *edit, bool allowNegative = true );
-float EditSpinFloat( CEdit *edit, bool up );
+bool EditControlEnterHit(CEdit *edit);
+float EditVerifyFloat(CEdit *edit, bool allowNegative = true);
+float EditSpinFloat(CEdit *edit, bool up);
 
 // combo box
-int SetSafeComboBoxSelection( CComboBox *combo, const char *string, int skip );
-int GetSafeComboBoxSelection( CComboBox *combo, CString &string, int skip );
-int UnsetSafeComboBoxSelection( CComboBox *combo, CString &string );
+int SetSafeComboBoxSelection(CComboBox *combo, const char *string, int skip);
+int GetSafeComboBoxSelection(CComboBox *combo, CString &string, int skip);
+int UnsetSafeComboBoxSelection(CComboBox *combo, CString &string);
 
 #endif /* !__AFX_STDAFX_H__ */

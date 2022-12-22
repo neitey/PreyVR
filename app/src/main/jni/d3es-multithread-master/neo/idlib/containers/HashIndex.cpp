@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,9 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-
-#include "idlib/containers/HashIndex.h"
+#include "../precompiled.h"
+#pragma hdrstop
 
 int idHashIndex::INVALID_INDEX[1] = { -1 };
 
@@ -37,8 +36,9 @@ int idHashIndex::INVALID_INDEX[1] = { -1 };
 idHashIndex::Init
 ================
 */
-void idHashIndex::Init( const int initialHashSize, const int initialIndexSize ) {
-	assert( idMath::IsPowerOfTwo( initialHashSize ) );
+void idHashIndex::Init(const int initialHashSize, const int initialIndexSize)
+{
+	assert(idMath::IsPowerOfTwo(initialHashSize));
 
 	hashSize = initialHashSize;
 	hash = INVALID_INDEX;
@@ -54,16 +54,17 @@ void idHashIndex::Init( const int initialHashSize, const int initialIndexSize ) 
 idHashIndex::Allocate
 ================
 */
-void idHashIndex::Allocate( const int newHashSize, const int newIndexSize ) {
-	assert( idMath::IsPowerOfTwo( newHashSize ) );
+void idHashIndex::Allocate(const int newHashSize, const int newIndexSize)
+{
+	assert(idMath::IsPowerOfTwo(newHashSize));
 
 	Free();
 	hashSize = newHashSize;
 	hash = new int[hashSize];
-	memset( hash, 0xff, hashSize * sizeof( hash[0] ) );
+	memset(hash, 0xff, hashSize * sizeof(hash[0]));
 	indexSize = newIndexSize;
 	indexChain = new int[indexSize];
-	memset( indexChain, 0xff, indexSize * sizeof( indexChain[0] ) );
+	memset(indexChain, 0xff, indexSize * sizeof(indexChain[0]));
 	hashMask = hashSize - 1;
 	lookupMask = -1;
 }
@@ -73,15 +74,18 @@ void idHashIndex::Allocate( const int newHashSize, const int newIndexSize ) {
 idHashIndex::Free
 ================
 */
-void idHashIndex::Free( void ) {
-	if ( hash != INVALID_INDEX ) {
+void idHashIndex::Free(void)
+{
+	if (hash != INVALID_INDEX) {
 		delete[] hash;
 		hash = INVALID_INDEX;
 	}
-	if ( indexChain != INVALID_INDEX ) {
+
+	if (indexChain != INVALID_INDEX) {
 		delete[] indexChain;
 		indexChain = INVALID_INDEX;
 	}
+
 	lookupMask = 0;
 }
 
@@ -90,29 +94,31 @@ void idHashIndex::Free( void ) {
 idHashIndex::ResizeIndex
 ================
 */
-void idHashIndex::ResizeIndex( const int newIndexSize ) {
+void idHashIndex::ResizeIndex(const int newIndexSize)
+{
 	int *oldIndexChain, mod, newSize;
 
-	if ( newIndexSize <= indexSize ) {
+	if (newIndexSize <= indexSize) {
 		return;
 	}
 
 	mod = newIndexSize % granularity;
-	if ( !mod ) {
+
+	if (!mod) {
 		newSize = newIndexSize;
 	} else {
 		newSize = newIndexSize + granularity - mod;
 	}
 
-	if ( indexChain == INVALID_INDEX ) {
+	if (indexChain == INVALID_INDEX) {
 		indexSize = newSize;
 		return;
 	}
 
 	oldIndexChain = indexChain;
 	indexChain = new int[newSize];
-	memcpy( indexChain, oldIndexChain, indexSize * sizeof(int) );
-	memset( indexChain + indexSize, 0xff, (newSize - indexSize) * sizeof(int) );
+	memcpy(indexChain, oldIndexChain, indexSize * sizeof(int));
+	memset(indexChain + indexSize, 0xff, (newSize - indexSize) * sizeof(int));
 	delete[] oldIndexChain;
 	indexSize = newSize;
 }
@@ -122,35 +128,44 @@ void idHashIndex::ResizeIndex( const int newIndexSize ) {
 idHashIndex::GetSpread
 ================
 */
-int idHashIndex::GetSpread( void ) const {
+int idHashIndex::GetSpread(void) const
+{
 	int i, index, totalItems, *numHashItems, average, error, e;
 
-	if ( hash == INVALID_INDEX ) {
+	if (hash == INVALID_INDEX) {
 		return 100;
 	}
 
 	totalItems = 0;
 	numHashItems = new int[hashSize];
-	for ( i = 0; i < hashSize; i++ ) {
+
+	for (i = 0; i < hashSize; i++) {
 		numHashItems[i] = 0;
-		for ( index = hash[i]; index >= 0; index = indexChain[index] ) {
+
+		for (index = hash[i]; index >= 0; index = indexChain[index]) {
 			numHashItems[i]++;
 		}
+
 		totalItems += numHashItems[i];
 	}
+
 	// if no items in hash
-	if ( totalItems <= 1 ) {
+	if (totalItems <= 1) {
 		delete[] numHashItems;
 		return 100;
 	}
+
 	average = totalItems / hashSize;
 	error = 0;
-	for ( i = 0; i < hashSize; i++ ) {
-		e = abs( numHashItems[i] - average );
-		if ( e > 1 ) {
+
+	for (i = 0; i < hashSize; i++) {
+		e = abs(numHashItems[i] - average);
+
+		if (e > 1) {
 			error += e - 1;
 		}
 	}
+
 	delete[] numHashItems;
 	return 100 - (error * 100 / totalItems);
 }

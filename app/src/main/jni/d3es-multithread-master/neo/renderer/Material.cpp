@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/math/Interpolate.h"
+#include "idlib/precompiled.h"
 #include "renderer/Cinematic.h"
 #include "renderer/tr_local.h"
 #include "ui/Window.h"

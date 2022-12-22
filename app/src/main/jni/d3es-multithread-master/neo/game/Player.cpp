@@ -27,8 +27,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 
-#include "sys/platform.h"
-#include "idlib/LangDict.h"
+#include "idlib/precompiled.h"
 #include "framework/async/NetworkSystem.h"
 #include "framework/DeclEntityDef.h"
 #include "renderer/RenderSystem.h"
@@ -16332,7 +16331,7 @@ void idPlayer::WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const {
 	int i;
 
 	msg.WriteByte( bobCycle );
-	msg.WriteInt( stepUpTime );
+	msg.WriteLong( stepUpTime );
 	msg.WriteFloat( stepUpDelta );
 	msg.WriteShort( inventory.weapons );
 	msg.WriteByte( inventory.armor );
@@ -16354,7 +16353,7 @@ void idPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
 	int i, ammo;
 
 	bobCycle = msg.ReadByte();
-	stepUpTime = msg.ReadInt();
+	stepUpTime = msg.ReadLong();
 	stepUpDelta = msg.ReadFloat();
 	inventory.weapons = msg.ReadShort();
 	inventory.armor = msg.ReadByte();

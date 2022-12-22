@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,9 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "../precompiled.h"
+#pragma hdrstop
 
-#include "idlib/math/Simd_MMX.h"
+#include "Simd_Generic.h"
+#include "Simd_MMX.h"
+
 
 //===============================================================
 //
@@ -36,17 +39,18 @@ If you have questions concerning this license or the applicable additional terms
 //
 //===============================================================
 
-#if defined(__GNUC__) && defined(__MMX__)
+#if defined(MACOS_X) && defined(__i386__)
 /*
 ============
 idSIMD_MMX::GetName
 ============
 */
-const char * idSIMD_MMX::GetName( void ) const {
+const char *idSIMD_MMX::GetName(void) const
+{
 	return "MMX";
 }
 
-#elif defined(_MSC_VER) && defined(_M_IX86)
+#elif defined(_WIN32)
 
 #define EMMS_INSTRUCTION		__asm emms
 
@@ -55,7 +59,8 @@ const char * idSIMD_MMX::GetName( void ) const {
 idSIMD_MMX::GetName
 ============
 */
-const char * idSIMD_MMX::GetName( void ) const {
+const char *idSIMD_MMX::GetName(void) const
+{
 	return "MMX";
 }
 
@@ -64,14 +69,15 @@ const char * idSIMD_MMX::GetName( void ) const {
 MMX_Memcpy8B
 ================
 */
-void MMX_Memcpy8B( void *dest, const void *src, const int count ) {
+void MMX_Memcpy8B(void *dest, const void *src, const int count)
+{
 	_asm {
 		mov		esi, src
 		mov		edi, dest
 		mov		ecx, count
 		shr		ecx, 3			// 8 bytes per iteration
 
-loop1:
+		loop1:
 		movq	mm1,  0[ESI]	// Read in source data
 		movntq	0[EDI], mm1		// Non-temporal stores
 
@@ -91,14 +97,15 @@ MMX_Memcpy64B
   165MB/sec
 ================
 */
-void MMX_Memcpy64B( void *dest, const void *src, const int count ) {
+void MMX_Memcpy64B(void *dest, const void *src, const int count)
+{
 	_asm {
 		mov		esi, src
 		mov		edi, dest
 		mov		ecx, count
 		shr		ecx, 6		// 64 bytes per iteration
 
-loop1:
+		loop1:
 		prefetchnta 64[ESI]	// Prefetch next loop, non-temporal
 		prefetchnta 96[ESI]
 
@@ -135,7 +142,8 @@ MMX_Memcpy2kB
   240MB/sec
 ================
 */
-void MMX_Memcpy2kB( void *dest, const void *src, const int count ) {
+void MMX_Memcpy2kB(void *dest, const void *src, const int count)
+{
 	byte *tbuf = (byte *)_alloca16(2048);
 	__asm {
 		push	ebx
@@ -144,12 +152,12 @@ void MMX_Memcpy2kB( void *dest, const void *src, const int count ) {
 		shr		ebx, 11		// 2048 bytes at a time
 		mov		edi, dest
 
-loop2k:
+		loop2k:
 		push	edi			// copy 2k into temporary buffer
 		mov		edi, tbuf
 		mov		ecx, 32
 
-loopMemToL1:
+		loopMemToL1:
 		prefetchnta 64[ESI] // Prefetch next loop, non-temporal
 		prefetchnta 96[ESI]
 
@@ -180,7 +188,7 @@ loopMemToL1:
 		mov		esi, tbuf
 		mov		ecx, 32
 
-loopL1ToMem:
+		loopL1ToMem:
 		movq mm1, 0[ESI]	// Read in source data from L1
 		movq mm2, 8[ESI]
 		movq mm3, 16[ESI]
@@ -220,48 +228,49 @@ idSIMD_MMX::Memcpy
   optimized memory copy routine that handles all alignment cases and block sizes efficiently
 ================
 */
-void VPCALL idSIMD_MMX::Memcpy( void *dest0, const void *src0, const int count0 ) {
+void VPCALL idSIMD_MMX::Memcpy(void *dest0, const void *src0, const int count0)
+{
 	// if copying more than 16 bytes and we can copy 8 byte aligned
-	if ( count0 > 16 && !( ( (int)dest0 ^ (int)src0 ) & 7 ) ) {
+	if (count0 > 16 && !(((int)dest0 ^(int)src0) & 7)) {
 		byte *dest = (byte *)dest0;
 		byte *src = (byte *)src0;
 
 		// copy up to the first 8 byte aligned boundary
 		int count = ((int)dest) & 7;
-		memcpy( dest, src, count );
+		memcpy(dest, src, count);
 		dest += count;
 		src += count;
 		count = count0 - count;
 
 		// if there are multiple blocks of 2kB
-		if ( count & ~4095 ) {
-			MMX_Memcpy2kB( dest, src, count );
+		if (count & ~4095) {
+			MMX_Memcpy2kB(dest, src, count);
 			src += (count & ~2047);
 			dest += (count & ~2047);
 			count &= 2047;
 		}
 
 		// if there are blocks of 64 bytes
-		if ( count & ~63 ) {
-			MMX_Memcpy64B( dest, src, count );
+		if (count & ~63) {
+			MMX_Memcpy64B(dest, src, count);
 			src += (count & ~63);
 			dest += (count & ~63);
 			count &= 63;
 		}
 
 		// if there are blocks of 8 bytes
-		if ( count & ~7 ) {
-			MMX_Memcpy8B( dest, src, count );
+		if (count & ~7) {
+			MMX_Memcpy8B(dest, src, count);
 			src += (count & ~7);
 			dest += (count & ~7);
 			count &= 7;
 		}
 
 		// copy any remaining bytes
-		memcpy( dest, src, count );
+		memcpy(dest, src, count);
 	} else {
 		// use the regular one if we cannot copy 8 byte aligned
-		memcpy( dest0, src0, count0 );
+		memcpy(dest0, src0, count0);
 	}
 
 	// the MMX_Memcpy* functions use MOVNTQ, issue a fence operation
@@ -275,7 +284,8 @@ void VPCALL idSIMD_MMX::Memcpy( void *dest0, const void *src0, const int count0 
 idSIMD_MMX::Memset
 ================
 */
-void VPCALL idSIMD_MMX::Memset( void* dest0, const int val, const int count0 ) {
+void VPCALL idSIMD_MMX::Memset(void *dest0, const int val, const int count0)
+{
 	union {
 		byte	bytes[8];
 		word	words[4];
@@ -285,12 +295,13 @@ void VPCALL idSIMD_MMX::Memset( void* dest0, const int val, const int count0 ) {
 	byte *dest = (byte *)dest0;
 	int count = count0;
 
-	while ( count > 0 && (((int)dest) & 7) ) {
+	while (count > 0 && (((int)dest) & 7)) {
 		*dest = val;
 		dest++;
 		count--;
 	}
-	if ( !count ) {
+
+	if (!count) {
 		return;
 	}
 
@@ -299,7 +310,7 @@ void VPCALL idSIMD_MMX::Memset( void* dest0, const int val, const int count0 ) {
 	dat.words[1] = dat.words[0];
 	dat.dwords[1] = dat.dwords[0];
 
-	if ( count >= 64 ) {
+	if (count >= 64) {
 		__asm {
 			mov edi, dest
 			mov ecx, count
@@ -312,7 +323,7 @@ void VPCALL idSIMD_MMX::Memset( void* dest0, const int val, const int count0 ) {
 			movq mm6, mm1
 			movq mm7, mm1
 			movq mm0, mm1
-loop1:
+			loop1:
 			movntq  0[EDI], mm1		// Non-temporal stores
 			movntq  8[EDI], mm2
 			movntq 16[EDI], mm3
@@ -326,17 +337,17 @@ loop1:
 			dec ecx
 			jnz loop1
 		}
-		dest += ( count & ~63 );
+		dest += (count & ~63);
 		count &= 63;
 	}
 
-	if ( count >= 8 ) {
+	if (count >= 8) {
 		__asm {
 			mov edi, dest
 			mov ecx, count
 			shr ecx, 3				// 8 bytes per iteration
 			movq mm1, dat			// Read in source data
-loop2:
+			loop2:
 			movntq  0[EDI], mm1		// Non-temporal stores
 
 			add edi, 8
@@ -347,7 +358,7 @@ loop2:
 		count &= 7;
 	}
 
-	while ( count > 0 ) {
+	while (count > 0) {
 		*dest = val;
 		dest++;
 		count--;
@@ -361,4 +372,4 @@ loop2:
 	}
 }
 
-#endif /* _MSC_VER */
+#endif /* _WIN32 */

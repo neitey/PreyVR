@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -36,63 +36,64 @@ class DialogAFConstraintSpring;
 
 // DialogAFConstraint dialog
 
-class DialogAFConstraint : public CDialog {
+class DialogAFConstraint : public CDialog
+{
 
-	DECLARE_DYNAMIC(DialogAFConstraint)
+		DECLARE_DYNAMIC(DialogAFConstraint)
 
-public:
-						DialogAFConstraint( CWnd* pParent = NULL );   // standard constructor
-	virtual				~DialogAFConstraint();
-	void				LoadFile( idDeclAF *af );
-	void				SaveFile( void );
-	void				LoadConstraint( const char *name );
-	void				SaveConstraint( void );
-	void				UpdateFile( void );
+	public:
+		DialogAFConstraint(CWnd *pParent = NULL);     // standard constructor
+		virtual				~DialogAFConstraint();
+		void				LoadFile(idDeclAF *af);
+		void				SaveFile(void);
+		void				LoadConstraint(const char *name);
+		void				SaveConstraint(void);
+		void				UpdateFile(void);
 
-	enum				{ IDD = IDD_DIALOG_AF_CONSTRAINT };
+		enum				{ IDD = IDD_DIALOG_AF_CONSTRAINT };
 
-protected:
-	virtual BOOL		OnInitDialog();
-	virtual void		DoDataExchange( CDataExchange* pDX );    // DDX/DDV support
-	virtual int			OnToolHitTest( CPoint point, TOOLINFO* pTI ) const;
-	afx_msg BOOL		OnToolTipNotify( UINT id, NMHDR *pNMHDR, LRESULT *pResult );
-	afx_msg void		OnShowWindow( BOOL bShow, UINT nStatus );
-	afx_msg void		OnCbnSelchangeComboConstraints();
-	afx_msg void		OnBnClickedButtonNewconstraint();
-	afx_msg void		OnBnClickedButtonRenameconstraint();
-	afx_msg void		OnBnClickedButtonDeleteconstraint();
-	afx_msg void		OnCbnSelchangeComboConstraintType();
-	afx_msg void		OnCbnSelchangeComboConstraintBody1();
-	afx_msg void		OnCbnSelchangeComboConstraintBody2();
-	afx_msg void		OnEnChangeEditConstraintFriction();
-	afx_msg void		OnDeltaposSpinConstraintFriction(NMHDR *pNMHDR, LRESULT *pResult);
+	protected:
+		virtual BOOL		OnInitDialog();
+		virtual void		DoDataExchange(CDataExchange *pDX);      // DDX/DDV support
+		virtual int			OnToolHitTest(CPoint point, TOOLINFO *pTI) const;
+		afx_msg BOOL		OnToolTipNotify(UINT id, NMHDR *pNMHDR, LRESULT *pResult);
+		afx_msg void		OnShowWindow(BOOL bShow, UINT nStatus);
+		afx_msg void		OnCbnSelchangeComboConstraints();
+		afx_msg void		OnBnClickedButtonNewconstraint();
+		afx_msg void		OnBnClickedButtonRenameconstraint();
+		afx_msg void		OnBnClickedButtonDeleteconstraint();
+		afx_msg void		OnCbnSelchangeComboConstraintType();
+		afx_msg void		OnCbnSelchangeComboConstraintBody1();
+		afx_msg void		OnCbnSelchangeComboConstraintBody2();
+		afx_msg void		OnEnChangeEditConstraintFriction();
+		afx_msg void		OnDeltaposSpinConstraintFriction(NMHDR *pNMHDR, LRESULT *pResult);
 
-	DECLARE_MESSAGE_MAP()
+		DECLARE_MESSAGE_MAP()
 
-private:
-	idDeclAF *			file;
-	idDeclAF_Constraint*constraint;
-	CDialog *			constraintDlg;
-	DialogAFConstraintFixed *fixedDlg;
-	DialogAFConstraintBallAndSocket *ballAndSocketDlg;
-	DialogAFConstraintUniversal *universalDlg;
-	DialogAFConstraintHinge *hingeDlg;
-	DialogAFConstraintSlider *sliderDlg;
-	DialogAFConstraintSpring *springDlg;
+	private:
+		idDeclAF 			*file;
+		idDeclAF_Constraint *constraint;
+		CDialog 			*constraintDlg;
+		DialogAFConstraintFixed *fixedDlg;
+		DialogAFConstraintBallAndSocket *ballAndSocketDlg;
+		DialogAFConstraintUniversal *universalDlg;
+		DialogAFConstraintHinge *hingeDlg;
+		DialogAFConstraintSlider *sliderDlg;
+		DialogAFConstraintSpring *springDlg;
 
-	//{{AFX_DATA(DialogAFConstraint)
-	CComboBox			m_comboConstraintList;			// list with constraints
-	CComboBox			m_comboConstraintType;
-	CComboBox			m_comboBody1List;
-	CComboBox			m_comboBody2List;
-	float				m_friction;
-	//}}AFX_DATA
+		//{{AFX_DATA(DialogAFConstraint)
+		CComboBox			m_comboConstraintList;			// list with constraints
+		CComboBox			m_comboConstraintType;
+		CComboBox			m_comboBody1List;
+		CComboBox			m_comboBody2List;
+		float				m_friction;
+		//}}AFX_DATA
 
-	static toolTip_t	toolTips[];
+		static toolTip_t	toolTips[];
 
-private:
-	void				InitConstraintList( void );
-	void				InitConstraintTypeDlg( void );
-	void				InitBodyLists( void );
-	void				InitNewRenameDeleteButtons( void );
+	private:
+		void				InitConstraintList(void);
+		void				InitConstraintTypeDlg(void);
+		void				InitBodyLists(void);
+		void				InitNewRenameDeleteButtons(void);
 };

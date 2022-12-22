@@ -23,22 +23,22 @@
 
 class PROPTREE_API CPropTreeItemStatic : public CPropTreeItem
 {
-public:
-	CPropTreeItemStatic();
-	virtual ~CPropTreeItemStatic();
+	public:
+		CPropTreeItemStatic();
+		virtual ~CPropTreeItemStatic();
 
-public:
-	// The attribute area needs drawing
-	virtual void DrawAttribute(CDC* pDC, const RECT& rc);
+	public:
+		// The attribute area needs drawing
+		virtual void DrawAttribute(CDC *pDC, const RECT &rc);
 
-	// Retrieve the item's attribute value (in this case the CString)
-	virtual LPARAM GetItemValue();
+		// Retrieve the item's attribute value (in this case the CString)
+		virtual LPARAM GetItemValue();
 
-	// Set the item's attribute value
-	virtual void SetItemValue(LPARAM lParam);
+		// Set the item's attribute value
+		virtual void SetItemValue(LPARAM lParam);
 
-protected:
-	CString		m_sAttribute;
+	protected:
+		CString		m_sAttribute;
 };
 
 

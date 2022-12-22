@@ -40,7 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 	#include <curl/curl.h>
 #endif
 
-#include "idlib/hashing/MD4.h"
+#include "idlib/precompiled.h"
 #include "framework/Licensee.h"
 #include "framework/Unzip.h"
 #include "framework/EventLoop.h"
@@ -1322,7 +1322,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 			break;
 		}
 		if ( file_info.uncompressed_size > 0 ) {
-			fs_headerLongs[fs_numHeaderLongs++] = LittleInt( file_info.crc );
+			fs_headerLongs[fs_numHeaderLongs++] = LittleLong( file_info.crc );
 		}
 		hash = HashFileName( filename_inzip );
 		buildBuffer[i].name = filename_inzip;
@@ -1373,7 +1373,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 	}
 
 	pack->checksum = MD4_BlockChecksum( fs_headerLongs, 4 * fs_numHeaderLongs );
-	pack->checksum = LittleInt( pack->checksum );
+	pack->checksum = LittleLong( pack->checksum );
 
 	Mem_Free( fs_headerLongs );
 

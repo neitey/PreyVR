@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __JOINTTRANSFORM_H__
 #define __JOINTTRANSFORM_H__
 
-#include "idlib/math/Matrix.h"
-#include "idlib/math/Quat.h"
-
 /*
 ===============================================================================
 
@@ -40,11 +37,12 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idJointQuat {
-public:
+class idJointQuat
+{
+	public:
 
-	idQuat			q;
-	idVec3			t;
+		idQuat			q;
+		idVec3			t;
 };
 
 
@@ -63,36 +61,38 @@ public:
 ===============================================================================
 */
 
-class idJointMat {
-public:
+class idJointMat
+{
+	public:
 
-	void			SetRotation( const idMat3 &m );
-	void			SetTranslation( const idVec3 &t );
+		void			SetRotation(const idMat3 &m);
+		void			SetTranslation(const idVec3 &t);
 
-	idVec3			operator*( const idVec3 &v ) const;							// only rotate
-	idVec3			operator*( const idVec4 &v ) const;							// rotate and translate
+		idVec3			operator*(const idVec3 &v) const;							// only rotate
+		idVec3			operator*(const idVec4 &v) const;							// rotate and translate
 
-	idJointMat &	operator*=( const idJointMat &a );							// transform
-	idJointMat &	operator/=( const idJointMat &a );							// untransform
-
-	bool			Compare( const idJointMat &a ) const;						// exact compare, no epsilon
-	bool			Compare( const idJointMat &a, const float epsilon ) const;	// compare with epsilon
-	bool			operator==(	const idJointMat &a ) const;					// exact compare, no epsilon
-	bool			operator!=(	const idJointMat &a ) const;					// exact compare, no epsilon
+		idJointMat 	&operator*=(const idJointMat &a);							// transform
+		idJointMat 	&operator/=(const idJointMat &a);							// untransform
 
 	void			Invert();
 
-	idMat3			ToMat3( void ) const;
-	idVec3			ToVec3( void ) const;
-	idJointQuat		ToJointQuat( void ) const;
-	const float *	ToFloatPtr( void ) const;
-	float *			ToFloatPtr( void );
+		bool			Compare(const idJointMat &a) const;						// exact compare, no epsilon
+		bool			Compare(const idJointMat &a, const float epsilon) const;	// compare with epsilon
+		bool			operator==(const idJointMat &a) const;					// exact compare, no epsilon
+		bool			operator!=(const idJointMat &a) const;					// exact compare, no epsilon
 
-private:
-	float			mat[3*4];
+		idMat3			ToMat3(void) const;
+		idVec3			ToVec3(void) const;
+		idJointQuat		ToJointQuat(void) const;
+		const float 	*ToFloatPtr(void) const;
+		float 			*ToFloatPtr(void);
+
+	private:
+		float			mat[3*4];
 };
 
-ID_INLINE void idJointMat::SetRotation( const idMat3 &m ) {
+ID_INLINE void idJointMat::SetRotation(const idMat3 &m)
+{
 	// NOTE: idMat3 is transposed because it is column-major
 	mat[0 * 4 + 0] = m[0][0];
 	mat[0 * 4 + 1] = m[1][0];
@@ -105,25 +105,29 @@ ID_INLINE void idJointMat::SetRotation( const idMat3 &m ) {
 	mat[2 * 4 + 2] = m[2][2];
 }
 
-ID_INLINE void idJointMat::SetTranslation( const idVec3 &t ) {
+ID_INLINE void idJointMat::SetTranslation(const idVec3 &t)
+{
 	mat[0 * 4 + 3] = t[0];
 	mat[1 * 4 + 3] = t[1];
 	mat[2 * 4 + 3] = t[2];
 }
 
-ID_INLINE idVec3 idJointMat::operator*( const idVec3 &v ) const {
-	return idVec3(	mat[0 * 4 + 0] * v[0] + mat[0 * 4 + 1] * v[1] + mat[0 * 4 + 2] * v[2],
-					mat[1 * 4 + 0] * v[0] + mat[1 * 4 + 1] * v[1] + mat[1 * 4 + 2] * v[2],
-					mat[2 * 4 + 0] * v[0] + mat[2 * 4 + 1] * v[1] + mat[2 * 4 + 2] * v[2] );
+ID_INLINE idVec3 idJointMat::operator*(const idVec3 &v) const
+{
+	return idVec3(mat[0 * 4 + 0] * v[0] + mat[0 * 4 + 1] * v[1] + mat[0 * 4 + 2] * v[2],
+	              mat[1 * 4 + 0] * v[0] + mat[1 * 4 + 1] * v[1] + mat[1 * 4 + 2] * v[2],
+	              mat[2 * 4 + 0] * v[0] + mat[2 * 4 + 1] * v[1] + mat[2 * 4 + 2] * v[2]);
 }
 
-ID_INLINE idVec3 idJointMat::operator*( const idVec4 &v ) const {
-	return idVec3(	mat[0 * 4 + 0] * v[0] + mat[0 * 4 + 1] * v[1] + mat[0 * 4 + 2] * v[2] + mat[0 * 4 + 3] * v[3],
-					mat[1 * 4 + 0] * v[0] + mat[1 * 4 + 1] * v[1] + mat[1 * 4 + 2] * v[2] + mat[1 * 4 + 3] * v[3],
-					mat[2 * 4 + 0] * v[0] + mat[2 * 4 + 1] * v[1] + mat[2 * 4 + 2] * v[2] + mat[2 * 4 + 3] * v[3] );
+ID_INLINE idVec3 idJointMat::operator*(const idVec4 &v) const
+{
+	return idVec3(mat[0 * 4 + 0] * v[0] + mat[0 * 4 + 1] * v[1] + mat[0 * 4 + 2] * v[2] + mat[0 * 4 + 3] * v[3],
+	              mat[1 * 4 + 0] * v[0] + mat[1 * 4 + 1] * v[1] + mat[1 * 4 + 2] * v[2] + mat[1 * 4 + 3] * v[3],
+	              mat[2 * 4 + 0] * v[0] + mat[2 * 4 + 1] * v[1] + mat[2 * 4 + 2] * v[2] + mat[2 * 4 + 3] * v[3]);
 }
 
-ID_INLINE idJointMat &idJointMat::operator*=( const idJointMat &a ) {
+ID_INLINE idJointMat &idJointMat::operator*=(const idJointMat &a)
+{
 	float dst[3];
 
 	dst[0] = mat[0 * 4 + 0] * a.mat[0 * 4 + 0] + mat[1 * 4 + 0] * a.mat[0 * 4 + 1] + mat[2 * 4 + 0] * a.mat[0 * 4 + 2];
@@ -161,7 +165,8 @@ ID_INLINE idJointMat &idJointMat::operator*=( const idJointMat &a ) {
 	return *this;
 }
 
-ID_INLINE idJointMat &idJointMat::operator/=( const idJointMat &a ) {
+ID_INLINE idJointMat &idJointMat::operator/=(const idJointMat &a)
+{
 	float dst[3];
 
 	mat[0 * 4 + 3] -= a.mat[0 * 4 + 3];
@@ -199,34 +204,62 @@ ID_INLINE idJointMat &idJointMat::operator/=( const idJointMat &a ) {
 	return *this;
 }
 
-ID_INLINE bool idJointMat::Compare( const idJointMat &a ) const {
+ID_INLINE bool idJointMat::Compare(const idJointMat &a) const
+{
 	int i;
 
-	for ( i = 0; i < 12; i++ ) {
-		if ( mat[i] != a.mat[i] ) {
+	for (i = 0; i < 12; i++) {
+		if (mat[i] != a.mat[i]) {
 			return false;
 		}
 	}
+
 	return true;
 }
 
-ID_INLINE bool idJointMat::Compare( const idJointMat &a, const float epsilon ) const {
+ID_INLINE bool idJointMat::Compare(const idJointMat &a, const float epsilon) const
+{
 	int i;
 
-	for ( i = 0; i < 12; i++ ) {
-		if ( idMath::Fabs( mat[i] - a.mat[i] ) > epsilon ) {
+	for (i = 0; i < 12; i++) {
+		if (idMath::Fabs(mat[i] - a.mat[i]) > epsilon) {
 			return false;
 		}
 	}
+
 	return true;
 }
 
-ID_INLINE bool idJointMat::operator==( const idJointMat &a ) const {
-	return Compare( a );
+ID_INLINE bool idJointMat::operator==(const idJointMat &a) const
+{
+	return Compare(a);
 }
 
-ID_INLINE bool idJointMat::operator!=( const idJointMat &a ) const {
-	return !Compare( a );
+ID_INLINE bool idJointMat::operator!=(const idJointMat &a) const
+{
+	return !Compare(a);
+}
+
+ID_INLINE idMat3 idJointMat::ToMat3(void) const
+{
+	return idMat3(mat[0 * 4 + 0], mat[1 * 4 + 0], mat[2 * 4 + 0],
+	              mat[0 * 4 + 1], mat[1 * 4 + 1], mat[2 * 4 + 1],
+	              mat[0 * 4 + 2], mat[1 * 4 + 2], mat[2 * 4 + 2]);
+}
+
+ID_INLINE idVec3 idJointMat::ToVec3(void) const
+{
+	return idVec3(mat[0 * 4 + 3], mat[1 * 4 + 3], mat[2 * 4 + 3]);
+}
+
+ID_INLINE const float *idJointMat::ToFloatPtr(void) const
+{
+	return mat;
+}
+
+ID_INLINE float *idJointMat::ToFloatPtr(void)
+{
+	return mat;
 }
 
 /*
@@ -256,24 +289,6 @@ ID_INLINE void idJointMat::Invert()
 	tmp[2] = mat[1 * 4 + 2];
 	mat[1 * 4 + 2] = mat[2 * 4 + 1];
 	mat[2 * 4 + 1] = tmp[2];
-}
-
-ID_INLINE idMat3 idJointMat::ToMat3( void ) const {
-	return idMat3(	mat[0 * 4 + 0], mat[1 * 4 + 0], mat[2 * 4 + 0],
-					mat[0 * 4 + 1], mat[1 * 4 + 1], mat[2 * 4 + 1],
-					mat[0 * 4 + 2], mat[1 * 4 + 2], mat[2 * 4 + 2] );
-}
-
-ID_INLINE idVec3 idJointMat::ToVec3( void ) const {
-	return idVec3( mat[0 * 4 + 3], mat[1 * 4 + 3], mat[2 * 4 + 3] );
-}
-
-ID_INLINE const float *idJointMat::ToFloatPtr( void ) const {
-	return mat;
-}
-
-ID_INLINE float *idJointMat::ToFloatPtr( void ) {
-	return mat;
 }
 
 #endif /* !__JOINTTRANSFORM_H__ */

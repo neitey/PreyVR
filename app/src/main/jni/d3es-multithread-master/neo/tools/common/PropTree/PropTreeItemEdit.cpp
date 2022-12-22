@@ -17,8 +17,8 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "proptree.h"
 #include "PropTreeItemEdit.h"
@@ -56,7 +56,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CPropTreeItemEdit message handlers
 
-void CPropTreeItemEdit::DrawAttribute(CDC* pDC, const RECT& rc)
+void CPropTreeItemEdit::DrawAttribute(CDC *pDC, const RECT &rc)
 {
 	ASSERT(m_pProp!=NULL);
 
@@ -71,18 +71,16 @@ void CPropTreeItemEdit::DrawAttribute(CDC* pDC, const RECT& rc)
 	// can't use GetPasswordChar(), because window may not be created yet
 	ch = (m_bPassword) ? '*' : '\0';
 
-	if (ch)
-	{
+	if (ch) {
 		CString s;
 
 		s = m_sEdit;
-		for (LONG i=0; i<s.GetLength();i++)
+
+		for (LONG i=0; i<s.GetLength(); i++)
 			s.SetAt(i, ch);
 
 		pDC->DrawText(s, r, DT_SINGLELINE|DT_VCENTER);
-	}
-	else
-	{
+	} else {
 		pDC->DrawText(m_sEdit, r, DT_SINGLELINE|DT_VCENTER);
 	}
 }
@@ -103,8 +101,7 @@ void CPropTreeItemEdit::SetValueFormat(ValueFormat nFormat)
 
 LPARAM CPropTreeItemEdit::GetItemValue()
 {
-	switch (m_nFormat)
-	{
+	switch (m_nFormat) {
 		case ValueFormatNumber:
 			return _ttoi(m_sEdit);
 
@@ -119,24 +116,21 @@ LPARAM CPropTreeItemEdit::GetItemValue()
 
 void CPropTreeItemEdit::SetItemValue(LPARAM lParam)
 {
-	switch (m_nFormat)
-	{
+	switch (m_nFormat) {
 		case ValueFormatNumber:
 			m_sEdit.Format(_T("%d"), lParam);
 			return;
 
-		case ValueFormatFloatPointer:
-			{
-				TCHAR tmp[MAX_PATH];
-				m_fValue = *(float*)lParam;
-				_stprintf(tmp, _T("%f"), m_fValue);
-				m_sEdit = tmp;
-			}
-			return;
+		case ValueFormatFloatPointer: {
+			TCHAR tmp[MAX_PATH];
+			m_fValue = *(float *)lParam;
+			_stprintf(tmp, _T("%f"), m_fValue);
+			m_sEdit = tmp;
+		}
+		return;
 	}
 
-	if (lParam==0L)
-	{
+	if (lParam==0L) {
 		TRACE0("CPropTreeItemEdit::SetItemValue - Invalid lParam value\n");
 		return;
 	}
@@ -172,8 +166,7 @@ void CPropTreeItemEdit::OnCommit()
 void CPropTreeItemEdit::OnActivate(int activateType, CPoint point)
 {
 	// Check if the edit control needs creation
-	if (!IsWindow(m_hWnd))
-	{
+	if (!IsWindow(m_hWnd)) {
 		DWORD dwStyle;
 
 		dwStyle = WS_CHILD|ES_AUTOHSCROLL;

@@ -26,11 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/LangDict.h"
-#include "idlib/Timer.h"
+#include "idlib/precompiled.h"
 #include "framework/async/NetworkSystem.h"
-#include "framework/BuildVersion.h"
 #include "framework/DeclEntityDef.h"
 #include "framework/FileSystem.h"
 #include "renderer/ModelManager.h"
@@ -51,6 +48,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Game_local.h"
 #include "../../../Doom3Quest/VrClientInfo.h"
+#include "sys/platform.h"
 
 const int NUM_RENDER_PORTAL_BITS	= idMath::BitsForInteger( PS_BLOCK_ALL );
 
@@ -4651,7 +4649,7 @@ void idGameLocal::SetPortalState( qhandle_t portal, int blockingBits ) {
 	if ( !gameLocal.isClient ) {
 		outMsg.Init( msgBuf, sizeof( msgBuf ) );
 		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_PORTAL );
-		outMsg.WriteInt( portal );
+		outMsg.WriteLong( portal );
 		outMsg.WriteBits( blockingBits, NUM_RENDER_PORTAL_BITS );
 		networkSystem->ServerSendReliableMessage( -1, outMsg );
 	}

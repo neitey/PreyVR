@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -34,26 +34,25 @@ If you have questions concerning this license or the applicable additional terms
 
 class rvGEZOrderModifier : public rvGEModifier
 {
-public:
+	public:
 
-	enum EZOrderChange
-	{
-		ZO_FORWARD,
-		ZO_BACKWARD,
-		ZO_FRONT,
-		ZO_BACK,
-	};
+		enum EZOrderChange {
+			ZO_FORWARD,
+			ZO_BACKWARD,
+			ZO_FRONT,
+			ZO_BACK,
+		};
 
-	rvGEZOrderModifier ( const char* name, idWindow* window, EZOrderChange change );
+		rvGEZOrderModifier(const char *name, idWindow *window, EZOrderChange change);
 
-	virtual bool		Apply	( void );
-	virtual bool		Undo	( void );
-	virtual bool		IsValid	( void );
+		virtual bool		Apply(void);
+		virtual bool		Undo(void);
+		virtual bool		IsValid(void);
 
-protected:
+	protected:
 
-	idWindow*	mBefore;
-	idWindow*	mUndoBefore;
+		idWindow	*mBefore;
+		idWindow	*mUndoBefore;
 };
 
 #endif // GEZORDERMODIFIER_H_

@@ -27,17 +27,13 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 #include <SDL.h>
+#include "idlib/precompiled.h"
+#include "sys/sys_public.h"
 #include <d3es-multithread-master/neo/game/Vr.h>
 
-
-#include "sys/platform.h"
-#include "idlib/containers/HashTable.h"
-#include "idlib/LangDict.h"
-#include "idlib/MapFile.h"
 #include "cm/CollisionModel.h"
 #include "framework/async/AsyncNetwork.h"
 #include "framework/async/NetworkSystem.h"
-#include "framework/BuildVersion.h"
 #include "framework/Licensee.h"
 #include "framework/Console.h"
 #include "framework/Session.h"
@@ -56,6 +52,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "GameCallbacks_local.h"
 #include "Session_local.h" // DG: For FT_IsDemo/isDemo() hack
+#include "config.h"
+#include "sys/platform.h"
 
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256

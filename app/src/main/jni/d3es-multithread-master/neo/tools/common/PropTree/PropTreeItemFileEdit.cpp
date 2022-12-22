@@ -2,8 +2,8 @@
 
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "proptree.h"
 #include "PropTreeItemFileEdit.h"
@@ -19,10 +19,12 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CPropTreeItemFileEdit
 
-CPropTreeItemFileEdit::CPropTreeItemFileEdit() {
+CPropTreeItemFileEdit::CPropTreeItemFileEdit()
+{
 }
 
-CPropTreeItemFileEdit::~CPropTreeItemFileEdit() {
+CPropTreeItemFileEdit::~CPropTreeItemFileEdit()
+{
 }
 
 
@@ -43,20 +45,22 @@ BEGIN_MESSAGE_MAP(CPropTreeItemFileEdit, CPropTreeItemEdit)
 END_MESSAGE_MAP()
 
 
-void CPropTreeItemFileEdit::OnContextMenu(CWnd* pWnd, CPoint point) {
+void CPropTreeItemFileEdit::OnContextMenu(CWnd *pWnd, CPoint point)
+{
 
 	CMenu FloatingMenu;
 	VERIFY(FloatingMenu.LoadMenu(IDR_ME_EDIT_MENU));
-	CMenu* pPopupMenu = FloatingMenu.GetSubMenu (0);
+	CMenu *pPopupMenu = FloatingMenu.GetSubMenu(0);
 
-	if(CanUndo()) {
+	if (CanUndo()) {
 		pPopupMenu->EnableMenuItem(ID_EDIT_UNDO, MF_BYCOMMAND | MF_ENABLED);
 	} else {
 		pPopupMenu->EnableMenuItem(ID_EDIT_UNDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
 
 	DWORD dwSel = GetSel();
-	if(HIWORD(dwSel) != LOWORD(dwSel)) {
+
+	if (HIWORD(dwSel) != LOWORD(dwSel)) {
 		pPopupMenu->EnableMenuItem(ID_EDIT_CUT, MF_BYCOMMAND | MF_ENABLED);
 		pPopupMenu->EnableMenuItem(ID_EDIT_COPY, MF_BYCOMMAND | MF_ENABLED);
 		pPopupMenu->EnableMenuItem(ID_EDIT_DELETE, MF_BYCOMMAND | MF_ENABLED);
@@ -66,7 +70,7 @@ void CPropTreeItemFileEdit::OnContextMenu(CWnd* pWnd, CPoint point) {
 		pPopupMenu->EnableMenuItem(ID_EDIT_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
 
-	pPopupMenu->TrackPopupMenu (TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y, this);
+	pPopupMenu->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y, this);
 }
 
 int CPropTreeItemFileEdit::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -79,16 +83,17 @@ int CPropTreeItemFileEdit::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
-void CPropTreeItemFileEdit::OnInsertFile() {
+void CPropTreeItemFileEdit::OnInsertFile()
+{
 	CFileDialog dlg(TRUE);
 	dlg.m_ofn.Flags |= OFN_FILEMUSTEXIST;
 
 	int startSel, endSel;
 	GetSel(startSel, endSel);
 
-	if( dlg.DoModal()== IDOK) {
+	if (dlg.DoModal()== IDOK) {
 
-		idStr currentText = (char*)GetItemValue();
+		idStr currentText = (char *)GetItemValue();
 		idStr newText = currentText.Left(startSel) + currentText.Right(currentText.Length() - endSel);
 
 		idStr filename = fileSystem->OSPathToRelativePath(dlg.m_ofn.lpstrFile);
@@ -105,26 +110,32 @@ void CPropTreeItemFileEdit::OnInsertFile() {
 	}
 }
 
-void CPropTreeItemFileEdit::OnEditUndo() {
+void CPropTreeItemFileEdit::OnEditUndo()
+{
 	Undo();
 }
 
-void CPropTreeItemFileEdit::OnEditCut() {
+void CPropTreeItemFileEdit::OnEditCut()
+{
 	Cut();
 }
 
-void CPropTreeItemFileEdit::OnEditCopy() {
+void CPropTreeItemFileEdit::OnEditCopy()
+{
 	Copy();
 }
 
-void CPropTreeItemFileEdit::OnEditPaste() {
+void CPropTreeItemFileEdit::OnEditPaste()
+{
 	Paste();
 }
 
-void CPropTreeItemFileEdit::OnEditDelete() {
+void CPropTreeItemFileEdit::OnEditDelete()
+{
 	Clear();
 }
 
-void CPropTreeItemFileEdit::OnEditSelectAll() {
+void CPropTreeItemFileEdit::OnEditSelectAll()
+{
 	SetSel(0, -1);
 }

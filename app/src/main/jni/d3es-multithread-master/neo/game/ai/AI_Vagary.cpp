@@ -33,7 +33,7 @@ Vagary specific AI code
 
 ***********************************************************************/
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "script/Script_Thread.h"
 
 #include "gamesys/SysCvar.h"

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,33 +31,33 @@ If you have questions concerning this license or the applicable additional terms
 
 class rvGETransformer
 {
-public:
+	public:
 
-	rvGETransformer ( );
+		rvGETransformer();
 
-	bool		Create			( HWND parent, bool visible );
-	void		Show			( bool show );
+		bool		Create(HWND parent, bool visible);
+		void		Show(bool show);
 
-	void		SetWorkspace	( rvGEWorkspace* workspace );
-	void		Update			( void );
+		void		SetWorkspace(rvGEWorkspace *workspace);
+		void		Update(void);
 
-	HWND		GetWindow		( void );
+		HWND		GetWindow(void);
 
-protected:
+	protected:
 
-	HWND			mWnd;
-	HWND			mDlg;
-	rvGEWorkspace*	mWorkspace;
-	idWindow*		mRelative;
+		HWND			mWnd;
+		HWND			mDlg;
+		rvGEWorkspace	*mWorkspace;
+		idWindow		*mRelative;
 
-private:
+	private:
 
-	static LRESULT CALLBACK		WndProc		( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam );
-	static INT_PTR CALLBACK		DlgProc		( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam );
-	static LRESULT FAR PASCAL	GetMsgProc	( int nCode, WPARAM wParam, LPARAM lParam );
+		static LRESULT CALLBACK		WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static INT_PTR CALLBACK		DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static LRESULT FAR PASCAL	GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam);
 };
 
-ID_INLINE HWND rvGETransformer::GetWindow ( void )
+ID_INLINE HWND rvGETransformer::GetWindow(void)
 {
 	return mWnd;
 }

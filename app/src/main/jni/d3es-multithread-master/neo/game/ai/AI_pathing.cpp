@@ -26,9 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/containers/Queue.h"
-#include "idlib/geometry/Winding2D.h"
+#include "idlib/precompiled.h"
 
 #include "gamesys/SysCvar.h"
 #include "Moveable.h"

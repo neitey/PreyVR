@@ -28,7 +28,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <SDL.h>
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Licensee.h"
 
 #include "renderer/tr_local.h"
@@ -220,7 +220,7 @@ GLExtension_t GLimp_ExtensionPointer(const char *name) {
 
 void GLimp_WindowActive(bool active)
 {
-	LOGI( "GLimp_WindowActive %d", active );
+	printf( "GLimp_WindowActive %d", active );
 
 	tr.windowActive = active;
 

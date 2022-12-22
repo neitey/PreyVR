@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,8 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #define RPITEM_MAX_NAME	64
 
-struct RPITEM
-{
+struct RPITEM {
 	HWND		mDialog;
 	HWND		mButton;
 	HWND		mGroupBox;
@@ -46,99 +45,99 @@ struct RPITEM
 
 class rvRollupPanel
 {
-public:
+	public:
 
-	rvRollupPanel ( void );
-	virtual ~rvRollupPanel ( void );
+		rvRollupPanel(void);
+		virtual ~rvRollupPanel(void);
 
-	bool	Create			( DWORD dwStyle, const RECT& rect, HWND parent, unsigned int id );
+		bool	Create(DWORD dwStyle, const RECT &rect, HWND parent, unsigned int id);
 
-	int		InsertItem		( const char* caption, HWND dialog, bool autoDestroy, int index = -1);
+		int		InsertItem(const char *caption, HWND dialog, bool autoDestroy, int index = -1);
 
-	void	RemoveItem		( int index );
-	void	RemoveAllItems	( void );
+		void	RemoveItem(int index);
+		void	RemoveAllItems(void);
 
-	void	ExpandItem		( int index, bool expand = true );
-	void	ExpandAllItems	( bool expand = true );
+		void	ExpandItem(int index, bool expand = true);
+		void	ExpandAllItems(bool expand = true);
 
-	void	EnableItem		( int index, bool enabled = true );
-	void	EnableAllItems	( bool enable = true );
+		void	EnableItem(int index, bool enabled = true);
+		void	EnableAllItems(bool enable = true);
 
-	int		GetItemCount	( void );
+		int		GetItemCount(void);
 
-	RPITEM*	GetItem			( int index );
+		RPITEM	*GetItem(int index);
 
-	int		GetItemIndex	( const char* caption );
-	int		GetItemIndex	( HWND hwnd );
+		int		GetItemIndex(const char *caption);
+		int		GetItemIndex(HWND hwnd);
 
-	void	ScrollToItem	( int index, bool top = true );
-	int		MoveItemAt		( int index, int newIndex );
-	bool	IsItemExpanded	( int index );
-	bool	IsItemEnabled	( int index );
+		void	ScrollToItem(int index, bool top = true);
+		int		MoveItemAt(int index, int newIndex);
+		bool	IsItemExpanded(int index);
+		bool	IsItemEnabled(int index);
 
-	HWND	GetWindow		( void );
+		HWND	GetWindow(void);
 
-	void	AutoSize		( void );
+		void	AutoSize(void);
 
-protected:
+	protected:
 
-	void	RecallLayout	( void );
-	void	_RemoveItem		( int index );
-	void	_ExpandItem		( RPITEM* item, bool expand );
-	void	_EnableItem		( RPITEM* item, bool enable );
+		void	RecallLayout(void);
+		void	_RemoveItem(int index);
+		void	_ExpandItem(RPITEM *item, bool expand);
+		void	_EnableItem(RPITEM *item, bool enable);
 
-	int		HandleCommand		( WPARAM wParam, LPARAM lParam );
-	int		HandlePaint			( WPARAM wParam, LPARAM lParam );
-	int		HandleSize			( WPARAM wParam, LPARAM lParam );
-	int		HandleLButtonDown	( WPARAM wParam, LPARAM lParam );
-	int		HandleLButtonUp		( WPARAM wParam, LPARAM lParam );
-	int		HandleMouseMove		( WPARAM wParam, LPARAM lParam );
-	int		HandleMouseWheel	( WPARAM wParam, LPARAM lParam );
-	int		HandleMouseActivate	( WPARAM wParam, LPARAM lParam );
-	int		HandleContextMenu	( WPARAM wParam, LPARAM lParam );
+		int		HandleCommand(WPARAM wParam, LPARAM lParam);
+		int		HandlePaint(WPARAM wParam, LPARAM lParam);
+		int		HandleSize(WPARAM wParam, LPARAM lParam);
+		int		HandleLButtonDown(WPARAM wParam, LPARAM lParam);
+		int		HandleLButtonUp(WPARAM wParam, LPARAM lParam);
+		int		HandleMouseMove(WPARAM wParam, LPARAM lParam);
+		int		HandleMouseWheel(WPARAM wParam, LPARAM lParam);
+		int		HandleMouseActivate(WPARAM wParam, LPARAM lParam);
+		int		HandleContextMenu(WPARAM wParam, LPARAM lParam);
 
-	// Datas
-	idList<RPITEM*>	mItems;
-	int				mStartYPos;
-	int				mItemHeight;
-	int				mOldMouseYPos;
-	int				mSBOffset;
-	HWND			mWindow;
+		// Datas
+		idList<RPITEM *>	mItems;
+		int				mStartYPos;
+		int				mItemHeight;
+		int				mOldMouseYPos;
+		int				mSBOffset;
+		HWND			mWindow;
 
-	// Window proc
-	static LRESULT CALLBACK		WindowProc	( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-	static LRESULT CALLBACK		DialogProc	( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-	static LRESULT CALLBACK		ButtonProc	( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+		// Window proc
+		static LRESULT CALLBACK		WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		static LRESULT CALLBACK		DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		static LRESULT CALLBACK		ButtonProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	static LRESULT FAR PASCAL	GetMsgProc	( int nCode, WPARAM wParam, LPARAM lParam );
-	static idList<HWND>	mDialogs;
-	static HHOOK		mDialogHook;
+		static LRESULT FAR PASCAL	GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam);
+		static idList<HWND>	mDialogs;
+		static HHOOK		mDialogHook;
 };
 
-ID_INLINE int rvRollupPanel::GetItemCount ( void )
+ID_INLINE int rvRollupPanel::GetItemCount(void)
 {
 	return mItems.Num();
 }
 
-ID_INLINE bool rvRollupPanel::IsItemExpanded ( int index )
+ID_INLINE bool rvRollupPanel::IsItemExpanded(int index)
 {
-	if ( index >= mItems.Num() || index < 0 )
-	{
+	if (index >= mItems.Num() || index < 0) {
 		return false;
 	}
+
 	return mItems[index]->mExpanded;
 }
 
-ID_INLINE bool rvRollupPanel::IsItemEnabled( int index )
+ID_INLINE bool rvRollupPanel::IsItemEnabled(int index)
 {
-	if ( index >= mItems.Num() || index < 0 )
-	{
+	if (index >= mItems.Num() || index < 0) {
 		return false;
 	}
+
 	return mItems[index]->mEnable;
 }
 
-ID_INLINE HWND rvRollupPanel::GetWindow ( void )
+ID_INLINE HWND rvRollupPanel::GetWindow(void)
 {
 	return mWindow;
 }

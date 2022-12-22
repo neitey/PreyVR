@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/BitMsg.h"
+#include "idlib/precompiled.h"
 #include "framework/Compressor.h"
 
 #include "framework/async/MsgChannel.h"
@@ -338,7 +337,7 @@ void idMsgChannel::WriteMessageData( idBitMsg &out, const idBitMsg &msg ) {
 	tmp.Init( tmpBuf, sizeof( tmpBuf ) );
 
 	// write acknowledgement of last received reliable message
-	tmp.WriteInt( reliableReceive.GetLast() );
+	tmp.WriteLong( reliableReceive.GetLast() );
 
 	// write reliable messages
 	reliableSend.CopyToBuffer( tmp.GetData() + tmp.GetSize() );
@@ -378,7 +377,7 @@ bool idMsgChannel::ReadMessageData( idBitMsg &out, const idBitMsg &msg ) {
 	out.BeginReading();
 
 	// read acknowledgement of sent reliable messages
-	reliableAcknowledge = out.ReadInt();
+	reliableAcknowledge = out.ReadLong();
 
 	// remove acknowledged reliable messages
 	while( reliableSend.GetFirst() <= reliableAcknowledge ) {
@@ -394,7 +393,7 @@ bool idMsgChannel::ReadMessageData( idBitMsg &out, const idBitMsg &msg ) {
 			common->Printf( "%s: bad reliable message\n", Sys_NetAdrToString( remoteAddress ) );
 			return false;
 		}
-		reliableSequence = out.ReadInt();
+		reliableSequence = out.ReadLong();
 		if ( reliableSequence == reliableReceive.GetLast() + 1 ) {
 			reliableReceive.Add( out.GetData() + out.GetReadCount(), reliableMessageSize );
 		}
@@ -428,7 +427,7 @@ void idMsgChannel::SendNextFragment( idPort &port, const int time ) {
 	// write the packet
 	msg.Init( msgBuf, sizeof( msgBuf ) );
 	msg.WriteShort( id );
-	msg.WriteInt( outgoingSequence | FRAGMENT_BIT );
+	msg.WriteLong( outgoingSequence | FRAGMENT_BIT );
 
 	fragLength = FRAGMENT_SIZE;
 	if ( unsentFragmentStart + fragLength > unsentMsg.GetSize() ) {
@@ -507,7 +506,7 @@ int idMsgChannel::SendMessage( idPort &port, const int time, const idBitMsg &msg
 
 	// write the header
 	unsentMsg.WriteShort( id );
-	unsentMsg.WriteInt( outgoingSequence );
+	unsentMsg.WriteLong( outgoingSequence );
 
 	// write out the message data
 	WriteMessageData( unsentMsg, msg );
@@ -554,7 +553,7 @@ bool idMsgChannel::Process( const netadr_t from, int time, idBitMsg &msg, int &s
 	UpdateIncomingRate( time, msg.GetSize() );
 
 	// get sequence numbers
-	sequence = msg.ReadInt();
+	sequence = msg.ReadLong();
 
 	// check for fragment information
 	if ( sequence & FRAGMENT_BIT ) {

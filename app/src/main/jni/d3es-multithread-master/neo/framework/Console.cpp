@@ -26,10 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/math/Vector.h"
+#include "idlib/precompiled.h"
 #include "framework/async/AsyncNetwork.h"
-#include "framework/BuildVersion.h"
 #include "framework/CVarSystem.h"
 #include "framework/Session.h"
 #include "framework/EditField.h"

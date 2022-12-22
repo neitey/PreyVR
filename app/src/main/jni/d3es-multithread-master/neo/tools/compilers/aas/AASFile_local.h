@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __AASFILELOCAL_H__
 #define __AASFILELOCAL_H__
 
-#include "tools/compilers/aas/AASFile.h"
-
 /*
 ===============================================================================
 
@@ -39,63 +37,64 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idAASFileLocal : public idAASFile {
-	friend class idAASBuild;
-	friend class idAASReach;
-	friend class idAASCluster;
-public:
-								idAASFileLocal( void );
-	virtual						~idAASFileLocal( void );
+class idAASFileLocal : public idAASFile
+{
+		friend class idAASBuild;
+		friend class idAASReach;
+		friend class idAASCluster;
+	public:
+		idAASFileLocal(void);
+		virtual 					~idAASFileLocal(void);
 
-public:
-	virtual idVec3				EdgeCenter( int edgeNum ) const;
-	virtual idVec3				FaceCenter( int faceNum ) const;
-	virtual idVec3				AreaCenter( int areaNum ) const;
+	public:
+		virtual idVec3				EdgeCenter(int edgeNum) const;
+		virtual idVec3				FaceCenter(int faceNum) const;
+		virtual idVec3				AreaCenter(int areaNum) const;
 
-	virtual idBounds			EdgeBounds( int edgeNum ) const;
-	virtual idBounds			FaceBounds( int faceNum ) const;
-	virtual idBounds			AreaBounds( int areaNum ) const;
+		virtual idBounds			EdgeBounds(int edgeNum) const;
+		virtual idBounds			FaceBounds(int faceNum) const;
+		virtual idBounds			AreaBounds(int areaNum) const;
 
-	virtual int					PointAreaNum( const idVec3 &origin ) const;
-	virtual int					PointReachableAreaNum( const idVec3 &origin, const idBounds &searchBounds, const int areaFlags, const int excludeTravelFlags ) const;
-	virtual int					BoundsReachableAreaNum( const idBounds &bounds, const int areaFlags, const int excludeTravelFlags ) const;
-	virtual void				PushPointIntoAreaNum( int areaNum, idVec3 &point ) const;
-	virtual bool				Trace( aasTrace_t &trace, const idVec3 &start, const idVec3 &end ) const;
-	virtual void				PrintInfo( void ) const;
+		virtual int					PointAreaNum(const idVec3 &origin) const;
+		virtual int					PointReachableAreaNum(const idVec3 &origin, const idBounds &searchBounds, const int areaFlags, const int excludeTravelFlags) const;
+		virtual int					BoundsReachableAreaNum(const idBounds &bounds, const int areaFlags, const int excludeTravelFlags) const;
+		virtual void				PushPointIntoAreaNum(int areaNum, idVec3 &point) const;
+		virtual bool				Trace(aasTrace_t &trace, const idVec3 &start, const idVec3 &end) const;
+		virtual void				PrintInfo(void) const;
 
-public:
-	bool						Load( const idStr &fileName, unsigned int mapFileCRC );
-	bool						Write( const idStr &fileName, unsigned int mapFileCRC );
+	public:
+		bool						Load(const idStr &fileName, unsigned int mapFileCRC);
+		bool						Write(const idStr &fileName, unsigned int mapFileCRC);
 
-	int							MemorySize( void ) const;
-	void						ReportRoutingEfficiency( void ) const;
-	void						Optimize( void );
-	void						LinkReversedReachability( void );
-	void						FinishAreas( void );
+		int							MemorySize(void) const;
+		void						ReportRoutingEfficiency(void) const;
+		void						Optimize(void);
+		void						LinkReversedReachability(void);
+		void						FinishAreas(void);
 
-	void						Clear( void );
-	void						DeleteReachabilities( void );
-	void						DeleteClusters( void );
+		void						Clear(void);
+		void						DeleteReachabilities(void);
+		void						DeleteClusters(void);
 
-private:
-	bool						ParseIndex( idLexer &src, idList<aasIndex_t> &indexes );
-	bool						ParsePlanes( idLexer &src );
-	bool						ParseVertices( idLexer &src );
-	bool						ParseEdges( idLexer &src );
-	bool						ParseFaces( idLexer &src );
-	bool						ParseReachabilities( idLexer &src, int areaNum );
-	bool						ParseAreas( idLexer &src );
-	bool						ParseNodes( idLexer &src );
-	bool						ParsePortals( idLexer &src );
-	bool						ParseClusters( idLexer &src );
+	private:
+		bool						ParseIndex(idLexer &src, idList<aasIndex_t> &indexes);
+		bool						ParsePlanes(idLexer &src);
+		bool						ParseVertices(idLexer &src);
+		bool						ParseEdges(idLexer &src);
+		bool						ParseFaces(idLexer &src);
+		bool						ParseReachabilities(idLexer &src, int areaNum);
+		bool						ParseAreas(idLexer &src);
+		bool						ParseNodes(idLexer &src);
+		bool						ParsePortals(idLexer &src);
+		bool						ParseClusters(idLexer &src);
 
-private:
-	int							BoundsReachableAreaNum_r( int nodeNum, const idBounds &bounds, const int areaFlags, const int excludeTravelFlags ) const;
-	void						MaxTreeDepth_r( int nodeNum, int &depth, int &maxDepth ) const;
-	int							MaxTreeDepth( void ) const;
-	int							AreaContentsTravelFlags( int areaNum ) const;
-	idVec3						AreaReachableGoal( int areaNum ) const;
-	int							NumReachabilities( void ) const;
+	private:
+		int							BoundsReachableAreaNum_r(int nodeNum, const idBounds &bounds, const int areaFlags, const int excludeTravelFlags) const;
+		void						MaxTreeDepth_r(int nodeNum, int &depth, int &maxDepth) const;
+		int							MaxTreeDepth(void) const;
+		int							AreaContentsTravelFlags(int areaNum) const;
+		idVec3						AreaReachableGoal(int areaNum) const;
+		int							NumReachabilities(void) const;
 };
 
 #endif /* !__AASFILELOCAL_H__ */

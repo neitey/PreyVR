@@ -29,7 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SESSION_H__
 #define __SESSION_H__
 
-struct sysEvent_t;
 struct backgroundDownload_t;
 class idDemoFile;
 class idRenderWorld;

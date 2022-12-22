@@ -26,14 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "../idlib/precompiled.h"
 #include "Grabber.h"
-#include "../idlib/Dict.h"
 #include "../renderer/Material.h"
 #include "Moveable.h"
 #include "gamesys/SysCvar.h"
 #include "../cm/CollisionModel.h"
-#include "../idlib/bv/Bounds.h"
 #include "Player.h"
 #include "ai/AI.h"
 

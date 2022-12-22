@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __EDIT_PUBLIC_H__
 #define __EDIT_PUBLIC_H__
 
-#include "idlib/math/Vector.h"
-#include "idlib/Dict.h"
-
 /*
 ===============================================================================
 
@@ -46,75 +43,75 @@ class	idInterpreter;
 
 
 // Radiant Level Editor
-void	RadiantInit( void );
-void	RadiantShutdown( void );
-void	RadiantRun( void );
-void	RadiantPrint( const char *text );
-void	RadiantSync( const char *mapName, const idVec3 &viewOrg, const idAngles &viewAngles );
+void	RadiantInit(void);
+void	RadiantShutdown(void);
+void	RadiantRun(void);
+void	RadiantPrint(const char *text);
+void	RadiantSync(const char *mapName, const idVec3 &viewOrg, const idAngles &viewAngles);
 
 
 // in-game Light Editor
-void	LightEditorInit( const idDict *spawnArgs );
-void	LightEditorShutdown( void );
-void	LightEditorRun( void );
+void	LightEditorInit(const idDict *spawnArgs);
+void	LightEditorShutdown(void);
+void	LightEditorRun(void);
 
 
 // in-game Sound Editor
-void	SoundEditorInit( const idDict *spawnArgs );
-void	SoundEditorShutdown( void );
-void	SoundEditorRun( void );
+void	SoundEditorInit(const idDict *spawnArgs);
+void	SoundEditorShutdown(void);
+void	SoundEditorRun(void);
 
 
 // in-game Articulated Figure Editor
-void	AFEditorInit( const idDict *spawnArgs );
-void	AFEditorShutdown( void );
-void	AFEditorRun( void );
+void	AFEditorInit(const idDict *spawnArgs);
+void	AFEditorShutdown(void);
+void	AFEditorRun(void);
 
 
 // in-game Particle Editor
-void	ParticleEditorInit( const idDict *spawnArgs );
-void	ParticleEditorShutdown( void );
-void	ParticleEditorRun( void );
+void	ParticleEditorInit(const idDict *spawnArgs);
+void	ParticleEditorShutdown(void);
+void	ParticleEditorRun(void);
 
 
 // in-game PDA Editor
-void	PDAEditorInit( const idDict *spawnArgs );
-void	PDAEditorShutdown( void );
-void	PDAEditorRun( void );
+void	PDAEditorInit(const idDict *spawnArgs);
+void	PDAEditorShutdown(void);
+void	PDAEditorRun(void);
 
 
 // in-game Script Editor
-void	ScriptEditorInit( const idDict *spawnArgs );
-void	ScriptEditorShutdown( void );
-void	ScriptEditorRun( void );
+void	ScriptEditorInit(const idDict *spawnArgs);
+void	ScriptEditorShutdown(void);
+void	ScriptEditorRun(void);
 
 
 // in-game Declaration Browser
-void	DeclBrowserInit( const idDict *spawnArgs );
-void	DeclBrowserShutdown( void );
-void	DeclBrowserRun( void );
-void	DeclBrowserReloadDeclarations( void );
+void	DeclBrowserInit(const idDict *spawnArgs);
+void	DeclBrowserShutdown(void);
+void	DeclBrowserRun(void);
+void	DeclBrowserReloadDeclarations(void);
 
 
 // GUI Editor
-void	GUIEditorInit( void );
-void	GUIEditorShutdown( void );
-void	GUIEditorRun( void );
-bool	GUIEditorHandleMessage( void *msg );
+void	GUIEditorInit(void);
+void	GUIEditorShutdown(void);
+void	GUIEditorRun(void);
+bool	GUIEditorHandleMessage(void *msg);
 
 
 // Script Debugger
-void	DebuggerClientLaunch( void );
-void	DebuggerClientInit( const char *cmdline );
-bool	DebuggerServerInit( void );
-void	DebuggerServerShutdown( void );
-void	DebuggerServerPrint( const char *text );
-void	DebuggerServerCheckBreakpoint( idInterpreter *interpreter, idProgram *program, int instructionPointer );
+void	DebuggerClientLaunch(void);
+void	DebuggerClientInit(const char *cmdline);
+bool	DebuggerServerInit(void);
+void	DebuggerServerShutdown(void);
+void	DebuggerServerPrint(const char *text);
+void	DebuggerServerCheckBreakpoint(idInterpreter *interpreter, idProgram *program, int instructionPointer);
 
 //Material Editor
-void	MaterialEditorInit( void );
-void	MaterialEditorRun( void );
-void	MaterialEditorShutdown( void );
-void	MaterialEditorPrintConsole( const char *msg );
+void	MaterialEditorInit(void);
+void	MaterialEditorRun(void);
+void	MaterialEditorShutdown(void);
+void	MaterialEditorPrintConsole(const char *msg);
 
 #endif /* !__EDIT_PUBLIC_H__ */

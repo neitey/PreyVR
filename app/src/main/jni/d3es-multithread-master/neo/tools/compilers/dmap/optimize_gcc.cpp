@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,46 +25,61 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+/*
+crazy gcc 3.3.5 optimization bug
+happens even at -O1
+if you remove the 'return NULL;' after Error(), it only happens at -O3 / release
+see dmap.gcc.zip test map and .proc outputs
+*/
 
-#if !defined(__GETSTRING_H__)
-#define __GETSTRING_H__
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
-#if _MSC_VER >= 1000
-#pragma once
-#endif // _MSC_VER >= 1000
+#include "dmap.h"
 
-// CGetString dialog
+extern idBounds optBounds;
 
-// NOTE: already included in qe3.h but won't compile without including it again !?
-#include "../../sys/win32/rc/Radiant_resource.h"
+#define MAX_OPT_VERTEXES 0x10000
+extern int numOptVerts;
+extern optVertex_t optVerts[MAX_OPT_VERTEXES];
 
-class CGetString : public CDialog
+/*
+================
+FindOptVertex
+================
+*/
+optVertex_t *FindOptVertex(idDrawVert *v, optimizeGroup_t *opt)
 {
-public:
-	CGetString(LPCSTR pPrompt, CString *pFeedback, CWnd* pParent = NULL);   // standard constructor
-	virtual ~CGetString();
-// Overrides
+	int		i;
+	float	x, y;
+	optVertex_t	*vert;
 
-// Dialog Data
+	// deal with everything strictly as 2D
+	x = v->xyz * opt->axis[0];
+	y = v->xyz * opt->axis[1];
 
-	enum { IDD = IDD_DIALOG_GETSTRING };
+	// should we match based on the t-junction fixing hash verts?
+	for (i = 0 ; i < numOptVerts ; i++) {
+		if (optVerts[i].pv[0] == x && optVerts[i].pv[1] == y) {
+			return &optVerts[i];
+		}
+	}
 
-	CString	m_strEditBox;
-	CString *m_pFeedback;
-	LPCSTR	m_pPrompt;
+	if (numOptVerts >= MAX_OPT_VERTEXES) {
+		common->Error("MAX_OPT_VERTEXES");
+		return NULL;
+	}
 
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnInitDialog();
-	virtual void OnOK();
+	numOptVerts++;
 
-	DECLARE_MESSAGE_MAP()
-};
+	vert = &optVerts[i];
+	memset(vert, 0, sizeof(*vert));
+	vert->v = *v;
+	vert->pv[0] = x;
+	vert->pv[1] = y;
+	vert->pv[2] = 0;
 
-LPCSTR GetString(LPCSTR psPrompt);
-bool GetYesNo(const char *psQuery);
-void ErrorBox(const char *sString);
-void InfoBox(const char *sString);
-void WarningBox(const char *sString);
+	optBounds.AddPoint(vert->pv);
 
-#endif /* !__GETSTRING_H__ */
+	return vert;
+}

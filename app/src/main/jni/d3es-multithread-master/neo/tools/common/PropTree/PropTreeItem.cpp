@@ -17,8 +17,8 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "PropTree.h"
 
@@ -60,8 +60,7 @@ static void _DrawExpand(HDC hdc, LONG x, LONG y, BOOL bExpand, BOOL bFill)
 	Rectangle(hdc, x, y, x + PROPTREEITEM_EXPANDBOX, y + PROPTREEITEM_EXPANDBOX);
 	SelectObject(hdc, GetStockObject(BLACK_PEN));
 
-	if (!bExpand)
-	{
+	if (!bExpand) {
 		MoveToEx(hdc, x + PROPTREEITEM_EXPANDBOXHALF, y + 2, NULL);
 		LineTo(hdc, x + PROPTREEITEM_EXPANDBOXHALF, y + PROPTREEITEM_EXPANDBOX - 2);
 	}
@@ -186,13 +185,13 @@ void CPropTreeItem::HasCheckBox(BOOL bCheckbox)
 }
 
 
-BOOL CPropTreeItem::HitExpand(const POINT& pt)
+BOOL CPropTreeItem::HitExpand(const POINT &pt)
 {
 	return m_rcExpand.PtInRect(pt);
 }
 
 
-BOOL CPropTreeItem::HitCheckBox(const POINT& pt)
+BOOL CPropTreeItem::HitCheckBox(const POINT &pt)
 {
 	return m_rcCheckbox.PtInRect(pt);
 }
@@ -207,13 +206,12 @@ BOOL CPropTreeItem::IsRootLevel()
 
 LONG CPropTreeItem::GetTotalHeight()
 {
-	CPropTreeItem* pItem;
+	CPropTreeItem *pItem;
 	LONG nHeight;
 
 	nHeight = GetHeight();
 
-	if (IsExpanded())
-	{
+	if (IsExpanded()) {
 		for (pItem = GetChild(); pItem; pItem = pItem->GetSibling())
 			nHeight += pItem->GetTotalHeight();
 	}
@@ -328,67 +326,67 @@ void CPropTreeItem::OnActivate(int activateType, CPoint point)
 }
 
 
-void CPropTreeItem::SetPropOwner(CPropTree* pProp)
+void CPropTreeItem::SetPropOwner(CPropTree *pProp)
 {
 	m_pProp = pProp;
 }
 
 
-const POINT& CPropTreeItem::GetLocation()
+const POINT &CPropTreeItem::GetLocation()
 {
 	return m_loc;
 }
 
 
-CPropTreeItem* CPropTreeItem::GetParent()
+CPropTreeItem *CPropTreeItem::GetParent()
 {
 	return m_pParent;
 }
 
 
-CPropTreeItem* CPropTreeItem::GetSibling()
+CPropTreeItem *CPropTreeItem::GetSibling()
 {
 	return m_pSibling;
 }
 
 
-CPropTreeItem* CPropTreeItem::GetChild()
+CPropTreeItem *CPropTreeItem::GetChild()
 {
 	return m_pChild;
 }
 
 
-CPropTreeItem* CPropTreeItem::GetNextVisible()
+CPropTreeItem *CPropTreeItem::GetNextVisible()
 {
 	return m_pVis;
 }
 
 
-void CPropTreeItem::SetParent(CPropTreeItem* pParent)
+void CPropTreeItem::SetParent(CPropTreeItem *pParent)
 {
 	m_pParent = pParent;
 }
 
 
-void CPropTreeItem::SetSibling(CPropTreeItem* pSibling)
+void CPropTreeItem::SetSibling(CPropTreeItem *pSibling)
 {
 	m_pSibling = pSibling;
 }
 
 
-void CPropTreeItem::SetChild(CPropTreeItem* pChild)
+void CPropTreeItem::SetChild(CPropTreeItem *pChild)
 {
 	m_pChild = pChild;
 }
 
 
-void CPropTreeItem::SetNextVisible(CPropTreeItem* pVis)
+void CPropTreeItem::SetNextVisible(CPropTreeItem *pVis)
 {
 	m_pVis = pVis;
 }
 
 
-LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
+LONG CPropTreeItem::DrawItem(CDC *pDC, const RECT &rc, LONG x, LONG y)
 {
 	CPoint pt;
 	LONG nTotal, nCol, ey;
@@ -423,16 +421,14 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 		drc.SetRect(pt.x + PROPTREEITEM_EXPANDCOLUMN, pt.y, nCol, pt.y + nTotal);
 
 	// root level items are shaded
-	if (IsRootLevel())
-	{
+	if (IsRootLevel()) {
 		HGDIOBJ hOld = pDC->SelectObject(GetSysColorBrush(COLOR_BTNFACE));
 		pDC->PatBlt(rc.left, drc.top, rc.right - rc.left + 1, drc.Height(), PATCOPY);
 		pDC->SelectObject(hOld);
 	}
 
 	// calc/draw expand box position
-	if (GetChild())
-	{
+	if (GetChild()) {
 		m_rcExpand.left = PROPTREEITEM_EXPANDCOLUMN/2 - PROPTREEITEM_EXPANDBOXHALF;
 		m_rcExpand.top = m_loc.y + ey;
 		m_rcExpand.right = m_rcExpand.left + PROPTREEITEM_EXPANDBOX - 1;
@@ -441,13 +437,11 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 		ir = m_rcExpand;
 		ir.OffsetRect(0, -m_pProp->GetOrigin().y);
 		_DrawExpand(pDC->m_hDC, ir.left, ir.top, IsExpanded(), !IsRootLevel());
-	}
-	else
+	} else
 		m_rcExpand.SetRectEmpty();
 
 	// calc/draw check box position
-	if (IsCheckBox())
-	{
+	if (IsCheckBox()) {
 		bCheck = true;
 
 		ir.left = drc.left + PROPTREEITEM_SPACE;
@@ -457,15 +451,13 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 		ir.bottom = ir.top + PROPTREEITEM_CHECKBOX;
 
 		m_rcCheckbox = ir;
-	}
-	else
+	} else
 		m_rcCheckbox.SetRectEmpty();
 
 	HRGN hRgn = NULL;
 
 	// create a clipping region for the label
-	if (!IsRootLevel())
-	{
+	if (!IsRootLevel()) {
 		hRgn = CreateRectRgn(drc.left, drc.top, drc.right, drc.bottom);
 		SelectClipRgn(pDC->m_hDC, hRgn);
 	}
@@ -479,8 +471,7 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 		OffsetRect(&ir, PROPTREEITEM_CHECKBOX + PROPTREEITEM_SPACE * 2, 0);
 
 	// draw label
-	if (!m_sLabel.IsEmpty())
-	{
+	if (!m_sLabel.IsEmpty()) {
 		if (IsRootLevel())
 			pDC->SelectObject(CPropTree::GetBoldFont());
 		else
@@ -491,8 +482,7 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 		pDC->DrawText(m_sLabel, &ir, DT_SINGLELINE|DT_VCENTER|DT_CALCRECT);
 
 		// draw the text highlighted if selected
-		if (IsSelected())
-		{
+		if (IsSelected()) {
 			HGDIOBJ oPen = pDC->SelectObject(GetStockObject(NULL_PEN));
 			HGDIOBJ oBrush = pDC->SelectObject(GetSysColorBrush(COLOR_HIGHLIGHT));
 
@@ -516,16 +506,14 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 	}
 
 	// draw check box frame
-	if (IsCheckBox())
-	{
+	if (IsCheckBox()) {
 		ir = m_rcCheckbox;
 		ir.OffsetRect(0, -m_pProp->GetOrigin().y);
 		pDC->DrawFrameControl(&ir, DFC_BUTTON, DFCS_BUTTONCHECK | (IsChecked() ? DFCS_CHECKED : 0));
 	}
 
 	// remove clip region
-	if (hRgn)
-	{
+	if (hRgn) {
 		SelectClipRgn(pDC->m_hDC, NULL);
 		DeleteObject(hRgn);
 	}
@@ -534,11 +522,10 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 	_DotHLine(pDC->m_hDC, PROPTREEITEM_EXPANDCOLUMN, pt.y + nTotal - 1, rc.right - PROPTREEITEM_EXPANDCOLUMN + 1);
 
 	// draw separators
-	if (!IsRootLevel())
-	{
+	if (!IsRootLevel()) {
 		// column sep
 		CPen pn1(PS_SOLID, 1, GetSysColor(COLOR_BTNSHADOW));
-		CPen* pOld;
+		CPen *pOld;
 
 		pOld = pDC->SelectObject(&pn1);
 		pDC->MoveTo(nCol, drc.top);
@@ -553,8 +540,7 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 	}
 
 	// draw attribute
-	if (!IsRootLevel())
-	{
+	if (!IsRootLevel()) {
 		// create clip region
 		hRgn = CreateRectRgn(m_rc.left, m_rc.top, m_rc.right, m_rc.bottom);
 		SelectClipRgn(pDC->m_hDC, hRgn);
@@ -566,14 +552,12 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 	}
 
 	// draw children
-	if (GetChild() && IsExpanded())
-	{
+	if (GetChild() && IsExpanded()) {
 		y += nTotal;
 
-		CPropTreeItem* pNext;
+		CPropTreeItem *pNext;
 
-		for (pNext = GetChild(); pNext; pNext = pNext->GetSibling())
-		{
+		for (pNext = GetChild(); pNext; pNext = pNext->GetSibling()) {
 			LONG nHeight = pNext->DrawItem(pDC, rc, x + (IsRootLevel() ? 0 : PNINDENT), y);
 			nTotal += nHeight;
 			y += nHeight;
@@ -584,7 +568,7 @@ LONG CPropTreeItem::DrawItem(CDC* pDC, const RECT& rc, LONG x, LONG y)
 }
 
 
-void CPropTreeItem::DrawAttribute(CDC*, const RECT&)
+void CPropTreeItem::DrawAttribute(CDC *, const RECT &)
 {
 	// no attributes are assocatied with this type
 }

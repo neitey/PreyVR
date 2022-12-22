@@ -17,8 +17,8 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "tools/edit_gui_common.h"
-
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "PropTree.h"
 #include "../../../sys/win32/rc/proptree_Resource.h"
@@ -32,14 +32,12 @@ static char THIS_FILE[] = __FILE__;
 
 extern HINSTANCE ghInst;
 
-typedef struct _ColorTableEntry
-{
+typedef struct _ColorTableEntry {
 	COLORREF	color;
 	RECT		rcSpot;
 } ColorTableEntry;
 
-static ColorTableEntry _crColors[] =
-{
+static ColorTableEntry _crColors[] = {
 	{RGB(0x00, 0x00, 0x00)},
 	{RGB(0xA5, 0x2A, 0x00)},
 	{RGB(0x00, 0x40, 0x40)},
@@ -86,11 +84,11 @@ static ColorTableEntry _crColors[] =
 	{RGB(0xFF, 0xFF, 0xFF)}
 };
 
-static void ColorBox(CDC* pDC, CPoint pt, COLORREF clr, BOOL bHover)
+static void ColorBox(CDC *pDC, CPoint pt, COLORREF clr, BOOL bHover)
 {
 	CBrush br(clr);
 
-	CBrush* obr = pDC->SelectObject(&br);
+	CBrush *obr = pDC->SelectObject(&br);
 
 	pDC->PatBlt(pt.x, pt.y, 13, 13, PATCOPY);
 	pDC->SelectObject(obr);
@@ -105,8 +103,7 @@ static void ColorBox(CDC* pDC, CPoint pt, COLORREF clr, BOOL bHover)
 
 static LONG FindSpot(CPoint point)
 {
-	for (LONG i=0; i<40; i++)
-	{
+	for (LONG i=0; i<40; i++) {
 		if (PtInRect(&_crColors[i].rcSpot, point))
 			return i;
 	}
@@ -118,7 +115,7 @@ static LONG FindSpot(CPoint point)
 /////////////////////////////////////////////////////////////////////////////
 // CPropTreeItemColor
 
-COLORREF* CPropTreeItemColor::s_pColors = NULL;
+COLORREF *CPropTreeItemColor::s_pColors = NULL;
 
 CPropTreeItemColor::CPropTreeItemColor() :
 	m_cColor(0),
@@ -149,13 +146,13 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CPropTreeItemColor message handlers
 
-void CPropTreeItemColor::SetDefaultColorsList(COLORREF* pColors)
+void CPropTreeItemColor::SetDefaultColorsList(COLORREF *pColors)
 {
 	s_pColors = pColors;
 }
 
 
-void CPropTreeItemColor::DrawAttribute(CDC* pDC, const RECT& rc)
+void CPropTreeItemColor::DrawAttribute(CDC *pDC, const RECT &rc)
 {
 	ASSERT(m_pProp!=NULL);
 
@@ -172,7 +169,7 @@ void CPropTreeItemColor::DrawAttribute(CDC* pDC, const RECT& rc)
 	r.right = r.left + r.Height() - 1;
 
 	CBrush br(m_cColor);
-	CBrush* pold = pDC->SelectObject(&br);
+	CBrush *pold = pDC->SelectObject(&br);
 	pDC->PatBlt(r.left, r.top, r.Width(), r.Height(), PATCOPY);
 	pDC->SelectObject(pold);
 
@@ -228,8 +225,7 @@ void CPropTreeItemColor::OnActivate(int activateType, CPoint point)
 	ASSERT(m_pProp!=NULL);
 	m_pProp->GetCtrlParent()->ClientToScreen(r);
 
-	if (!IsWindow(m_hWnd))
-	{
+	if (!IsWindow(m_hWnd)) {
 		LPCTSTR pszClassName;
 
 		pszClassName = AfxRegisterWndClass(CS_VREDRAW|CS_HREDRAW, LoadCursor(NULL, IDC_ARROW), (HBRUSH)(COLOR_BTNFACE + 1));
@@ -245,7 +241,7 @@ void CPropTreeItemColor::OnActivate(int activateType, CPoint point)
 }
 
 
-void CPropTreeItemColor::OnKillFocus(CWnd* pNewWnd)
+void CPropTreeItemColor::OnKillFocus(CWnd *pNewWnd)
 {
 	CWnd::OnKillFocus(pNewWnd);
 
@@ -259,8 +255,7 @@ void CPropTreeItemColor::OnPaint()
 	CPaintDC dc(this);
 	CPoint pt;
 
-	for (LONG i=0; i<40; i++)
-	{
+	for (LONG i=0; i<40; i++) {
 		pt.x = (i & 7) * 18 + 3;
 		pt.y = (i >> 3) * 18 + 3;
 		ColorBox(&dc, pt, _crColors[i].color, m_nSpot==i);
@@ -293,33 +288,30 @@ void CPropTreeItemColor::OnMouseMove(UINT, CPoint point)
 	LONG nSpot;
 
 	nSpot = FindSpot(point);
-	if (nSpot!=m_nSpot)
-	{
+
+	if (nSpot!=m_nSpot) {
 		Invalidate(FALSE);
 		m_nSpot = nSpot;
 	}
 
 	bButton = m_rcButton.PtInRect(point);
 
-	if (bButton!=m_bButton)
-	{
+	if (bButton!=m_bButton) {
 		m_bButton = bButton;
 		Invalidate(FALSE);
 	}
 }
 
 
-BOOL CPropTreeItemColor::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
+BOOL CPropTreeItemColor::OnSetCursor(CWnd *pWnd, UINT nHitTest, UINT message)
 {
-	if (nHitTest==HTCLIENT)
-	{
+	if (nHitTest==HTCLIENT) {
 		CPoint point;
 
 		GetCursorPos(&point);
 		ScreenToClient(&point);
 
-		if (FindSpot(point)!=-1 || m_rcButton.PtInRect(point))
-		{
+		if (FindSpot(point)!=-1 || m_rcButton.PtInRect(point)) {
 			SetCursor(LoadCursor(ghInst, MAKEINTRESOURCE(IDC_FPOINT)));
 			return TRUE;
 		}
@@ -332,14 +324,10 @@ BOOL CPropTreeItemColor::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 
 void CPropTreeItemColor::OnLButtonDown(UINT, CPoint point)
 {
-	if (m_nSpot!=-1)
-	{
+	if (m_nSpot!=-1) {
 		m_cColor = _crColors[m_nSpot].color;
 		CommitChanges();
-	}
-	else
-	if (m_rcButton.PtInRect(point))
-	{
+	} else if (m_rcButton.PtInRect(point)) {
 		CHOOSECOLOR cc;
 		COLORREF clr[16];
 

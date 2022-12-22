@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __COMPILER_PUBLIC_H__
 #define __COMPILER_PUBLIC_H__
 
-#include "idlib/CmdArgs.h"
-
 /*
 ===============================================================================
 
@@ -40,18 +38,18 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // map processing (also see SuperOptimizeOccluders in tr_local.h)
-void Dmap_f( const idCmdArgs &args );
+void Dmap_f(const idCmdArgs &args);
 
 // bump map generation
-void RenderBump_f( const idCmdArgs &args );
-void RenderBumpFlat_f( const idCmdArgs &args );
+void RenderBump_f(const idCmdArgs &args);
+void RenderBumpFlat_f(const idCmdArgs &args);
 
 // AAS file compiler
-void RunAAS_f( const idCmdArgs &args );
-void RunAASDir_f( const idCmdArgs &args );
-void RunReach_f( const idCmdArgs &args );
+void RunAAS_f(const idCmdArgs &args);
+void RunAASDir_f(const idCmdArgs &args);
+void RunReach_f(const idCmdArgs &args);
 
 // video file encoding
-void RoQFileEncode_f( const idCmdArgs &args );
+void RoQFileEncode_f(const idCmdArgs &args);
 
 #endif	/* !__COMPILER_PUBLIC_H__ */

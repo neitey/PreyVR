@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MATH_LCP_H__
 #define __MATH_LCP_H__
 
-#include "idlib/math/Matrix.h"
-#include "framework/Common.h"
-#include "framework/CVarSystem.h"
-
 /*
 ===============================================================================
 
@@ -44,17 +40,17 @@ If you have questions concerning this license or the applicable additional terms
   complementarity condition: (x[i] - lo[i]) * (x[i] - hi[i]) * t[i] = 0
   such that for each 0 <= i < n one of the following holds:
 
-	1. lo[i] < x[i] < hi[i], t[i] == 0
-	2. x[i] == lo[i], t[i] >= 0
-	3. x[i] == hi[i], t[i] <= 0
+    1. lo[i] < x[i] < hi[i], t[i] == 0
+    2. x[i] == lo[i], t[i] >= 0
+    3. x[i] == hi[i], t[i] <= 0
 
   Partly bounded or unbounded variables can have lo[i] and/or hi[i]
   set to negative/positive idMath::INFITITY respectively.
 
   If boxIndex != NULL and boxIndex[i] != -1 then
 
-	lo[i] = - fabs( lo[i] * x[boxIndex[i]] )
-	hi[i] = fabs( hi[i] * x[boxIndex[i]] )
+    lo[i] = - fabs( lo[i] * x[boxIndex[i]] )
+    hi[i] = fabs( hi[i] * x[boxIndex[i]] )
 	boxIndex[boxIndex[i]] must be -1
 
   Before calculating any of the bounded x[i] with boxIndex[i] != -1 the
@@ -63,19 +59,20 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idLCP {
-public:
-	static idLCP *	AllocSquare( void );		// A must be a square matrix
-	static idLCP *	AllocSymmetric( void );		// A must be a symmetric matrix
+class idLCP
+{
+	public:
+		static idLCP 	*AllocSquare(void);		// A must be a square matrix
+		static idLCP 	*AllocSymmetric(void);		// A must be a symmetric matrix
 
-	virtual			~idLCP( void );
+		virtual			~idLCP(void);
 
-	virtual bool	Solve( const idMatX &A, idVecX &x, const idVecX &b, const idVecX &lo, const idVecX &hi, const int *boxIndex = NULL ) = 0;
-	virtual void	SetMaxIterations( int max );
-	virtual int		GetMaxIterations( void );
+		virtual bool	Solve(const idMatX &A, idVecX &x, const idVecX &b, const idVecX &lo, const idVecX &hi, const int *boxIndex = NULL) = 0;
+		virtual void	SetMaxIterations(int max);
+		virtual int		GetMaxIterations(void);
 
-protected:
-	int				maxIterations;
+	protected:
+		int				maxIterations;
 };
 
 #endif /* !__MATH_LCP_H__ */

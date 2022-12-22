@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/LangDict.h"
+#include "idlib/precompiled.h"
 #include "framework/Licensee.h"
 #include "framework/Console.h"
 #include "framework/Session.h"
@@ -1330,7 +1329,7 @@ void R_SetColorMappings( void ) {
 	RB_overbright = (r_brightness.GetFloat() * 2) - 1;
 	if( RB_overbright < 1 )
 		RB_overbright = 1;
-	LOGI("RB_overbright = %f",RB_overbright);
+	printf("RB_overbright = %f",RB_overbright);
 }
 
 

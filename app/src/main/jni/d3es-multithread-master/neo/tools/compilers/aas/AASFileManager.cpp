@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,10 +26,11 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "tools/compilers/aas/AASFileManager.h"
+#include "../../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "tools/compilers/aas/AASFile_local.h"
+#include "AASFile.h"
+#include "AASFile_local.h"
 
 /*
 ===============================================================================
@@ -39,16 +40,17 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idAASFileManagerLocal : public idAASFileManager {
-public:
-	virtual						~idAASFileManagerLocal( void ) {}
+class idAASFileManagerLocal : public idAASFileManager
+{
+	public:
+		virtual						~idAASFileManagerLocal(void) {}
 
-	virtual idAASFile *			LoadAAS( const char *fileName, unsigned int mapFileCRC );
-	virtual void				FreeAAS( idAASFile *file );
+		virtual idAASFile 			*LoadAAS(const char *fileName, unsigned int mapFileCRC);
+		virtual void				FreeAAS(idAASFile *file);
 };
 
 idAASFileManagerLocal			AASFileManagerLocal;
-idAASFileManager *				AASFileManager = &AASFileManagerLocal;
+idAASFileManager 				*AASFileManager = &AASFileManagerLocal;
 
 
 /*
@@ -56,12 +58,15 @@ idAASFileManager *				AASFileManager = &AASFileManagerLocal;
 idAASFileManagerLocal::LoadAAS
 ================
 */
-idAASFile *idAASFileManagerLocal::LoadAAS( const char *fileName, unsigned int mapFileCRC ) {
+idAASFile *idAASFileManagerLocal::LoadAAS(const char *fileName, unsigned int mapFileCRC)
+{
 	idAASFileLocal *file = new idAASFileLocal();
-	if ( !file->Load( fileName, mapFileCRC ) ) {
+
+	if (!file->Load(fileName, mapFileCRC)) {
 		delete file;
 		return NULL;
 	}
+
 	return file;
 }
 
@@ -70,6 +75,7 @@ idAASFile *idAASFileManagerLocal::LoadAAS( const char *fileName, unsigned int ma
 idAASFileManagerLocal::FreeAAS
 ================
 */
-void idAASFileManagerLocal::FreeAAS( idAASFile *file ) {
+void idAASFileManagerLocal::FreeAAS(idAASFile *file)
+{
 	delete file;
 }

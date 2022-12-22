@@ -30,7 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <xmmintrin.h>
 #endif
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/Session.h"
 #include "renderer/RenderWorld_local.h"
 

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,39 +30,39 @@ If you have questions concerning this license or the applicable additional terms
 
 class rvDebuggerBreakpoint
 {
-public:
+	public:
 
-	rvDebuggerBreakpoint ( const char* filename, int linenumber, int id = -1 );
-	rvDebuggerBreakpoint ( rvDebuggerBreakpoint& bp );
-	~rvDebuggerBreakpoint ( void );
+		rvDebuggerBreakpoint(const char *filename, int linenumber, int id = -1);
+		rvDebuggerBreakpoint(rvDebuggerBreakpoint &bp);
+		~rvDebuggerBreakpoint(void);
 
-	const char*		GetFilename		( void );
-	int				GetLineNumber	( void );
-	int				GetID			( void );
+		const char		*GetFilename(void);
+		int				GetLineNumber(void);
+		int				GetID(void);
 
-protected:
+	protected:
 
-	bool	mEnabled;
-	int		mID;
-	int		mLineNumber;
-	idStr	mFilename;
+		bool	mEnabled;
+		int		mID;
+		int		mLineNumber;
+		idStr	mFilename;
 
-private:
+	private:
 
-	static int	mNextID;
+		static int	mNextID;
 };
 
-ID_INLINE const char* rvDebuggerBreakpoint::GetFilename ( void )
+ID_INLINE const char *rvDebuggerBreakpoint::GetFilename(void)
 {
 	return mFilename;
 }
 
-ID_INLINE int rvDebuggerBreakpoint::GetLineNumber ( void )
+ID_INLINE int rvDebuggerBreakpoint::GetLineNumber(void)
 {
 	return mLineNumber;
 }
 
-ID_INLINE int rvDebuggerBreakpoint::GetID ( void )
+ID_INLINE int rvDebuggerBreakpoint::GetID(void)
 {
 	return mID;
 }

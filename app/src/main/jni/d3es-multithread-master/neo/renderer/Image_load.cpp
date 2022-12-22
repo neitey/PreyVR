@@ -26,8 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
-#include "idlib/hashing/MD4.h"
+#include "idlib/precompiled.h"
 #include "renderer/tr_local.h"
 #include "renderer/Cinematic.h"
 
@@ -416,7 +415,7 @@ void myglTexImage2D(char* cachefname,GLenum target, GLint level, GLint internalf
 		}
 		else
 		{
-			LOGI("Loaded cached image from %s", cachefname);
+			printf("Loaded cached image from %s", cachefname);
 		}
 	} else {
 		qglTexImage2D(target,level,internalformat,width,height,border,format,type,pixels);
@@ -856,7 +855,7 @@ void	idImage::ActuallyLoadImage( bool fromBind ) {
 
 	if(fromBind)
 	{
-		LOGI("ERROR!! CAN NOT LOAD IMAGE FROM BIND");
+		printf("ERROR!! CAN NOT LOAD IMAGE FROM BIND");
 		globalImages->AddAllocList( this );
 		return;
 	}
