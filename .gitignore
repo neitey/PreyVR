@@ -1,6 +1,6 @@
 # Android Studio
-#.idea/
-#.gradle/
+.idea/
+.gradle/
 
 # Windows image file caches
 Thumbs.db
