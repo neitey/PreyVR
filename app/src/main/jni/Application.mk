@@ -18,7 +18,7 @@ APP_ALLOW_MISSING_DEPS=true
 
 APP_SHORT_COMMANDS :=true
 
-APP_MODULES := doom3 d3es_game
+APP_MODULES := doom3 game
 APP_STL := c++_shared
 
 

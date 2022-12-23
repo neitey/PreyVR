@@ -33,8 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/Image.h"
 
-#include "framework/GameCallbacks_local.h"
-
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
 #endif
@@ -1042,11 +1040,6 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 	int		i;
 	idImage	*image;
 	bool	all;
-
-	// DG: notify the game DLL about the reloadImages command
-	if(gameCallbacks.reloadImagesCB != NULL) {
-		gameCallbacks.reloadImagesCB(gameCallbacks.reloadImagesUserArg, args);
-	}
 
 	// this probably isn't necessary...
 	globalImages->ChangeTextureFilter();

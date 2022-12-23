@@ -39,9 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/tr_local.h"
 
-#include "framework/GameCallbacks_local.h"
-
-
 // functions that are not called every frame
 
 glconfig_t	glConfig;
@@ -1377,11 +1374,6 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 	// if OpenGL isn't started, do nothing
 	if ( !glConfig.isInitialized ) {
 		return;
-	}
-
-	// DG: notify the game DLL about the reloadImages and vid_restart commands
-	if(gameCallbacks.reloadImagesCB != NULL) {
-		gameCallbacks.reloadImagesCB(gameCallbacks.reloadImagesUserArg, args);
 	}
 
 	bool full = true;

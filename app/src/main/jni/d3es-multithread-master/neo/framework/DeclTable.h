@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __DECLTABLE_H__
 #define __DECLTABLE_H__
 
-#include "idlib/containers/List.h"
-#include "framework/DeclManager.h"
-
 /*
 ===============================================================================
 
@@ -41,19 +38,37 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idDeclTable : public idDecl {
-public:
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual bool			Parse( const char *text, const int textLength );
-	virtual void			FreeData( void );
+class idDeclTable : public idDecl
+{
+	public:
+		virtual size_t			Size(void) const;
+		virtual const char 	*DefaultDefinition(void) const;
+		virtual bool			Parse(const char *text, const int textLength);
+		virtual void			FreeData(void);
 
-	float					TableLookup( float index ) const;
+#ifdef _RAVEN
+			float			GetMaxValue( void ) const { return( maxValue ); }
+			float			GetMinValue( void ) const { return( minValue ); }
+// bdube: made virtual so it can be accessed in game
+	virtual
+#endif
+#ifdef _HUMANHEAD
+		virtual	//HUMANHEAD pdm: made virtual so it can be called from game code
+#endif
+		float					TableLookup(float index) const;
 
-private:
-	bool					clamp;
-	bool					snap;
-	idList<float>			values;
+	private:
+		bool					clamp;
+		bool					snap;
+		idList<float>			values;
+
+#ifdef _RAVEN
+// RAVEN BEGIN
+// jscott: for BSE
+	float					minValue;
+	float					maxValue;
+// RAVEN END
+#endif
 };
 
 #endif /* !__DECLTABLE_H__ */

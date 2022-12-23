@@ -26,8 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#include <unistd.h>
 #include "idlib/precompiled.h"
-#include "framework/Game.h"
 #include "../game/Vr.h"
 #include "framework/EventLoop.h"
 #include "framework/Session.h"

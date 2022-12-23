@@ -43,7 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <locale.h>
 
-static char path_argv[MAX_OSPATH];
+static char path_argv[PATH_MAX];
 
 bool Sys_GetPath(sysPath_t type, idStr &path) {
 	const char *s;
@@ -488,7 +488,7 @@ main
 #ifdef __ANDROID__
 
 bool running = true;
-int main_android(int argc, char **argv) {
+int main_android(int argc, const char **argv) {
 #else
 int main(int argc, char **argv) {
 #endif
@@ -512,9 +512,9 @@ int main(int argc, char **argv) {
 	Posix_InitSignalHandlers();
 #endif
 	if ( argc > 1 ) {
-		common->Init( argc-1, &argv[1] );
+		common->Init( argc-1, &argv[1], NULL );
 	} else {
-		common->Init( 0, NULL );
+		common->Init( 0, NULL, NULL );
 	}
 
 	while (running) {
@@ -524,7 +524,47 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-extern "C" void VR_Doom3Main(int argc, char** argv)
+// APK's native library path on Android.
+char *native_library_dir = NULL;
+extern "C" void VR_Doom3Main(int argc, const char** argv)
 {
+	native_library_dir = (char*)getenv("GAMELIBDIR");;
 	main_android(argc, argv);
 }
+
+const char *workdir()
+{
+	static char wd[256];
+	getcwd(wd,256);
+	return wd;
+}
+
+const char *Sys_DefaultBasePath(void) { return workdir(); }
+const char *Sys_DefaultSavePath(void) { return workdir(); }
+const char *Sys_DefaultCDPath(void) { return ""; }
+
+const char *Sys_EXEPath(void) {
+	static char	buf[ 1024 ];
+	idStr		linkpath;
+	int			len;
+
+	buf[ 0 ] = '\0';
+	sprintf(linkpath, "/proc/%d/exe", getpid());
+	len = readlink(linkpath.c_str(), buf, sizeof(buf));
+
+	if (len == -1) {
+		Sys_Printf("couldn't stat exe path link %s\n", linkpath.c_str());
+		buf[ len ] = '\0';
+	}
+
+	return buf;
+}
+
+float analogx=0.0f;
+float analogy=0.0f;
+int analogenabled=0;
+
+void Sys_DoPreferences(void) { }
+
+void pull_input_event(int execCmd){}
+

@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,49 +26,53 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "framework/DeclTable.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
 
 /*
 =================
 idDeclTable::TableLookup
 =================
 */
-float idDeclTable::TableLookup( float index ) const {
+float idDeclTable::TableLookup(float index) const
+{
 	int iIndex;
 	float iFrac;
 
 	int domain = values.Num() - 1;
 
-	if ( domain <= 1 ) {
+	if (domain <= 1) {
 		return 1.0f;
 	}
 
-	if ( clamp ) {
+	if (clamp) {
 		index *= (domain-1);
-		if ( index >= domain - 1 ) {
+
+		if (index >= domain - 1) {
 			return values[domain - 1];
-		} else if ( index <= 0 ) {
+		} else if (index <= 0) {
 			return values[0];
 		}
-		iIndex = idMath::Ftoi( index );
+
+		iIndex = idMath::Ftoi(index);
 		iFrac = index - iIndex;
 	} else {
 		index *= domain;
 
-		if ( index < 0 ) {
-			index += domain * idMath::Ceil( -index / domain );
+		if (index < 0) {
+			index += domain * idMath::Ceil(-index / domain);
 		}
 
-		iIndex = idMath::FtoiFast( idMath::Floor( index ) );
+		iIndex = idMath::FtoiFast(idMath::Floor(index));
 		iFrac = index - iIndex;
 		iIndex = iIndex % domain;
 	}
 
-	if ( !snap ) {
+	if (!snap) {
 		// we duplicated the 0 index at the end at creation time, so we
 		// don't need to worry about wrapping the filter
-		return values[iIndex] * ( 1.0f - iFrac ) + values[iIndex + 1] * iFrac;
+		return values[iIndex] * (1.0f - iFrac) + values[iIndex + 1] * iFrac;
 	}
 
 	return values[iIndex];
@@ -79,8 +83,9 @@ float idDeclTable::TableLookup( float index ) const {
 idDeclTable::Size
 =================
 */
-size_t idDeclTable::Size( void ) const {
-	return sizeof( idDeclTable ) + values.Allocated();
+size_t idDeclTable::Size(void) const
+{
+	return sizeof(idDeclTable) + values.Allocated();
 }
 
 /*
@@ -88,7 +93,8 @@ size_t idDeclTable::Size( void ) const {
 idDeclTable::FreeData
 =================
 */
-void idDeclTable::FreeData( void ) {
+void idDeclTable::FreeData(void)
+{
 	snap = false;
 	clamp = false;
 	values.Clear();
@@ -99,7 +105,8 @@ void idDeclTable::FreeData( void ) {
 idDeclTable::DefaultDefinition
 =================
 */
-const char *idDeclTable::DefaultDefinition( void ) const {
+const char *idDeclTable::DefaultDefinition(void) const
+{
 	return "{ { 0 } }";
 }
 
@@ -108,60 +115,65 @@ const char *idDeclTable::DefaultDefinition( void ) const {
 idDeclTable::Parse
 =================
 */
-bool idDeclTable::Parse( const char *text, const int textLength ) {
+bool idDeclTable::Parse(const char *text, const int textLength)
+{
 	idLexer src;
 	idToken token;
 	float v;
 
-	src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
-	src.SetFlags( DECL_LEXER_FLAGS );
-	src.SkipUntilString( "{" );
+	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
+	src.SetFlags(DECL_LEXER_FLAGS);
+	src.SkipUntilString("{");
 
 	snap = false;
 	clamp = false;
 	values.Clear();
 
-	while ( 1 ) {
-		if ( !src.ReadToken( &token ) ) {
+	while (1) {
+		if (!src.ReadToken(&token)) {
 			break;
 		}
 
-		if ( token == "}" ) {
+		if (token == "}") {
 			break;
 		}
 
-		if ( token.Icmp( "snap" ) == 0 ) {
+		if (token.Icmp("snap") == 0) {
 			snap = true;
-		} else if ( token.Icmp( "clamp" ) == 0 ) {
+		} else if (token.Icmp("clamp") == 0) {
 			clamp = true;
-		} else if ( token.Icmp( "{" ) == 0 ) {
+		} else if (token.Icmp("{") == 0) {
 
-			while ( 1 ) {
+			while (1) {
 				bool errorFlag;
 
-				v = src.ParseFloat( &errorFlag );
-				if ( errorFlag ) {
+				v = src.ParseFloat(&errorFlag);
+
+				if (errorFlag) {
 					// we got something non-numeric
 					MakeDefault();
 					return false;
 				}
 
-				values.Append( v );
+				values.Append(v);
 
-				src.ReadToken( &token );
-				if ( token == "}" ) {
+				src.ReadToken(&token);
+
+				if (token == "}") {
 					break;
 				}
-				if ( token == "," ) {
+
+				if (token == ",") {
 					continue;
 				}
-				src.Warning( "expected comma or brace" );
+
+				src.Warning("expected comma or brace");
 				MakeDefault();
 				return false;
 			}
 
 		} else {
-			src.Warning( "unknown token '%s'", token.c_str() );
+			src.Warning("unknown token '%s'", token.c_str());
 			MakeDefault();
 			return false;
 		}
@@ -170,7 +182,7 @@ bool idDeclTable::Parse( const char *text, const int textLength ) {
 	// copy the 0 element to the end, so lerping doesn't
 	// need to worry about the wrap case
 	float val = values[0];		// template bug requires this to not be in the Append()?
-	values.Append( val );
+	values.Append(val);
 
 	return true;
 }

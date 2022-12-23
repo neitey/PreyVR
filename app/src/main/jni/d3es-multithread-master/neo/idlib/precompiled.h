@@ -278,7 +278,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
 	#elif defined _HUMANHEAD
 	#include "../prey/Game.h"
 	#else
-	#include "../framework/Game.h"
+	#include "../game/Game.h"
 	#endif
 #else
 	#include "../game/Game.h"

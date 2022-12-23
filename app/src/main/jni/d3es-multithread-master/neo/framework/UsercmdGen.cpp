@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,39 +19,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the addres		Doom3s below.
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
 
 If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "game/Game_local.h"
 #include "game/Vr.h"
-#include "game/gamesys/SysCvar.h"
-
-#include "framework/CVarSystem.h"
-#include "framework/KeyInput.h"
-#include "framework/async/AsyncNetwork.h"
-
-#include "framework/UsercmdGen.h"
-#include "Game.h"
-
-
-#include "renderer/RenderSystem.h"
+#include "Session_local.h"
 
 /*
 ================
 usercmd_t::ByteSwap
 ================
 */
-void usercmd_t::ByteSwap( void ) {
-	angles[0] = LittleShort( angles[0] );
-	angles[1] = LittleShort( angles[1] );
-	angles[2] = LittleShort( angles[2] );
-	sequence = LittleLong( sequence );
+void usercmd_t::ByteSwap(void)
+{
+	angles[0] = LittleShort(angles[0]);
+	angles[1] = LittleShort(angles[1]);
+	angles[2] = LittleShort(angles[2]);
+	sequence = LittleLong(sequence);
 }
 
 /*
@@ -59,18 +50,19 @@ void usercmd_t::ByteSwap( void ) {
 usercmd_t::operator==
 ================
 */
-bool usercmd_t::operator==( const usercmd_t &rhs ) const {
-	return ( buttons == rhs.buttons &&
-			forwardmove == rhs.forwardmove &&
-			rightmove == rhs.rightmove &&
-			upmove == rhs.upmove &&
-			angles[0] == rhs.angles[0] &&
-			angles[1] == rhs.angles[1] &&
-			angles[2] == rhs.angles[2] &&
-			impulse == rhs.impulse &&
-			flags == rhs.flags &&
-			mx == rhs.mx &&
-			my == rhs.my );
+bool usercmd_t::operator==(const usercmd_t &rhs) const
+{
+	return (buttons == rhs.buttons &&
+	        forwardmove == rhs.forwardmove &&
+	        rightmove == rhs.rightmove &&
+	        upmove == rhs.upmove &&
+	        angles[0] == rhs.angles[0] &&
+	        angles[1] == rhs.angles[1] &&
+	        angles[2] == rhs.angles[2] &&
+	        impulse == rhs.impulse &&
+	        flags == rhs.flags &&
+	        mx == rhs.mx &&
+	        my == rhs.my);
 }
 
 
@@ -170,6 +162,10 @@ typedef enum {
 	UB_IMPULSE61,
 	UB_IMPULSE62,
 	UB_IMPULSE63,
+
+#ifdef _HUMANHEAD
+	UB_ATTACK_ALT,
+#endif
 
 	UB_MAX_BUTTONS
 } usercmdButton_t;
@@ -272,17 +268,24 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_impulse62",		UB_IMPULSE62 },
 	{ "_impulse63",		UB_IMPULSE63 },
 
+#ifdef _HUMANHEAD
+	{ "_attackalt",		UB_ATTACK_ALT },
+#endif
+
 	{ NULL,				UB_NONE },
 };
 
- class buttonState_t {
- public:
-	int		on;
-	bool	held;
+class buttonState_t
+{
+	public:
+		int		on;
+		bool	held;
 
-			buttonState_t() { Clear(); };
-	void	Clear( void );
-	void	SetKeyState( int keystate, bool toggle );
+		buttonState_t() {
+			Clear();
+		};
+		void	Clear(void);
+		void	SetKeyState(int keystate, bool toggle);
 };
 
 /*
@@ -290,7 +293,8 @@ userCmdString_t	userCmdStrings[] = {
 buttonState_t::Clear
 ================
 */
-void buttonState_t::Clear( void ) {
+void buttonState_t::Clear(void)
+{
 	held = false;
 	on = 0;
 }
@@ -300,13 +304,14 @@ void buttonState_t::Clear( void ) {
 buttonState_t::SetKeyState
 ================
 */
-void buttonState_t::SetKeyState( int keystate, bool toggle ) {
-	if ( !toggle ) {
+void buttonState_t::SetKeyState(int keystate, bool toggle)
+{
+	if (!toggle) {
 		held = false;
 		on = keystate;
-	} else if ( !keystate ) {
+	} else if (!keystate) {
 		held = false;
-	} else if ( !held ) {
+	} else if (!held) {
 		held = true;
 		on ^= 1;
 	}
@@ -317,114 +322,115 @@ const int NUM_USER_COMMANDS = sizeof(userCmdStrings) / sizeof(userCmdString_t);
 
 const int MAX_CHAT_BUFFER = 127;
 
-class idUsercmdGenLocal : public idUsercmdGen {
-public:
-					idUsercmdGenLocal( void );
+class idUsercmdGenLocal : public idUsercmdGen
+{
+	public:
+		idUsercmdGenLocal(void);
 
-	void			Init( void );
+		void			Init(void);
 
-	void			InitForNewMap( void );
+		void			InitForNewMap(void);
 
-	void			Shutdown( void );
+		void			Shutdown(void);
 
-	void			Clear( void );
+		void			Clear(void);
 
-	void			ClearAngles( void );
+		void			ClearAngles(void);
 
-	usercmd_t		TicCmd( int ticNumber );
+		usercmd_t		TicCmd(int ticNumber);
 
-	void			InhibitUsercmd( inhibit_t subsystem, bool inhibit );
+		void			InhibitUsercmd(inhibit_t subsystem, bool inhibit);
 
-	void			UsercmdInterrupt( void );
+		void			UsercmdInterrupt(void);
 
-	int				CommandStringUsercmdData( const char *cmdString );
+		int				CommandStringUsercmdData(const char *cmdString);
 
-	int				GetNumUserCommands( void );
+		int				GetNumUserCommands(void);
 
-	const char *	GetUserCommandName( int index );
+		const char 	*GetUserCommandName(int index);
 
-	void			MouseState( int *x, int *y, int *button, bool *down );
+		void			MouseState(int *x, int *y, int *button, bool *down);
 
-	int				ButtonState( int key );
-	int				KeyState( int key );
+		int				ButtonState(int key);
+		int				KeyState(int key);
 
-	usercmd_t		GetDirectUsercmd( void );
+		usercmd_t		GetDirectUsercmd(void);
 
-private:
-	void			MakeCurrent( void );
-	void			InitCurrent( void );
+	private:
+		void			MakeCurrent(void);
+		void			InitCurrent(void);
 
-	bool			Inhibited( void );
-	void			AdjustAngles( void );
-	void			KeyMove( void );
-	void			JoystickMove( void );
-	void			MouseMove( void );
-	void			CmdButtons( void );
+		bool			Inhibited(void);
+		void			AdjustAngles(void);
+		void			KeyMove(void);
+		void			JoystickMove(void);
+		void			MouseMove(void);
+		void			CmdButtons(void);
 
-	void			Mouse( void );
-	void			Keyboard( void );
-	void			Joystick( void );
+		void			Mouse(void);
+		void			Keyboard(void);
+		void			Joystick(void);
 
-	void			Key( int keyNum, bool down );
+		void			Key(int keyNum, bool down);
 
-	idVec3			viewangles;
-	int				flags;
-	int				impulse;
+		idVec3			viewangles;
+		int				flags;
+		int				impulse;
 
-	buttonState_t	toggled_crouch;
-	buttonState_t	toggled_run;
-	buttonState_t	toggled_zoom;
+		buttonState_t	toggled_crouch;
+		buttonState_t	toggled_run;
+		buttonState_t	toggled_zoom;
 
-	int				buttonState[UB_MAX_BUTTONS];
-	bool			keyState[K_LAST_KEY];
+		int				buttonState[UB_MAX_BUTTONS];
+		bool			keyState[K_LAST_KEY];
 
-	int				inhibitCommands;	// true when in console or menu locally
-	int				lastCommandTime;
+		int				inhibitCommands;	// true when in console or menu locally
+		int				lastCommandTime;
 
-	bool			initialized;
+		bool			initialized;
 
-	usercmd_t		cmd;		// the current cmd being built
-	usercmd_t		buffered[MAX_BUFFERED_USERCMD];
+		usercmd_t		cmd;		// the current cmd being built
+		usercmd_t		buffered[MAX_BUFFERED_USERCMD];
 
-	int				continuousMouseX, continuousMouseY;	// for gui event generatioin, never zerod
-	int				mouseButton;						// for gui event generatioin
-	bool			mouseDown;
+		int				continuousMouseX, continuousMouseY;	// for gui event generatioin, never zerod
+		int				mouseButton;						// for gui event generatioin
+		bool			mouseDown;
 
-	int				mouseDx, mouseDy;	// added to by mouse events
-	int				joystickAxis[MAX_JOYSTICK_AXIS];	// set by joystick events
+		int				mouseDx, mouseDy;	// added to by mouse events
+		int				joystickAxis[MAX_JOYSTICK_AXIS];	// set by joystick events
 
-	static idCVar	in_yawSpeed;
-	static idCVar	in_pitchSpeed;
-	static idCVar	in_angleSpeedKey;
-	static idCVar	in_freeLook;
-	static idCVar	in_alwaysRun;
-	static idCVar	in_toggleRun;
-	static idCVar	in_toggleCrouch;
-	static idCVar	in_toggleZoom;
-	static idCVar	sensitivity;
-	static idCVar	m_pitch;
-	static idCVar	m_yaw;
-	static idCVar	m_strafeScale;
-	static idCVar	m_smooth;
-	static idCVar	m_strafeSmooth;
-	static idCVar	m_showMouseRate;
+		static idCVar	in_yawSpeed;
+		static idCVar	in_pitchSpeed;
+		static idCVar	in_angleSpeedKey;
+		static idCVar	in_freeLook;
+		static idCVar	in_alwaysRun;
+		static idCVar	in_toggleRun;
+		static idCVar	in_toggleCrouch;
+		static idCVar	in_toggleZoom;
+		static idCVar	sensitivity;
+		static idCVar	m_pitch;
+		static idCVar	m_yaw;
+		static idCVar	m_strafeScale;
+		static idCVar	m_smooth;
+		static idCVar	m_strafeSmooth;
+		static idCVar	m_showMouseRate;
 };
 
-idCVar idUsercmdGenLocal::in_yawSpeed( "in_yawspeed", "140", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "yaw change speed when holding down _left or _right button" );
-idCVar idUsercmdGenLocal::in_pitchSpeed( "in_pitchspeed", "140", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "pitch change speed when holding down look _lookUp or _lookDown button" );
-idCVar idUsercmdGenLocal::in_angleSpeedKey( "in_anglespeedkey", "1.5", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "angle change scale when holding down _speed button" );
-idCVar idUsercmdGenLocal::in_freeLook( "in_freeLook", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "look around with mouse (reverse _mlook button)" );
-idCVar idUsercmdGenLocal::in_alwaysRun( "in_alwaysRun", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "always run (reverse _speed button) - only in MP" );
-idCVar idUsercmdGenLocal::in_toggleRun( "in_toggleRun", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _speed button toggles run on/off - only in MP" );
-idCVar idUsercmdGenLocal::in_toggleCrouch( "in_toggleCrouch", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _movedown button toggles player crouching/standing" );
-idCVar idUsercmdGenLocal::in_toggleZoom( "in_toggleZoom", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _zoom button toggles zoom on/off" );
-idCVar idUsercmdGenLocal::sensitivity( "sensitivity", "5", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse view sensitivity" );
-idCVar idUsercmdGenLocal::m_pitch( "m_pitch", "0.022", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse pitch scale" );
-idCVar idUsercmdGenLocal::m_yaw( "m_yaw", "0.022", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse yaw scale" );
-idCVar idUsercmdGenLocal::m_strafeScale( "m_strafeScale", "6.25", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse strafe movement scale" );
-idCVar idUsercmdGenLocal::m_smooth( "m_smooth", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "number of samples blended for mouse viewing", 1, 8, idCmdSystem::ArgCompletion_Integer<1,8> );
-idCVar idUsercmdGenLocal::m_strafeSmooth( "m_strafeSmooth", "4", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "number of samples blended for mouse moving", 1, 8, idCmdSystem::ArgCompletion_Integer<1,8> );
-idCVar idUsercmdGenLocal::m_showMouseRate( "m_showMouseRate", "0", CVAR_SYSTEM | CVAR_BOOL, "shows mouse movement" );
+idCVar idUsercmdGenLocal::in_yawSpeed("in_yawspeed", "140", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "yaw change speed when holding down _left or _right button");
+idCVar idUsercmdGenLocal::in_pitchSpeed("in_pitchspeed", "140", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "pitch change speed when holding down look _lookUp or _lookDown button");
+idCVar idUsercmdGenLocal::in_angleSpeedKey("in_anglespeedkey", "1.5", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "angle change scale when holding down _speed button");
+idCVar idUsercmdGenLocal::in_freeLook("in_freeLook", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "look around with mouse (reverse _mlook button)");
+idCVar idUsercmdGenLocal::in_alwaysRun("in_alwaysRun", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "always run (reverse _speed button) - only in MP");
+idCVar idUsercmdGenLocal::in_toggleRun("in_toggleRun", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _speed button toggles run on/off - only in MP");
+idCVar idUsercmdGenLocal::in_toggleCrouch("in_toggleCrouch", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _movedown button toggles player crouching/standing");
+idCVar idUsercmdGenLocal::in_toggleZoom("in_toggleZoom", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _zoom button toggles zoom on/off");
+idCVar idUsercmdGenLocal::sensitivity("sensitivity", "5", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse view sensitivity");
+idCVar idUsercmdGenLocal::m_pitch("m_pitch", "0.022", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse pitch scale");
+idCVar idUsercmdGenLocal::m_yaw("m_yaw", "0.022", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse yaw scale");
+idCVar idUsercmdGenLocal::m_strafeScale("m_strafeScale", "6.25", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse strafe movement scale");
+idCVar idUsercmdGenLocal::m_smooth("m_smooth", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "number of samples blended for mouse viewing", 1, 8, idCmdSystem::ArgCompletion_Integer<1,8>);
+idCVar idUsercmdGenLocal::m_strafeSmooth("m_strafeSmooth", "4", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "number of samples blended for mouse moving", 1, 8, idCmdSystem::ArgCompletion_Integer<1,8>);
+idCVar idUsercmdGenLocal::m_showMouseRate("m_showMouseRate", "0", CVAR_SYSTEM | CVAR_BOOL, "shows mouse movement");
 
 static idUsercmdGenLocal localUsercmdGen;
 idUsercmdGen	*usercmdGen = &localUsercmdGen;
@@ -434,7 +440,8 @@ idUsercmdGen	*usercmdGen = &localUsercmdGen;
 idUsercmdGenLocal::idUsercmdGenLocal
 ================
 */
-idUsercmdGenLocal::idUsercmdGenLocal( void ) {
+idUsercmdGenLocal::idUsercmdGenLocal(void)
+{
 	lastCommandTime = 0;
 	initialized = false;
 
@@ -455,15 +462,14 @@ idUsercmdGenLocal::idUsercmdGenLocal( void ) {
 idUsercmdGenLocal::InhibitUsercmd
 ================
 */
-void idUsercmdGenLocal::InhibitUsercmd( inhibit_t subsystem, bool inhibit ) {
-	if ( inhibit ) {
+void idUsercmdGenLocal::InhibitUsercmd(inhibit_t subsystem, bool inhibit)
+{
+	if (inhibit) {
 		inhibitCommands |= 1 << subsystem;
 	} else {
-		inhibitCommands &= ( 0xffffffff ^ ( 1 << subsystem ) );
+		inhibitCommands &= (0xffffffff ^(1 << subsystem));
 	}
 }
-
-extern "C" int Android_GetButton( int key );
 
 /*
 ===============
@@ -472,12 +478,13 @@ idUsercmdGenLocal::ButtonState
 Returns (the fraction of the frame) that the key was down
 ===============
 */
-int	idUsercmdGenLocal::ButtonState( int key ) {
-	if ( key<0 || key>=UB_MAX_BUTTONS ) {
+int	idUsercmdGenLocal::ButtonState(int key)
+{
+	if (key<0 || key>=UB_MAX_BUTTONS) {
 		return -1;
 	}
 
-	return ( (buttonState[key] > 0) || Android_GetButton(key) ) ? 1 : 0;
+	return (buttonState[key] > 0) ? 1 : 0;
 }
 
 /*
@@ -488,11 +495,13 @@ Returns (the fraction of the frame) that the key was down
 bk20060111
 ===============
 */
-int	idUsercmdGenLocal::KeyState( int key ) {
-	if ( key<0 || key>=K_LAST_KEY ) {
+int	idUsercmdGenLocal::KeyState(int key)
+{
+	if (key<0 || key>=K_LAST_KEY) {
 		return -1;
 	}
-	return ( keyState[key] ) ? 1 : 0;
+
+	return (keyState[key]) ? 1 : 0;
 }
 
 
@@ -504,7 +513,8 @@ int	idUsercmdGenLocal::KeyState( int key ) {
 idUsercmdGenLocal::GetNumUserCommands
 ================
 */
-int idUsercmdGenLocal::GetNumUserCommands( void ) {
+int idUsercmdGenLocal::GetNumUserCommands(void)
+{
 	return NUM_USER_COMMANDS;
 }
 
@@ -513,10 +523,12 @@ int idUsercmdGenLocal::GetNumUserCommands( void ) {
 idUsercmdGenLocal::GetNumUserCommands
 ================
 */
-const char *idUsercmdGenLocal::GetUserCommandName( int index ) {
+const char *idUsercmdGenLocal::GetUserCommandName(int index)
+{
 	if (index >= 0 && index < NUM_USER_COMMANDS) {
 		return userCmdStrings[index].string;
 	}
+
 	return "";
 }
 
@@ -527,8 +539,9 @@ idUsercmdGenLocal::Inhibited
 is user cmd generation inhibited
 ================
 */
-bool idUsercmdGenLocal::Inhibited( void ) {
-	return ( inhibitCommands != 0);
+bool idUsercmdGenLocal::Inhibited(void)
+{
+	return (inhibitCommands != 0);
 }
 
 /*
@@ -538,22 +551,23 @@ idUsercmdGenLocal::AdjustAngles
 Moves the local angle positions
 ================
 */
-void idUsercmdGenLocal::AdjustAngles( void ) {
+void idUsercmdGenLocal::AdjustAngles(void)
+{
 	float	speed;
 
-	if ( toggled_run.on ^ ( in_alwaysRun.GetBool() && idAsyncNetwork::IsActive() ) ) {
+	if (toggled_run.on ^(in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())) {
 		speed = idMath::M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat();
 	} else {
 		speed = idMath::M_MS2SEC * USERCMD_MSEC;
 	}
 
-	if ( !ButtonState( UB_STRAFE ) ) {
-		viewangles[YAW] -= speed * in_yawSpeed.GetFloat() * ButtonState( UB_RIGHT );
-		viewangles[YAW] += speed * in_yawSpeed.GetFloat() * ButtonState( UB_LEFT );
+	if (!ButtonState(UB_STRAFE)) {
+		viewangles[YAW] -= speed * in_yawSpeed.GetFloat() * ButtonState(UB_RIGHT);
+		viewangles[YAW] += speed * in_yawSpeed.GetFloat() * ButtonState(UB_LEFT);
 	}
 
-	viewangles[PITCH] -= speed * in_pitchSpeed.GetFloat() * ButtonState( UB_LOOKUP );
-	viewangles[PITCH] += speed * in_pitchSpeed.GetFloat() * ButtonState( UB_LOOKDOWN );
+	viewangles[PITCH] -= speed * in_pitchSpeed.GetFloat() * ButtonState(UB_LOOKUP);
+	viewangles[PITCH] += speed * in_pitchSpeed.GetFloat() * ButtonState(UB_LOOKDOWN);
 }
 
 /*
@@ -563,30 +577,45 @@ idUsercmdGenLocal::KeyMove
 Sets the usercmd_t based on key states
 ================
 */
-void idUsercmdGenLocal::KeyMove( void ) {
+//n0n3m4
+
+extern float analogx;
+extern float analogy;
+extern int analogenabled;
+
+void idUsercmdGenLocal::KeyMove(void)
+{
 	int		forward, side, up;
 
 	forward = 0;
 	side = 0;
 	up = 0;
-/*	if ( ButtonState( UB_STRAFE ) ) {
-		side += KEY_MOVESPEED * ButtonState( UB_RIGHT );
-		side -= KEY_MOVESPEED * ButtonState( UB_LEFT );
+
+	if (ButtonState(UB_STRAFE)) {
+		side += KEY_MOVESPEED * ButtonState(UB_RIGHT);
+		side -= KEY_MOVESPEED * ButtonState(UB_LEFT);
 	}
 
-	side += KEY_MOVESPEED * ButtonState( UB_MOVERIGHT );
-	side -= KEY_MOVESPEED * ButtonState( UB_MOVELEFT );
-*/
+	side += KEY_MOVESPEED * ButtonState(UB_MOVERIGHT);
+	side -= KEY_MOVESPEED * ButtonState(UB_MOVELEFT);
+
 	up -= KEY_MOVESPEED * toggled_crouch.on;
-	up += KEY_MOVESPEED * ButtonState( UB_UP );
+	up += KEY_MOVESPEED * ButtonState(UB_UP);
 
-/*	forward += KEY_MOVESPEED * ButtonState( UB_FORWARD );
-	forward -= KEY_MOVESPEED * ButtonState( UB_BACK );
+	forward += KEY_MOVESPEED * ButtonState(UB_FORWARD);
+	forward -= KEY_MOVESPEED * ButtonState(UB_BACK);
 
-	cmd.forwardmove = idMath::ClampChar( forward );
-	cmd.rightmove = idMath::ClampChar( side );
- */
-	cmd.upmove = idMath::ClampChar( up );
+	//ANALOG
+	if (analogenabled)
+	{
+	side = (int)(KEY_MOVESPEED * analogx);
+	forward = (int)(KEY_MOVESPEED * analogy);
+	}
+	//END
+
+	cmd.forwardmove = idMath::ClampChar(forward);
+	cmd.rightmove = idMath::ClampChar(side);
+	cmd.upmove = idMath::ClampChar(up);
 }
 
 /*
@@ -594,7 +623,8 @@ void idUsercmdGenLocal::KeyMove( void ) {
 idUsercmdGenLocal::MouseMove
 =================
 */
-void idUsercmdGenLocal::MouseMove( void ) {
+void idUsercmdGenLocal::MouseMove(void)
+{
 	float		mx, my, strafeMx, strafeMy;
 	static int	history[8][2];
 	static int	historyCounter;
@@ -605,81 +635,92 @@ void idUsercmdGenLocal::MouseMove( void ) {
 
 	// allow mouse movement to be smoothed together
 	int smooth = m_smooth.GetInteger();
-	if ( smooth < 1 ) {
+
+	if (smooth < 1) {
 		smooth = 1;
 	}
-	if ( smooth > 8 ) {
+
+	if (smooth > 8) {
 		smooth = 8;
 	}
+
 	mx = 0;
 	my = 0;
-	for ( i = 0 ; i < smooth ; i++ ) {
-		mx += history[ ( historyCounter - i + 8 ) & 7 ][0];
-		my += history[ ( historyCounter - i + 8 ) & 7 ][1];
+
+	for (i = 0 ; i < smooth ; i++) {
+		mx += history[(historyCounter - i + 8) & 7 ][0];
+		my += history[(historyCounter - i + 8) & 7 ][1];
 	}
+
 	mx /= smooth;
 	my /= smooth;
 
 	// use a larger smoothing for strafing
 	smooth = m_strafeSmooth.GetInteger();
-	if ( smooth < 1 ) {
+
+	if (smooth < 1) {
 		smooth = 1;
 	}
-	if ( smooth > 8 ) {
+
+	if (smooth > 8) {
 		smooth = 8;
 	}
+
 	strafeMx = 0;
 	strafeMy = 0;
-	for ( i = 0 ; i < smooth ; i++ ) {
-		strafeMx += history[ ( historyCounter - i + 8 ) & 7 ][0];
-		strafeMy += history[ ( historyCounter - i + 8 ) & 7 ][1];
+
+	for (i = 0 ; i < smooth ; i++) {
+		strafeMx += history[(historyCounter - i + 8) & 7 ][0];
+		strafeMy += history[(historyCounter - i + 8) & 7 ][1];
 	}
+
 	strafeMx /= smooth;
 	strafeMy /= smooth;
 
 	historyCounter++;
 
-	if ( idMath::Fabs( mx ) > 1000 || idMath::Fabs( my ) > 1000 ) {
-		Sys_DebugPrintf( "idUsercmdGenLocal::MouseMove: Ignoring ridiculous mouse delta.\n" );
+	if (idMath::Fabs(mx) > 1000 || idMath::Fabs(my) > 1000) {
+		Sys_DebugPrintf("idUsercmdGenLocal::MouseMove: Ignoring ridiculous mouse delta.\n");
 		mx = my = 0;
 	}
 
 	mx *= sensitivity.GetFloat();
 	my *= sensitivity.GetFloat();
 
-	if ( m_showMouseRate.GetBool() ) {
-		Sys_DebugPrintf( "[%3i %3i  = %5.1f %5.1f = %5.1f %5.1f] ", mouseDx, mouseDy, mx, my, strafeMx, strafeMy );
+	if (m_showMouseRate.GetBool()) {
+		Sys_DebugPrintf("[%3i %3i  = %5.1f %5.1f = %5.1f %5.1f] ", mouseDx, mouseDy, mx, my, strafeMx, strafeMy);
 	}
 
 	mouseDx = 0;
 	mouseDy = 0;
 
-	if ( !strafeMx && !strafeMy ) {
+	if (!strafeMx && !strafeMy) {
 		return;
 	}
 
-	if ( ButtonState( UB_STRAFE ) || !( cmd.buttons & BUTTON_MLOOK ) ) {
+	if (ButtonState(UB_STRAFE) || !(cmd.buttons & BUTTON_MLOOK)) {
 		// add mouse X/Y movement to cmd
 		strafeMx *= m_strafeScale.GetFloat();
 		strafeMy *= m_strafeScale.GetFloat();
 		// clamp as a vector, instead of separate floats
-		float len = sqrt( strafeMx * strafeMx + strafeMy * strafeMy );
-		if ( len > 127 ) {
+		float len = sqrt(strafeMx * strafeMx + strafeMy * strafeMy);
+
+		if (len > 127) {
 			strafeMx = strafeMx * 127 / len;
 			strafeMy = strafeMy * 127 / len;
 		}
 	}
 
-	if ( !ButtonState( UB_STRAFE ) ) {
+	if (!ButtonState(UB_STRAFE)) {
 		viewangles[YAW] -= m_yaw.GetFloat() * mx;
 	} else {
-		cmd.rightmove = idMath::ClampChar( (int)(cmd.rightmove + strafeMx) );
+		cmd.rightmove = idMath::ClampChar((int)(cmd.rightmove + strafeMx));
 	}
 
-	if ( !ButtonState( UB_STRAFE ) && ( cmd.buttons & BUTTON_MLOOK ) ) {
+	if (!ButtonState(UB_STRAFE) && (cmd.buttons & BUTTON_MLOOK)) {
 		viewangles[PITCH] += m_pitch.GetFloat() * my;
 	} else {
-		cmd.forwardmove = idMath::ClampChar( (int)(cmd.forwardmove - strafeMy) );
+		cmd.forwardmove = idMath::ClampChar((int)(cmd.forwardmove - strafeMy));
 	}
 }
 
@@ -688,24 +729,25 @@ void idUsercmdGenLocal::MouseMove( void ) {
 idUsercmdGenLocal::JoystickMove
 =================
 */
-void idUsercmdGenLocal::JoystickMove( void ) {
+void idUsercmdGenLocal::JoystickMove(void)
+{
 	float	anglespeed;
 
-	if ( toggled_run.on ^ ( in_alwaysRun.GetBool() && idAsyncNetwork::IsActive() ) ) {
+	if (toggled_run.on ^(in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())) {
 		anglespeed = idMath::M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat();
 	} else {
 		anglespeed = idMath::M_MS2SEC * USERCMD_MSEC;
 	}
 
-	if ( !ButtonState( UB_STRAFE ) ) {
+	if (!ButtonState(UB_STRAFE)) {
 		viewangles[YAW] += anglespeed * in_yawSpeed.GetFloat() * joystickAxis[AXIS_SIDE];
 		viewangles[PITCH] += anglespeed * in_pitchSpeed.GetFloat() * joystickAxis[AXIS_FORWARD];
 	} else {
-		cmd.rightmove = idMath::ClampChar( cmd.rightmove + joystickAxis[AXIS_SIDE] );
-		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + joystickAxis[AXIS_FORWARD] );
+		cmd.rightmove = idMath::ClampChar(cmd.rightmove + joystickAxis[AXIS_SIDE]);
+		cmd.forwardmove = idMath::ClampChar(cmd.forwardmove + joystickAxis[AXIS_FORWARD]);
 	}
 
-	cmd.upmove = idMath::ClampChar( cmd.upmove + joystickAxis[AXIS_UP] );
+	cmd.upmove = idMath::ClampChar(cmd.upmove + joystickAxis[AXIS_UP]);
 }
 
 /*
@@ -713,65 +755,51 @@ void idUsercmdGenLocal::JoystickMove( void ) {
 idUsercmdGenLocal::CmdButtons
 ==============
 */
-void idUsercmdGenLocal::CmdButtons( void ) {
+void idUsercmdGenLocal::CmdButtons(void)
+{
 	int		i;
 
 	cmd.buttons = 0;
 
-    // Koz begin cancel teleport if fire button pressed.
-    static int teleportCanceled = 0;
-    bool performAttack = true;
-
 	// figure button bits
 	for (i = 0 ; i <= 7 ; i++) {
-		if ( ButtonState( (usercmdButton_t)( UB_BUTTON0 + i ) ) ) {
+		if (ButtonState((usercmdButton_t)(UB_BUTTON0 + i))) {
 			cmd.buttons |= 1 << i;
 		}
 	}
 
 	// check the attack button
-	if ( ButtonState( UB_ATTACK ) ) {
-        performAttack = game->CMDButtonsAttackCall(teleportCanceled);
-        if(performAttack)
-	        cmd.buttons |= BUTTON_ATTACK;
+	if (ButtonState(UB_ATTACK)) {
+		cmd.buttons |= BUTTON_ATTACK;
 	}
 
-    teleportCanceled &= ButtonState( UB_ATTACK );
-
 	// check the run button
-	if ( toggled_run.on ^ ( in_alwaysRun.GetBool() && idAsyncNetwork::IsActive() ) ) {
+	if (toggled_run.on ^(in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())) {
 		cmd.buttons |= BUTTON_RUN;
 	}
 
 	// check the zoom button
-	if ( toggled_zoom.on ) {
+	if (toggled_zoom.on) {
 		cmd.buttons |= BUTTON_ZOOM;
 	}
 
 	// check the scoreboard button
-	if ( ButtonState( UB_SHOWSCORES ) || ButtonState( UB_IMPULSE19 ) ) {
+	if (ButtonState(UB_SHOWSCORES) || ButtonState(UB_IMPULSE19)) {
 		// the button is toggled in SP mode as well but without effect
 		cmd.buttons |= BUTTON_SCORES;
 	}
 
 	// check the mouse look button
-	if ( ButtonState( UB_MLOOK ) ^ in_freeLook.GetInteger() ) {
+	if (ButtonState(UB_MLOOK) ^ in_freeLook.GetInteger()) {
 		cmd.buttons |= BUTTON_MLOOK;
 	}
 
-	if( ButtonState( UB_UP ) )
-	{
-		cmd.buttons |= BUTTON_JUMP;
+#ifdef _HUMANHEAD
+	// check the alt attack button
+	if (ButtonState(UB_ATTACK_ALT)) {
+		cmd.buttons |= BUTTON_ATTACK_ALT;
 	}
-	if( toggled_crouch.on )
-	{
-		cmd.buttons |= BUTTON_CROUCH;
-	}
-
-	if(game->CMDButtonsPhysicalCrouch())
-	{
-		cmd.buttons |= BUTTON_CROUCH;
-	}
+#endif
 }
 
 /*
@@ -781,11 +809,12 @@ idUsercmdGenLocal::InitCurrent
 inits the current command for this frame
 ================
 */
-void idUsercmdGenLocal::InitCurrent( void ) {
-	memset( &cmd, 0, sizeof( cmd ) );
+void idUsercmdGenLocal::InitCurrent(void)
+{
+	memset(&cmd, 0, sizeof(cmd));
 	cmd.flags = flags;
 	cmd.impulse = impulse;
-	cmd.buttons |= ( in_alwaysRun.GetBool() && idAsyncNetwork::IsActive() ) ? BUTTON_RUN : 0;
+	cmd.buttons |= (in_alwaysRun.GetBool() && idAsyncNetwork::IsActive()) ? BUTTON_RUN : 0;
 	cmd.buttons |= in_freeLook.GetBool() ? BUTTON_MLOOK : 0;
 }
 
@@ -798,19 +827,18 @@ idUsercmdGenLocal::MakeCurrent
 creates the current command for this frame
 ================
 */
-void idUsercmdGenLocal::MakeCurrent( void ) {
-    idVec3 oldAngles = viewangles;
-    static int thirdPersonTime = Sys_Milliseconds();
+void idUsercmdGenLocal::MakeCurrent(void)
+{
+	idVec3		oldAngles;
 	int		i;
-	static float prevYaw = 0;
 
 	oldAngles = viewangles;
 
-	if ( !Inhibited() ) {
+	if (!Inhibited()) {
 		// update toggled key states
-		toggled_crouch.SetKeyState( ButtonState( UB_DOWN ), in_toggleCrouch.GetBool() );
-		toggled_run.SetKeyState( ButtonState( UB_SPEED ), in_toggleRun.GetBool() && idAsyncNetwork::IsActive() );
-		toggled_zoom.SetKeyState( ButtonState( UB_ZOOM ), in_toggleZoom.GetBool() );
+		toggled_crouch.SetKeyState(ButtonState(UB_DOWN), in_toggleCrouch.GetBool());
+		toggled_run.SetKeyState(ButtonState(UB_SPEED), in_toggleRun.GetBool() && idAsyncNetwork::IsActive());
+		toggled_zoom.SetKeyState(ButtonState(UB_ZOOM), in_toggleZoom.GetBool());
 
 		// keyboard angle adjustment
 		AdjustAngles();
@@ -848,53 +876,13 @@ void idUsercmdGenLocal::MakeCurrent( void ) {
 		{
 			viewangles[PITCH] = oldAngles[PITCH] - 90;
 		}
-
-
-#if 0
-		// get basic movement from mouse
-		MouseMove();
-
-		// get basic movement from joystick
-		JoystickMove();
-#endif
-
-		/*float forward,strafe;
-		float hmd_forward,hmd_strafe;
-		float up = 0;
-		float yaw = 0;
-		float pitch = 0;
-		float roll = 0;
-
-		static int previous = 0;
-		int t = Sys_Milliseconds();
-       	int frameTime = t - previous;
-       	previous = t;
-		if(frameTime > 100)
-			frameTime = 100;
-
-		VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
-
-		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_strafe );
-		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_forward);
-		viewangles[YAW] -= prevYaw;
-		viewangles[YAW] += yaw;
-		viewangles[PITCH] = pitch;
-		viewangles[ROLL] = roll;
-		prevYaw = yaw;
-
-		// check to make sure the angles haven't wrapped
-		if ( viewangles[PITCH] - oldAngles[PITCH] > 90 ) {
-			viewangles[PITCH] = oldAngles[PITCH] + 90;
-		} else if ( oldAngles[PITCH] - viewangles[PITCH] > 90 ) {
-			viewangles[PITCH] = oldAngles[PITCH] - 90;
-		}*/
 	} else {
 		mouseDx = 0;
 		mouseDy = 0;
 	}
 
-	for ( i = 0; i < 3; i++ ) {
-		cmd.angles[i] = ANGLE2SHORT( viewangles[i] );  // Koz this sets player body
+	for (i = 0; i < 3; i++) {
+		cmd.angles[i] = ANGLE2SHORT(viewangles[i]);
 	}
 
 	cmd.mx = continuousMouseX;
@@ -902,6 +890,7 @@ void idUsercmdGenLocal::MakeCurrent( void ) {
 
 	flags = cmd.flags;
 	impulse = cmd.impulse;
+
 }
 
 //=====================================================================
@@ -914,12 +903,14 @@ idUsercmdGenLocal::CommandStringUsercmdData
 Returns the button if the command string is used by the async usercmd generator.
 ================
 */
-int	idUsercmdGenLocal::CommandStringUsercmdData( const char *cmdString ) {
-	for ( userCmdString_t *ucs = userCmdStrings ; ucs->string ; ucs++ ) {
-		if ( idStr::Icmp( cmdString, ucs->string ) == 0 ) {
+int	idUsercmdGenLocal::CommandStringUsercmdData(const char *cmdString)
+{
+	for (userCmdString_t *ucs = userCmdStrings ; ucs->string ; ucs++) {
+		if (idStr::Icmp(cmdString, ucs->string) == 0) {
 			return ucs->button;
 		}
 	}
+
 	return UB_NONE;
 }
 
@@ -928,7 +919,8 @@ int	idUsercmdGenLocal::CommandStringUsercmdData( const char *cmdString ) {
 idUsercmdGenLocal::Init
 ================
 */
-void idUsercmdGenLocal::Init( void ) {
+void idUsercmdGenLocal::Init(void)
+{
 	initialized = true;
 }
 
@@ -937,7 +929,8 @@ void idUsercmdGenLocal::Init( void ) {
 idUsercmdGenLocal::InitForNewMap
 ================
 */
-void idUsercmdGenLocal::InitForNewMap( void ) {
+void idUsercmdGenLocal::InitForNewMap(void)
+{
 	flags = 0;
 	impulse = 0;
 
@@ -955,7 +948,8 @@ void idUsercmdGenLocal::InitForNewMap( void ) {
 idUsercmdGenLocal::Shutdown
 ================
 */
-void idUsercmdGenLocal::Shutdown( void ) {
+void idUsercmdGenLocal::Shutdown(void)
+{
 	initialized = false;
 }
 
@@ -964,10 +958,11 @@ void idUsercmdGenLocal::Shutdown( void ) {
 idUsercmdGenLocal::Clear
 ================
 */
-void idUsercmdGenLocal::Clear( void ) {
+void idUsercmdGenLocal::Clear(void)
+{
 	// clears all key states
-	memset( buttonState, 0, sizeof( buttonState ) );
-	memset( keyState, false, sizeof( keyState ) );
+	memset(buttonState, 0, sizeof(buttonState));
+	memset(keyState, false, sizeof(keyState));
 
 	inhibitCommands = false;
 
@@ -981,7 +976,8 @@ void idUsercmdGenLocal::Clear( void ) {
 idUsercmdGenLocal::ClearAngles
 ================
 */
-void idUsercmdGenLocal::ClearAngles( void ) {
+void idUsercmdGenLocal::ClearAngles(void)
+{
 	viewangles.Zero();
 }
 
@@ -992,22 +988,23 @@ idUsercmdGenLocal::TicCmd
 Returns a buffered usercmd
 ================
 */
-usercmd_t idUsercmdGenLocal::TicCmd( int ticNumber ) {
+usercmd_t idUsercmdGenLocal::TicCmd(int ticNumber)
+{
 
 	// the packetClient code can legally ask for com_ticNumber+1, because
 	// it is in the async code and com_ticNumber hasn't been updated yet,
 	// but all other code should never ask for anything > com_ticNumber
-	if ( ticNumber > com_ticNumber+1 ) {
-		common->Error( "idUsercmdGenLocal::TicCmd ticNumber > com_ticNumber" );
+	if (ticNumber > com_ticNumber+1) {
+		common->Error("idUsercmdGenLocal::TicCmd ticNumber > com_ticNumber");
 	}
 
-	if ( ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD ) {
+	if (ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD) {
 		// this can happen when something in the game code hitches badly, allowing the
 		// async code to overflow the buffers
 		//common->Printf( "warning: idUsercmdGenLocal::TicCmd ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD\n" );
 	}
 
-	return buffered[ ticNumber & (MAX_BUFFERED_USERCMD-1) ];
+	return buffered[ ticNumber & (MAX_BUFFERED_USERCMD-1)];
 }
 
 //======================================================================
@@ -1020,30 +1017,33 @@ idUsercmdGenLocal::Key
 Handles async mouse/keyboard button actions
 ===================
 */
-void idUsercmdGenLocal::Key( int keyNum, bool down ) {
+void idUsercmdGenLocal::Key(int keyNum, bool down)
+{
 
 	// Sanity check, sometimes we get double message :(
-	if ( keyState[ keyNum ] == down ) {
+	if (keyState[ keyNum ] == down) {
 		return;
 	}
+
 	keyState[ keyNum ] = down;
 
-	int action = idKeyInput::GetUsercmdAction( keyNum );
+	int action = idKeyInput::GetUsercmdAction(keyNum);
 
-	if ( down ) {
+	if (down) {
 
 		buttonState[ action ]++;
 
-		if ( !Inhibited()  ) {
-			if ( action >= UB_IMPULSE0 && action <= UB_IMPULSE61 ) {
+		if (!Inhibited()) {
+			if (action >= UB_IMPULSE0 && action <= UB_IMPULSE61) {
 				cmd.impulse = action - UB_IMPULSE0;
 				cmd.flags ^= UCF_IMPULSE_SEQUENCE;
 			}
 		}
 	} else {
 		buttonState[ action ]--;
+
 		// we might have one held down across an app active transition
-		if ( buttonState[ action ] < 0 ) {
+		if (buttonState[ action ] < 0) {
 			buttonState[ action ] = 0;
 		}
 	}
@@ -1054,24 +1054,26 @@ void idUsercmdGenLocal::Key( int keyNum, bool down ) {
 idUsercmdGenLocal::Mouse
 ===================
 */
-void idUsercmdGenLocal::Mouse( void ) {
+void idUsercmdGenLocal::Mouse(void)
+{
 	int i, numEvents;
 
 	numEvents = Sys_PollMouseInputEvents();
 
-	if ( numEvents ) {
+	if (numEvents) {
 		//
 		// Study each of the buffer elements and process them.
 		//
-		for( i = 0; i < numEvents; i++ ) {
+		for (i = 0; i < numEvents; i++) {
 			int action, value;
-			if ( Sys_ReturnMouseInputEvent( i, action, value ) ) {
-				if ( action >= M_ACTION1 && action <= M_ACTION8 ) {
-					mouseButton = K_MOUSE1 + ( action - M_ACTION1 );
-					mouseDown = ( value != 0 );
-					Key( mouseButton, mouseDown );
+
+			if (Sys_ReturnMouseInputEvent(i, action, value)) {
+				if (action >= M_ACTION1 && action <= M_ACTION8) {
+					mouseButton = K_MOUSE1 + (action - M_ACTION1);
+					mouseDown = (value != 0);
+					Key(mouseButton, mouseDown);
 				} else {
-					switch ( action ) {
+					switch (action) {
 						case M_DELTAX:
 							mouseDx += value;
 							continuousMouseX += value;
@@ -1082,13 +1084,15 @@ void idUsercmdGenLocal::Mouse( void ) {
 							break;
 						case M_DELTAZ:
 							int key = value < 0 ? K_MWHEELDOWN : K_MWHEELUP;
-							value = abs( value );
-							while( value-- > 0 ) {
-								Key( key, true );
-								Key( key, false );
+							value = abs(value);
+
+							while (value-- > 0) {
+								Key(key, true);
+								Key(key, false);
 								mouseButton = key;
 								mouseDown = true;
 							}
+
 							break;
 					}
 				}
@@ -1104,19 +1108,21 @@ void idUsercmdGenLocal::Mouse( void ) {
 idUsercmdGenLocal::Keyboard
 ===============
 */
-void idUsercmdGenLocal::Keyboard( void ) {
+void idUsercmdGenLocal::Keyboard(void)
+{
 
 	int numEvents = Sys_PollKeyboardInputEvents();
 
-	if ( numEvents ) {
+	if (numEvents) {
 		//
 		// Study each of the buffer elements and process them.
 		//
 		int key;
 		bool state;
-		for( int i = 0; i < numEvents; i++ ) {
-			if (Sys_ReturnKeyboardInputEvent( i, key, state )) {
-				Key ( key, state );
+
+		for (int i = 0; i < numEvents; i++) {
+			if (Sys_ReturnKeyboardInputEvent(i, key, state)) {
+				Key(key, state);
 			}
 		}
 	}
@@ -1129,8 +1135,9 @@ void idUsercmdGenLocal::Keyboard( void ) {
 idUsercmdGenLocal::Joystick
 ===============
 */
-void idUsercmdGenLocal::Joystick( void ) {
-	memset( joystickAxis, 0, sizeof( joystickAxis ) );
+void idUsercmdGenLocal::Joystick(void)
+{
+	memset(joystickAxis, 0, sizeof(joystickAxis));
 }
 
 /*
@@ -1140,9 +1147,10 @@ idUsercmdGenLocal::UsercmdInterrupt
 Called asyncronously
 ================
 */
-void idUsercmdGenLocal::UsercmdInterrupt( void ) {
+void idUsercmdGenLocal::UsercmdInterrupt(void)
+{
 	// dedicated servers won't create usercmds
-	if ( !initialized ) {
+	if (!initialized) {
 		return;
 	}
 
@@ -1172,21 +1180,21 @@ void idUsercmdGenLocal::UsercmdInterrupt( void ) {
 idUsercmdGenLocal::MouseState
 ================
 */
-void idUsercmdGenLocal::MouseState( int *x, int *y, int *button, bool *down ) {
+void idUsercmdGenLocal::MouseState(int *x, int *y, int *button, bool *down)
+{
 	*x = continuousMouseX;
 	*y = continuousMouseY;
 	*button = mouseButton;
 	*down = mouseDown;
 }
 
-extern "C" int Android_GetNextImpulse();
-
 /*
 ================
 idUsercmdGenLocal::GetDirectUsercmd
 ================
 */
-usercmd_t idUsercmdGenLocal::GetDirectUsercmd( void ) {
+usercmd_t idUsercmdGenLocal::GetDirectUsercmd(void)
+{
 
 	// initialize current usercmd
 	InitCurrent();
@@ -1198,18 +1206,7 @@ usercmd_t idUsercmdGenLocal::GetDirectUsercmd( void ) {
 	Keyboard();
 
 	// process the system joystick events
-	//Joystick();
-
-	int imp = Android_GetNextImpulse();
-	if( imp )
-	{
-		if ( !Inhibited()  ) {
-			if ( imp >= UB_IMPULSE0 && imp <= UB_IMPULSE61 ) {
-				cmd.impulse = imp - UB_IMPULSE0;
-				cmd.flags ^= UCF_IMPULSE_SEQUENCE;
-			}
-		}
-	}
+	Joystick();
 
 	// create the usercmd
 	MakeCurrent();

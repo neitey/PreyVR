@@ -27,7 +27,6 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 #include "idlib/precompiled.h"
-#include "framework/Game.h"
 #include "framework/Session.h"
 #include "framework/DeclSkin.h"
 #include "renderer/GuiModel.h"

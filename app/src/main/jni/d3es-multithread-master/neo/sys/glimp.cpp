@@ -232,3 +232,13 @@ void GLimp_WindowActive(bool active)
 
 void GLimp_GrabInput(int flags) {
 }
+
+/*
+================
+Sys_GetVideoRam
+================
+*/
+int Sys_GetVideoRam(void)
+{
+	return 256;
+}

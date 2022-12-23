@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "sys/platform.h"
+#include "idlib/precompiled.h"
 #include "framework/KeyInput.h"
 // included for image uploading for player stat graph
 #include "idlib/precompiled.h"

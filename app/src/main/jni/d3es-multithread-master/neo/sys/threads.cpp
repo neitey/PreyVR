@@ -30,6 +30,8 @@ If you have questions concerning this license or the applicable additional terms
 #include <SDL_mutex.h>
 #include <SDL_thread.h>
 #include <SDL_timer.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "idlib/precompiled.h"
 #include "framework/Common.h"
@@ -43,6 +45,79 @@ static bool			waiting[MAX_TRIGGER_EVENTS] = { };
 
 static xthreadInfo	*thread[MAX_THREADS] = { };
 static size_t		thread_count = 0;
+
+
+/*
+=========================================================
+Async Thread
+=========================================================
+*/
+
+xthreadInfo asyncThread;
+
+/*
+=================
+Sys_AsyncThread
+=================
+*/
+void *Sys_AsyncThread(void *p)
+{
+	int now;
+	int start, end;
+	int ticked, to_ticked;
+
+#if defined(__ANDROID__)
+	xthreadInfo *threadInfo = static_cast<xthreadInfo *>(p);
+	assert(threadInfo);
+#endif
+
+	start = Sys_Milliseconds();
+	ticked = start >> 4;
+
+	while (1) {
+		start = Sys_Milliseconds();
+		to_ticked = start >> 4;
+
+		while (ticked < to_ticked) {
+			common->Async();
+			ticked++;
+			Sys_TriggerEvent(TRIGGER_EVENT_ONE);
+		}
+
+		// sleep
+		end = Sys_Milliseconds() - start;
+		if (end < 16) {
+			usleep(16 - end);
+		}
+
+		// thread exit
+#if defined(__ANDROID__)
+		if (threadInfo->threadCancel) {
+			break;
+		}
+#else
+		pthread_testcancel();
+#endif
+	}
+
+	return NULL;
+}
+
+/*
+=================
+Posix_StartAsyncThread
+=================
+*/
+void Posix_StartAsyncThread()
+{
+	if (asyncThread.threadHandle == 0) {
+		Sys_CreateThread(reinterpret_cast<xthread_t>(Sys_AsyncThread), &asyncThread, THREAD_NORMAL, asyncThread, "Async", g_threads, &g_thread_count);
+	} else {
+		common->Printf("Async thread already running\n");
+	}
+
+	common->Printf("Async thread started\n");
+}
 
 /*
 ==============
@@ -96,6 +171,8 @@ void Sys_InitThreads() {
 		thread[i] = NULL;
 
 	thread_count = 0;
+
+	Posix_StartAsyncThread();
 }
 
 /*
@@ -162,7 +239,7 @@ void Sys_LeaveCriticalSection(int index) {
 wait and trigger events
 we use a single lock to manipulate the conditions, CRITICAL_SECTION_SYS
 
-the semantics match the win32 version. signals raised while no one is waiting stay raised until a wait happens (which then does a simple pass-through)
+the semantics match the win32 version. signals raised while no one is waiting sta   y raised until a wait happens (which then does a simple pass-through)
 
 NOTE: we use the same mutex for all the events. I don't think this would become much of a problem
 cond_wait unlocks atomically with setting the wait condition, and locks it back before exiting the function
@@ -215,6 +292,46 @@ void Sys_TriggerEvent(int index) {
 	Sys_LeaveCriticalSection(CRITICAL_SECTION_SYS);
 }
 
+// not a hard limit, just what we keep track of for debugging
+#define MAX_THREADS 10
+xthreadInfo *g_threads[MAX_THREADS];
+
+int g_thread_count = 0;
+
+typedef void *(*pthread_function_t)(void *);
+
+/*
+==================
+Sys_CreateThread
+==================
+*/
+void Sys_CreateThread(xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo **threads, int *thread_count)
+{
+	Sys_EnterCriticalSection();
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+
+	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) != 0) {
+		common->Error("ERROR: pthread_attr_setdetachstate %s failed\n", name);
+	}
+
+	if (pthread_create((pthread_t *)&info.threadHandle, &attr,
+	                   reinterpret_cast<void *(*)(void *)>(function), parms) != 0) {
+		common->Error("ERROR: pthread_create %s failed\n", name);
+	}
+
+	pthread_attr_destroy(&attr);
+	info.name = name;
+
+	if (*thread_count < MAX_THREADS) {
+		threads[(*thread_count)++ ] = &info;
+	} else {
+		common->DPrintf("WARNING: MAX_THREADS reached\n");
+	}
+
+	Sys_LeaveCriticalSection();
+}
+
 /*
 ==================
 Sys_CreateThread
@@ -236,7 +353,7 @@ void Sys_CreateThread(xthread_t function, void *parms, xthreadInfo& info, const 
 	}
 
 	info.name = name;
-	info.threadHandle = t;
+	info.threadHandle = reinterpret_cast<intptr_t>(t);
 	info.threadId = SDL_GetThreadID(t);
 
 	if (thread_count < MAX_THREADS)
@@ -255,7 +372,7 @@ Sys_DestroyThread
 void Sys_DestroyThread(xthreadInfo& info) {
 	assert(info.threadHandle);
 
-	SDL_WaitThread(info.threadHandle, NULL);
+	SDL_WaitThread(reinterpret_cast<SDL_Thread *>(info.threadHandle), NULL);
 
 	info.name = NULL;
 	info.threadHandle = NULL;

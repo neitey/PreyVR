@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)/../
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := d3es_game
+LOCAL_MODULE := game
 
 LOCAL_C_INCLUDES :=  \
 $(SDL_INCLUDE_PATHS) \
@@ -158,7 +158,7 @@ src_game = \
 LOCAL_SRC_FILES = $(src_idlib) $(src_game)
 
 LOCAL_SHARED_LIBRARIES := 
-LOCAL_STATIC_LIBRARIES :=
+LOCAL_STATIC_LIBRARIES :=d3es_
 LOCAL_LDLIBS :=
 
 include $(BUILD_SHARED_LIBRARY)

@@ -34,7 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "idlib/containers/StrList.h"
 #include "idlib/containers/LinkList.h"
 #include "idlib/BitMsg.h"
-#include "framework/Game.h"
+#include "Game.h"
 
 #include "gamesys/SaveGame.h"
 #include "physics/Clip.h"

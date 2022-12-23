@@ -7,16 +7,16 @@ As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this r
 Current status of the work (in `Doom3Quest/app/src/main/jni/d3es-multithread-master/neo/`):
 
 * cm - merged
-* framework - TODO
+* framework - merged
 * game - TODO: this will be per game different
 * idlib - merged
 * MayaImport - merged
-* renderer - DO NOT MERGE, backport
-* sound - TODO
-* sys - TODO
+* renderer - kept
+* sound - kept
+* sys - adjusted
 * tools - merged
 * TypeInfo - merged
-* ui - TODO
+* ui - kept
 
 
 # Original README

@@ -177,6 +177,8 @@ void			Sys_Shutdown( void );
 void			Sys_Error( const char *error, ...);
 void			Sys_Quit( void );
 
+bool			Sys_AlreadyRunning(void);
+
 // note that this isn't journaled...
 char *			Sys_GetClipboardData( void );
 void			Sys_SetClipboardData( const char *string );
@@ -225,6 +227,9 @@ void			Sys_FPU_SetDAZ( bool enable );
 
 // returns amount of system ram
 int				Sys_GetSystemRam( void );
+
+// returns amount of video ram
+int				Sys_GetVideoRam(void);
 
 // returns amount of drive space in path
 int				Sys_GetDriveFreeSpace( const char *path );
@@ -296,10 +301,20 @@ ID_TIME_T			Sys_FileTimeStamp( FILE *fp );
 const char *	Sys_TimeStampToStr( ID_TIME_T timeStamp );
 
 bool			Sys_GetPath(sysPath_t type, idStr &path);
+const char 	*Sys_DefaultCDPath(void);
+const char 	*Sys_DefaultBasePath(void);
+const char 	*Sys_DefaultSavePath(void);
+const char 	*Sys_EXEPath(void);
 
 // use fs_debug to verbose Sys_ListFiles
 // returns -1 if directory was not found (the list is cleared)
 int				Sys_ListFiles( const char *directory, const char *extension, idList<class idStr> &list );
+
+// know early if we are performing a fatal error shutdown so the error message doesn't get lost
+void			Sys_SetFatalError(const char *error);
+
+// display perference dialog
+void			Sys_DoPreferences(void);
 
 /*
 ==============================================================
@@ -396,12 +411,26 @@ struct SDL_Thread;
 
 typedef int (*xthread_t)( void * );
 
+typedef enum {
+	THREAD_NORMAL,
+	THREAD_ABOVE_NORMAL,
+	THREAD_HIGHEST
+} xthreadPriority;
+
 typedef struct {
-	const char		*name;
-	SDL_Thread		*threadHandle;
-	unsigned int	threadId;
+	const char 	*name;
+	intptr_t	threadHandle;
+	size_t		threadId;
+#if defined(__ANDROID__)
+	bool		threadCancel;
+#endif
 } xthreadInfo;
 
+const int MAX_THREADS				= 10;
+extern xthreadInfo *g_threads[MAX_THREADS];
+extern int			g_thread_count;
+
+void				Sys_CreateThread(xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count);
 void				Sys_CreateThread( xthread_t function, void *parms, xthreadInfo &info, const char *name );
 void				Sys_DestroyThread( xthreadInfo& info ); // sets threadHandle back to 0
 

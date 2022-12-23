@@ -120,8 +120,7 @@ src_framework = \
 	framework/async/MsgChannel.cpp \
 	framework/async/NetworkSystem.cpp \
 	framework/async/ServerScan.cpp \
-	framework/minizip/ioapi.c \
-	framework/minizip/unzip.cpp \
+	framework/Unzip.cpp \
 
 
 src_cm = \
@@ -152,7 +151,6 @@ src_dmap = \
 	tools/compilers/dmap/ubrush.cpp \
 	tools/compilers/dmap/usurface.cpp \
 	tools/compilers/dmap/optimize_gcc.cpp \
-
 
 
 src_aas = \
@@ -322,6 +320,9 @@ src_core = \
         ${src_ui} \
         ${src_tools} \
         $(src_idlib) \
+        $(src_dmap) \
+        $(src_renderbump) \
+        $(src_roq) \
         $(src_renderer_glsl) \
 		$(src_d3quest)
 

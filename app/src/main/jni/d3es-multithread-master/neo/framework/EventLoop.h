@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __EVENTLOOP_H__
 #define __EVENTLOOP_H__
 
-#include "framework/File.h"
-#include "framework/Session.h"
-#include "sys/sys_public.h"
-
 /*
 ===============================================================================
 
@@ -45,46 +41,47 @@ If you have questions concerning this license or the applicable additional terms
 
 const int MAX_PUSHED_EVENTS =	64;
 
-class idEventLoop {
-public:
-					idEventLoop( void );
-					~idEventLoop( void );
+class idEventLoop
+{
+	public:
+		idEventLoop(void);
+		~idEventLoop(void);
 
-	void			Init( void );
+		void			Init(void);
 
-					// Closes the journal file if needed.
-	void			Shutdown( void );
+		// Closes the journal file if needed.
+		void			Shutdown(void);
 
-					// It is possible to get an event at the beginning of a frame that
-					// has a time stamp lower than the last event from the previous frame.
-	sysEvent_t		GetEvent( void );
+		// It is possible to get an event at the beginning of a frame that
+		// has a time stamp lower than the last event from the previous frame.
+		sysEvent_t		GetEvent(void);
 
-					// Dispatches all pending events and returns the current time.
-	int				RunEventLoop( bool commandExecution = true );
+		// Dispatches all pending events and returns the current time.
+		int				RunEventLoop(bool commandExecution = true);
 
-					// Gets the current time in a way that will be journaled properly,
-					// as opposed to Sys_Milliseconds(), which always reads a real timer.
-	int				Milliseconds( void );
+		// Gets the current time in a way that will be journaled properly,
+		// as opposed to Sys_Milliseconds(), which always reads a real timer.
+		int				Milliseconds(void);
 
-					// Returns the journal level, 1 = record, 2 = play back.
-	int				JournalLevel( void ) const;
+		// Returns the journal level, 1 = record, 2 = play back.
+		int				JournalLevel(void) const;
 
-					// Journal file.
-	idFile *		com_journalFile;
-	idFile *		com_journalDataFile;
+		// Journal file.
+		idFile 		*com_journalFile;
+		idFile 		*com_journalDataFile;
 
-private:
-					// all events will have this subtracted from their time
-	int				initialTimeOffset;
+	private:
+		// all events will have this subtracted from their time
+		int				initialTimeOffset;
 
-	int				com_pushedEventsHead, com_pushedEventsTail;
-	sysEvent_t		com_pushedEvents[MAX_PUSHED_EVENTS];
+		int				com_pushedEventsHead, com_pushedEventsTail;
+		sysEvent_t		com_pushedEvents[MAX_PUSHED_EVENTS];
 
-	static idCVar	com_journal;
+		static idCVar	com_journal;
 
-	sysEvent_t		GetRealEvent( void );
-	void			ProcessEvent( sysEvent_t ev );
-	void			PushEvent( sysEvent_t *event );
+		sysEvent_t		GetRealEvent(void);
+		void			ProcessEvent(sysEvent_t ev);
+		void			PushEvent(sysEvent_t *event);
 };
 
 extern	idEventLoop	*eventLoop;

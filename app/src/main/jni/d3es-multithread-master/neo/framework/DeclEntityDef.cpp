@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,19 +26,18 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "framework/Common.h"
-#include "framework/Game.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "framework/DeclEntityDef.h"
 
 /*
 =================
 idDeclEntityDef::Size
 =================
 */
-size_t idDeclEntityDef::Size( void ) const {
-	return sizeof( idDeclEntityDef ) + dict.Allocated();
+size_t idDeclEntityDef::Size(void) const
+{
+	return sizeof(idDeclEntityDef) + dict.Allocated();
 }
 
 /*
@@ -46,7 +45,8 @@ size_t idDeclEntityDef::Size( void ) const {
 idDeclEntityDef::FreeData
 ================
 */
-void idDeclEntityDef::FreeData( void ) {
+void idDeclEntityDef::FreeData(void)
+{
 	dict.Clear();
 }
 
@@ -55,42 +55,45 @@ void idDeclEntityDef::FreeData( void ) {
 idDeclEntityDef::Parse
 ================
 */
-bool idDeclEntityDef::Parse( const char *text, const int textLength ) {
+bool idDeclEntityDef::Parse(const char *text, const int textLength)
+{
 	idLexer src;
 	idToken	token, token2;
 
-	src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
-	src.SetFlags( DECL_LEXER_FLAGS );
-	src.SkipUntilString( "{" );
+	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
+	src.SetFlags(DECL_LEXER_FLAGS);
+	src.SkipUntilString("{");
 
 	while (1) {
-		if ( !src.ReadToken( &token ) ) {
+		if (!src.ReadToken(&token)) {
 			break;
 		}
 
-		if ( !token.Icmp( "}" ) ) {
+		if (!token.Icmp("}")) {
 			break;
 		}
-		if ( token.type != TT_STRING ) {
-			src.Warning( "Expected quoted string, but found '%s'", token.c_str() );
+
+		if (token.type != TT_STRING) {
+			src.Warning("Expected quoted string, but found '%s'", token.c_str());
 			MakeDefault();
 			return false;
 		}
 
-		if ( !src.ReadToken( &token2 ) ) {
-			src.Warning( "Unexpected end of file" );
+		if (!src.ReadToken(&token2)) {
+			src.Warning("Unexpected end of file");
 			MakeDefault();
 			return false;
 		}
 
-		if ( dict.FindKey( token ) ) {
-			src.Warning( "'%s' already defined", token.c_str() );
+		if (dict.FindKey(token)) {
+			src.Warning("'%s' already defined", token.c_str());
 		}
-		dict.Set( token, token2 );
+
+		dict.Set(token, token2);
 	}
 
 	// we always automatically set a "classname" key to our name
-	dict.Set( "classname", GetName() );
+	dict.Set("classname", GetName());
 
 	// "inherit" keys will cause all values from another entityDef to be copied into this one
 	// if they don't conflict.  We can't have circular recursions, because each entityDef will
@@ -99,33 +102,35 @@ bool idDeclEntityDef::Parse( const char *text, const int textLength ) {
 	// find all of the dicts first, because copying inherited values will modify the dict
 	idList<const idDeclEntityDef *> defList;
 
-	while ( 1 ) {
+	while (1) {
 		const idKeyValue *kv;
-		kv = dict.MatchPrefix( "inherit", NULL );
-		if ( !kv ) {
+		kv = dict.MatchPrefix("inherit", NULL);
+
+		if (!kv) {
 			break;
 		}
 
-		const idDeclEntityDef *copy = static_cast<const idDeclEntityDef *>( declManager->FindType( DECL_ENTITYDEF, kv->GetValue(), false ) );
-		if ( !copy ) {
-			src.Warning( "Unknown entityDef '%s' inherited by '%s'", kv->GetValue().c_str(), GetName() );
+		const idDeclEntityDef *copy = static_cast<const idDeclEntityDef *>(declManager->FindType(DECL_ENTITYDEF, kv->GetValue(), false));
+
+		if (!copy) {
+			src.Warning("Unknown entityDef '%s' inherited by '%s'", kv->GetValue().c_str(), GetName());
 		} else {
-			defList.Append( copy );
+			defList.Append(copy);
 		}
 
 		// delete this key/value pair
-		dict.Delete( kv->GetKey() );
+		dict.Delete(kv->GetKey());
 	}
 
 	// now copy over the inherited key / value pairs
-	for ( int i = 0 ; i < defList.Num() ; i++ ) {
-		dict.SetDefaults( &defList[ i ]->dict );
+	for (int i = 0 ; i < defList.Num() ; i++) {
+		dict.SetDefaults(&defList[ i ]->dict);
 	}
 
 	// precache all referenced media
 	// do this as long as we arent in modview
-	if ( !( com_editors & (EDITOR_RADIANT|EDITOR_AAS) ) ) {
-		game->CacheDictionaryMedia( &dict );
+	if (!(com_editors & (EDITOR_RADIANT|EDITOR_AAS))) {
+		game->CacheDictionaryMedia(&dict);
 	}
 
 	return true;
@@ -136,11 +141,12 @@ bool idDeclEntityDef::Parse( const char *text, const int textLength ) {
 idDeclEntityDef::DefaultDefinition
 ================
 */
-const char *idDeclEntityDef::DefaultDefinition( void ) const {
+const char *idDeclEntityDef::DefaultDefinition(void) const
+{
 	return
-		"{\n"
-	"\t"	"\"DEFAULTED\"\t\"1\"\n"
-		"}";
+	        "{\n"
+	        "\t"	"\"DEFAULTED\"\t\"1\"\n"
+	        "}";
 }
 
 /*
@@ -150,6 +156,7 @@ idDeclEntityDef::Print
 Dumps all key/value pairs, including inherited ones
 ================
 */
-void idDeclEntityDef::Print( void ) const {
+void idDeclEntityDef::Print(void)
+{
 	dict.Print();
 }

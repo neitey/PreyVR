@@ -362,8 +362,30 @@ int Sys_GetDriveFreeSpace( const char *path ) {
 	return 1000 * 1024;
 }
 
+/*
+================
+Sys_AlreadyRunning
+return true if there is a copy of D3 running already
+================
+*/
+bool Sys_AlreadyRunning(void)
+{
+	return false;
+}
 
 // ----------- lots of signal handling stuff ------------
+
+static char fatalError[ 1024 ];
+
+/*
+==================
+Sys_SetFatalError
+==================
+*/
+void Sys_SetFatalError(const char *error)
+{
+	strncpy(fatalError, error, sizeof(fatalError));
+}
 
 static const int   crashSigs[]     = {  SIGILL,   SIGABRT,   SIGFPE,   SIGSEGV };
 static const char* crashSigNames[] = { "SIGILL", "SIGABRT", "SIGFPE", "SIGSEGV" };

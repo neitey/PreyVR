@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,19 +26,18 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "framework/Common.h"
-#include "renderer/ModelManager.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "framework/DeclFX.h"
 
 /*
 =================
 idDeclFX::Size
 =================
 */
-size_t idDeclFX::Size( void ) const {
-	return sizeof( idDeclFX );
+size_t idDeclFX::Size(void) const
+{
+	return sizeof(idDeclFX);
 }
 
 /*
@@ -46,12 +45,14 @@ size_t idDeclFX::Size( void ) const {
 idDeclFX::Print
 ===============
 */
-void idDeclFX::Print( void ) const {
+void idDeclFX::Print(void) const
+{
 	const idDeclFX *list = this;
 
-	common->Printf("%d events\n", list->events.Num() );
-	for( int i = 0; i < list->events.Num(); i++ ) {
-		switch( list->events[i].type ) {
+	common->Printf("%d events\n", list->events.Num());
+
+	for (int i = 0; i < list->events.Num(); i++) {
+		switch (list->events[i].type) {
 			case FX_LIGHT:
 				common->Printf("FX_LIGHT %s\n", list->events[i].data.c_str());
 				break;
@@ -91,8 +92,9 @@ void idDeclFX::Print( void ) const {
 idDeclFX::List
 ===============
 */
-void idDeclFX::List( void ) const {
-	common->Printf("%s, %d stages\n", GetName(), events.Num() );
+void idDeclFX::List(void) const
+{
+	common->Printf("%s, %d stages\n", GetName(), events.Num());
 }
 
 /*
@@ -100,7 +102,8 @@ void idDeclFX::List( void ) const {
 idDeclFX::ParseSingleFXAction
 ================
 */
-void idDeclFX::ParseSingleFXAction( idLexer &src, idFXSingleAction& FXAction ) {
+void idDeclFX::ParseSingleFXAction(idLexer &src, idFXSingleAction &FXAction)
+{
 	idToken token;
 
 	FXAction.type = -1;
@@ -139,15 +142,15 @@ void idDeclFX::ParseSingleFXAction( idLexer &src, idFXSingleAction& FXAction ) {
 	FXAction.soundStarted = false;
 
 	while (1) {
-		if ( !src.ReadToken( &token ) ) {
+		if (!src.ReadToken(&token)) {
 			break;
 		}
 
-		if ( !token.Icmp( "}" ) ) {
+		if (!token.Icmp("}")) {
 			break;
 		}
 
-		if ( !token.Icmp( "shake" ) ) {
+		if (!token.Icmp("shake")) {
 			FXAction.type = FX_SHAKE;
 			FXAction.shakeTime = src.ParseFloat();
 			src.ExpectTokenString(",");
@@ -161,47 +164,47 @@ void idDeclFX::ParseSingleFXAction( idLexer &src, idFXSingleAction& FXAction ) {
 			continue;
 		}
 
-		if ( !token.Icmp( "noshadows" ) ) {
+		if (!token.Icmp("noshadows")) {
 			FXAction.noshadows = true;
 			continue;
 		}
 
-		if ( !token.Icmp( "name" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("name")) {
+			src.ReadToken(&token);
 			FXAction.name = token;
 			continue;
 		}
 
-		if ( !token.Icmp( "fire") ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("fire")) {
+			src.ReadToken(&token);
 			FXAction.fire = token;
 			continue;
 		}
 
-		if ( !token.Icmp( "random" ) ) {
+		if (!token.Icmp("random")) {
 			FXAction.random1 = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			FXAction.random2 = src.ParseFloat();
 			FXAction.delay = 0.0f;		// check random
 			continue;
 		}
 
-		if ( !token.Icmp( "delay" ) ) {
+		if (!token.Icmp("delay")) {
 			FXAction.delay = src.ParseFloat();
 			continue;
 		}
 
-		if ( !token.Icmp( "rotate" ) ) {
+		if (!token.Icmp("rotate")) {
 			FXAction.rotate = src.ParseFloat();
 			continue;
 		}
 
-		if ( !token.Icmp( "duration" ) ) {
+		if (!token.Icmp("duration")) {
 			FXAction.duration = src.ParseFloat();
 			continue;
 		}
 
-		if ( !token.Icmp( "trackorigin" ) ) {
+		if (!token.Icmp("trackorigin")) {
 			FXAction.trackOrigin = src.ParseBool();
 			continue;
 		}
@@ -211,36 +214,36 @@ void idDeclFX::ParseSingleFXAction( idLexer &src, idFXSingleAction& FXAction ) {
 			continue;
 		}
 
-		if ( !token.Icmp( "fadeIn" ) ) {
+		if (!token.Icmp("fadeIn")) {
 			FXAction.fadeInTime = src.ParseFloat();
 			continue;
 		}
 
-		if ( !token.Icmp( "fadeOut" ) ) {
+		if (!token.Icmp("fadeOut")) {
 			FXAction.fadeOutTime = src.ParseFloat();
 			continue;
 		}
 
-		if ( !token.Icmp( "size" ) ) {
+		if (!token.Icmp("size")) {
 			FXAction.size = src.ParseFloat();
 			continue;
 		}
 
-		if ( !token.Icmp( "offset" ) ) {
+		if (!token.Icmp("offset")) {
 			FXAction.offset.x = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			FXAction.offset.y = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			FXAction.offset.z = src.ParseFloat();
 			continue;
 		}
 
-		if ( !token.Icmp( "axis" ) ) {
+		if (!token.Icmp("axis")) {
 			idVec3 v;
 			v.x = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			v.y = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			v.z = src.ParseFloat();
 			v.Normalize();
 			FXAction.axis = v.ToMat3();
@@ -248,159 +251,170 @@ void idDeclFX::ParseSingleFXAction( idLexer &src, idFXSingleAction& FXAction ) {
 			continue;
 		}
 
-		if ( !token.Icmp( "angle" ) ) {
+		if (!token.Icmp("angle")) {
 			idAngles a;
 			a[0] = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			a[1] = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			a[2] = src.ParseFloat();
 			FXAction.axis = a.ToMat3();
 			FXAction.explicitAxis = true;
 			continue;
 		}
 
-		if ( !token.Icmp( "uselight" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("uselight")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
-			for( int i = 0; i < events.Num(); i++ ) {
-				if ( events[i].name.Icmp( FXAction.data ) == 0 ) {
+
+			for (int i = 0; i < events.Num(); i++) {
+				if (events[i].name.Icmp(FXAction.data) == 0) {
 					FXAction.sibling = i;
 					FXAction.lightColor = events[i].lightColor;
 					FXAction.lightRadius = events[i].lightRadius;
 				}
 			}
+
 			FXAction.type = FX_LIGHT;
 
 			// precache the light material
-			declManager->FindMaterial( FXAction.data );
+			declManager->FindMaterial(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "attachlight" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("attachlight")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_ATTACHLIGHT;
 
 			// precache it
-			declManager->FindMaterial( FXAction.data );
+			declManager->FindMaterial(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "attachentity" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("attachentity")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_ATTACHENTITY;
 
 			// precache the model
-			renderModelManager->FindModel( FXAction.data );
+			renderModelManager->FindModel(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "launch" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("launch")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_LAUNCH;
 
 			// precache the entity def
-			declManager->FindType( DECL_ENTITYDEF, FXAction.data );
+			declManager->FindType(DECL_ENTITYDEF, FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "useModel" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("useModel")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
-			for( int i = 0; i < events.Num(); i++ ) {
-				if ( events[i].name.Icmp( FXAction.data ) == 0 ) {
+
+			for (int i = 0; i < events.Num(); i++) {
+				if (events[i].name.Icmp(FXAction.data) == 0) {
 					FXAction.sibling = i;
 				}
 			}
+
 			FXAction.type = FX_MODEL;
 
 			// precache the model
-			renderModelManager->FindModel( FXAction.data );
+			renderModelManager->FindModel(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "light" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("light")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			FXAction.lightColor[0] = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			FXAction.lightColor[1] = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			FXAction.lightColor[2] = src.ParseFloat();
-			src.ExpectTokenString( "," );
+			src.ExpectTokenString(",");
 			FXAction.lightRadius = src.ParseFloat();
 			FXAction.type = FX_LIGHT;
 
 			// precache the light material
-			declManager->FindMaterial( FXAction.data );
+			declManager->FindMaterial(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "model" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("model")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_MODEL;
 
 			// precache it
-			renderModelManager->FindModel( FXAction.data );
+			renderModelManager->FindModel(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "particle" ) ) {	// FIXME: now the same as model
-			src.ReadToken( &token );
+		if (!token.Icmp("particle")) {	// FIXME: now the same as model
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_PARTICLE;
 
 			// precache it
-			renderModelManager->FindModel( FXAction.data );
+			renderModelManager->FindModel(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "decal" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("decal")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_DECAL;
 
 			// precache it
-			declManager->FindMaterial( FXAction.data );
+			declManager->FindMaterial(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "particleTrackVelocity" ) ) {
+		if (!token.Icmp("particleTrackVelocity")) {
 			FXAction.particleTrackVelocity = true;
 			continue;
 		}
 
-		if ( !token.Icmp( "sound" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("sound")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_SOUND;
 
 			// precache it
-			declManager->FindSound( FXAction.data );
+			declManager->FindSound(FXAction.data);
 			continue;
 		}
 
-		if ( !token.Icmp( "ignoreMaster" ) ) {
+		if (!token.Icmp("ignoreMaster")) {
 			FXAction.shakeIgnoreMaster = true;
 			continue;
 		}
 
-		if ( !token.Icmp( "shockwave" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("shockwave")) {
+			src.ReadToken(&token);
 			FXAction.data = token;
 			FXAction.type = FX_SHOCKWAVE;
 
 			// precache the entity def
-			declManager->FindType( DECL_ENTITYDEF, FXAction.data );
+			declManager->FindType(DECL_ENTITYDEF, FXAction.data);
 			continue;
 		}
 
-		src.Warning( "FX File: bad token" );
+#ifdef _HUMANHEAD
+		if (!token.Icmp("useAxis")) {
+			src.SkipRestOfLine();
+			continue;
+		}
+#endif
+
+		src.Warning("FX File: bad token: '%s'", token.c_str());
 		continue;
 	}
 }
@@ -410,43 +424,45 @@ void idDeclFX::ParseSingleFXAction( idLexer &src, idFXSingleAction& FXAction ) {
 idDeclFX::Parse
 ================
 */
-bool idDeclFX::Parse( const char *text, const int textLength ) {
+bool idDeclFX::Parse(const char *text, const int textLength)
+{
 	idLexer src;
 	idToken token;
 
-	src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
-	src.SetFlags( DECL_LEXER_FLAGS );
-	src.SkipUntilString( "{" );
+	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
+	src.SetFlags(DECL_LEXER_FLAGS);
+	src.SkipUntilString("{");
 
 	// scan through, identifying each individual parameter
-	while( 1 ) {
+	while (1) {
 
-		if ( !src.ReadToken( &token ) ) {
+		if (!src.ReadToken(&token)) {
 			break;
 		}
 
-		if ( token == "}" ) {
+		if (token == "}") {
 			break;
 		}
 
-		if ( !token.Icmp( "bindto" ) ) {
-			src.ReadToken( &token );
+		if (!token.Icmp("bindto")) {
+			src.ReadToken(&token);
 			joint = token;
 			continue;
 		}
 
-		if ( !token.Icmp( "{" ) ) {
+		if (!token.Icmp("{")) {
 			idFXSingleAction action;
-			ParseSingleFXAction( src, action );
-			events.Append( action );
+			ParseSingleFXAction(src, action);
+			events.Append(action);
 			continue;
 		}
 	}
 
-	if ( src.HadError() ) {
-		src.Warning( "FX decl '%s' had a parse error", GetName() );
+	if (src.HadError()) {
+		src.Warning("FX decl '%s' had a parse error", GetName());
 		return false;
 	}
+
 	return true;
 }
 
@@ -455,14 +471,15 @@ bool idDeclFX::Parse( const char *text, const int textLength ) {
 idDeclFX::DefaultDefinition
 ===================
 */
-const char *idDeclFX::DefaultDefinition( void ) const {
+const char *idDeclFX::DefaultDefinition(void) const
+{
 	return
-		"{\n"
-	"\t"	"{\n"
-	"\t\t"		"duration\t5\n"
-	"\t\t"		"model\t\t_default\n"
-	"\t"	"}\n"
-		"}";
+	        "{\n"
+	        "\t"	"{\n"
+	        "\t\t"		"duration\t5\n"
+	        "\t\t"		"model\t\t_default\n"
+	        "\t"	"}\n"
+	        "}";
 }
 
 /*
@@ -470,6 +487,7 @@ const char *idDeclFX::DefaultDefinition( void ) const {
 idDeclFX::FreeData
 ===================
 */
-void idDeclFX::FreeData( void ) {
+void idDeclFX::FreeData(void)
+{
 	events.Clear();
 }

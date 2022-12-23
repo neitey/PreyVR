@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,11 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifndef __DECLFX_H__
 #define __DECLFX_H__
-
-#include "idlib/containers/List.h"
-#include "idlib/math/Matrix.h"
-#include "idlib/Str.h"
-#include "framework/DeclManager.h"
 
 /*
 ===============================================================================
@@ -96,23 +91,35 @@ typedef struct {
 	bool					trackOrigin;
 } idFXSingleAction;
 
+#ifdef _HUMANHEAD
+// HUMANHEAD nla
+enum fxAxis { AXIS_CURRENT, AXIS_NORMAL, AXIS_BOUNCE, AXIS_INCOMING, AXIS_CUSTOMLOCAL };
+// HUMANHEAD END
+#endif
+
 //
 // grouped fx structures
 //
-class idDeclFX : public idDecl {
-public:
-	virtual size_t			Size( void ) const;
-	virtual const char *	DefaultDefinition( void ) const;
-	virtual bool			Parse( const char *text, const int textLength );
-	virtual void			FreeData( void );
-	virtual void			Print( void ) const;
-	virtual void			List( void ) const;
+class idDeclFX : public idDecl
+{
+	public:
+		virtual size_t			Size(void) const;
+		virtual const char 	*DefaultDefinition(void) const;
+		virtual bool			Parse(const char *text, const int textLength);
+		virtual void			FreeData(void);
+		virtual void			Print(void) const;
+		virtual void			List(void) const;
 
-	idList<idFXSingleAction>events;
-	idStr					joint;
+		idList<idFXSingleAction>events;
+		idStr					joint;
 
-private:
-	void					ParseSingleFXAction( idLexer &src, idFXSingleAction& FXAction );
+	private:
+		void					ParseSingleFXAction(idLexer &src, idFXSingleAction &FXAction);
+#ifdef _HUMANHEAD
+    // HUMANHEAD nla
+    void	ParseUseAxis(idStr& text, idFXSingleAction& action) const;
+    // HUMANHEAD END
+#endif
 };
 
 #endif /* !__DECLFX_H__ */

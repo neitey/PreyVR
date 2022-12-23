@@ -11,7 +11,6 @@
 #include "Game_local.h"
 #include "physics/Clip.h"
 #include "../sys/sys_public.h"
-#include "../framework/Game.h"
 #include "../framework/Common.h"
 #include "../renderer/tr_local.h"
 #include "../idlib/Lib.h"
