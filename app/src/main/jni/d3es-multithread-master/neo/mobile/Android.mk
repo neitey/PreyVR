@@ -18,6 +18,7 @@ $(SUPPORT_LIBS)/liboggvorbis/include
 
 LOCAL_CPPFLAGS := -DUSE_GLES2
 LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
+LOCAL_CPPFLAGS += -D_HUMANHEAD -DHUMANHEAD -D_PREY
 
 
 LOCAL_CPPFLAGS += -Wno-sign-compare \
@@ -121,6 +122,7 @@ src_framework = \
 	framework/async/NetworkSystem.cpp \
 	framework/async/ServerScan.cpp \
 	framework/Unzip.cpp \
+	framework/declPreyBeam.cpp \
 
 
 src_cm = \
@@ -266,6 +268,7 @@ src_idlib = \
 	idlib/Heap.cpp \
 	idlib/bv/Frustum_gcc.cpp \
     idlib/precompiled.cpp \
+    idlib/math/prey_math.cpp \
 
 
 src_sys_base = \

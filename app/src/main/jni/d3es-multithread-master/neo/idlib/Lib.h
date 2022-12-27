@@ -196,8 +196,8 @@ template<class T> ID_INLINE T	Min(T x, T y)
 #include "math/Extrapolate.h"
 #include "math/Interpolate.h"
 #ifdef _HUMANHEAD
-#include "../humanhead/idlib/math/prey_interpolate.h"		// HUMANHEAD pdm
-#include "../humanhead/idlib/math/prey_math.h"				// HUMANHEAD pdm
+#include "idlib/math/prey_interpolate.h"		// HUMANHEAD pdm
+#include "idlib/math/prey_math.h"				// HUMANHEAD pdm
 #endif
 #include "math/Curve.h"
 #include "math/Ode.h"
@@ -245,7 +245,7 @@ template<class T> ID_INLINE T	Min(T x, T y)
 
 #ifdef _HUMANHEAD
 // HUMANHEAD pdm: idlib additions
-#include "../humanhead/idlib/containers/PreyStack.h"
+#include "idlib/containers/PreyStack.h"
 // HUMANHEAD END
 #endif
 

@@ -51,6 +51,8 @@ class idRenderModel;
 #define PROC_FILE_EXT				"proc"
 #define	PROC_FILE_ID				"mapProcFile003"
 
+#define MAX_BEAM_NODES                         32
+
 // shader parms
 const int MAX_GLOBAL_SHADER_PARMS	= 12;
 

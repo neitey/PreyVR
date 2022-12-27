@@ -186,7 +186,7 @@ public:
 	virtual allowReply_t		ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] ) = 0;
 
 	// Connects a client.
-	virtual void				ServerClientConnect( int clientNum, const char *guid ) = 0;
+	virtual void				ServerClientConnect( int clientNum, const char *guid = 0 ) = 0;
 
 	// Spawns the player entity to be used by the client.
 	virtual void				ServerClientBegin( int clientNum ) = 0;
@@ -216,13 +216,13 @@ public:
 	virtual void				ClientProcessReliableMessage( int clientNum, const idBitMsg &msg ) = 0;
 
 	// Runs prediction on entities at the client.
-	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame ) = 0;
+	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame = false ) = 0;
 
 	// Used to manage divergent time-lines
 	virtual void				SelectTimeGroup( int timeGroup ) = 0;
 	virtual int					GetTimeGroupTime( int timeGroup ) = 0;
 
-	virtual void				GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] ) = 0;
+	virtual void				GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] = 0 ) = 0;
 
 	// Returns a summary of stats for a given client
 	virtual void				GetClientStats( int clientNum, char *data, const int len ) = 0;
