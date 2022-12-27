@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,107 +28,108 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_BEARSHOOT_WINDOW_H__
 #define __GAME_BEARSHOOT_WINDOW_H__
 
-#include "ui/Window.h"
-
 class idGameBearShootWindow;
 
-class BSEntity {
-public:
-	const idMaterial *		material;
-	idStr					materialName;
-	float					width, height;
-	bool					visible;
+class BSEntity
+{
+	public:
+		const idMaterial 		*material;
+		idStr					materialName;
+		float					width, height;
+		bool					visible;
 
-	idVec4					entColor;
-	idVec2					position;
-	float					rotation;
-	float					rotationSpeed;
-	idVec2					velocity;
+		idVec4					entColor;
+		idVec2					position;
+		float					rotation;
+		float					rotationSpeed;
+		idVec2					velocity;
 
-	bool					fadeIn;
-	bool					fadeOut;
+		bool					fadeIn;
+		bool					fadeOut;
 
-	idGameBearShootWindow *	game;
+		idGameBearShootWindow 	*game;
 
-public:
-						BSEntity(idGameBearShootWindow* _game);
-	virtual				~BSEntity();
+	public:
+		BSEntity(idGameBearShootWindow *_game);
+		virtual				~BSEntity();
 
-	virtual void		WriteToSaveGame( idFile *savefile );
-	virtual void		ReadFromSaveGame( idFile *savefile, idGameBearShootWindow* _game );
+		virtual void		WriteToSaveGame(idFile *savefile);
+		virtual void		ReadFromSaveGame(idFile *savefile, idGameBearShootWindow *_game);
 
-	void				SetMaterial(const char* name);
-	void				SetSize( float _width, float _height );
-	void				SetVisible( bool isVisible );
+		void				SetMaterial(const char *name);
+		void				SetSize(float _width, float _height);
+		void				SetVisible(bool isVisible);
 
-	virtual void		Update( float timeslice );
-	virtual void		Draw(idDeviceContext *dc);
+		virtual void		Update(float timeslice);
+		virtual void		Draw(idDeviceContext *dc);
 
-private:
+	private:
 };
 
 
-class idGameBearShootWindow : public idWindow {
-public:
-	idGameBearShootWindow(idUserInterfaceLocal *gui);
-	idGameBearShootWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	~idGameBearShootWindow();
+class idGameBearShootWindow : public idWindow
+{
+	public:
+		idGameBearShootWindow(idUserInterfaceLocal *gui);
+		idGameBearShootWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
+		~idGameBearShootWindow();
 
-	virtual void		WriteToSaveGame( idFile *savefile );
-	virtual void		ReadFromSaveGame( idFile *savefile );
+		virtual void		WriteToSaveGame(idFile *savefile);
+		virtual void		ReadFromSaveGame(idFile *savefile);
 
-	virtual const char*	HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void		PostParse();
-	virtual void		Draw(int time, float x, float y);
-	virtual idWinVar *	GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
+		virtual const char	*HandleEvent(const sysEvent_t *event, bool *updateVisuals);
+		virtual void		PostParse();
+		virtual void		Draw(int time, float x, float y);
+		virtual const char	*Activate(bool activate);
+		virtual idWinVar 	*GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t **owner = NULL);
 
-private:
-	void				CommonInit();
-	void				ResetGameState();
+	private:
+		void				CommonInit();
+		void				ResetGameState();
 
-	void				UpdateBear();
-	void				UpdateHelicopter();
-	void				UpdateTurret();
-	void				UpdateButtons();
-	void				UpdateGame();
-	void				UpdateScore();
+		void				UpdateBear();
+		void				UpdateHelicopter();
+		void				UpdateTurret();
+		void				UpdateButtons();
+		void				UpdateGame();
+		void				UpdateScore();
 
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
+		virtual bool		ParseInternalVar(const char *name, idParser *src);
 
-private:
+	private:
 
-	idWinBool			gamerunning;
-	idWinBool			onFire;
-	idWinBool			onContinue;
-	idWinBool			onNewGame;
+		idWinBool			gamerunning;
+		idWinBool			onFire;
+		idWinBool			onContinue;
+		idWinBool			onNewGame;
 
-	float				timeSlice;
-	float				timeRemaining;
-	bool				gameOver;
+		float				timeSlice;
+		float				timeRemaining;
+		bool				gameOver;
 
-	int					currentLevel;
-	int					goalsHit;
-	bool				updateScore;
-	bool				bearHitTarget;
+		int					currentLevel;
+		int					goalsHit;
+		bool				updateScore;
+		bool				bearHitTarget;
 
-	float				bearScale;
-	bool				bearIsShrinking;
-	int					bearShrinkStartTime;
+		float				bearScale;
+		bool				bearIsShrinking;
+		int					bearShrinkStartTime;
 
-	float				turretAngle;
-	float				turretForce;
+		float				turretAngle;
+		float				turretForce;
 
-	float				windForce;
-	int					windUpdateTime;
+		float				windForce;
+		int					windUpdateTime;
 
-	idList<BSEntity*>	entities;
+		idList<BSEntity *>	entities;
 
-	BSEntity			*turret;
-	BSEntity			*bear;
-	BSEntity			*helicopter;
-	BSEntity			*goal;
-	BSEntity			*wind;
-	BSEntity			*gunblast;
+		BSEntity			*turret;
+		BSEntity			*bear;
+		BSEntity			*helicopter;
+		BSEntity			*goal;
+		BSEntity			*wind;
+		BSEntity			*gunblast;
 };
 
 #endif //__GAME_BEARSHOOT_WINDOW_H__

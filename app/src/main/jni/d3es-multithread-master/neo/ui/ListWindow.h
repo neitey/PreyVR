@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,10 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __LISTWINDOW_H
 #define __LISTWINDOW_H
 
-#include "idlib/containers/StrList.h"
-#include "idlib/containers/HashTable.h"
-#include "ui/Window.h"
-
 class idSliderWindow;
 
 enum {
@@ -49,54 +45,57 @@ struct idTabRect {
 	float iconVOffset;
 };
 
-class idListWindow : public idWindow {
-public:
-	idListWindow(idUserInterfaceLocal *gui);
-	idListWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
+class idListWindow : public idWindow
+{
+	public:
+		idListWindow(idUserInterfaceLocal *gui);
+		idListWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
 
-	virtual const char*	HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void		PostParse();
-	virtual void		Draw(int time, float x, float y);
-	virtual void		Activate(bool activate, idStr &act);
-	virtual void		HandleBuddyUpdate(idWindow *buddy);
-	virtual void		StateChanged( bool redraw = false );
-	virtual size_t		Allocated(){return idWindow::Allocated();};
-	virtual idWinVar*	GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
+		virtual const char	*HandleEvent(const sysEvent_t *event, bool *updateVisuals);
+		virtual void		PostParse();
+		virtual void		Draw(int time, float x, float y);
+		virtual void		Activate(bool activate, idStr &act);
+		virtual void		HandleBuddyUpdate(idWindow *buddy);
+		virtual void		StateChanged(bool redraw = false);
+		virtual size_t		Allocated() {
+			return idWindow::Allocated();
+		};
+		virtual idWinVar	*GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t **owner = NULL);
 
-	void				UpdateList();
+		void				UpdateList();
 
-private:
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
-	void				CommonInit();
-	void				InitScroller( bool horizontal );
-	void				SetCurrentSel( int sel );
-	void				AddCurrentSel( int sel );
-	int					GetCurrentSel();
-	bool				IsSelected( int index );
-	void				ClearSelection( int sel );
+	private:
+		virtual bool		ParseInternalVar(const char *name, idParser *src);
+		void				CommonInit();
+		void				InitScroller(bool horizontal);
+		void				SetCurrentSel(int sel);
+		void				AddCurrentSel(int sel);
+		int					GetCurrentSel();
+		bool				IsSelected(int index);
+		void				ClearSelection(int sel);
 
-	idList<idTabRect>	tabInfo;
-	int					top;
-	float				sizeBias;
-	bool				horizontal;
-	idStr				tabStopStr;
-	idStr				tabAlignStr;
-	idStr				tabVAlignStr;
-	idStr				tabTypeStr;
-	idStr				tabIconSizeStr;
-	idStr				tabIconVOffsetStr;
-	idHashTable<const idMaterial*> iconMaterials;
-	bool				multipleSel;
+		idList<idTabRect>	tabInfo;
+		int					top;
+		float				sizeBias;
+		bool				horizontal;
+		idStr				tabStopStr;
+		idStr				tabAlignStr;
+		idStr				tabVAlignStr;
+		idStr				tabTypeStr;
+		idStr				tabIconSizeStr;
+		idStr				tabIconVOffsetStr;
+		idHashTable<const idMaterial *> iconMaterials;
+		bool				multipleSel;
 
-	idStrList			listItems;
-	idSliderWindow*		scroller;
-	idList<int>			currentSel;
-	idStr				listName;
+		idStrList			listItems;
+		idSliderWindow		*scroller;
+		idList<int>			currentSel;
+		idStr				listName;
 
-	int					clickTime;
+		int					clickTime;
 
-	int					typedTime;
-	idStr				typed;
+		int					typedTime;
+		idStr				typed;
 };
 
 #endif // __LISTWINDOW_H

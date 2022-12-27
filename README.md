@@ -16,7 +16,7 @@ Current status of the work (in `Doom3Quest/app/src/main/jni/d3es-multithread-mas
 * sys - adjusted
 * tools - merged
 * TypeInfo - merged
-* ui - kept
+* ui - merged
 
 
 # Original README

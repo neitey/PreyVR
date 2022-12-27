@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SIMPLEWIN_H__
 #define __SIMPLEWIN_H__
 
-#include "ui/Window.h"
-
 class idUserInterfaceLocal;
 class idDeviceContext;
 class idSimpleWindow;
@@ -40,64 +38,78 @@ typedef struct {
 	idSimpleWindow *simp;
 } drawWin_t;
 
-class idSimpleWindow {
-	friend class idWindow;
-public:
-					idSimpleWindow(idWindow* win);
-	virtual			~idSimpleWindow();
-	void			Redraw(float x, float y);
-	void			StateChanged( bool redraw );
+class idSimpleWindow
+{
+		friend class idWindow;
+	public:
+		idSimpleWindow(idWindow *win);
+		virtual			~idSimpleWindow();
+		void			Redraw(float x, float y);
+		void			StateChanged(bool redraw);
 
-	idStr			name;
+		idStr			name;
 
-	idWinVar *		GetWinVarByName(const char *_name);
-	intptr_t		GetWinVarOffset( idWinVar *wv, drawWin_t* owner);
-	size_t			Size();
+		idWinVar 		*GetWinVarByName(const char *_name);
+		intptr_t		GetWinVarOffset(idWinVar *wv, drawWin_t *owner);
+		size_t			Size();
 
-	idWindow*		GetParent ( void ) { return mParent; }
+		idWindow		*GetParent(void) {
+			return mParent;
+		}
 
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile );
+		virtual void	WriteToSaveGame(idFile *savefile);
+		virtual void	ReadFromSaveGame(idFile *savefile);
+#ifdef _RAVEN // quake4 gui function
+// jmarshall - quake 4 gui
+    void			ResetCinematics(void);
+// jmarshall end
+#endif
 
-protected:
-	void			CalcClientRect(float xofs, float yofs);
-	void			SetupTransforms(float x, float y);
-	void			DrawBackground(const idRectangle &drawRect);
-	void			DrawBorderAndCaption(const idRectangle &drawRect);
+	protected:
+		void 			CalcClientRect(float xofs, float yofs);
+		void 			SetupTransforms(float x, float y);
+		void 			DrawBackground(const idRectangle &drawRect);
+		void 			DrawBorderAndCaption(const idRectangle &drawRect);
 
-	idUserInterfaceLocal *gui;
-	idDeviceContext *dc;
-	int				flags;
-	idRectangle		drawRect;			// overall rect
-	idRectangle		clientRect;			// client area
-	idRectangle		textRect;
-	idVec2			origin;
-	int				fontNum;
-	float			matScalex;
-	float			matScaley;
-	float			borderSize;
-	int				textAlign;
-	float			textAlignx;
-	float			textAligny;
-	int				textShadow;
+		idUserInterfaceLocal *gui;
+		idDeviceContext *dc;
+		int 			flags;
+		idRectangle 	drawRect;			// overall rect
+		idRectangle 	clientRect;			// client area
+		idRectangle 	textRect;
+		idVec2			origin;
+		int 			fontNum;
+		float 			matScalex;
+		float 			matScaley;
+		float 			borderSize;
+		int 			textAlign;
+		float 			textAlignx;
+		float 			textAligny;
+		int				textShadow;
 
-	idWinStr		text;
-	idWinBool		visible;
-	idWinRectangle	rect;				// overall rect
-	idWinVec4		backColor;
-	idWinVec4		matColor;
-	idWinVec4		foreColor;
-	idWinVec4		borderColor;
-	idWinFloat		textScale;
-	idWinFloat		rotate;
-	idWinVec2		shear;
-	idWinBackground	backGroundName;
+		idWinStr		text;
+		idWinBool		visible;
+		idWinRectangle	rect;				// overall rect
+		idWinVec4		backColor;
+		idWinVec4		matColor;
+		idWinVec4		foreColor;
+		idWinVec4		borderColor;
+		idWinFloat		textScale;
+		idWinFloat		rotate;
+		idWinVec2		shear;
+		idWinBackground	backGroundName;
 
-	const idMaterial* background;
+		const idMaterial *background;
 
-	idWindow *		mParent;
+		idWindow 		*mParent;
 
-	idWinBool	hideCursor;
+		idWinBool	hideCursor;
+
+#ifdef _HUMANHEAD
+	private:
+	int translateFontNum;
+	void Translate(int tFontNum = -1);
+#endif
 };
 
 #endif /* !__SIMPLEWIN_H__ */
