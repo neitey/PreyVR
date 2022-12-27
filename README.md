@@ -2,13 +2,13 @@
 
 The work is based on this project: https://github.com/glKarin/com.n0n3m4.diii4a (last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/214c12e55661c3d07d3796f72b9f2366302f3b93)
 
-As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I try to merge it together.
+As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I merge them together.
 
-Current status of the work (in `Doom3Quest/app/src/main/jni/d3es-multithread-master/neo/`):
+Current status (in `Doom3Quest/app/src/main/jni/d3es-multithread-master/neo/`):
 
 * cm - merged
 * framework - merged
-* game - TODO: this will be per game different
+* game - this is per game different
 * idlib - merged
 * MayaImport - merged
 * renderer - kept
@@ -17,6 +17,8 @@ Current status of the work (in `Doom3Quest/app/src/main/jni/d3es-multithread-mas
 * tools - merged
 * TypeInfo - merged
 * ui - merged
+
+Note that this version is not backward compatible with DrBeef's Doom3Quest. It uses different format for save games.
 
 
 # Original README
