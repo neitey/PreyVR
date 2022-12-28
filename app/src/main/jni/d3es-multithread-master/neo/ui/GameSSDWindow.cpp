@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,15 +25,16 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "idlib/precompiled.h"
-#include "framework/Session_local.h"
-#include "sound/sound.h"
-#include "ui/DeviceContext.h"
-#include "ui/Window.h"
-#include "ui/UserInterfaceLocal.h"
+#include "../framework/Session_local.h"
 
-#include "ui/GameSSDWindow.h"
+#include "DeviceContext.h"
+#include "Window.h"
+#include "UserInterfaceLocal.h"
+#include "GameSSDWindow.h"
+
 
 #define Z_NEAR 100.0f
 #define Z_FAR  4000.0f
@@ -51,13 +52,16 @@ If you have questions concerning this license or the applicable additional terms
 #define CROSSHAIR_STANDARD_MATERIAL "game/SSD/crosshair_standard"
 #define CROSSHAIR_SUPER_MATERIAL "game/SSD/crosshair_super"
 
-SSDCrossHair::SSDCrossHair() {
+SSDCrossHair::SSDCrossHair()
+{
 }
 
-SSDCrossHair::~SSDCrossHair() {
+SSDCrossHair::~SSDCrossHair()
+{
 }
 
-void SSDCrossHair::WriteToSaveGame( idFile *savefile ) {
+void SSDCrossHair::WriteToSaveGame(idFile *savefile)
+{
 
 	savefile->Write(&currentCrosshair, sizeof(currentCrosshair));
 	savefile->Write(&crosshairWidth, sizeof(crosshairWidth));
@@ -65,7 +69,8 @@ void SSDCrossHair::WriteToSaveGame( idFile *savefile ) {
 
 }
 
-void SSDCrossHair::ReadFromSaveGame( idFile *savefile ) {
+void SSDCrossHair::ReadFromSaveGame(idFile *savefile)
+{
 
 	InitCrosshairs();
 
@@ -75,10 +80,11 @@ void SSDCrossHair::ReadFromSaveGame( idFile *savefile ) {
 
 }
 
-void SSDCrossHair::InitCrosshairs() {
+void SSDCrossHair::InitCrosshairs()
+{
 
-	crosshairMaterial[CROSSHAIR_STANDARD] = declManager->FindMaterial( CROSSHAIR_STANDARD_MATERIAL );
-	crosshairMaterial[CROSSHAIR_SUPER] = declManager->FindMaterial( CROSSHAIR_SUPER_MATERIAL );
+	crosshairMaterial[CROSSHAIR_STANDARD] = declManager->FindMaterial(CROSSHAIR_STANDARD_MATERIAL);
+	crosshairMaterial[CROSSHAIR_SUPER] = declManager->FindMaterial(CROSSHAIR_SUPER_MATERIAL);
 
 	crosshairWidth = 64;
 	crosshairHeight = 64;
@@ -87,7 +93,8 @@ void SSDCrossHair::InitCrosshairs() {
 
 }
 
-void SSDCrossHair::Draw(idDeviceContext *dc, const idVec2& cursor) {
+void SSDCrossHair::Draw(idDeviceContext *dc, const idVec2 &cursor)
+{
 
 	float x,y;
 	x = cursor.x-(crosshairWidth/2);
@@ -102,14 +109,17 @@ void SSDCrossHair::Draw(idDeviceContext *dc, const idVec2& cursor) {
 ****************************************************************************
 */
 
-SSDEntity::SSDEntity() {
+SSDEntity::SSDEntity()
+{
 	EntityInit();
 }
 
-SSDEntity::~SSDEntity() {
+SSDEntity::~SSDEntity()
+{
 }
 
-void SSDEntity::WriteToSaveGame( idFile *savefile ) {
+void SSDEntity::WriteToSaveGame(idFile *savefile)
+{
 
 	savefile->Write(&type, sizeof(type));
 	game->WriteSaveGameString(materialName, savefile);
@@ -137,7 +147,8 @@ void SSDEntity::WriteToSaveGame( idFile *savefile ) {
 
 }
 
-void SSDEntity::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game ) {
+void SSDEntity::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 
 	savefile->Read(&type, sizeof(type));
 	game->ReadSaveGameString(materialName, savefile);
@@ -166,7 +177,8 @@ void SSDEntity::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game ) {
 	savefile->Read(&inUse, sizeof(inUse));
 }
 
-void SSDEntity::EntityInit() {
+void SSDEntity::EntityInit()
+{
 
 	inUse = false;
 
@@ -196,39 +208,46 @@ void SSDEntity::EntityInit() {
 	foreColor.Set(1, 1, 1, 1);
 }
 
-void SSDEntity::SetGame(idGameSSDWindow* _game) {
+void SSDEntity::SetGame(idGameSSDWindow *_game)
+{
 	game = _game;
 }
 
-void SSDEntity::SetMaterial(const char* name) {
+void SSDEntity::SetMaterial(const char *name)
+{
 	materialName = name;
-	material = declManager->FindMaterial( name );
-	material->SetSort( SS_GUI );
+	material = declManager->FindMaterial(name);
+	material->SetSort(SS_GUI);
 }
 
-void SSDEntity::SetPosition(const idVec3& _position) {
+void SSDEntity::SetPosition(const idVec3 &_position)
+{
 	position = _position;
 }
 
-void SSDEntity::SetSize(const idVec2& _size) {
+void SSDEntity::SetSize(const idVec2 &_size)
+{
 	size = _size;
 }
 
-void SSDEntity::SetRadius(float _radius, float _hitFactor) {
+void SSDEntity::SetRadius(float _radius, float _hitFactor)
+{
 	radius = _radius;
 	hitRadius = _radius*_hitFactor;
 }
 
-void SSDEntity::SetRotation(float _rotation) {
+void SSDEntity::SetRotation(float _rotation)
+{
 	rotation = _rotation;
 }
 
-void SSDEntity::Update() {
+void SSDEntity::Update()
+{
 
 	currentTime = game->ssdTime;
 
 	//Is this the first update
-	if(lastUpdate == 0) {
+	if (lastUpdate == 0) {
 		lastUpdate = currentTime;
 		return;
 	}
@@ -240,9 +259,10 @@ void SSDEntity::Update() {
 	lastUpdate = currentTime;
 }
 
-bool SSDEntity::HitTest(const idVec2& pt) {
+bool SSDEntity::HitTest(const idVec2 &pt)
+{
 
-	if(noHit) {
+	if (noHit) {
 		return false;
 	}
 
@@ -259,13 +279,15 @@ bool SSDEntity::HitTest(const idVec2& pt) {
 	idVec2 diff = screenPos.ToVec2()-pt;
 	float dist = idMath::Fabs(diff.LengthSqr());
 
-	if(dist < scaleRadSqr) {
+	if (dist < scaleRadSqr) {
 		return true;
 	}
+
 	return false;
 }
 
-void SSDEntity::Draw(idDeviceContext *dc) {
+void SSDEntity::Draw(idDeviceContext *dc)
+{
 
 
 	idVec2 persize;
@@ -279,22 +301,26 @@ void SSDEntity::Draw(idDeviceContext *dc) {
 	persize.x = idMath::Fabs(screenBounds[1].x - screenBounds[0].x);
 	persize.y = idMath::Fabs(screenBounds[1].y - screenBounds[0].y);
 
+	idVec3 center = screenBounds.GetCenter();
+
 	x = screenBounds[0].x;
 	y = screenBounds[1].y;
 	dc->DrawMaterialRotated(x, y, persize.x, persize.y, material, matColor, 1.0f, 1.0f, DEG2RAD(rotation));
 
-	if(text.Length() > 0) {
-		idRectangle rect( x, y, VIRTUAL_WIDTH, VIRTUAL_HEIGHT );
-		dc->DrawText( text, textScale, 0, foreColor, rect, false );
+	if (text.Length() > 0) {
+		idRectangle rect(x, y, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+		dc->DrawText(text, textScale, 0, foreColor, rect, false);
 	}
 
 }
 
-void SSDEntity::DestroyEntity() {
+void SSDEntity::DestroyEntity()
+{
 	inUse = false;
 }
 
-idBounds SSDEntity::WorldToScreen(const idBounds worldBounds) {
+idBounds SSDEntity::WorldToScreen(const idBounds worldBounds)
+{
 
 	idVec3 screenMin = WorldToScreen(worldBounds[0]);
 	idVec3 screenMax = WorldToScreen(worldBounds[1]);
@@ -303,7 +329,8 @@ idBounds SSDEntity::WorldToScreen(const idBounds worldBounds) {
 	return screenBounds;
 }
 
-idVec3 SSDEntity::WorldToScreen(const idVec3& worldPos) {
+idVec3 SSDEntity::WorldToScreen(const idVec3 &worldPos)
+{
 
 	float d = 0.5f*V_WIDTH*idMath::Tan(DEG2RAD(90.0f)/2.0f);
 
@@ -321,7 +348,8 @@ idVec3 SSDEntity::WorldToScreen(const idVec3& worldPos) {
 	return screenPos;
 }
 
-idVec3 SSDEntity::ScreenToWorld(const idVec3& screenPos) {
+idVec3 SSDEntity::ScreenToWorld(const idVec3 &screenPos)
+{
 
 	idVec3 worldPos;
 
@@ -338,33 +366,39 @@ idVec3 SSDEntity::ScreenToWorld(const idVec3& screenPos) {
 ****************************************************************************
 */
 
-SSDMover::SSDMover() {
+SSDMover::SSDMover()
+{
 }
 
-SSDMover::~SSDMover() {
+SSDMover::~SSDMover()
+{
 }
 
-void SSDMover::WriteToSaveGame( idFile *savefile ) {
+void SSDMover::WriteToSaveGame(idFile *savefile)
+{
 	SSDEntity::WriteToSaveGame(savefile);
 
 	savefile->Write(&speed, sizeof(speed));
 	savefile->Write(&rotationSpeed, sizeof(rotationSpeed));
 }
 
-void SSDMover::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
+void SSDMover::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 	SSDEntity::ReadFromSaveGame(savefile, _game);
 
 	savefile->Read(&speed, sizeof(speed));
 	savefile->Read(&rotationSpeed, sizeof(rotationSpeed));
 }
 
-void SSDMover::MoverInit(const idVec3& _speed, float _rotationSpeed) {
+void SSDMover::MoverInit(const idVec3 &_speed, float _rotationSpeed)
+{
 
 	speed = _speed;
 	rotationSpeed = _rotationSpeed;
 }
 
-void SSDMover::EntityUpdate() {
+void SSDMover::EntityUpdate()
+{
 
 	SSDEntity::EntityUpdate();
 
@@ -374,10 +408,12 @@ void SSDMover::EntityUpdate() {
 
 	float rotated = ((float)elapsed/1000.0f)*rotationSpeed*360.0f;
 	rotation += rotated;
-	if(rotation >= 360) {
+
+	if (rotation >= 360) {
 		rotation -= 360.0f;
 	}
-	if(rotation < 0) {
+
+	if (rotation < 0) {
 		rotation += 360.0f;
 	}
 }
@@ -393,25 +429,30 @@ SSDAsteroid	SSDAsteroid::asteroidPool[MAX_ASTEROIDS];
 
 #define ASTEROID_MATERIAL "game/SSD/asteroid"
 
-SSDAsteroid::SSDAsteroid() {
+SSDAsteroid::SSDAsteroid()
+{
 }
 
-SSDAsteroid::~SSDAsteroid() {
+SSDAsteroid::~SSDAsteroid()
+{
 }
 
-void SSDAsteroid::WriteToSaveGame( idFile *savefile ) {
+void SSDAsteroid::WriteToSaveGame(idFile *savefile)
+{
 	SSDMover::WriteToSaveGame(savefile);
 
 	savefile->Write(&health, sizeof(health));
 }
 
-void SSDAsteroid::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
+void SSDAsteroid::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 	SSDMover::ReadFromSaveGame(savefile, _game);
 
 	savefile->Read(&health, sizeof(health));
 }
 
-void SSDAsteroid::Init(idGameSSDWindow* _game, const idVec3& startPosition, const idVec2& _size, float _speed, float rotate, int _health) {
+void SSDAsteroid::Init(idGameSSDWindow *_game, const idVec3 &startPosition, const idVec2 &_size, float _speed, float rotate, int _health)
+{
 
 	EntityInit();
 	MoverInit(idVec3(0,0, -_speed), rotate);
@@ -431,14 +472,16 @@ void SSDAsteroid::Init(idGameSSDWindow* _game, const idVec3& startPosition, cons
 	health = _health;
 }
 
-void SSDAsteroid::EntityUpdate() {
+void SSDAsteroid::EntityUpdate()
+{
 
 	SSDMover::EntityUpdate();
 }
 
-SSDAsteroid* SSDAsteroid::GetNewAsteroid(idGameSSDWindow* _game, const idVec3& startPosition, const idVec2& _size, float _speed, float rotate, int _health) {
-	for(int i = 0; i < MAX_ASTEROIDS; i++) {
-		if(!asteroidPool[i].inUse) {
+SSDAsteroid *SSDAsteroid::GetNewAsteroid(idGameSSDWindow *_game, const idVec3 &startPosition, const idVec2 &_size, float _speed, float rotate, int _health)
+{
+	for (int i = 0; i < MAX_ASTEROIDS; i++) {
+		if (!asteroidPool[i].inUse) {
 			asteroidPool[i].Init(_game, startPosition, _size, _speed, rotate, _health);
 			asteroidPool[i].inUse = true;
 			asteroidPool[i].id = i;
@@ -446,37 +489,45 @@ SSDAsteroid* SSDAsteroid::GetNewAsteroid(idGameSSDWindow* _game, const idVec3& s
 			return &asteroidPool[i];
 		}
 	}
+
 	return NULL;
 }
 
-SSDAsteroid* SSDAsteroid::GetSpecificAsteroid(int id) {
+SSDAsteroid *SSDAsteroid::GetSpecificAsteroid(int id)
+{
 	return &asteroidPool[id];
 }
 
-void SSDAsteroid::WriteAsteroids(idFile* savefile) {
+void SSDAsteroid::WriteAsteroids(idFile *savefile)
+{
 	int count = 0;
-	for(int i = 0; i < MAX_ASTEROIDS; i++) {
-		if(asteroidPool[i].inUse) {
+
+	for (int i = 0; i < MAX_ASTEROIDS; i++) {
+		if (asteroidPool[i].inUse) {
 			count++;
 		}
 	}
+
 	savefile->Write(&count, sizeof(count));
-	for(int i = 0; i < MAX_ASTEROIDS; i++) {
-		if(asteroidPool[i].inUse) {
+
+	for (int i = 0; i < MAX_ASTEROIDS; i++) {
+		if (asteroidPool[i].inUse) {
 			savefile->Write(&(asteroidPool[i].id), sizeof(asteroidPool[i].id));
 			asteroidPool[i].WriteToSaveGame(savefile);
 		}
 	}
 }
 
-void SSDAsteroid::ReadAsteroids(idFile* savefile, idGameSSDWindow* _game) {
+void SSDAsteroid::ReadAsteroids(idFile *savefile, idGameSSDWindow *_game)
+{
 
 	int count;
 	savefile->Read(&count, sizeof(count));
-	for(int i = 0; i < count; i++) {
+
+	for (int i = 0; i < count; i++) {
 		int id;
 		savefile->Read(&id, sizeof(id));
-		SSDAsteroid* ent = GetSpecificAsteroid(id);
+		SSDAsteroid *ent = GetSpecificAsteroid(id);
 		ent->ReadFromSaveGame(savefile, _game);
 	}
 }
@@ -491,25 +542,30 @@ SSDAstronaut	SSDAstronaut::astronautPool[MAX_ASTRONAUT];
 
 #define ASTRONAUT_MATERIAL "game/SSD/astronaut"
 
-SSDAstronaut::SSDAstronaut() {
+SSDAstronaut::SSDAstronaut()
+{
 }
 
-SSDAstronaut::~SSDAstronaut() {
+SSDAstronaut::~SSDAstronaut()
+{
 }
 
-void SSDAstronaut::WriteToSaveGame( idFile *savefile ) {
+void SSDAstronaut::WriteToSaveGame(idFile *savefile)
+{
 	SSDMover::WriteToSaveGame(savefile);
 
 	savefile->Write(&health, sizeof(health));
 }
 
-void SSDAstronaut::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
+void SSDAstronaut::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 	SSDMover::ReadFromSaveGame(savefile, _game);
 
 	savefile->Read(&health, sizeof(health));
 }
 
-void SSDAstronaut::Init(idGameSSDWindow* _game, const idVec3& startPosition, float _speed, float rotate, int _health) {
+void SSDAstronaut::Init(idGameSSDWindow *_game, const idVec3 &startPosition, float _speed, float rotate, int _health)
+{
 
 	EntityInit();
 	MoverInit(idVec3(0,0, -_speed), rotate);
@@ -527,47 +583,56 @@ void SSDAstronaut::Init(idGameSSDWindow* _game, const idVec3& startPosition, flo
 	health = _health;
 }
 
-SSDAstronaut* SSDAstronaut::GetNewAstronaut(idGameSSDWindow* _game, const idVec3& startPosition, float _speed, float rotate, int _health) {
-	for(int i = 0; i < MAX_ASTRONAUT; i++) {
-		if(!astronautPool[i].inUse) {
+SSDAstronaut *SSDAstronaut::GetNewAstronaut(idGameSSDWindow *_game, const idVec3 &startPosition, float _speed, float rotate, int _health)
+{
+	for (int i = 0; i < MAX_ASTRONAUT; i++) {
+		if (!astronautPool[i].inUse) {
 			astronautPool[i].Init(_game, startPosition, _speed, rotate, _health);
 			astronautPool[i].inUse = true;
 			astronautPool[i].id = i;
 			return &astronautPool[i];
 		}
 	}
+
 	return NULL;
 }
 
-SSDAstronaut* SSDAstronaut::GetSpecificAstronaut(int id) {
+SSDAstronaut *SSDAstronaut::GetSpecificAstronaut(int id)
+{
 	return &astronautPool[id];
 
 }
 
-void SSDAstronaut::WriteAstronauts(idFile* savefile) {
+void SSDAstronaut::WriteAstronauts(idFile *savefile)
+{
 	int count = 0;
-	for(int i = 0; i < MAX_ASTRONAUT; i++) {
-		if(astronautPool[i].inUse) {
+
+	for (int i = 0; i < MAX_ASTRONAUT; i++) {
+		if (astronautPool[i].inUse) {
 			count++;
 		}
 	}
+
 	savefile->Write(&count, sizeof(count));
-	for(int i = 0; i < MAX_ASTRONAUT; i++) {
-		if(astronautPool[i].inUse) {
+
+	for (int i = 0; i < MAX_ASTRONAUT; i++) {
+		if (astronautPool[i].inUse) {
 			savefile->Write(&(astronautPool[i].id), sizeof(astronautPool[i].id));
 			astronautPool[i].WriteToSaveGame(savefile);
 		}
 	}
 }
 
-void SSDAstronaut::ReadAstronauts(idFile* savefile, idGameSSDWindow* _game) {
+void SSDAstronaut::ReadAstronauts(idFile *savefile, idGameSSDWindow *_game)
+{
 
 	int count;
 	savefile->Read(&count, sizeof(count));
-	for(int i = 0; i < count; i++) {
+
+	for (int i = 0; i < count; i++) {
 		int id;
 		savefile->Read(&id, sizeof(id));
-		SSDAstronaut* ent = GetSpecificAstronaut(id);
+		SSDAstronaut *ent = GetSpecificAstronaut(id);
 		ent->ReadFromSaveGame(savefile, _game);
 	}
 }
@@ -584,21 +649,24 @@ SSDExplosion SSDExplosion::explosionPool[MAX_EXPLOSIONS];
 //#define EXPLOSION_MATERIAL "game/SSD/fball"
 //#define EXPLOSION_TELEPORT "game/SSD/teleport"
 
-const char* explosionMaterials[] = {
+const char *explosionMaterials[] = {
 	"game/SSD/fball",
 	"game/SSD/teleport"
 };
 
 #define EXPLOSION_MATERIAL_COUNT 2
 
-SSDExplosion::SSDExplosion() {
+SSDExplosion::SSDExplosion()
+{
 	type = SSD_ENTITY_EXPLOSION;
 }
 
-SSDExplosion::~SSDExplosion() {
+SSDExplosion::~SSDExplosion()
+{
 }
 
-void SSDExplosion::WriteToSaveGame( idFile *savefile ) {
+void SSDExplosion::WriteToSaveGame(idFile *savefile)
+{
 	SSDEntity::WriteToSaveGame(savefile);
 
 	savefile->Write(&finalSize, sizeof(finalSize));
@@ -615,7 +683,8 @@ void SSDExplosion::WriteToSaveGame( idFile *savefile ) {
 	savefile->Write(&followBuddy, sizeof(followBuddy));
 }
 
-void SSDExplosion::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
+void SSDExplosion::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 	SSDEntity::ReadFromSaveGame(savefile, _game);
 
 	savefile->Read(&finalSize, sizeof(finalSize));
@@ -635,7 +704,8 @@ void SSDExplosion::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  
 	savefile->Read(&followBuddy, sizeof(followBuddy));
 }
 
-void SSDExplosion::Init(idGameSSDWindow* _game, const idVec3& _position, const idVec2& _size, int _length, int _type, SSDEntity* _buddy, bool _killBuddy, bool _followBuddy) {
+void SSDExplosion::Init(idGameSSDWindow *_game, const idVec3 &_position, const idVec2 &_size, int _length, int _type, SSDEntity *_buddy, bool _killBuddy, bool _followBuddy)
+{
 
 	EntityInit();
 
@@ -664,12 +734,13 @@ void SSDExplosion::Init(idGameSSDWindow* _game, const idVec3& _position, const i
 	noHit = true;
 }
 
-void SSDExplosion::EntityUpdate() {
+void SSDExplosion::EntityUpdate()
+{
 
 	SSDEntity::EntityUpdate();
 
 	//Always set my position to my buddies position except change z to be on top
-	if(followBuddy) {
+	if (followBuddy) {
 		position = buddy->position;
 		position.z -= 50;
 	} else {
@@ -681,55 +752,64 @@ void SSDExplosion::EntityUpdate() {
 	size = finalSize*((float)(currentTime-beginTime)/(float)length);
 
 	//Destroy myself after the explosion is done
-	if(currentTime > endTime) {
+	if (currentTime > endTime) {
 		destroyed = true;
 
-		if(killBuddy) {
+		if (killBuddy) {
 			//Destroy the exploding object
 			buddy->destroyed = true;
 		}
 	}
 }
 
-SSDExplosion* SSDExplosion::GetNewExplosion(idGameSSDWindow* _game, const idVec3& _position, const idVec2& _size, int _length, int _type, SSDEntity* _buddy, bool _killBuddy, bool _followBuddy) {
-	for(int i = 0; i < MAX_EXPLOSIONS; i++) {
-		if(!explosionPool[i].inUse) {
+SSDExplosion *SSDExplosion::GetNewExplosion(idGameSSDWindow *_game, const idVec3 &_position, const idVec2 &_size, int _length, int _type, SSDEntity *_buddy, bool _killBuddy, bool _followBuddy)
+{
+	for (int i = 0; i < MAX_EXPLOSIONS; i++) {
+		if (!explosionPool[i].inUse) {
 			explosionPool[i].Init(_game, _position, _size, _length, _type, _buddy, _killBuddy, _followBuddy);
 			explosionPool[i].inUse = true;
 			return &explosionPool[i];
 		}
 	}
+
 	return NULL;
 }
 
-SSDExplosion* SSDExplosion::GetSpecificExplosion(int id) {
+SSDExplosion *SSDExplosion::GetSpecificExplosion(int id)
+{
 	return &explosionPool[id];
 }
 
-void SSDExplosion::WriteExplosions(idFile* savefile) {
+void SSDExplosion::WriteExplosions(idFile *savefile)
+{
 	int count = 0;
-	for(int i = 0; i < MAX_EXPLOSIONS; i++) {
-		if(explosionPool[i].inUse) {
+
+	for (int i = 0; i < MAX_EXPLOSIONS; i++) {
+		if (explosionPool[i].inUse) {
 			count++;
 		}
 	}
+
 	savefile->Write(&count, sizeof(count));
-	for(int i = 0; i < MAX_EXPLOSIONS; i++) {
-		if(explosionPool[i].inUse) {
+
+	for (int i = 0; i < MAX_EXPLOSIONS; i++) {
+		if (explosionPool[i].inUse) {
 			savefile->Write(&(explosionPool[i].id), sizeof(explosionPool[i].id));
 			explosionPool[i].WriteToSaveGame(savefile);
 		}
 	}
 }
 
-void SSDExplosion::ReadExplosions(idFile* savefile, idGameSSDWindow* _game) {
+void SSDExplosion::ReadExplosions(idFile *savefile, idGameSSDWindow *_game)
+{
 
 	int count;
 	savefile->Read(&count, sizeof(count));
-	for(int i = 0; i < count; i++) {
+
+	for (int i = 0; i < count; i++) {
 		int id;
 		savefile->Read(&id, sizeof(id));
-		SSDExplosion* ent = GetSpecificExplosion(id);
+		SSDExplosion *ent = GetSpecificExplosion(id);
 		ent->ReadFromSaveGame(savefile, _game);
 	}
 }
@@ -742,14 +822,17 @@ void SSDExplosion::ReadExplosions(idFile* savefile, idGameSSDWindow* _game) {
 
 SSDPoints	SSDPoints::pointsPool[MAX_POINTS];
 
-SSDPoints::SSDPoints() {
+SSDPoints::SSDPoints()
+{
 	type = SSD_ENTITY_POINTS;
 }
 
-SSDPoints::~SSDPoints() {
+SSDPoints::~SSDPoints()
+{
 }
 
-void SSDPoints::WriteToSaveGame( idFile *savefile ) {
+void SSDPoints::WriteToSaveGame(idFile *savefile)
+{
 	SSDEntity::WriteToSaveGame(savefile);
 
 	savefile->Write(&length, sizeof(length));
@@ -765,7 +848,8 @@ void SSDPoints::WriteToSaveGame( idFile *savefile ) {
 
 }
 
-void SSDPoints::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
+void SSDPoints::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 	SSDEntity::ReadFromSaveGame(savefile, _game);
 
 	savefile->Read(&length, sizeof(length));
@@ -780,7 +864,8 @@ void SSDPoints::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
 	savefile->Read(&endColor, sizeof(endColor));
 }
 
-void SSDPoints::Init(idGameSSDWindow* _game, SSDEntity* _ent, int _points, int _length, int _distance, const idVec4& color) {
+void SSDPoints::Init(idGameSSDWindow *_game, SSDEntity *_ent, int _points, int _length, int _distance, const idVec4 &color)
+{
 
 	EntityInit();
 
@@ -795,7 +880,8 @@ void SSDPoints::Init(idGameSSDWindow* _game, SSDEntity* _ent, int _points, int _
 	text = va("%d", _points);
 
 	float width = 0;
-	for(int i = 0; i < text.Length(); i++) {
+
+	for (int i = 0; i < text.Length(); i++) {
 		width += game->GetDC()->CharWidth(text[i], textScale);
 	}
 
@@ -823,7 +909,8 @@ void SSDPoints::Init(idGameSSDWindow* _game, SSDEntity* _ent, int _points, int _
 	noHit = true;
 }
 
-void SSDPoints::EntityUpdate() {
+void SSDPoints::EntityUpdate()
+{
 
 	float t = (float)(currentTime - beginTime)/(float)length;
 
@@ -833,50 +920,59 @@ void SSDPoints::EntityUpdate() {
 	//Interpolate the color
 	foreColor.Lerp(beginColor, endColor, t);
 
-	if(currentTime > endTime) {
+	if (currentTime > endTime) {
 		destroyed = true;
 	}
 }
 
-SSDPoints* SSDPoints::GetNewPoints(idGameSSDWindow* _game, SSDEntity* _ent, int _points, int _length, int _distance, const idVec4& color) {
-	for(int i = 0; i < MAX_POINTS; i++) {
-		if(!pointsPool[i].inUse) {
+SSDPoints *SSDPoints::GetNewPoints(idGameSSDWindow *_game, SSDEntity *_ent, int _points, int _length, int _distance, const idVec4 &color)
+{
+	for (int i = 0; i < MAX_POINTS; i++) {
+		if (!pointsPool[i].inUse) {
 			pointsPool[i].Init(_game, _ent, _points, _length, _distance, color);
 			pointsPool[i].inUse = true;
 			return &pointsPool[i];
 		}
 	}
+
 	return NULL;
 }
 
-SSDPoints* SSDPoints::GetSpecificPoints(int id) {
+SSDPoints *SSDPoints::GetSpecificPoints(int id)
+{
 	return &pointsPool[id];
 }
 
-void SSDPoints::WritePoints(idFile* savefile) {
+void SSDPoints::WritePoints(idFile *savefile)
+{
 	int count = 0;
-	for(int i = 0; i < MAX_POINTS; i++) {
-		if(pointsPool[i].inUse) {
+
+	for (int i = 0; i < MAX_POINTS; i++) {
+		if (pointsPool[i].inUse) {
 			count++;
 		}
 	}
+
 	savefile->Write(&count, sizeof(count));
-	for(int i = 0; i < MAX_POINTS; i++) {
-		if(pointsPool[i].inUse) {
+
+	for (int i = 0; i < MAX_POINTS; i++) {
+		if (pointsPool[i].inUse) {
 			savefile->Write(&(pointsPool[i].id), sizeof(pointsPool[i].id));
 			pointsPool[i].WriteToSaveGame(savefile);
 		}
 	}
 }
 
-void SSDPoints::ReadPoints(idFile* savefile, idGameSSDWindow* _game) {
+void SSDPoints::ReadPoints(idFile *savefile, idGameSSDWindow *_game)
+{
 
 	int count;
 	savefile->Read(&count, sizeof(count));
-	for(int i = 0; i < count; i++) {
+
+	for (int i = 0; i < count; i++) {
 		int id;
 		savefile->Read(&id, sizeof(id));
-		SSDPoints* ent = GetSpecificPoints(id);
+		SSDPoints *ent = GetSpecificPoints(id);
 		ent->ReadFromSaveGame(savefile, _game);
 	}
 }
@@ -891,14 +987,17 @@ SSDProjectile SSDProjectile::projectilePool[MAX_PROJECTILES];
 
 #define PROJECTILE_MATERIAL "game/SSD/fball"
 
-SSDProjectile::SSDProjectile() {
+SSDProjectile::SSDProjectile()
+{
 	type = SSD_ENTITY_PROJECTILE;
 }
 
-SSDProjectile::~SSDProjectile() {
+SSDProjectile::~SSDProjectile()
+{
 }
 
-void SSDProjectile::WriteToSaveGame( idFile *savefile ) {
+void SSDProjectile::WriteToSaveGame(idFile *savefile)
+{
 	SSDEntity::WriteToSaveGame(savefile);
 
 	savefile->Write(&dir, sizeof(dir));
@@ -909,7 +1008,8 @@ void SSDProjectile::WriteToSaveGame( idFile *savefile ) {
 	savefile->Write(&endPosition, sizeof(endPosition));
 }
 
-void SSDProjectile::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
+void SSDProjectile::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 	SSDEntity::ReadFromSaveGame(savefile, _game);
 
 	savefile->Read(&dir, sizeof(dir));
@@ -920,7 +1020,8 @@ void SSDProjectile::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game 
 	savefile->Read(&endPosition, sizeof(endPosition));
 }
 
-void SSDProjectile::Init(idGameSSDWindow* _game, const idVec3& _beginPosition, const idVec3& _endPosition, float _speed, float _size) {
+void SSDProjectile::Init(idGameSSDWindow *_game, const idVec3 &_beginPosition, const idVec3 &_endPosition, float _speed, float _size)
+{
 
 	EntityInit();
 
@@ -941,7 +1042,8 @@ void SSDProjectile::Init(idGameSSDWindow* _game, const idVec3& _beginPosition, c
 	noHit = true;
 }
 
-void SSDProjectile::EntityUpdate() {
+void SSDProjectile::EntityUpdate()
+{
 
 	SSDEntity::EntityUpdate();
 
@@ -949,51 +1051,60 @@ void SSDProjectile::EntityUpdate() {
 	idVec3 moved = dir*((float)elapsed/1000.0f)*speed.z;
 	position += moved;
 
-	if(position.z > endPosition.z) {
+	if (position.z > endPosition.z) {
 		//We have reached our position
 		destroyed = true;
 	}
 }
 
-SSDProjectile* SSDProjectile::GetNewProjectile(idGameSSDWindow* _game, const idVec3& _beginPosition, const idVec3& _endPosition, float _speed, float _size) {
-	for(int i = 0; i < MAX_PROJECTILES; i++) {
-		if(!projectilePool[i].inUse) {
+SSDProjectile *SSDProjectile::GetNewProjectile(idGameSSDWindow *_game, const idVec3 &_beginPosition, const idVec3 &_endPosition, float _speed, float _size)
+{
+	for (int i = 0; i < MAX_PROJECTILES; i++) {
+		if (!projectilePool[i].inUse) {
 			projectilePool[i].Init(_game, _beginPosition, _endPosition, _speed, _size);
 			projectilePool[i].inUse = true;
 			return &projectilePool[i];
 		}
 	}
+
 	return NULL;
 }
 
-SSDProjectile* SSDProjectile::GetSpecificProjectile(int id) {
+SSDProjectile *SSDProjectile::GetSpecificProjectile(int id)
+{
 	return &projectilePool[id];
 }
 
-void SSDProjectile::WriteProjectiles(idFile* savefile) {
+void SSDProjectile::WriteProjectiles(idFile *savefile)
+{
 	int count = 0;
-	for(int i = 0; i < MAX_PROJECTILES; i++) {
-		if(projectilePool[i].inUse) {
+
+	for (int i = 0; i < MAX_PROJECTILES; i++) {
+		if (projectilePool[i].inUse) {
 			count++;
 		}
 	}
+
 	savefile->Write(&count, sizeof(count));
-	for(int i = 0; i < MAX_PROJECTILES; i++) {
-		if(projectilePool[i].inUse) {
+
+	for (int i = 0; i < MAX_PROJECTILES; i++) {
+		if (projectilePool[i].inUse) {
 			savefile->Write(&(projectilePool[i].id), sizeof(projectilePool[i].id));
 			projectilePool[i].WriteToSaveGame(savefile);
 		}
 	}
 }
 
-void SSDProjectile::ReadProjectiles(idFile* savefile, idGameSSDWindow* _game) {
+void SSDProjectile::ReadProjectiles(idFile *savefile, idGameSSDWindow *_game)
+{
 
 	int count;
 	savefile->Read(&count, sizeof(count));
-	for(int i = 0; i < count; i++) {
+
+	for (int i = 0; i < count; i++) {
 		int id;
 		savefile->Read(&id, sizeof(id));
-		SSDProjectile* ent = GetSpecificProjectile(id);
+		SSDProjectile *ent = GetSpecificProjectile(id);
 		ent->ReadFromSaveGame(savefile, _game);
 	}
 }
@@ -1004,46 +1115,51 @@ void SSDProjectile::ReadProjectiles(idFile* savefile, idGameSSDWindow* _game) {
 ****************************************************************************
 */
 
-const char* powerupMaterials[][2] = {
-	{ "game/SSD/powerupHealthClosed",			"game/SSD/powerupHealthOpen" },
-	{ "game/SSD/powerupSuperBlasterClosed",	"game/SSD/powerupSuperBlasterOpen" },
-	{ "game/SSD/powerupNukeClosed",			"game/SSD/powerupNukeOpen" },
-	{ "game/SSD/powerupRescueClosed",			"game/SSD/powerupRescueOpen" },
-	{ "game/SSD/powerupBonusPointsClosed",	"game/SSD/powerupBonusPointsOpen" },
-	{ "game/SSD/powerupDamageClosed",			"game/SSD/powerupDamageOpen" },
+const char *powerupMaterials[][2] = {
+	{ "game/SSD/powerupHealthClosed",			"game/SSD/powerupHealthOpen", },
+	{ "game/SSD/powerupSuperBlasterClosed",	"game/SSD/powerupSuperBlasterOpen", },
+	{ "game/SSD/powerupNukeClosed",			"game/SSD/powerupNukeOpen", },
+	{ "game/SSD/powerupRescueClosed",			"game/SSD/powerupRescueOpen", },
+	{ "game/SSD/powerupBonusPointsClosed",	"game/SSD/powerupBonusPointsOpen", },
+	{ "game/SSD/powerupDamageClosed",			"game/SSD/powerupDamageOpen", },
 };
 
 #define POWERUP_MATERIAL_COUNT 6
 
 SSDPowerup	SSDPowerup::powerupPool[MAX_POWERUPS];
 
-SSDPowerup::SSDPowerup() {
+SSDPowerup::SSDPowerup()
+{
 
 }
 
-SSDPowerup::~SSDPowerup() {
+SSDPowerup::~SSDPowerup()
+{
 }
 
-void SSDPowerup::WriteToSaveGame( idFile *savefile ) {
+void SSDPowerup::WriteToSaveGame(idFile *savefile)
+{
 	SSDMover::WriteToSaveGame(savefile);
 
 	savefile->Write(&powerupState, sizeof(powerupState));
 	savefile->Write(&powerupType, sizeof(powerupType));
 }
 
-void SSDPowerup::ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  ) {
+void SSDPowerup::ReadFromSaveGame(idFile *savefile,  idGameSSDWindow *_game)
+{
 	SSDMover::ReadFromSaveGame(savefile, _game);
 
 	savefile->Read(&powerupState, sizeof(powerupState));
 	savefile->Read(&powerupType, sizeof(powerupType));
 }
 
-void SSDPowerup::OnHit(int key) {
+void SSDPowerup::OnHit(int key)
+{
 
-	if(powerupState == POWERUP_STATE_CLOSED) {
+	if (powerupState == POWERUP_STATE_CLOSED) {
 
 		//Small explosion to indicate it is opened
-		SSDExplosion* explosion = SSDExplosion::GetNewExplosion(game, position, size*2.0f, 300, SSDExplosion::EXPLOSION_NORMAL, this, false, true);
+		SSDExplosion *explosion = SSDExplosion::GetNewExplosion(game, position, size*2.0f, 300, SSDExplosion::EXPLOSION_NORMAL, this, false, true);
 		game->entities.Append(explosion);
 
 
@@ -1051,7 +1167,7 @@ void SSDPowerup::OnHit(int key) {
 		SetMaterial(powerupMaterials[powerupType][powerupState]);
 	} else {
 		//Destory the powerup with a big explosion
-		SSDExplosion* explosion = SSDExplosion::GetNewExplosion(game, position, size*2, 300, SSDExplosion::EXPLOSION_NORMAL, this);
+		SSDExplosion *explosion = SSDExplosion::GetNewExplosion(game, position, size*2, 300, SSDExplosion::EXPLOSION_NORMAL, this);
 		game->entities.Append(explosion);
 		game->PlaySound("arcade_explode");
 
@@ -1060,9 +1176,10 @@ void SSDPowerup::OnHit(int key) {
 	}
 }
 
-void SSDPowerup::OnStrikePlayer() {
+void SSDPowerup::OnStrikePlayer()
+{
 
-	if(powerupState == POWERUP_STATE_OPEN) {
+	if (powerupState == POWERUP_STATE_OPEN) {
 		//The powerup was open so activate it
 		OnActivatePowerup();
 	}
@@ -1071,49 +1188,46 @@ void SSDPowerup::OnStrikePlayer() {
 	destroyed = true;
 }
 
-void SSDPowerup::OnOpenPowerup() {
+void SSDPowerup::OnOpenPowerup()
+{
 }
 
-void SSDPowerup::OnActivatePowerup() {
-	switch(powerupType) {
-		case POWERUP_TYPE_HEALTH:
-			{
-				game->AddHealth(10);
-				break;
-			}
-		case POWERUP_TYPE_SUPER_BLASTER:
-			{
-				game->OnSuperBlaster();
-				break;
-			}
-		case POWERUP_TYPE_ASTEROID_NUKE:
-			{
-				game->OnNuke();
-				break;
-			}
-		case POWERUP_TYPE_RESCUE_ALL:
-			{
-				game->OnRescueAll();
-				break;
-			}
-		case POWERUP_TYPE_BONUS_POINTS:
-			{
-				int points = (game->random.RandomInt(5)+1) * 100;
-				game->AddScore(this, points);
-				break;
-			}
-		case POWERUP_TYPE_DAMAGE:
-			{
-				game->AddDamage(10);
-				game->PlaySound("arcade_explode");
-				break;
-			}
+void SSDPowerup::OnActivatePowerup()
+{
+	switch (powerupType) {
+		case POWERUP_TYPE_HEALTH: {
+			game->AddHealth(10);
+			break;
+		}
+		case POWERUP_TYPE_SUPER_BLASTER: {
+			game->OnSuperBlaster();
+			break;
+		}
+		case POWERUP_TYPE_ASTEROID_NUKE: {
+			game->OnNuke();
+			break;
+		}
+		case POWERUP_TYPE_RESCUE_ALL: {
+			game->OnRescueAll();
+			break;
+		}
+		case POWERUP_TYPE_BONUS_POINTS: {
+			int points = (game->random.RandomInt(5)+1) * 100;
+			game->AddScore(this, points);
+			break;
+		}
+		case POWERUP_TYPE_DAMAGE: {
+			game->AddDamage(10);
+			game->PlaySound("arcade_explode");
+			break;
+		}
 
 	}
 }
 
 
-void SSDPowerup::Init(idGameSSDWindow* _game, float _speed, float _rotation) {
+void SSDPowerup::Init(idGameSSDWindow *_game, float _speed, float _rotation)
+{
 
 	EntityInit();
 	MoverInit(idVec3(0,0, -_speed), _rotation);
@@ -1134,7 +1248,8 @@ void SSDPowerup::Init(idGameSSDWindow* _game, float _speed, float _rotation) {
 
 	powerupState = POWERUP_STATE_CLOSED;
 	powerupType = game->random.RandomInt(POWERUP_TYPE_MAX+1);
-	if(powerupType >= POWERUP_TYPE_MAX) {
+
+	if (powerupType >= POWERUP_TYPE_MAX) {
 		powerupType = 0;
 	}
 
@@ -1146,46 +1261,55 @@ void SSDPowerup::Init(idGameSSDWindow* _game, float _speed, float _rotation) {
 	SetMaterial(powerupMaterials[powerupType][powerupState]);
 }
 
-SSDPowerup* SSDPowerup::GetNewPowerup(idGameSSDWindow* _game, float _speed, float _rotation) {
+SSDPowerup *SSDPowerup::GetNewPowerup(idGameSSDWindow *_game, float _speed, float _rotation)
+{
 
-	for(int i = 0; i < MAX_POWERUPS; i++) {
-		if(!powerupPool[i].inUse) {
+	for (int i = 0; i < MAX_POWERUPS; i++) {
+		if (!powerupPool[i].inUse) {
 			powerupPool[i].Init(_game, _speed, _rotation);
 			powerupPool[i].inUse = true;
 			return &powerupPool[i];
 		}
 	}
+
 	return NULL;
 }
 
-SSDPowerup* SSDPowerup::GetSpecificPowerup(int id) {
+SSDPowerup *SSDPowerup::GetSpecificPowerup(int id)
+{
 	return &powerupPool[id];
 }
 
-void SSDPowerup::WritePowerups(idFile* savefile) {
+void SSDPowerup::WritePowerups(idFile *savefile)
+{
 	int count = 0;
-	for(int i = 0; i < MAX_POWERUPS; i++) {
-		if(powerupPool[i].inUse) {
+
+	for (int i = 0; i < MAX_POWERUPS; i++) {
+		if (powerupPool[i].inUse) {
 			count++;
 		}
 	}
+
 	savefile->Write(&count, sizeof(count));
-	for(int i = 0; i < MAX_POWERUPS; i++) {
-		if(powerupPool[i].inUse) {
+
+	for (int i = 0; i < MAX_POWERUPS; i++) {
+		if (powerupPool[i].inUse) {
 			savefile->Write(&(powerupPool[i].id), sizeof(powerupPool[i].id));
 			powerupPool[i].WriteToSaveGame(savefile);
 		}
 	}
 }
 
-void SSDPowerup::ReadPowerups(idFile* savefile, idGameSSDWindow* _game) {
+void SSDPowerup::ReadPowerups(idFile *savefile, idGameSSDWindow *_game)
+{
 
 	int count;
 	savefile->Read(&count, sizeof(count));
-	for(int i = 0; i < count; i++) {
+
+	for (int i = 0; i < count; i++) {
 		int id;
 		savefile->Read(&id, sizeof(id));
-		SSDPowerup* ent = GetSpecificPowerup(id);
+		SSDPowerup *ent = GetSpecificPowerup(id);
 		ent->ReadFromSaveGame(savefile, _game);
 	}
 }
@@ -1198,22 +1322,26 @@ void SSDPowerup::ReadPowerups(idFile* savefile, idGameSSDWindow* _game) {
 
 idRandom idGameSSDWindow::random;
 
-idGameSSDWindow::idGameSSDWindow(idDeviceContext *d, idUserInterfaceLocal *g) : idWindow(d, g) {
+idGameSSDWindow::idGameSSDWindow(idDeviceContext *d, idUserInterfaceLocal *g) : idWindow(d, g)
+{
 	dc = d;
 	gui = g;
 	CommonInit();
 }
 
-idGameSSDWindow::idGameSSDWindow(idUserInterfaceLocal *g) : idWindow(g) {
+idGameSSDWindow::idGameSSDWindow(idUserInterfaceLocal *g) : idWindow(g)
+{
 	gui = g;
 	CommonInit();
 }
 
-idGameSSDWindow::~idGameSSDWindow() {
+idGameSSDWindow::~idGameSSDWindow()
+{
 	ResetGameStats();
 }
 
-void idGameSSDWindow::WriteToSaveGame( idFile *savefile ) {
+void idGameSSDWindow::WriteToSaveGame(idFile *savefile)
+{
 	idWindow::WriteToSaveGame(savefile);
 
 	savefile->Write(&ssdTime, sizeof(ssdTime));
@@ -1227,7 +1355,8 @@ void idGameSSDWindow::WriteToSaveGame( idFile *savefile ) {
 	savefile->Write(&screenBounds, sizeof(screenBounds));
 
 	savefile->Write(&levelCount, sizeof(levelCount));
-	for(int i = 0; i < levelCount; i++) {
+
+	for (int i = 0; i < levelCount; i++) {
 		savefile->Write(&(levelData[i]), sizeof(SSDLevelData_t));
 		savefile->Write(&(asteroidData[i]), sizeof(SSDAsteroidData_t));
 		savefile->Write(&(astronautData[i]), sizeof(SSDAstronautData_t));
@@ -1235,7 +1364,8 @@ void idGameSSDWindow::WriteToSaveGame( idFile *savefile ) {
 	}
 
 	savefile->Write(&weaponCount, sizeof(weaponCount));
-	for(int i = 0; i < weaponCount; i++) {
+
+	for (int i = 0; i < weaponCount; i++) {
 		savefile->Write(&(weaponData[i]), sizeof(SSDWeaponData_t));
 	}
 
@@ -1252,13 +1382,15 @@ void idGameSSDWindow::WriteToSaveGame( idFile *savefile ) {
 
 	int entCount = entities.Num();
 	savefile->Write(&entCount, sizeof(entCount));
-	for(int i = 0; i < entCount; i++) {
+
+	for (int i = 0; i < entCount; i++) {
 		savefile->Write(&(entities[i]->type), sizeof(entities[i]->type));
 		savefile->Write(&(entities[i]->id), sizeof(entities[i]->id));
 	}
 }
 
-void idGameSSDWindow::ReadFromSaveGame( idFile *savefile ) {
+void idGameSSDWindow::ReadFromSaveGame(idFile *savefile)
+{
 	idWindow::ReadFromSaveGame(savefile);
 
 
@@ -1273,7 +1405,8 @@ void idGameSSDWindow::ReadFromSaveGame( idFile *savefile ) {
 	savefile->Read(&screenBounds, sizeof(screenBounds));
 
 	savefile->Read(&levelCount, sizeof(levelCount));
-	for(int i = 0; i < levelCount; i++) {
+
+	for (int i = 0; i < levelCount; i++) {
 		SSDLevelData_t newLevel;
 		savefile->Read(&newLevel, sizeof(SSDLevelData_t));
 		levelData.Append(newLevel);
@@ -1292,7 +1425,8 @@ void idGameSSDWindow::ReadFromSaveGame( idFile *savefile ) {
 	}
 
 	savefile->Read(&weaponCount, sizeof(weaponCount));
-	for(int i = 0; i < weaponCount; i++) {
+
+	for (int i = 0; i < weaponCount; i++) {
 		SSDWeaponData_t newWeapon;
 		savefile->Read(&newWeapon, sizeof(SSDWeaponData_t));
 		weaponData.Append(newWeapon);
@@ -1314,45 +1448,49 @@ void idGameSSDWindow::ReadFromSaveGame( idFile *savefile ) {
 	int entCount;
 	savefile->Read(&entCount, sizeof(entCount));
 
-	for(int i = 0; i < entCount; i++) {
+	for (int i = 0; i < entCount; i++) {
 		int type, id;
 		savefile->Read(&type, sizeof(type));
 		savefile->Read(&id, sizeof(id));
 
-		SSDEntity* ent = GetSpecificEntity(type, id);
-		if(ent) {
+		SSDEntity *ent = GetSpecificEntity(type, id);
+
+		if (ent) {
 			entities.Append(ent);
 		}
 	}
 }
 
-const char *idGameSSDWindow::HandleEvent(const sysEvent_t *event, bool *updateVisuals) {
+const char *idGameSSDWindow::HandleEvent(const sysEvent_t *event, bool *updateVisuals)
+{
 
 	// need to call this to allow proper focus and capturing on embedded children
 	const char *ret = idWindow::HandleEvent(event, updateVisuals);
 
-	if(!gameStats.gameRunning) {
+	if (!gameStats.gameRunning) {
 		return ret;
 	}
 
 	int key = event->evValue;
 
-	if ( event->evType == SE_KEY ) {
+	if (event->evType == SE_KEY) {
 
-		if ( !event->evValue2 ) {
+		if (!event->evValue2) {
 			return ret;
 		}
 
-		if ( key == K_MOUSE1 || key == K_MOUSE2) {
+		if (key == K_MOUSE1 || key == K_MOUSE2) {
 			FireWeapon(key);
 		} else {
 			return ret;
 		}
 	}
+
 	return ret;
 }
 
-idWinVar *idGameSSDWindow::GetWinVarByName	(const char *_name, bool winLookup, drawWin_t** owner) {
+idWinVar *idGameSSDWindow::GetWinVarByName(const char *_name, bool winLookup, drawWin_t **owner)
+{
 
 	idWinVar *retVar = NULL;
 
@@ -1367,12 +1505,13 @@ idWinVar *idGameSSDWindow::GetWinVarByName	(const char *_name, bool winLookup, d
 	if (idStr::Icmp(_name, "continueGame") == 0) {
 		retVar = &continueGame;
 	}
+
 	if (idStr::Icmp(_name, "refreshGuiData") == 0) {
 		retVar = &refreshGuiData;
 	}
 
 
-	if(retVar) {
+	if (retVar) {
 		return retVar;
 	}
 
@@ -1380,19 +1519,20 @@ idWinVar *idGameSSDWindow::GetWinVarByName	(const char *_name, bool winLookup, d
 }
 
 
-void idGameSSDWindow::Draw(int time, float x, float y) {
+void idGameSSDWindow::Draw(int time, float x, float y)
+{
 
 	//Update the game every frame before drawing
 	UpdateGame();
 
 	RefreshGuiData();
 
-	if(gameStats.gameRunning) {
+	if (gameStats.gameRunning) {
 
 		ZOrderEntities();
 
 		//Draw from back to front
-		for(int i = entities.Num()-1; i >= 0; i--) {
+		for (int i = entities.Num()-1; i >= 0; i--) {
 			entities[i]->Draw(dc);
 		}
 
@@ -1407,28 +1547,33 @@ void idGameSSDWindow::Draw(int time, float x, float y) {
 }
 
 
-bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src) {
+bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src)
+{
 
 	if (idStr::Icmp(_name, "beginLevel") == 0) {
 		beginLevel = src->ParseBool();
 		return true;
 	}
+
 	if (idStr::Icmp(_name, "resetGame") == 0) {
 		resetGame = src->ParseBool();
 		return true;
 	}
+
 	if (idStr::Icmp(_name, "continueGame") == 0) {
 		continueGame = src->ParseBool();
 		return true;
 	}
+
 	if (idStr::Icmp(_name, "refreshGuiData") == 0) {
 		refreshGuiData = src->ParseBool();
 		return true;
 	}
 
-	if(idStr::Icmp(_name, "levelcount") == 0) {
+	if (idStr::Icmp(_name, "levelcount") == 0) {
 		levelCount = src->ParseInt();
-		for(int i = 0; i < levelCount; i++) {
+
+		for (int i = 0; i < levelCount; i++) {
 			SSDLevelData_t newLevel;
 			memset(&newLevel, 0, sizeof(SSDLevelData_t));
 			levelData.Append(newLevel);
@@ -1447,19 +1592,23 @@ bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src) {
 
 
 		}
+
 		return true;
 	}
-	if(idStr::Icmp(_name, "weaponCount") == 0) {
+
+	if (idStr::Icmp(_name, "weaponCount") == 0) {
 		weaponCount = src->ParseInt();
-		for(int i = 0; i < weaponCount; i++) {
+
+		for (int i = 0; i < weaponCount; i++) {
 			SSDWeaponData_t newWeapon;
 			memset(&newWeapon, 0, sizeof(SSDWeaponData_t));
 			weaponData.Append(newWeapon);
 		}
+
 		return true;
 	}
 
-	if(idStr::FindText(_name, "leveldata", false) >= 0) {
+	if (idStr::FindText(_name, "leveldata", false) >= 0) {
 		idStr tempName = _name;
 		int level = atoi(tempName.Right(2))-1;
 
@@ -1469,7 +1618,7 @@ bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src) {
 		return true;
 	}
 
-	if(idStr::FindText(_name, "asteroiddata", false) >= 0) {
+	if (idStr::FindText(_name, "asteroiddata", false) >= 0) {
 		idStr tempName = _name;
 		int level = atoi(tempName.Right(2))-1;
 
@@ -1479,7 +1628,7 @@ bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src) {
 		return true;
 	}
 
-	if(idStr::FindText(_name, "weapondata", false) >= 0) {
+	if (idStr::FindText(_name, "weapondata", false) >= 0) {
 		idStr tempName = _name;
 		int weapon = atoi(tempName.Right(2))-1;
 
@@ -1489,7 +1638,7 @@ bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src) {
 		return true;
 	}
 
-	if(idStr::FindText(_name, "astronautdata", false) >= 0) {
+	if (idStr::FindText(_name, "astronautdata", false) >= 0) {
 		idStr tempName = _name;
 		int level = atoi(tempName.Right(2))-1;
 
@@ -1499,7 +1648,7 @@ bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src) {
 		return true;
 	}
 
-	if(idStr::FindText(_name, "powerupdata", false) >= 0) {
+	if (idStr::FindText(_name, "powerupdata", false) >= 0) {
 		idStr tempName = _name;
 		int level = atoi(tempName.Right(2))-1;
 
@@ -1512,7 +1661,8 @@ bool idGameSSDWindow::ParseInternalVar(const char *_name, idParser *src) {
 	return idWindow::ParseInternalVar(_name, src);
 }
 
-void idGameSSDWindow::ParseLevelData(int level, const idStr& levelDataString) {
+void idGameSSDWindow::ParseLevelData(int level, const idStr &levelDataString)
+{
 
 	idParser parser;
 	idToken token;
@@ -1523,7 +1673,8 @@ void idGameSSDWindow::ParseLevelData(int level, const idStr& levelDataString) {
 
 }
 
-void idGameSSDWindow::ParseAsteroidData(int level, const idStr& asteroidDataString) {
+void idGameSSDWindow::ParseAsteroidData(int level, const idStr &asteroidDataString)
+{
 
 	idParser parser;
 	idToken token;
@@ -1546,7 +1697,8 @@ void idGameSSDWindow::ParseAsteroidData(int level, const idStr& asteroidDataStri
 	asteroidData[level].asteroidPoints = parser.ParseInt(); //Points awarded for destruction
 }
 
-void idGameSSDWindow::ParsePowerupData(int level, const idStr& powerupDataString) {
+void idGameSSDWindow::ParsePowerupData(int level, const idStr &powerupDataString)
+{
 
 	idParser parser;
 	idToken token;
@@ -1563,7 +1715,8 @@ void idGameSSDWindow::ParsePowerupData(int level, const idStr& powerupDataString
 
 }
 
-void idGameSSDWindow::ParseWeaponData(int weapon, const idStr& weaponDataString) {
+void idGameSSDWindow::ParseWeaponData(int weapon, const idStr &weaponDataString)
+{
 
 	idParser parser;
 	idToken token;
@@ -1574,7 +1727,8 @@ void idGameSSDWindow::ParseWeaponData(int weapon, const idStr& weaponDataString)
 	weaponData[weapon].size = parser.ParseFloat();
 }
 
-void idGameSSDWindow::ParseAstronautData(int level, const idStr& astronautDataString) {
+void idGameSSDWindow::ParseAstronautData(int level, const idStr &astronautDataString)
+{
 
 	idParser parser;
 	idToken token;
@@ -1594,7 +1748,8 @@ void idGameSSDWindow::ParseAstronautData(int level, const idStr& astronautDataSt
 	astronautData[level].penalty = parser.ParseInt(); //Points awarded for destruction
 }
 
-void idGameSSDWindow::CommonInit() {
+void idGameSSDWindow::CommonInit()
+{
 	crosshair.InitCrosshairs();
 
 
@@ -1616,24 +1771,27 @@ void idGameSSDWindow::CommonInit() {
 	declManager->FindMaterial(ASTEROID_MATERIAL);
 	declManager->FindMaterial(ASTRONAUT_MATERIAL);
 
-	for(int i = 0; i < EXPLOSION_MATERIAL_COUNT; i++) {
+	for (int i = 0; i < EXPLOSION_MATERIAL_COUNT; i++) {
 		declManager->FindMaterial(explosionMaterials[i]);
 	}
+
 	declManager->FindMaterial(PROJECTILE_MATERIAL);
-	for(int i = 0; i < POWERUP_MATERIAL_COUNT; i++) {
+
+	for (int i = 0; i < POWERUP_MATERIAL_COUNT; i++) {
 		declManager->FindMaterial(powerupMaterials[i][0]);
 		declManager->FindMaterial(powerupMaterials[i][1]);
 	}
 
 	// Precache sounds
-	declManager->FindSound( "arcade_blaster" );
-	declManager->FindSound( "arcade_capture " );
-	declManager->FindSound( "arcade_explode" );
+	declManager->FindSound("arcade_blaster");
+	declManager->FindSound("arcade_capture ");
+	declManager->FindSound("arcade_explode");
 
 	ResetGameStats();
 }
 
-void idGameSSDWindow::ResetGameStats() {
+void idGameSSDWindow::ResetGameStats()
+{
 
 	ResetEntities();
 
@@ -1644,7 +1802,8 @@ void idGameSSDWindow::ResetGameStats() {
 
 }
 
-void idGameSSDWindow::ResetLevelStats() {
+void idGameSSDWindow::ResetLevelStats()
+{
 
 	ResetEntities();
 
@@ -1654,25 +1813,30 @@ void idGameSSDWindow::ResetLevelStats() {
 
 }
 
-void idGameSSDWindow::ResetEntities() {
+void idGameSSDWindow::ResetEntities()
+{
 	//Destroy all of the entities
-	for(int i = 0; i < entities.Num(); i++) {
+	for (int i = 0; i < entities.Num(); i++) {
 		entities[i]->DestroyEntity();
 	}
+
 	entities.Clear();
 }
 
-void idGameSSDWindow::StartGame() {
+void idGameSSDWindow::StartGame()
+{
 
 	gameStats.gameRunning = true;
 }
 
-void idGameSSDWindow::StopGame() {
+void idGameSSDWindow::StopGame()
+{
 
 	gameStats.gameRunning = false;
 }
 
-void idGameSSDWindow::GameOver() {
+void idGameSSDWindow::GameOver()
+{
 
 
 	StopGame();
@@ -1680,7 +1844,8 @@ void idGameSSDWindow::GameOver() {
 	gui->HandleNamedEvent("gameOver");
 }
 
-void idGameSSDWindow::BeginLevel(int level) {
+void idGameSSDWindow::BeginLevel(int level)
+{
 
 	ResetLevelStats();
 
@@ -1692,24 +1857,28 @@ void idGameSSDWindow::BeginLevel(int level) {
 /**
 * Continue game resets the players health
 */
-void idGameSSDWindow::ContinueGame() {
+void idGameSSDWindow::ContinueGame()
+{
 	gameStats.health = 100;
 
 	StartGame();
 }
 
-void idGameSSDWindow::LevelComplete() {
+void idGameSSDWindow::LevelComplete()
+{
 
 	gameStats.prebonusscore = gameStats.score;
 
 	// Add the bonuses
 	int accuracy;
-	if( !gameStats.levelStats.shotCount ) {
+
+	if (!gameStats.levelStats.shotCount) {
 		accuracy = 0;
 	} else {
-		accuracy = (int)( ( (float)gameStats.levelStats.hitCount / (float)gameStats.levelStats.shotCount ) * 100.0f );
+		accuracy = (int)(((float)gameStats.levelStats.hitCount / (float)gameStats.levelStats.shotCount) * 100.0f);
 	}
-	int accuracyPoints = Max( 0, accuracy - 50 ) * 20;
+
+	int accuracyPoints = Max(0, accuracy - 50) * 20;
 
 	gui->SetStateString("player_accuracy_score", va("%i", accuracyPoints));
 
@@ -1717,12 +1886,14 @@ void idGameSSDWindow::LevelComplete() {
 
 	int saveAccuracy;
 	int totalAst = gameStats.levelStats.savedAstronauts + gameStats.levelStats.killedAstronauts;
-	if( !totalAst ) {
+
+	if (!totalAst) {
 		saveAccuracy = 0;
 	} else {
-		saveAccuracy = (int)( ( (float)gameStats.levelStats.savedAstronauts / (float)totalAst ) * 100.0f );
+		saveAccuracy = (int)(((float)gameStats.levelStats.savedAstronauts / (float)totalAst) * 100.0f);
 	}
-	accuracyPoints = Max( 0, saveAccuracy - 50 ) * 20;
+
+	accuracyPoints = Max(0, saveAccuracy - 50) * 20;
 
 	gui->SetStateString("save_accuracy_score", va("%i", accuracyPoints));
 
@@ -1734,7 +1905,7 @@ void idGameSSDWindow::LevelComplete() {
 
 	gameStats.nextLevel++;
 
-	if(gameStats.nextLevel >= levelCount) {
+	if (gameStats.nextLevel >= levelCount) {
 		//Have they beaten the game
 		GameComplete();
 	} else {
@@ -1747,38 +1918,43 @@ void idGameSSDWindow::LevelComplete() {
 	}
 }
 
-void idGameSSDWindow::GameComplete() {
+void idGameSSDWindow::GameComplete()
+{
 	StopGame();
 	gui->HandleNamedEvent("gameComplete");
 }
 
 
-void idGameSSDWindow::UpdateGame() {
+void idGameSSDWindow::UpdateGame()
+{
 
 	//Check to see if and functions where called by the gui
-	if(beginLevel == true) {
+	if (beginLevel == true) {
 		beginLevel = false;
 		BeginLevel(gameStats.nextLevel);
 	}
-	if(resetGame == true) {
+
+	if (resetGame == true) {
 		resetGame = false;
 		ResetGameStats();
 	}
-	if(continueGame == true) {
+
+	if (continueGame == true) {
 		continueGame = false;
 		ContinueGame();
 	}
-	if(refreshGuiData == true) {
+
+	if (refreshGuiData == true) {
 		refreshGuiData = false;
 		RefreshGuiData();
 	}
 
-	if(gameStats.gameRunning) {
+	if (gameStats.gameRunning) {
 
 		//We assume an upate every 16 milliseconds
 		ssdTime += 16;
 
-		if(superBlasterTimeout && ssdTime > superBlasterTimeout) {
+		if (superBlasterTimeout && ssdTime > superBlasterTimeout) {
 			StopSuperBlaster();
 		}
 
@@ -1790,16 +1966,16 @@ void idGameSSDWindow::UpdateGame() {
 		gameStats.levelStats.targetEnt = EntityHitTest(cursor);
 
 		//Update from back to front
-		for(int i = entities.Num()-1; i >= 0; i--) {
+		for (int i = entities.Num()-1; i >= 0; i--) {
 			entities[i]->Update();
 		}
 
 		CheckForHits();
 
 		//Delete entities that need to be deleted
-		for(int i = entities.Num()-1; i >= 0; i--) {
-			if(entities[i]->destroyed) {
-				SSDEntity* ent = entities[i];
+		for (int i = entities.Num()-1; i >= 0; i--) {
+			if (entities[i]->destroyed) {
+				SSDEntity *ent = entities[i];
 				ent->DestroyEntity();
 				entities.RemoveIndex(i);
 			}
@@ -1816,14 +1992,16 @@ void idGameSSDWindow::UpdateGame() {
 	}
 }
 
-void idGameSSDWindow::CheckForHits() {
+void idGameSSDWindow::CheckForHits()
+{
 
 	//See if the entity has gotten close enough
-	for(int i = 0; i < entities.Num(); i++) {
-		SSDEntity* ent = entities[i];
-		if(ent->position.z <= Z_NEAR) {
+	for (int i = 0; i < entities.Num(); i++) {
+		SSDEntity *ent = entities[i];
 
-			if(!ent->noPlayerDamage) {
+		if (ent->position.z <= Z_NEAR) {
+
+			if (!ent->noPlayerDamage) {
 
 				//Is the object still in the screen
 				idVec3 entPos = ent->position;
@@ -1832,15 +2010,15 @@ void idGameSSDWindow::CheckForHits() {
 				idBounds entBounds(entPos);
 				entBounds.ExpandSelf(ent->hitRadius);
 
-				if(screenBounds.IntersectsBounds(entBounds)) {
+				if (screenBounds.IntersectsBounds(entBounds)) {
 
 					ent->OnStrikePlayer();
 
 					//The entity hit the player figure out what is was and act appropriately
-					if(ent->type == SSD_ENTITY_ASTEROID) {
-						AsteroidStruckPlayer(static_cast<SSDAsteroid*>(ent));
-					} else if(ent->type == SSD_ENTITY_ASTRONAUT) {
-						AstronautStruckPlayer(static_cast<SSDAstronaut*>(ent));
+					if (ent->type == SSD_ENTITY_ASTEROID) {
+						AsteroidStruckPlayer(static_cast<SSDAsteroid *>(ent));
+					} else if (ent->type == SSD_ENTITY_ASTRONAUT) {
+						AstronautStruckPlayer(static_cast<SSDAstronaut *>(ent));
 					}
 				} else {
 					//Tag for removal later in the frame
@@ -1851,19 +2029,22 @@ void idGameSSDWindow::CheckForHits() {
 	}
 }
 
-void idGameSSDWindow::ZOrderEntities() {
+void idGameSSDWindow::ZOrderEntities()
+{
 	//Z-Order the entities
 	//Using a simple sorting method
 	for (int i = entities.Num()-1; i >= 0; i--) {
 		bool flipped = false;
+
 		for (int j = 0;  j<i ; j++) {
 			if (entities[j]->position.z > entities[j+1]->position.z) {
-				SSDEntity* ent = entities[j];
+				SSDEntity *ent = entities[j];
 				entities[j] = entities[j+1];
 				entities[j+1] = ent;
 				flipped = true;
 			}
 		}
+
 		if (!flipped) {
 			//Jump out because it is sorted
 			break;
@@ -1871,11 +2052,12 @@ void idGameSSDWindow::ZOrderEntities() {
 	}
 }
 
-void idGameSSDWindow::SpawnAsteroid() {
+void idGameSSDWindow::SpawnAsteroid()
+{
 
 	int currentTime = ssdTime;
 
-	if(currentTime < gameStats.levelStats.nextAsteroidSpawnTime) {
+	if (currentTime < gameStats.levelStats.nextAsteroidSpawnTime) {
 		//Not time yet
 		return;
 	}
@@ -1892,13 +2074,14 @@ void idGameSSDWindow::SpawnAsteroid() {
 	float size = random.RandomInt(asteroidData[gameStats.currentLevel].sizeMax - asteroidData[gameStats.currentLevel].sizeMin) + asteroidData[gameStats.currentLevel].sizeMin;
 	float rotate = (random.RandomFloat() * (asteroidData[gameStats.currentLevel].rotateMax - asteroidData[gameStats.currentLevel].rotateMin)) + asteroidData[gameStats.currentLevel].rotateMin;
 
-	SSDAsteroid* asteroid = SSDAsteroid::GetNewAsteroid(this, startPosition, idVec2(size, size), speed, rotate, asteroidData[gameStats.currentLevel].asteroidHealth);
+	SSDAsteroid *asteroid = SSDAsteroid::GetNewAsteroid(this, startPosition, idVec2(size, size), speed, rotate, asteroidData[gameStats.currentLevel].asteroidHealth);
 	entities.Append(asteroid);
 
 	gameStats.levelStats.nextAsteroidSpawnTime = currentTime + random.RandomInt(asteroidData[gameStats.currentLevel].spawnMax - asteroidData[gameStats.currentLevel].spawnMin) + asteroidData[gameStats.currentLevel].spawnMin;
 }
 
-void idGameSSDWindow::FireWeapon(int key) {
+void idGameSSDWindow::FireWeapon(int key)
+{
 
 	idVec2 cursorWorld = GetCursorWorld();
 	idVec2 cursor;
@@ -1906,14 +2089,14 @@ void idGameSSDWindow::FireWeapon(int key) {
 	cursor.x = gui->CursorX();
 	cursor.y = gui->CursorY();
 
-	if(key == K_MOUSE1) {
+	if (key == K_MOUSE1) {
 
 		gameStats.levelStats.shotCount++;
 
-		if(gameStats.levelStats.targetEnt) {
+		if (gameStats.levelStats.targetEnt) {
 			//Aim the projectile from the bottom of the screen directly at the ent
 			//SSDProjectile* newProj = new SSDProjectile(this, idVec3(320,0,0), gameStats.levelStats.targetEnt->position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
-			SSDProjectile* newProj = SSDProjectile::GetNewProjectile(this, idVec3(0,-180,0), gameStats.levelStats.targetEnt->position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
+			SSDProjectile *newProj = SSDProjectile::GetNewProjectile(this, idVec3(0,-180,0), gameStats.levelStats.targetEnt->position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
 			entities.Append(newProj);
 			//newProj = SSDProjectile::GetNewProjectile(this, idVec3(-320,-0,0), gameStats.levelStats.targetEnt->position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
 			//entities.Append(newProj);
@@ -1923,11 +2106,11 @@ void idGameSSDWindow::FireWeapon(int key) {
 
 			gameStats.levelStats.targetEnt->OnHit(key);
 
-			if(gameStats.levelStats.targetEnt->type == SSD_ENTITY_ASTEROID) {
-				HitAsteroid(static_cast<SSDAsteroid*>(gameStats.levelStats.targetEnt), key);
-			} else if(gameStats.levelStats.targetEnt->type == SSD_ENTITY_ASTRONAUT) {
-				HitAstronaut(static_cast<SSDAstronaut*>(gameStats.levelStats.targetEnt), key);
-			} else if(gameStats.levelStats.targetEnt->type == SSD_ENTITY_ASTRONAUT) {
+			if (gameStats.levelStats.targetEnt->type == SSD_ENTITY_ASTEROID) {
+				HitAsteroid(static_cast<SSDAsteroid *>(gameStats.levelStats.targetEnt), key);
+			} else if (gameStats.levelStats.targetEnt->type == SSD_ENTITY_ASTRONAUT) {
+				HitAstronaut(static_cast<SSDAstronaut *>(gameStats.levelStats.targetEnt), key);
+			} else if (gameStats.levelStats.targetEnt->type == SSD_ENTITY_ASTRONAUT) {
 
 			}
 		} else {
@@ -1937,7 +2120,7 @@ void idGameSSDWindow::FireWeapon(int key) {
 			//Aim the projectile so it crosses the cursor 1/4 of screen
 			idVec3 vec = idVec3(cursorWorld.x, cursorWorld.y, (Z_FAR-Z_NEAR)/8.0f);
 			vec *= 8;
-			SSDProjectile* newProj = SSDProjectile::GetNewProjectile(this, idVec3(0,-180,0), vec, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
+			SSDProjectile *newProj = SSDProjectile::GetNewProjectile(this, idVec3(0,-180,0), vec, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
 			entities.Append(newProj);
 
 		}
@@ -1947,6 +2130,7 @@ void idGameSSDWindow::FireWeapon(int key) {
 		PlaySound("arcade_blaster");
 
 	} /*else if (key == K_MOUSE2) {
+
 		if(gameStats.levelStats.targetEnt) {
 			if(gameStats.levelStats.targetEnt->type == SSD_ENTITY_ASTRONAUT) {
 				HitAstronaut(static_cast<SSDAstronaut*>(gameStats.levelStats.targetEnt), key);
@@ -1955,28 +2139,31 @@ void idGameSSDWindow::FireWeapon(int key) {
 	}*/
 }
 
-SSDEntity* idGameSSDWindow::EntityHitTest(const idVec2& pt) {
+SSDEntity *idGameSSDWindow::EntityHitTest(const idVec2 &pt)
+{
 
-	for(int i = 0; i < entities.Num(); i++) {
+	for (int i = 0; i < entities.Num(); i++) {
 		//Since we ZOrder the entities every frame we can stop at the first entity we hit.
 		//ToDo: Make sure this assumption is true
-		if(entities[i]->HitTest(pt)) {
+		if (entities[i]->HitTest(pt)) {
 			return entities[i];
 		}
 	}
+
 	return NULL;
 }
 
-void idGameSSDWindow::HitAsteroid(SSDAsteroid* asteroid, int key) {
+void idGameSSDWindow::HitAsteroid(SSDAsteroid *asteroid, int key)
+{
 
 
 
 	asteroid->health -= weaponData[gameStats.currentWeapon].damage;
 
-	if(asteroid->health <= 0) {
+	if (asteroid->health <= 0) {
 
 		//The asteroid has been destroyed
-		SSDExplosion* explosion = SSDExplosion::GetNewExplosion(this, asteroid->position, asteroid->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, asteroid);
+		SSDExplosion *explosion = SSDExplosion::GetNewExplosion(this, asteroid->position, asteroid->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, asteroid);
 		entities.Append(explosion);
 		PlaySound("arcade_explode");
 
@@ -1992,67 +2179,73 @@ void idGameSSDWindow::HitAsteroid(SSDAsteroid* asteroid, int key) {
 
 	} else {
 		//This was a damage hit so create a real small quick explosion
-		SSDExplosion* explosion = SSDExplosion::GetNewExplosion(this, asteroid->position, asteroid->size/2.0f, 200, SSDExplosion::EXPLOSION_NORMAL, asteroid, false, false);
+		SSDExplosion *explosion = SSDExplosion::GetNewExplosion(this, asteroid->position, asteroid->size/2.0f, 200, SSDExplosion::EXPLOSION_NORMAL, asteroid, false, false);
 		entities.Append(explosion);
 	}
 }
 
-void idGameSSDWindow::AsteroidStruckPlayer(SSDAsteroid* asteroid) {
+void idGameSSDWindow::AsteroidStruckPlayer(SSDAsteroid *asteroid)
+{
 
 	asteroid->noPlayerDamage = true;
 	asteroid->noHit = true;
 
 	AddDamage(asteroidData[gameStats.currentLevel].asteroidDamage);
 
-	SSDExplosion* explosion = SSDExplosion::GetNewExplosion(this, asteroid->position, asteroid->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, asteroid);
+	SSDExplosion *explosion = SSDExplosion::GetNewExplosion(this, asteroid->position, asteroid->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, asteroid);
 	entities.Append(explosion);
 	PlaySound("arcade_explode");
 }
 
-void idGameSSDWindow::AddScore(SSDEntity* ent, int points) {
+void idGameSSDWindow::AddScore(SSDEntity *ent, int points)
+{
 
-	SSDPoints* pointsEnt;
+	SSDPoints *pointsEnt;
 
-	if(points > 0) {
+	if (points > 0) {
 		pointsEnt = SSDPoints::GetNewPoints(this, ent, points, 1000, 50, idVec4(0,1,0,1));
 	} else {
 		pointsEnt = SSDPoints::GetNewPoints(this, ent, points, 1000, 50, idVec4(1,0,0,1));
 	}
+
 	entities.Append(pointsEnt);
 
 	gameStats.score += points;
-	gui->SetStateString( "player_score", va("%i", gameStats.score ) );
+	gui->SetStateString("player_score", va("%i", gameStats.score));
 }
 
-void idGameSSDWindow::AddDamage(int damage) {
+void idGameSSDWindow::AddDamage(int damage)
+{
 	gameStats.health -= damage;
-	gui->SetStateString( "player_health", va("%i", gameStats.health ) );
+	gui->SetStateString("player_health", va("%i", gameStats.health));
 
-	gui->HandleNamedEvent( "playerDamage" );
+	gui->HandleNamedEvent("playerDamage");
 
-	if(gameStats.health <= 0) {
+	if (gameStats.health <= 0) {
 		//The player is dead
 		GameOver();
 	}
 }
 
-void idGameSSDWindow::AddHealth(int health) {
+void idGameSSDWindow::AddHealth(int health)
+{
 	gameStats.health += health;
-	gameStats.health = Min( 100, gameStats.health );
+	gameStats.health = Min(100, gameStats.health);
 }
 
 
-void idGameSSDWindow::OnNuke() {
+void idGameSSDWindow::OnNuke()
+{
 
 	gui->HandleNamedEvent("nuke");
 
 	//Destory All Asteroids
-	for(int i = 0 ; i < entities.Num(); i++) {
+	for (int i = 0 ; i < entities.Num(); i++) {
 
-		if(entities[i]->type == SSD_ENTITY_ASTEROID) {
+		if (entities[i]->type == SSD_ENTITY_ASTEROID) {
 
 			//The asteroid has been destroyed
-			SSDExplosion* explosion = SSDExplosion::GetNewExplosion(this, entities[i]->position, entities[i]->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, entities[i]);
+			SSDExplosion *explosion = SSDExplosion::GetNewExplosion(this, entities[i]->position, entities[i]->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, entities[i]);
 			entities.Append(explosion);
 
 			AddScore(entities[i], asteroidData[gameStats.currentLevel].asteroidPoints);
@@ -2063,6 +2256,7 @@ void idGameSSDWindow::OnNuke() {
 			gameStats.levelStats.destroyedAsteroids++;
 		}
 	}
+
 	PlaySound("arcade_explode");
 
 	//Check to see if a nuke ends the level
@@ -2072,55 +2266,61 @@ void idGameSSDWindow::OnNuke() {
 	}*/
 }
 
-void idGameSSDWindow::OnRescueAll() {
+void idGameSSDWindow::OnRescueAll()
+{
 
 	gui->HandleNamedEvent("rescueAll");
 
 	//Rescue All Astronauts
-	for(int i = 0 ; i < entities.Num(); i++) {
+	for (int i = 0 ; i < entities.Num(); i++) {
 
-		if(entities[i]->type == SSD_ENTITY_ASTRONAUT) {
+		if (entities[i]->type == SSD_ENTITY_ASTRONAUT) {
 
-			AstronautStruckPlayer((SSDAstronaut*)entities[i]);
+			AstronautStruckPlayer((SSDAstronaut *)entities[i]);
 		}
 	}
 }
 
-void idGameSSDWindow::OnSuperBlaster() {
+void idGameSSDWindow::OnSuperBlaster()
+{
 
 	StartSuperBlaster();
 }
 
 
 
-void idGameSSDWindow::RefreshGuiData() {
+void idGameSSDWindow::RefreshGuiData()
+{
 
 
 	gui->SetStateString("nextLevel", va("%i", gameStats.nextLevel+1));
 	gui->SetStateString("currentLevel", va("%i", gameStats.currentLevel+1));
 
 	float accuracy;
-	if(!gameStats.levelStats.shotCount) {
+
+	if (!gameStats.levelStats.shotCount) {
 		accuracy = 0;
 	} else {
 		accuracy = ((float)gameStats.levelStats.hitCount/(float)gameStats.levelStats.shotCount)*100.0f;
 	}
-	gui->SetStateString( "player_accuracy", va("%d%%", (int)accuracy));
+
+	gui->SetStateString("player_accuracy", va("%d%%", (int)accuracy));
 
 	float saveAccuracy;
 	int totalAst = gameStats.levelStats.savedAstronauts + gameStats.levelStats.killedAstronauts;
 
-	if(!totalAst) {
+	if (!totalAst) {
 		saveAccuracy = 0;
 	} else {
 		saveAccuracy = ((float)gameStats.levelStats.savedAstronauts/(float)totalAst)*100.0f;
 	}
-	gui->SetStateString( "save_accuracy", va("%d%%", (int)saveAccuracy));
+
+	gui->SetStateString("save_accuracy", va("%d%%", (int)saveAccuracy));
 
 
 
 
-	if(gameStats.levelStats.targetEnt) {
+	if (gameStats.levelStats.targetEnt) {
 		int dist = (gameStats.levelStats.targetEnt->position.z/100.0f);
 		dist *= 100;
 		gui->SetStateString("target_info", va("%i meters", dist));
@@ -2128,19 +2328,20 @@ void idGameSSDWindow::RefreshGuiData() {
 		gui->SetStateString("target_info", "No Target");
 	}
 
-	gui->SetStateString( "player_health", va("%i", gameStats.health ) );
-	gui->SetStateString( "player_score", va("%i", gameStats.score ) );
-	gui->SetStateString( "player_prebonusscore", va("%i", gameStats.prebonusscore ) );
-	gui->SetStateString( "level_complete", va("%i/%i", gameStats.levelStats.savedAstronauts, levelData[gameStats.currentLevel].needToWin ));
+	gui->SetStateString("player_health", va("%i", gameStats.health));
+	gui->SetStateString("player_score", va("%i", gameStats.score));
+	gui->SetStateString("player_prebonusscore", va("%i", gameStats.prebonusscore));
+	gui->SetStateString("level_complete", va("%i/%i", gameStats.levelStats.savedAstronauts, levelData[gameStats.currentLevel].needToWin));
 
 
-	if(superBlasterTimeout) {
+	if (superBlasterTimeout) {
 		float timeRemaining = (superBlasterTimeout - ssdTime)/1000.0f;
 		gui->SetStateString("super_blaster_time", va("%.2f", timeRemaining));
 	}
 }
 
-idVec2 idGameSSDWindow::GetCursorWorld() {
+idVec2 idGameSSDWindow::GetCursorWorld()
+{
 
 	idVec2 cursor;
 	//GetCursor(cursor);
@@ -2151,11 +2352,12 @@ idVec2 idGameSSDWindow::GetCursorWorld() {
 	return cursor;
 }
 
-void idGameSSDWindow::SpawnAstronaut() {
+void idGameSSDWindow::SpawnAstronaut()
+{
 
 	int currentTime = ssdTime;
 
-	if(currentTime < gameStats.levelStats.nextAstronautSpawnTime) {
+	if (currentTime < gameStats.levelStats.nextAstronautSpawnTime) {
 		//Not time yet
 		return;
 	}
@@ -2170,24 +2372,25 @@ void idGameSSDWindow::SpawnAstronaut() {
 	float speed = random.RandomInt(astronautData[gameStats.currentLevel].speedMax - astronautData[gameStats.currentLevel].speedMin) + astronautData[gameStats.currentLevel].speedMin;
 	float rotate = (random.RandomFloat() * (astronautData[gameStats.currentLevel].rotateMax - astronautData[gameStats.currentLevel].rotateMin)) + astronautData[gameStats.currentLevel].rotateMin;
 
-	SSDAstronaut* astronaut = SSDAstronaut::GetNewAstronaut(this, startPosition, speed, rotate, astronautData[gameStats.currentLevel].health);
+	SSDAstronaut *astronaut = SSDAstronaut::GetNewAstronaut(this, startPosition, speed, rotate, astronautData[gameStats.currentLevel].health);
 	entities.Append(astronaut);
 
 	gameStats.levelStats.nextAstronautSpawnTime = currentTime + random.RandomInt(astronautData[gameStats.currentLevel].spawnMax - astronautData[gameStats.currentLevel].spawnMin) + astronautData[gameStats.currentLevel].spawnMin;
 }
 
-void idGameSSDWindow::HitAstronaut(SSDAstronaut* astronaut, int key) {
+void idGameSSDWindow::HitAstronaut(SSDAstronaut *astronaut, int key)
+{
 
 
-	if(key == K_MOUSE1) {
+	if (key == K_MOUSE1) {
 		astronaut->health -= weaponData[gameStats.currentWeapon].damage;
 
-		if(astronaut->health <= 0) {
+		if (astronaut->health <= 0) {
 
 			gameStats.levelStats.killedAstronauts++;
 
 			//The astronaut has been destroyed
-			SSDExplosion* explosion = SSDExplosion::GetNewExplosion(this, astronaut->position, astronaut->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, astronaut);
+			SSDExplosion *explosion = SSDExplosion::GetNewExplosion(this, astronaut->position, astronaut->size*2, 300, SSDExplosion::EXPLOSION_NORMAL, astronaut);
 			entities.Append(explosion);
 			PlaySound("arcade_explode");
 
@@ -2198,13 +2401,14 @@ void idGameSSDWindow::HitAstronaut(SSDAstronaut* astronaut, int key) {
 			astronaut->noHit = true;
 		} else {
 			//This was a damage hit so create a real small quick explosion
-			SSDExplosion* explosion = SSDExplosion::GetNewExplosion(this, astronaut->position, astronaut->size/2.0f, 200, SSDExplosion::EXPLOSION_NORMAL, astronaut, false, false);
+			SSDExplosion *explosion = SSDExplosion::GetNewExplosion(this, astronaut->position, astronaut->size/2.0f, 200, SSDExplosion::EXPLOSION_NORMAL, astronaut, false, false);
 			entities.Append(explosion);
 		}
 	}
 }
 
-void idGameSSDWindow::AstronautStruckPlayer(SSDAstronaut* astronaut) {
+void idGameSSDWindow::AstronautStruckPlayer(SSDAstronaut *astronaut)
+{
 
 	gameStats.levelStats.savedAstronauts++;
 
@@ -2212,24 +2416,25 @@ void idGameSSDWindow::AstronautStruckPlayer(SSDAstronaut* astronaut) {
 	astronaut->noHit = true;
 
 	//We are saving an astronaut
-	SSDExplosion* explosion = SSDExplosion::GetNewExplosion(this, astronaut->position, astronaut->size*2, 300, SSDExplosion::EXPLOSION_TELEPORT, astronaut);
+	SSDExplosion *explosion = SSDExplosion::GetNewExplosion(this, astronaut->position, astronaut->size*2, 300, SSDExplosion::EXPLOSION_TELEPORT, astronaut);
 	entities.Append(explosion);
 	PlaySound("arcade_capture");
 
 	//Give the player points for saving the astronaut
 	AddScore(astronaut, astronautData[gameStats.currentLevel].points);
 
-	if(gameStats.levelStats.savedAstronauts >= levelData[gameStats.currentLevel].needToWin) {
+	if (gameStats.levelStats.savedAstronauts >= levelData[gameStats.currentLevel].needToWin) {
 		LevelComplete();
 	}
 
 }
 
-void idGameSSDWindow::SpawnPowerup() {
+void idGameSSDWindow::SpawnPowerup()
+{
 
 	int currentTime = ssdTime;
 
-	if(currentTime < gameStats.levelStats.nextPowerupSpawnTime) {
+	if (currentTime < gameStats.levelStats.nextPowerupSpawnTime) {
 		//Not time yet
 		return;
 	}
@@ -2237,60 +2442,67 @@ void idGameSSDWindow::SpawnPowerup() {
 	float speed = random.RandomInt(powerupData[gameStats.currentLevel].speedMax - powerupData[gameStats.currentLevel].speedMin) + powerupData[gameStats.currentLevel].speedMin;
 	float rotate = (random.RandomFloat() * (powerupData[gameStats.currentLevel].rotateMax - powerupData[gameStats.currentLevel].rotateMin)) + powerupData[gameStats.currentLevel].rotateMin;
 
-	SSDPowerup* powerup = SSDPowerup::GetNewPowerup(this, speed, rotate);
+	SSDPowerup *powerup = SSDPowerup::GetNewPowerup(this, speed, rotate);
 	entities.Append(powerup);
 
 	gameStats.levelStats.nextPowerupSpawnTime = currentTime + random.RandomInt(powerupData[gameStats.currentLevel].spawnMax - powerupData[gameStats.currentLevel].spawnMin) + powerupData[gameStats.currentLevel].spawnMin;
 
 }
 
-void idGameSSDWindow::StartSuperBlaster() {
+void idGameSSDWindow::StartSuperBlaster()
+{
 
 	gui->HandleNamedEvent("startSuperBlaster");
 	gameStats.currentWeapon = 1;
 	superBlasterTimeout = ssdTime + 10000;
 
 }
-void idGameSSDWindow::StopSuperBlaster() {
+void idGameSSDWindow::StopSuperBlaster()
+{
 	gui->HandleNamedEvent("stopSuperBlaster");
 	gameStats.currentWeapon = 0;
 	superBlasterTimeout = 0;
 
 }
 
-SSDEntity* idGameSSDWindow::GetSpecificEntity(int type, int id) {
-	SSDEntity* ent = NULL;
-	switch(type) {
-			case SSD_ENTITY_ASTEROID:
-				ent = SSDAsteroid::GetSpecificAsteroid(id);
-				break;
-			case SSD_ENTITY_ASTRONAUT:
-				ent = SSDAstronaut::GetSpecificAstronaut(id);
-				break;
-			case SSD_ENTITY_EXPLOSION:
-				ent = SSDExplosion::GetSpecificExplosion(id);
-				break;
-			case SSD_ENTITY_POINTS:
-				ent = SSDPoints::GetSpecificPoints(id);
-				break;
-			case SSD_ENTITY_PROJECTILE:
-				ent = SSDProjectile::GetSpecificProjectile(id);
-				break;
-			case SSD_ENTITY_POWERUP:
-				ent = SSDPowerup::GetSpecificPowerup(id);
-				break;
+SSDEntity *idGameSSDWindow::GetSpecificEntity(int type, int id)
+{
+	SSDEntity *ent = NULL;
+
+	switch (type) {
+		case SSD_ENTITY_ASTEROID:
+			ent = SSDAsteroid::GetSpecificAsteroid(id);
+			break;
+		case SSD_ENTITY_ASTRONAUT:
+			ent = SSDAstronaut::GetSpecificAstronaut(id);
+			break;
+		case SSD_ENTITY_EXPLOSION:
+			ent = SSDExplosion::GetSpecificExplosion(id);
+			break;
+		case SSD_ENTITY_POINTS:
+			ent = SSDPoints::GetSpecificPoints(id);
+			break;
+		case SSD_ENTITY_PROJECTILE:
+			ent = SSDProjectile::GetSpecificProjectile(id);
+			break;
+		case SSD_ENTITY_POWERUP:
+			ent = SSDPowerup::GetSpecificPowerup(id);
+			break;
 	}
+
 	return ent;
 }
 
 #define MAX_SOUND_CHANNEL 8
 
-void idGameSSDWindow::PlaySound(const char* sound) {
+void idGameSSDWindow::PlaySound(const char *sound)
+{
 
 	session->sw->PlayShaderDirectly(sound, currentSound);
 
 	currentSound++;
-	if(currentSound >= MAX_SOUND_CHANNEL) {
+
+	if (currentSound >= MAX_SOUND_CHANNEL) {
 		currentSound = 0;
 	}
 }

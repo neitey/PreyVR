@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,80 +32,89 @@ If you have questions concerning this license or the applicable additional terms
 class idWindow;
 class idWinVar;
 
-class idRegister {
-public:
-						idRegister();
-						idRegister( const char *p, int t );
+class idRegister
+{
+	public:
+		idRegister();
+		idRegister(const char *p, int t);
 
-	enum REGTYPE { VEC4 = 0, FLOAT, BOOL, INT, STRING, VEC2, VEC3, RECTANGLE, NUMTYPES } ;
-	static int REGCOUNT[NUMTYPES];
+		enum REGTYPE { VEC4 = 0, FLOAT, BOOL, INT, STRING, VEC2, VEC3, RECTANGLE, NUMTYPES } ;
+		static int REGCOUNT[NUMTYPES];
 
-	bool				enabled;
-	short				type;
-	idStr				name;
-	int					regCount;
-	unsigned short		regs[4];
-	idWinVar *			var;
+		bool				enabled;
+		short				type;
+		idStr				name;
+		int					regCount;
+		unsigned short		regs[4];
+		idWinVar 			*var;
 
-	void				SetToRegs( float *registers );
-	void				GetFromRegs( float *registers );
-	void				CopyRegs( idRegister *src );
-	void				Enable( bool b ) { enabled = b; }
-	void				ReadFromDemoFile( idDemoFile *f );
-	void				WriteToDemoFile( idDemoFile *f );
-	void				WriteToSaveGame( idFile *savefile );
-	void				ReadFromSaveGame( idFile *savefile );
+		void				SetToRegs(float *registers);
+		void				GetFromRegs(float *registers);
+		void				CopyRegs(idRegister *src);
+		void				Enable(bool b) {
+			enabled = b;
+		}
+		void				ReadFromDemoFile(idDemoFile *f);
+		void				WriteToDemoFile(idDemoFile *f);
+		void				WriteToSaveGame(idFile *savefile);
+		void				ReadFromSaveGame(idFile *savefile);
 };
 
-ID_INLINE idRegister::idRegister( void ) {
+ID_INLINE idRegister::idRegister(void)
+{
 }
 
-ID_INLINE idRegister::idRegister( const char *p, int t ) {
+ID_INLINE idRegister::idRegister(const char *p, int t)
+{
 	name = p;
 	type = t;
-	assert( t >= 0 && t < NUMTYPES );
+	assert(t >= 0 && t < NUMTYPES);
 	regCount = REGCOUNT[t];
-	enabled = ( type == STRING ) ? false : true;
+	enabled = (type == STRING) ? false : true;
 	var = NULL;
 };
 
-ID_INLINE void idRegister::CopyRegs( idRegister *src ) {
+ID_INLINE void idRegister::CopyRegs(idRegister *src)
+{
 	regs[0] = src->regs[0];
 	regs[1] = src->regs[1];
 	regs[2] = src->regs[2];
 	regs[3] = src->regs[3];
 }
 
-class idRegisterList {
-public:
+class idRegisterList
+{
+	public:
 
-						idRegisterList();
-						~idRegisterList();
+		idRegisterList();
+		~idRegisterList();
 
-	void				AddReg( const char *name, int type, idParser *src, idWindow *win, idWinVar *var );
-	void				AddReg( const char *name, int type, idVec4 data, idWindow *win, idWinVar *var );
+		void				AddReg(const char *name, int type, idParser *src, idWindow *win, idWinVar *var);
+		void				AddReg(const char *name, int type, idVec4 data, idWindow *win, idWinVar *var);
 
-	idRegister *		FindReg( const char *name );
-	void				SetToRegs( float *registers );
-	void				GetFromRegs( float *registers );
-	void				Reset();
-	void				ReadFromDemoFile( idDemoFile *f );
-	void				WriteToDemoFile( idDemoFile *f );
-	void				WriteToSaveGame( idFile *savefile );
-	void				ReadFromSaveGame( idFile *savefile );
+		idRegister 		*FindReg(const char *name);
+		void				SetToRegs(float *registers);
+		void				GetFromRegs(float *registers);
+		void				Reset();
+		void				ReadFromDemoFile(idDemoFile *f);
+		void				WriteToDemoFile(idDemoFile *f);
+		void				WriteToSaveGame(idFile *savefile);
+		void				ReadFromSaveGame(idFile *savefile);
 
-private:
-	idList<idRegister*>	regs;
-	idHashIndex			regHash;
+	private:
+		idList<idRegister *>	regs;
+		idHashIndex			regHash;
 };
 
-ID_INLINE idRegisterList::idRegisterList() {
-	regs.SetGranularity( 4 );
-	regHash.SetGranularity( 4 );
-	regHash.Clear( 32, 4 );
+ID_INLINE idRegisterList::idRegisterList()
+{
+	regs.SetGranularity(4);
+	regHash.SetGranularity(4);
+	regHash.Clear(32, 4);
 }
 
-ID_INLINE idRegisterList::~idRegisterList() {
+ID_INLINE idRegisterList::~idRegisterList()
+{
 }
 
 #endif /* !__REGEXP_H__ */

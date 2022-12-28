@@ -2328,3 +2328,73 @@ bool idRenderModelStatic::FindSurfaceWithId( int id, int &surfaceNum ) {
 	}
 	return false;
 }
+
+#ifdef _RAVEN // bse
+/*
+=================
+idRenderModelStatic::InitFromFile
+=================
+*/
+void rvRenderModelBSE::InitFromFile(const char* fileName) {
+	name = fileName;
+}
+
+/*
+=================
+idRenderModelStatic::FinishSurfaces
+=================
+*/
+void rvRenderModelBSE::FinishSurfaces(bool useMikktspace) {
+	int i; // ebp
+	int surfId; // ebx
+	srfTriangles_t* tri; // eax
+
+	this->bounds[1].z = 0.0;
+	this->bounds[1].y = 0.0;
+	this->bounds[1].x = 0.0;
+	i = 0;
+	this->bounds[0].z = 0.0;
+	this->bounds[0].y = 0.0;
+	this->bounds[0].x = 0.0;
+	if (this->surfaces.Num() > 0)
+	{
+		surfId = 0;
+		do
+		{
+			tri = this->surfaces[surfId].geometry;
+			if (tri)
+			{
+				this->bounds[0].x = fminf(this->bounds[0].x, tri->bounds[0].x);
+				this->bounds[0].y = fminf(this->bounds[0].y, tri->bounds[0].y);
+				this->bounds[0].z = fminf(this->bounds[0].z, tri->bounds[0].z);
+				this->bounds[1].x = fmaxf(this->bounds[1].x, tri->bounds[1].x);
+				this->bounds[1].y = fmaxf(this->bounds[1].y, tri->bounds[1].y);
+				this->bounds[1].z = fmaxf(this->bounds[1].z, tri->bounds[1].z);
+			}
+			++i;
+			++surfId;
+		} while (i < this->surfaces.Num());
+	}
+}
+#endif
+
+#ifdef _RAVEN //k: for ShowSurface/HideSurface, static model using surfaces index as mask: 1 << index, name is shader material name
+int idRenderModelStatic::GetSurfaceMask(const char *name) const
+{
+	int i;
+	const modelSurface_t *surf;
+	if(!name || !name[0])
+		return 0;
+	for(i = 0; i < surfaces.Num(); i++)
+	{
+		if(i > 31) //k: greate than int bits, it should be happened, but if happen, return 0 for do nothing
+			break;
+		surf = &surfaces[i];
+		if(!surf || !surf->shader)
+			continue;
+		if(!idStr::Icmp(name, surf->shader->GetName()))
+			return SUPPRESS_SURFACE_MASK(i);
+	}
+	return 0;
+}
+#endif

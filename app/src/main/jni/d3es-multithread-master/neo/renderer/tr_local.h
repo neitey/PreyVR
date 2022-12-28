@@ -720,6 +720,30 @@ public:
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			UnCrop();
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
+#ifdef _HUMANHEAD
+	virtual void			SetEntireSceneMaterial(idMaterial* material) { }; // HUMANHEAD CJR
+    virtual bool			IsScopeView() {
+        return scopeView;
+    };// HUMANHEAD CJR
+    virtual void			SetScopeView(bool view) {
+		scopeView = view;
+	} // HUMANHEAD CJR
+    virtual bool			IsShuttleView() {
+        return shuttleView;
+    };// HUMANHEAD CJR
+    virtual void			SetShuttleView(bool view) {
+		shuttleView = view;
+	}
+    virtual bool			SupportsFragmentPrograms(void) {
+        return false;
+    };// HUMANHEAD CJR
+    virtual int				VideoCardNumber(void) {
+        return 0;
+    }
+
+	bool scopeView;
+	bool shuttleView;
+#endif
 
 	virtual void 			DirectFrameBufferStart();
 	virtual void 			DirectFrameBufferEnd();
@@ -1022,6 +1046,9 @@ const int GLS_SRCBLEND_DST_ALPHA				= 0x00000007;
 const int GLS_SRCBLEND_ONE_MINUS_DST_ALPHA		= 0x00000008;
 const int GLS_SRCBLEND_ALPHA_SATURATE			= 0x00000009;
 const int GLS_SRCBLEND_BITS						= 0x0000000f;
+#ifdef _RAVEN //k: quake4 blend
+const int GLS_SRCBLEND_SRC_COLOR				= 0x00000002;
+#endif
 
 const int GLS_DSTBLEND_ZERO						= 0x0;
 const int GLS_DSTBLEND_ONE						= 0x00000020;
@@ -1194,6 +1221,9 @@ void R_ModulateLights_f( const idCmdArgs &args );
 
 void R_SetLightProject( idPlane lightProject[4], const idVec3 origin, const idVec3 targetPoint,
                         const idVec3 rightVector, const idVec3 upVector, const idVec3 start, const idVec3 stop );
+#ifdef _RAVEN // particle
+void R_AddEffectSurfaces(void);
+#endif
 
 void R_AddLightSurfaces( void );
 void R_AddModelSurfaces( void );
@@ -1558,5 +1588,65 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
                                         const viewDef_t * viewDef );
 
 //=============================================
+
+#include "RenderWorld_local.h"
+#include "GuiModel.h"
+#include "VertexCache.h"
+
+#ifdef __ANDROID__ //k for Android large stack memory allocate limit
+#define HARM_CVAR_CONTROL_MAX_STACK_ALLOC_SIZE
+
+#ifdef HARM_CVAR_CONTROL_MAX_STACK_ALLOC_SIZE
+extern idCVar harm_r_maxAllocStackMemory; // declare in tr_trisurf.cpp
+
+	#define HARM_MAX_STACK_ALLOC_SIZE (harm_r_maxAllocStackMemory.GetInteger())
+#else
+	#define HARM_MAX_STACK_ALLOC_SIZE (1024 * 512)
+#endif
+
+// alloc in heap memory
+#define _alloca16_heap( x )					((void *)((((intptr_t)calloc( (x)+15 ,1 )) + 15) & ~15))
+
+	// Using heap memory. Also reset RLIMIT_STACK by call `setrlimit`.
+#define _DROID_ALLOC16_DEF(T, alloc_size, varname, x) \
+	const int _HARM_MAX_STACK_ALLOC_SIZE##x = harm_r_maxAllocStackMemory.GetInteger(); \
+	bool useHeapMem##x; \
+	if(_HARM_MAX_STACK_ALLOC_SIZE##x > 0) \
+		useHeapMem##x = (alloc_size) >= _HARM_MAX_STACK_ALLOC_SIZE##x;	 \
+	else if(_HARM_MAX_STACK_ALLOC_SIZE##x == 0) \
+		useHeapMem##x = true; \
+	else \
+		useHeapMem##x = false; \
+	T *varname = (T *) (useHeapMem##x ? _alloca16_heap(alloc_size) : _alloca16(alloc_size)); \
+	if(useHeapMem##x) \
+		common->Printf("[Harmattan]: Alloca on heap memory %p(%d bytes)\n", varname, alloc_size);
+
+#define _DROID_ALLOC16(T, alloc_size, varname, x) \
+	const int _HARM_MAX_STACK_ALLOC_SIZE##x = harm_r_maxAllocStackMemory.GetInteger(); \
+	bool useHeapMem##x; \
+	if(_HARM_MAX_STACK_ALLOC_SIZE##x > 0) \
+		useHeapMem##x = (alloc_size) >= _HARM_MAX_STACK_ALLOC_SIZE##x;	 \
+	else if(_HARM_MAX_STACK_ALLOC_SIZE##x == 0) \
+		useHeapMem##x = true; \
+	else \
+		useHeapMem##x = false; \
+	varname = (T *) (useHeapMem##x ? _alloca16_heap(alloc_size) : _alloca16(alloc_size)); \
+	if(useHeapMem##x) \
+		common->Printf("[Harmattan]: Alloca on heap memory %p(%d bytes)\n", varname, alloc_size);
+
+	// free memory when not call alloca()
+#define _DROID_FREE(varname, x) \
+	if(useHeapMem##x) \
+	{ \
+		common->Printf("[Harmattan]: Free alloca heap memory %p\n", varname); \
+		free(varname); \
+	}
+
+#endif
+
+#ifdef _RAVEN //k: macros for renderEffect_s::suppressSurfaceMask
+#define SUPPRESS_SURFACE_MASK(x) (1 << (x))
+#define SUPPRESS_SURFACE_MASK_CHECK(t, x) ((t) & SUPPRESS_SURFACE_MASK(x))
+#endif
 
 #endif /* !__TR_LOCAL_H__ */

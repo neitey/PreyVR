@@ -49,12 +49,21 @@ class idRenderModel;
 */
 
 #define PROC_FILE_EXT				"proc"
+#ifdef _RAVEN // quake4 proc file
+#define PROC_FILE_ID					"PROC"
+#define PROC_FILEVERSION				"4" // jmarshall: changed to string.
+#else
 #define	PROC_FILE_ID				"mapProcFile003"
+#endif
 
 #define MAX_BEAM_NODES                         32
 
 // shader parms
+#ifdef _HUMANHEAD
+const int MAX_GLOBAL_SHADER_PARMS	= 13;	// HUMANHEAD pdm: increased from 12 (see also: MAX_ENTITY_SHADER_PARMS)
+#else
 const int MAX_GLOBAL_SHADER_PARMS	= 12;
+#endif
 
 const int SHADERPARM_RED			= 0;
 const int SHADERPARM_GREEN			= 1;
@@ -86,6 +95,91 @@ const int SHADERPARM_PARTICLE_STOPTIME = 8;	// don't spawn any more particles af
 // guis
 const int MAX_RENDERENTITY_GUI		= 3;
 
+#ifdef _HUMANHEAD
+// HUMANHEAD pdm
+const int SHADERPARM_MISC = 6; // aob
+const int SHADERPARM_ANY_DEFORM = 9; // Model deformation
+const int SHADERPARM_ANY_DEFORM_PARM1 = 10; // Model deformation parameter1
+const int SHADERPARM_ANY_DEFORM_PARM2 = 11; // Model deformation parameter2
+const int SHADERPARM_DISTANCE = 12; // CJR -- distance shader parm index
+// Always add to the end of the list so the old numbers don't change
+enum {
+	DEFORMTYPE_NONE = 0,
+	DEFORMTYPE_SCALE,
+	DEFORMTYPE_VERTEXCOLOR,
+	DEFORMTYPE_SPHERE,
+	DEFORMTYPE_RIPPLE,
+	DEFORMTYPE_PLANTSWAYX,
+	DEFORMTYPE_PLANTSWAYY,
+	DEFORMTYPE_FLATTEN,
+	DEFORMTYPE_VIBRATE,
+	DEFORMTYPE_SQUISH,
+	DEFORMTYPE_TURBULENT,	// 10
+	DEFORMTYPE_RAYS,
+	DEFORMTYPE_ALPHAGLOW,
+	DEFORMTYPE_FATTEN,
+	DEFORMTYPE_RIPPLECENTER,
+	DEFORMTYPE_MELT,
+	DEFORMTYPE_POD,
+	DEFORMTYPE_DEATHEFFECT,
+	DEFORMTYPE_WINDBLAST,
+	DEFORMTYPE_PINCHPOINT,
+	DEFORMTYPE_PORTAL
+	//NOTE: Any added here should also be added to prey_defs.script
+};
+// HUMANHEAD END
+
+// HUMANHEAD CJR:  Beam node information
+#define MAX_BEAM_NODES				32
+typedef struct hhBeamNodes_s {
+	idVec3		nodes[MAX_BEAM_NODES];
+} hhBeamNodes_t;
+// END HUMANHEAD
+#endif
+
+#ifdef _RAVEN
+// RAVEN BEGIN
+// jscott: for effect brightness
+const int SHADERPARM_BRIGHTNESS		= 6;	// for the overall brightness of effects
+// RAVEN END
+
+// RAVEN BEGIN
+// dluetscher: added a default value for light detail levels
+#define DEFAULT_LIGHT_DETAIL_LEVEL	10.f
+// RAVEN END
+
+// RAVEN BEGIN
+// AReis: Render flags.
+enum
+{
+	RF_NORMAL					= 0,
+	// Let the renderer know its in a editor of sorts.
+	RF_IS_EDITOR				= BIT( 0 ),
+	// Viewdef is fullscreen and is 2d (mostly for main menu)
+	RF_IS_FULLSCREEN_2D			= BIT( 1 ),
+	// Don't draw the GUI, just the world.
+	RF_NO_GUI					= BIT( 2 ),
+	// Only draw the GUI, not the world.
+	RF_GUI_ONLY					= BIT( 3 ),
+// RAVEN BEGIN
+// dluetscher: added render flag to denote that penumbra map rendering is desired
+	RF_PENUMBRA_MAP				= BIT( 4 ),
+// dluetscher: added render flag that defers the command buffer submission of render
+//			   commands until the first non-deferred render command (with the exception of
+//			   certain render commands like RC_DRAW_PENUMBRA_MAPS - which ignores deferred
+//			   render commands and lets them get submitted past)
+	RF_DEFER_COMMAND_SUBMIT		= BIT( 5 ),
+	// this is a portal sky view
+	RF_PORTAL_SKY				= BIT( 6 ),
+	// this the primary view - when this is rendered, we then know we can capture the screen buffer
+	RF_PRIMARY_VIEW				= BIT( 7 ),
+// RAVEN END
+};
+
+// RAVEN END
+
+#endif
+
 ID_INLINE int SIMD_ROUND_JOINTS( int numJoints )
 {
 	return ( ( numJoints + 1 ) & ~1 );
@@ -102,6 +196,75 @@ class idAnimator; // Koz
 
 typedef bool(*deferredEntityCallback_t)( renderEntity_s *, const renderView_s * );
 
+#ifdef _RAVEN // particle
+// RAVEN BEGIN
+// jscott: for handling of effects
+typedef struct renderEffect_s {
+
+	const idDecl			*declEffect;
+
+	float					startTime;
+	int						suppressSurfaceInViewID;
+	int						allowSurfaceInViewID;
+	int						groupID;
+
+	idVec3					origin;
+	idMat3					axis;
+
+	idVec3					gravity;
+	idVec3					endOrigin;
+
+	float					attenuation;
+	bool					hasEndOrigin;
+	bool					loop;						// effect is looping
+	bool					ambient;					// effect is from an entity
+	bool					inConnectedArea;
+	int						weaponDepthHackInViewID;	// squash depth range so view weapons don't poke into walls
+	float					modelDepthHack;
+
+	int						referenceSoundHandle;		// for shader sound tables, allowing effects to vary with sounds
+
+	float					shaderParms[ MAX_ENTITY_SHADER_PARMS ];	// can be used in any way by shader or model generation
+} renderEffect_t;
+// RAVEN END
+
+// RAVEN BEGIN
+// jscott: effect handling in the renderer
+class rvRenderEffect {
+public:
+	virtual					~rvRenderEffect(void) {}
+};
+// RAVEN END
+
+class rvRenderEffectLocal : rvRenderEffect
+{
+public:
+	renderEffect_s parms;
+	//renderEffect_s gameParms;
+	int gameTime;
+	int serviceTime;
+	bool newEffect;
+	bool expired;
+	class rvBSE* effect;
+	idBounds referenceBounds;
+	float modelMatrix[16];
+	class idRenderWorldLocal* world;
+	int lastModifiedFrameNum;
+	bool archived;
+	int viewCount;
+	//viewEffect_s* viewEffect;
+	int visibleCount;
+	//areaReference_s* effectRefs;
+	//cullLink_t* cullLinks;
+	bool remove;
+	int updateFramenum;
+	idLinkList<rvRenderEffectLocal> node;
+	int index;
+	idRenderModel* dynamicModel;
+	int dynamicModelFrameCount;
+};
+// RAVEN END
+#endif
 
 typedef struct renderEntity_s {
 	idRenderModel *			hModel;				// this can only be null if callback is set
@@ -175,8 +338,47 @@ typedef struct renderEntity_s {
 	bool					weaponDepthHack;		// squash depth range so view weapons don't poke into walls
 	// this automatically implies noShadow
 	int						forceUpdate;			// force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
+#ifdef _HUMANHEAD
+	const hhDeclBeam*		declBeam;			// HUMANHEAD beam information
+	hhBeamNodes_t*			beamNodes;			// HUMANHEAD beam node array (sized to the number of beams in the system)
+
+	//HUMANHEAD rww - moved other bools up here
+//#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww
+	bool					notInRenderDemos;		//if this is true, we will not record this renderentity
+//#endif //HUMANHEAD END
+
+	// HUMANHEAD:
+	bool				onlyVisibleInSpirit;	// True if this entity is only visible when spiritwalking or deathwalking
+	bool				onlyInvisibleInSpirit;	// True if this entity is only invisible when spiritwalking or deathwalking -tmj
+	bool				lowSkippable;			// bjk: True if skippable in low quality
+	float				eyeDistance;			// HUMANHEAD pdm: precalculated distance to eye
+	// HUMANHEAD END
+#endif
+
 	int						timeGroup;
 	int						xrayIndex;
+#ifdef _RAVEN
+	// RAVEN BEGIN
+	int						referenceSoundHandle;	// for shader sound tables, allowing effects to vary with sounds
+// RAVEN END
+// RAVEN BEGIN
+// bdube: hiding surfaces
+	// Mask of surfaces which should be suppresesed when rendering the entity
+	int						suppressSurfaceMask;
+// RAVEN END
+// RAVEN BEGIN
+// ddynerman: Wolf LOD code
+	float					shadowLODDistance;
+	int						suppressLOD;
+// RAVEN END
+// RAVEN BEGIN
+// bdube: overlay shaders
+	const idMaterial *		overlayShader;			// overlays the model on top of itself with this shader (originally for powerups)
+
+// bdube: weapon depth hack only in a given view id
+	int						weaponDepthHackInViewID;// squash depth range so view weapons don't poke into walls
+// RAVEN END
+#endif
 } renderEntity_t;
 
 
@@ -199,6 +401,10 @@ typedef struct renderLight_s {
 	bool					noShadows;			// (should we replace this with material parameters on the shader?)
 	bool					noSpecular;			// (should we replace this with material parameters on the shader?)
 
+#ifdef _HUMANHEAD
+	bool					lowSkippable;		// HUMANHEAD bjk: True if skippable in low quality
+#endif
+
 	bool					pointLight;			// otherwise a projection light (should probably invert the sense of this, because points are way more common)
 	bool					parallel;			// lightCenter gives the direction to the light at infinity
 	idVec3					lightRadius;		// xyz radius for point lights
@@ -217,15 +423,26 @@ typedef struct renderLight_s {
 	// Dmap will generate an optimized shadow volume named _prelight_<lightName>
 	// for the light against all the _area* models in the map.  The renderer will
 	// ignore this value if the light has been moved after initial creation
-	idRenderModel *			prelightModel;
+	idRenderModel 			*prelightModel;
 
 	// muzzle flash lights will not cast shadows from player and weapon world models
 	int						lightId;
 
 
-	const idMaterial *		shader;				// NULL = either lights/defaultPointLight or lights/defaultProjectedLight
+	const idMaterial 		*shader;				// NULL = either lights/defaultPointLight or lights/defaultProjectedLight
 	float					shaderParms[MAX_ENTITY_SHADER_PARMS];		// can be used in any way by shader
-	idSoundEmitter *		referenceSound;		// for shader sound tables, allowing effects to vary with sounds
+	idSoundEmitter 		*referenceSound;		// for shader sound tables, allowing effects to vary with sounds
+#ifdef _RAVEN
+	// RAVEN BEGIN
+// dluetscher: added a min light detail level setting that describes when this light is visible
+	float					detailLevel;
+// ddynerman: no dynamic shadows - allows dmap to create optimized static shadows, but prevents dynamic shadows
+	bool					noDynamicShadows;
+// RAVEN END
+	bool					globalLight;		// Whether this is a global light or not.
+
+	int						referenceSoundHandle;		// for shader sound tables, allowing effects to vary with sounds
+#endif
 } renderLight_t;
 
 
@@ -243,6 +460,12 @@ typedef struct renderView_s {
 
 	bool					cramZNear;			// for cinematics, we want to set ZNear much lower
 	bool					forceUpdate;		// for an update
+#ifdef _HUMANHEAD
+	bool			viewSpiritEntities; // HUMANHEAD cjr: this renderView can see all onlyVisibleInSpirit entities
+									   // tmj: this renderView cannot see onlyInvisibleInSpirit entities
+
+	float				frac;			// fraction of trace before hit
+#endif
 	bool 					forceMono;				// force mono
 
 	// time in milliseconds for shader effects and other time dependent rendering issues
@@ -266,6 +489,9 @@ typedef struct {
 	float				x, y;			// 0.0 to 1.0 range if trace hit a gui, otherwise -1
 	int					guiId;			// id of gui ( 0, 1, or 2 ) that the trace happened against
 	float				fraction;		// Koz added fraction of trace completed for touch screens
+#ifdef _HUMANHEAD
+	float				frac;
+#endif
 } guiPoint_t;
 
 
@@ -277,10 +503,25 @@ typedef struct modelTrace_s {
 	const idMaterial *		material;			// material of hit surface
 	const renderEntity_t *	entity;				// render entity that was hit
 	int						jointNumber;		// md5 joint nearest to the hit triangle
+#ifdef _RAVEN // quake4 trace
+	// RAVEN BEGIN
+// jscott: added block
+	const rvDeclMatType *	materialType;
+// RAVEN END
+#endif
 } modelTrace_t;
 
 
+#ifdef _RAVEN
+// RAVEN BEGIN
+// abahr: changed to 4 to include gravity
+static const int NUM_PORTAL_ATTRIBUTES = 4;
+// RAVEN END
+#elif defined(_HUMANHEAD)
+static const int NUM_PORTAL_ATTRIBUTES = 4;		// HUMANHEAD pdm: Bumped from 3
+#else
 static const int NUM_PORTAL_ATTRIBUTES = 3;
+#endif
 
 typedef enum {
 	PS_BLOCK_NONE = 0,
@@ -289,7 +530,19 @@ typedef enum {
 	PS_BLOCK_LOCATION = 2,		// game map location strings often stop in hallways
 	PS_BLOCK_AIR = 4,			// windows between pressurized and unpresurized areas
 
+#ifdef _RAVEN //k CONFLICT
+	// abahr
+	PS_BLOCK_GRAVITY = 8,		// PS_BLOCK_ALL does not block gravity.  Must use info_gravityseperator
+
+	PS_BLOCK_ALL = PS_BLOCK_VIEW|PS_BLOCK_LOCATION|PS_BLOCK_AIR
+#elif defined(_HUMANHEAD)
+	// HUMANHEAD pdm
+    PS_BLOCK_SOUND = 8,			// blocks sound completely, used on game portals
+// HUMANHEAD END
 	PS_BLOCK_ALL = (1<<NUM_PORTAL_ATTRIBUTES)-1
+#else
+	PS_BLOCK_ALL = (1<<NUM_PORTAL_ATTRIBUTES)-1
+#endif
 } portalConnection_t;
 
 
@@ -346,6 +599,19 @@ public:
 	// some calls to material functions use the current renderview time when servicing cinematics.  this function
 	// ensures that any parms accessed (such as time) are properly set.
 	virtual void			SetRenderView( const renderView_t *renderView ) = 0;
+
+#ifdef _RAVEN
+	// jscott: for portal skies
+	virtual bool			HasSkybox( int areaNum ) = 0;
+
+// jscott: handling of effects
+	virtual qhandle_t		AddEffectDef( const renderEffect_t *reffect, int time ) = 0;
+	virtual bool			UpdateEffectDef( qhandle_t effectHandle, const renderEffect_t *reffect, int time ) = 0;
+	virtual void			StopEffectDef( qhandle_t effectHandle ) = 0;
+	virtual const class rvRenderEffectLocal* GetEffectDef( qhandle_t effectHandle ) const = 0;
+	virtual void			FreeEffectDef( qhandle_t effectHandle ) = 0;
+	virtual bool			EffectDefHasSound( const renderEffect_s *reffect ) = 0;
+#endif
 
 	// rendering a scene may actually render multiple subviews for mirrors and portals, and
 	// may render composite textures for gui console screens and light projections
@@ -430,6 +696,16 @@ public:
 
 	// Line drawing for debug visualization
 	virtual void			DebugClearLines( int time ) = 0;		// a time of 0 will clear all lines and text
+#ifdef _RAVEN
+	virtual void			DebugClear(int time) { DebugClearLines(0); };		// a time of 0 will clear all lines and text
+
+// jscott: want to be able to specify depth test
+	virtual void			DebugBounds(const idVec4& color, const idBounds& bounds, const idVec3& org, const int lifetime, bool depthTest) {
+		DebugBox(color, idBox(bounds) + org, lifetime);
+	}
+
+	virtual void			DebugFOV(const idVec4& color, const idVec3& origin, const idVec3& dir, float farDot, float farDist, float nearDot = 1.0f, float nearDist = 0.0f, float alpha = 0.3f, int lifetime = 0) { }
+#endif
 	virtual void			DebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifetime = 0, const bool depthTest = false ) = 0;
 	virtual void			DebugArrow( const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime = 0 ) = 0;
 	virtual void			DebugWinding( const idVec4 &color, const idWinding &w, const idVec3 &origin, const idMat3 &axis, const int lifetime = 0, const bool depthTest = false ) = 0;

@@ -26,6 +26,9 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef __VERTEXCACHE_H__
+#define __VERTEXCACHE_H__
+
 #include "framework/CVarSystem.h"
 #include "renderer/qgl.h"
 
@@ -168,3 +171,4 @@ private:
 };
 
 extern idVertexCache vertexCache;
+#endif

@@ -115,6 +115,11 @@ void idMaterial::CommonInit() {
 	suppressInSubview = false;
 	refCount = 0;
 	portalSky = false;
+#ifdef _RAVEN // quake4 for trace
+// jmarshall - quake 4
+	materialType = 0;
+// jmarshall end
+#endif
 
 	decalInfo.stayTime = 10000;
 	decalInfo.fadeTime = 4000;
@@ -232,57 +237,81 @@ typedef struct {
 	int		clearSolid, surfaceFlags, contents;
 } infoParm_t;
 
-static const infoParm_t	infoParms[] = {
-	// game relevant attributes
-	{"solid",		0,	0,	CONTENTS_SOLID },		// may need to override a clearSolid
-	{"water",		1,	0,	CONTENTS_WATER },		// used for water
-	{"playerclip",	0,	0,	CONTENTS_PLAYERCLIP },	// solid to players
-	{"monsterclip",	0,	0,	CONTENTS_MONSTERCLIP },	// solid to monsters
-	{"moveableclip",0,	0,	CONTENTS_MOVEABLECLIP },// solid to moveable entities
-	{"ikclip",		0,	0,	CONTENTS_IKCLIP },		// solid to IK
-	{"blood",		0,	0,	CONTENTS_BLOOD },		// used to detect blood decals
-	{"trigger",		0,	0,	CONTENTS_TRIGGER },		// used for triggers
-	{"aassolid",	0,	0,	CONTENTS_AAS_SOLID },	// solid for AAS
-	{"aasobstacle",	0,	0,	CONTENTS_AAS_OBSTACLE },// used to compile an obstacle into AAS that can be enabled/disabled
-	{"flashlight_trigger",	0,	0,	CONTENTS_FLASHLIGHT_TRIGGER }, // used for triggers that are activated by the flashlight
-	{"nonsolid",	1,	0,	0 },					// clears the solid flag
-	{"nullNormal",	0,	SURF_NULLNORMAL,0 },		// renderbump will draw as 0x80 0x80 0x80
+static infoParm_t	infoParms[] = {
+		// game relevant attributes
+		{"solid",		0,	0,	CONTENTS_SOLID },		// may need to override a clearSolid
+		{"water",		1,	0,	CONTENTS_WATER },		// used for water
+		{"playerclip",	0,	0,	CONTENTS_PLAYERCLIP },	// solid to players
+		{"monsterclip",	0,	0,	CONTENTS_MONSTERCLIP },	// solid to monsters
+		{"moveableclip",0,	0,	CONTENTS_MOVEABLECLIP },// solid to moveable entities
+		{"ikclip",		0,	0,	CONTENTS_IKCLIP },		// solid to IK
+		{"blood",		0,	0,	CONTENTS_BLOOD },		// used to detect blood decals
+		{"trigger",		0,	0,	CONTENTS_TRIGGER },		// used for triggers
+		{"aassolid",	0,	0,	CONTENTS_AAS_SOLID },	// solid for AAS
+		{"aasobstacle",	0,	0,	CONTENTS_AAS_OBSTACLE },// used to compile an obstacle into AAS that can be enabled/disabled
+		{"flashlight_trigger",	0,	0,	CONTENTS_FLASHLIGHT_TRIGGER }, // used for triggers that are activated by the flashlight
+		{"nonsolid",	1,	0,	0 },					// clears the solid flag
+		{"nullNormal",	0,	SURF_NULLNORMAL,0 },		// renderbump will draw as 0x80 0x80 0x80
 
-	// utility relevant attributes
-	{"areaportal",	1,	0,	CONTENTS_AREAPORTAL },	// divides areas
-	{"qer_nocarve",	1,	0,	CONTENTS_NOCSG},		// don't cut brushes in editor
+		// utility relevant attributes
+		{"areaportal",	1,	0,	CONTENTS_AREAPORTAL },	// divides areas
+		{"qer_nocarve",	1,	0,	CONTENTS_NOCSG},		// don't cut brushes in editor
 
-	{"discrete",	1,	SURF_DISCRETE,	0 },		// surfaces should not be automatically merged together or
-	// clipped to the world,
-	// because they represent discrete objects like gui shaders
-	// mirrors, or autosprites
-	{"noFragment",	0,	SURF_NOFRAGMENT,	0 },
+		{"discrete",	1,	SURF_DISCRETE,	0 },		// surfaces should not be automatically merged together or
+		// clipped to the world,
+		// because they represent discrete objects like gui shaders
+		// mirrors, or autosprites
+		{"noFragment",	0,	SURF_NOFRAGMENT,	0 },
 
-	{"slick",		0,	SURF_SLICK,		0 },
-	{"collision",	0,	SURF_COLLISION,	0 },
-	{"noimpact",	0,	SURF_NOIMPACT,	0 },		// don't make impact explosions or marks
-	{"nodamage",	0,	SURF_NODAMAGE,	0 },		// no falling damage when hitting
-	{"ladder",		0,	SURF_LADDER,	0 },		// climbable
-	{"nosteps",		0,	SURF_NOSTEPS,	0 },		// no footsteps
+		{"slick",		0,	SURF_SLICK,		0 },
+		{"collision",	0,	SURF_COLLISION,	0 },
+		{"noimpact",	0,	SURF_NOIMPACT,	0 },		// don't make impact explosions or marks
+		{"nodamage",	0,	SURF_NODAMAGE,	0 },		// no falling damage when hitting
+		{"ladder",		0,	SURF_LADDER,	0 },		// climbable
+		{"nosteps",		0,	SURF_NOSTEPS,	0 },		// no footsteps
 
-	// material types for particle, sound, footstep feedback
-	{"metal",		0,  SURFTYPE_METAL,		0 },	// metal
-	{"stone",		0,  SURFTYPE_STONE,		0 },	// stone
-	{"flesh",		0,  SURFTYPE_FLESH,		0 },	// flesh
-	{"wood",		0,  SURFTYPE_WOOD,		0 },	// wood
-	{"cardboard",	0,	SURFTYPE_CARDBOARD,	0 },	// cardboard
-	{"liquid",		0,	SURFTYPE_LIQUID,	0 },	// liquid
-	{"glass",		0,	SURFTYPE_GLASS,		0 },	// glass
-	{"plastic",		0,	SURFTYPE_PLASTIC,	0 },	// plastic
-	{"ricochet",	0,	SURFTYPE_RICOCHET,	0 },	// behaves like metal but causes a ricochet sound
+		// material types for particle, sound, footstep feedback
+		{"metal",		0,  SURFTYPE_METAL,		0 },	// metal
+		{"stone",		0,  SURFTYPE_STONE,		0 },	// stone
+		{"flesh",		0,  SURFTYPE_FLESH,		0 },	// flesh
+		{"wood",		0,  SURFTYPE_WOOD,		0 },	// wood
+		{"cardboard",	0,	SURFTYPE_CARDBOARD,	0 },	// cardboard
+		{"liquid",		0,	SURFTYPE_LIQUID,	0 },	// liquid
+#ifdef _HUMANHEAD
+		{"wallwalk",	0,	SURFTYPE_WALLWALK,	0 },	// plastic
+        {"matter_altmetal",	0,	SURFTYPE_ALTMETAL,	0 },	// behaves like metal but causes a ricochet sound
 
-	// unassigned surface types
-	{"surftype10",	0,	SURFTYPE_10,	0 },
-	{"surftype11",	0,	SURFTYPE_11,	0 },
-	{"surftype12",	0,	SURFTYPE_12,	0 },
-	{"surftype13",	0,	SURFTYPE_13,	0 },
-	{"surftype14",	0,	SURFTYPE_14,	0 },
-	{"surftype15",	0,	SURFTYPE_15,	0 },
+        // unassigned surface types
+        {"forcefield",	0,	SURFTYPE_FORCEFIELD,	CONTENTS_FORCEFIELD },
+        {"pipe",	0,	SURFTYPE_PIPE,	0 },
+        {"spirit",	0,	SURFTYPE_SPIRIT,	0 },
+		{"vehicleclip",	0,	0,	CONTENTS_VEHICLECLIP },
+		{"hunterClip",	0,	0,	CONTENTS_HUNTERCLIP },
+        {"forcefield_nobullets",	0,	SURFTYPE_FORCEFIELD,	CONTENTS_FORCEFIELD },
+#else
+		{"glass",		0,	SURFTYPE_GLASS,		0 },	// glass
+		{"plastic",		0,	SURFTYPE_PLASTIC,	0 },	// plastic
+		{"ricochet",	0,	SURFTYPE_RICOCHET,	0 },	// behaves like metal but causes a ricochet sound
+
+		// unassigned surface types
+		{"surftype10",	0,	SURFTYPE_10,	0 },
+		{"surftype11",	0,	SURFTYPE_11,	0 },
+		{"surftype12",	0,	SURFTYPE_12,	0 },
+		{"surftype13",	0,	SURFTYPE_13,	0 },
+		{"surftype14",	0,	SURFTYPE_14,	0 },
+		{"surftype15",	0,	SURFTYPE_15,	0 },
+#endif
+
+#ifdef _RAVEN //k: quake 4 material flags
+		{"vehicleclip",	0,	0,	CONTENTS_VEHICLECLIP },
+		{"flyclip",	0,	0,	CONTENTS_FLYCLIP },
+		{"largeshotclip",	0,	0,	CONTENTS_LARGESHOTCLIP },
+		{"shotclip",	0,	0,	0 },
+		{"projectileClip",	0,	0,	CONTENTS_PROJECTILECLIP },
+		{"notacticalfeatures",	0,	0,	CONTENTS_NOTACTICALFEATURES },
+		{"bounce",	0,	SURF_BOUNCE,	0 },
+		{"sightClip",	0,	0,	CONTENTS_SIGHTCLIP },
+#endif
 };
 
 static const int numInfoParms = sizeof(infoParms) / sizeof (infoParms[0]);
@@ -605,6 +634,30 @@ int idMaterial::ParseTerm( idLexer &src ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL7;
 	}
+
+#ifdef _RAVEN //k: quake4 material property
+	if (!token.Icmp("glslPrograms")) {
+		return GetExpressionConstant(0);
+	}
+	if (!token.Icmp("DecalLife")) {
+		return GetExpressionConstant(9.0f);
+	}
+	if (!token.Icmp("IsMultiplayer")) {
+		return GetExpressionConstant(game->IsMultiplayer()); // constant???
+	}
+	if (!token.Icmp("VertexRandomizer")) {
+		return GetExpressionConstant(0.0f);
+	}
+#endif
+
+#ifdef _HUMANHEAD
+	if (!token.Icmp("distance")) {
+		// return GetExpressionConstant(0);
+		pd->registersAreConstant = false;
+		return EXP_REG_DISTANCE;
+	}
+#endif
+
 	if ( !token.Icmp( "fragmentPrograms" ) ) {
 		return GetExpressionConstant( (float) false );
 	}
@@ -747,6 +800,13 @@ void idMaterial::ClearStage( shaderStage_t *ss ) {
 	    ss->color.registers[1] =
 	        ss->color.registers[2] =
 	            ss->color.registers[3] = GetExpressionConstant( 1 );
+#ifdef _HUMANHEAD //k: scope view support
+	ss->isScopeView = false;
+	ss->isNotScopeView = false;
+	ss->isSpiritWalk = false;
+	ss->isNotSpiritWalk = false;
+	ss->isShuttleView = false;
+#endif
 }
 
 /*
@@ -774,6 +834,16 @@ int idMaterial::NameToSrcBlendMode( const idStr &name ) {
 	} else if ( !name.Icmp( "GL_SRC_ALPHA_SATURATE" ) ) {
 		return GLS_SRCBLEND_ALPHA_SATURATE;
 	}
+#ifdef _RAVEN //k: quake4 blend
+	else if (!name.Icmp("GL_SRC_COLOR")) {
+		return GLS_SRCBLEND_SRC_COLOR;
+	}
+#endif
+#ifdef _HUMANHEAD
+	else if (!name.Icmp("shader")) {
+		return GLS_SRCBLEND_ONE;
+	}
+#endif
 
 	common->Warning( "unknown blend mode '%s' in material '%s'", name.c_str(), GetName() );
 	SetMaterialFlag( MF_DEFAULTED );
@@ -857,11 +927,25 @@ void idMaterial::ParseBlend( idLexer &src, shaderStage_t *stage ) {
 
 	srcBlend = NameToSrcBlendMode( token );
 
-	MatchToken( src, "," );
-	if ( !src.ReadToken( &token ) ) {
+#ifdef _HUMANHEAD
+	const bool usingShader = !idStr::Icmp(token, "shader");
+	if(usingShader)
+	{
+		dstBlend = GLS_DSTBLEND_ONE;
+	}
+	else
+	{
+#endif
+	MatchToken(src, ",");
+
+	if (!src.ReadToken(&token)) {
 		return;
 	}
-	dstBlend = NameToDstBlendMode( token );
+
+	dstBlend = NameToDstBlendMode(token);
+#ifdef _HUMANHEAD
+	}
+#endif
 
 	stage->drawStateBits = srcBlend | dstBlend;
 }
@@ -1006,6 +1090,12 @@ void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 			continue;
 		}
 
+#ifdef _HUMANHEAD
+		if (!token.Icmp("highres")) {
+			continue;
+		}
+#endif
+
 		// assume anything else is the image name
 		src.UnreadToken( &token );
 		break;
@@ -1144,6 +1234,15 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			continue;
 		}
+
+#ifdef _RAVEN // quake4 material property
+		// jmarshall: quake 4 materials
+        if (!token.Icmp("nomips"))
+        {
+            continue;
+        }
+// jmarshall end
+#endif
 
 		if (  !token.Icmp( "remoteRenderMap" ) ) {
 			ts->dynamic = DI_REMOTE_RENDER;
@@ -1303,6 +1402,10 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				texGenRegisters[0] = ParseExpression( src );
 				texGenRegisters[1] = ParseExpression( src );
 				texGenRegisters[2] = ParseExpression( src );
+#ifdef _HUMANHEAD
+			} else if (!token.Icmp("screen")) {
+				ts->texgen = TG_SCREEN;
+#endif
 			} else {
 				common->Warning( "bad texGen '%s' in material %s", token.c_str(), GetName() );
 				SetMaterialFlag( MF_DEFAULTED );
@@ -1535,6 +1638,101 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			continue;
 		}
 
+#ifdef _RAVEN //k: unsupported GLSL shader program in material
+		if (!token.Icmp("glslProgram")) {
+			idStr tStr;
+			if (src.ReadRestOfLine(tStr)) {
+			}
+			SetMaterialFlag(MF_DEFAULTED); // as default
+			continue;
+		}
+		if (!token.Icmp("shaderParm")) {
+			idStr tStr;
+			if (src.ReadRestOfLine(tStr)) {
+			}
+			continue;
+		}
+		if (!token.Icmp("shaderTexture")) {
+			idStr tStr;
+			if (src.ReadRestOfLine(tStr)) {
+			}
+			continue;
+		}
+#endif
+
+#ifdef _HUMANHEAD
+		if (!token.Icmp("glowStage"))
+        {
+            continue;
+        }
+        if (!token.Icmp("specularEXP"))
+        {
+            idStr tmp;
+            src.ParseRestOfLine(tmp); // 2 float
+            continue;
+        }
+
+        if (!token.Icmp("fragmentparm")) {
+            src.SkipRestOfLine();
+            continue;
+        }
+        if (!token.Icmp("shaderFallback3")) {
+			continue;
+		}
+        if (!token.Icmp("shaderFallback2")) {
+			continue;
+		}
+        if (!token.Icmp("shaderFallback1")) {
+			continue;
+		}
+        if (!token.Icmp("scopeView")) { //k: scope view support
+			ss->isScopeView = true;
+			ss->isNotScopeView = false;
+			continue;
+		}
+        if (!token.Icmp("notScopeView")) { //k: scope view support
+			ss->isNotScopeView = true;
+			ss->isScopeView = false;
+			continue;
+		}
+        if (!token.Icmp("highres")) {
+			continue;
+		}
+        if (!token.Icmp("shaderLevel1")) {
+			continue;
+		}
+        if (!token.Icmp("shaderLevel2")) {
+			continue;
+		}
+        if (!token.Icmp("shaderLevel3")) {
+			continue;
+		}
+        if (!token.Icmp("shaderLevel1")) {
+			continue;
+		}
+        if (!token.Icmp("shuttleView")) {
+			ss->isShuttleView = true;
+			continue;
+		}
+        if (!token.Icmp("spiritWalk")) {
+			ss->isSpiritWalk = true;
+			ss->isNotSpiritWalk = false;
+			continue;
+		}
+        if (!token.Icmp("notSpiritWalk")) {
+			ss->isNotSpiritWalk = true;
+			ss->isSpiritWalk = false;
+			continue;
+		}
+        if (!token.Icmp("growIn")) { // it in color expression
+			src.SkipRestOfLine();
+			continue;
+		}
+        if (!token.Icmp("growOut")) { // it in color expression
+			src.SkipRestOfLine();
+			continue;
+		}
+#endif
 
 		common->Warning( "unknown token '%s' in material '%s'", token.c_str(), GetName() );
 		SetMaterialFlag( MF_DEFAULTED );
@@ -1660,6 +1858,21 @@ void idMaterial::ParseDeform( idLexer &src ) {
 		deformDecl = declManager->FindType( DECL_PARTICLE, token.c_str(), true );
 		return;
 	}
+#ifdef _HUMANHEAD //k: TODO deform type
+	if (!token.Icmp("corona")) {
+		cullType = CT_TWO_SIDED;
+		src.SkipRestOfLine();
+		SetMaterialFlag(MF_NOSHADOWS);
+		return;
+	}
+	if (!token.Icmp("jitter")) {
+		cullType = CT_TWO_SIDED;
+		src.SkipRestOfLine();
+		SetMaterialFlag(MF_NOSHADOWS);
+		return;
+	}
+#endif
+
 	src.Warning( "Bad deform type '%s'", token.c_str() );
 	SetMaterialFlag( MF_DEFAULTED );
 }
@@ -1819,6 +2032,15 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			src.SkipRestOfLine();
 			continue;
 		}
+#ifdef _RAVEN // quake4 material property
+// jmarshall - quake 4 materials.
+        else if (!token.Icmp("materialImage"))
+        {
+            src.ReadTokenOnLine(&token);
+            continue;
+        }
+// jmarshall end
+#endif
 		// description
 		else if ( !token.Icmp( "description") ) {
 			src.ReadTokenOnLine( &token );
@@ -1846,9 +2068,84 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		else if ( !token.Icmp( "noShadows" ) ) {
 			SetMaterialFlag( MF_NOSHADOWS );
 			continue;
+#ifdef _RAVEN // quake4 material property
+// jmarshall - possible legacy optimisations that aren't needed for current hardware.
+        else if (!token.Icmp("notfix"))
+        {
+            // Unknown what this is used for.
+            continue;
+        }
+				/*
+        else if (!token.Icmp("sightClip"))
+        {
+            // Unknown what this is used for.
+            continue;
+        }
+				*/
+        else if (!token.Icmp("sky"))
+        {
+            // Unknown what this is used for.
+            continue;
+        }
+        else if (!token.Icmp("needCurrentRender"))
+        {
+            // Unknown what this is used for.
+            continue;
+        }
+// jmarshall end
+#endif
 		} else if ( !token.Icmp( "suppressInSubview" ) ) {
 			suppressInSubview = true;
 			continue;
+#ifdef _RAVEN // quake4 material property
+// jmarshall
+        else if (!token.Icmp("materialType"))
+        {
+            src.ReadToken(&token);
+            materialType = declManager->FindMaterialType(token);
+            continue;
+        }
+// jmarshall end
+#endif
+#ifdef _RAVEN // quake4 material property
+		else if (!token.Icmp("portalDistanceNear")) {
+			(void)src.ParseFloat(); // a number
+			continue;
+		}
+		else if (!token.Icmp("portalDistanceFar")) {
+			(void)src.ParseFloat(); // a number
+			continue;
+		}
+		else if (!token.Icmp("portalImage")) {
+			idToken unusedToken;
+			src.ReadToken(&unusedToken); // a image
+			(void)unusedToken;
+			continue;
+		}
+		/*
+		else if (!token.Icmp("bounce")) {
+			continue;
+		}
+		else if (!token.Icmp("notacticalfeatures")) {
+			continue;
+		}
+		else if (!token.Icmp("shotclip")) {
+			continue;
+		}
+		else if (!token.Icmp("largeshotclip")) {
+			continue;
+		}
+		else if (!token.Icmp("projectileClip")) {
+			continue;
+		}
+		else if (!token.Icmp("flyclip")) {
+			continue;
+		}
+		else if (!token.Icmp("vehicleclip")) {
+			continue;
+		}
+		*/
+#endif
 		} else if ( !token.Icmp( "portalSky" ) ) {
 			portalSky = true;
 			continue;
@@ -2005,8 +2302,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		}
 		// diffusemap for stage shortcut
 		else if ( !token.Icmp( "diffusemap" ) ) {
-			str = R_ParsePastImageProgram( src );
-			idStr::snPrintf( buffer, sizeof( buffer ), "blend diffusemap\nmap %s\n}\n", str );
+#if defined(_RAVENxxx)
+// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
+			idStr nstr;
+            src.ReadRestOfLine(nstr);
+			idStr::snPrintf(buffer, sizeof(buffer), "blend diffusemap\nmap %s\n}\n", nstr.c_str());
+// jmarshall end
+#else
+			str = R_ParsePastImageProgram(src);
+			idStr::snPrintf(buffer, sizeof(buffer), "blend diffusemap\nmap %s\n}\n", str);
+#endif
 			newSrc.LoadMemory( buffer, strlen(buffer), "diffusemap" );
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
@@ -2015,8 +2320,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		}
 		// specularmap for stage shortcut
 		else if ( !token.Icmp( "specularmap" ) ) {
-			str = R_ParsePastImageProgram( src );
-			idStr::snPrintf( buffer, sizeof( buffer ), "blend specularmap\nmap %s\n}\n", str );
+#if defined(_RAVENxxx)
+// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
+			idStr nstr;
+            src.ReadRestOfLine(nstr);
+			idStr::snPrintf(buffer, sizeof(buffer), "blend specularmap\nmap %s\n}\n", nstr.c_str());
+// jmarshall end
+#else
+			str = R_ParsePastImageProgram(src);
+			idStr::snPrintf(buffer, sizeof(buffer), "blend specularmap\nmap %s\n}\n", str);
+#endif
 			newSrc.LoadMemory( buffer, strlen(buffer), "specularmap" );
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
@@ -2025,8 +2338,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		}
 		// normalmap for stage shortcut
 		else if ( !token.Icmp( "bumpmap" ) ) {
-			str = R_ParsePastImageProgram( src );
-			idStr::snPrintf( buffer, sizeof( buffer ), "blend bumpmap\nmap %s\n}\n", str );
+#if defined(_RAVENxxx)
+// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
+			idStr nstr;
+            src.ReadRestOfLine(nstr);
+			idStr::snPrintf(buffer, sizeof(buffer), "blend bumpmap\nmap %s\n}\n", nstr.c_str());
+// jmarshall end
+#else
+			str = R_ParsePastImageProgram(src);
+			idStr::snPrintf(buffer, sizeof(buffer), "blend bumpmap\nmap %s\n}\n", str);
+#endif
 			newSrc.LoadMemory( buffer, strlen(buffer), "bumpmap" );
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
@@ -2049,6 +2370,34 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			// noShadows
 			SetMaterialFlag( MF_NOSHADOWS );
 			continue;
+#ifdef _HUMANHEAD
+		} else if (!token.Icmp("matter_metal")) {
+		} else if (!token.Icmp("matter_wood")) {
+		} else if (!token.Icmp("matter_cardboard")) {
+		} else if (!token.Icmp("matter_tile")) {
+		} else if (!token.Icmp("matter_stone")) {
+		} else if (!token.Icmp("matter_flesh")) {
+		} else if (!token.Icmp("matter_glass")) {
+		} else if (!token.Icmp("matter_pipe")) {
+		} else if (!token.Icmp("decal_alphatest_macro")) {
+		} else if (!token.Icmp("skipClip")) {
+			SetMaterialFlag(MF_SKIPCLIP);
+		} else if (!token.Icmp("noSeeThru")) {
+		} else if (!token.Icmp("seeThru")) {
+		} else if (!token.Icmp("overlay_macro")) {
+		} else if (!token.Icmp("scorch_macro")) {
+		} else if (!token.Icmp("glass_macro")) {
+			surfaceFlags |= SURFTYPE_GLASS;
+		} else if (!token.Icmp("skybox_macro")) {
+			surfaceFlags |= SURF_NOFRAGMENT;
+			coverage = MC_OPAQUE;
+			SetMaterialFlag(MF_NOSHADOWS);
+		} else if (!token.Icmp("lightWholeMesh")) {
+		} else if (!token.Icmp("skyboxportal")) {
+			src.SkipRestOfLine();
+		} else if (!token.Icmp("directportal")) {
+			src.SkipRestOfLine();
+#endif
 		} else if ( token == "{" ) {
 			// create the new stage
 			ParseStage( src, trpDefault );
@@ -2437,6 +2786,9 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 	registers[EXP_REG_PARM9] = shaderParms[9];
 	registers[EXP_REG_PARM10] = shaderParms[10];
 	registers[EXP_REG_PARM11] = shaderParms[11];
+#ifdef _HUMANHEAD
+	registers[EXP_REG_DISTANCE] = shaderParms[12];
+#endif
 	registers[EXP_REG_GLOBAL0] = view->renderView.shaderParms[0];
 	registers[EXP_REG_GLOBAL1] = view->renderView.shaderParms[1];
 	registers[EXP_REG_GLOBAL2] = view->renderView.shaderParms[2];

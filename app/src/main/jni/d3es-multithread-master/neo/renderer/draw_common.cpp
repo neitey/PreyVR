@@ -110,4 +110,10 @@ void RB_RenderView(void) {
 	if (processed < numDrawSurfs) {
 		RB_GLSL_DrawShaderPasses(drawSurfs + processed, numDrawSurfs - processed);
 	}
+
+#if defined(_RAVENxxx)
+// jmarshall - stupid OpenGL
+	GL_State(GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO);
+// jmarshall end
+#endif
 }

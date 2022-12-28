@@ -137,6 +137,10 @@ typedef enum {
 	EXP_REG_GLOBAL6,
 	EXP_REG_GLOBAL7,
 
+#ifdef _HUMANHEAD
+	EXP_REG_DISTANCE, // HUMANHEAD: CJR
+#endif
+
 	EXP_REG_NUM_PREDEFINED
 } expRegister_t;
 
@@ -218,6 +222,17 @@ typedef struct {
 	float				privatePolygonOffset;	// a per-stage polygon offset
 
 	newShaderStage_t	*newStage;			// vertex / fragment program based stage
+
+#ifdef _HUMANHEAD
+	bool				isGlow; // HUMANHEAD CJR:  Glow overlay
+    bool				isScopeView; // HUMANHEAD CJR:  Scope view
+    bool				isShuttleView;	// HUMANHEAD pdm: shuttle view
+    bool				isNotScopeView; // HUMANHEAD CJR:  Does not show up in scope view
+    bool				isSpiritWalk; // HUMANHEAD CJR: Spiritwalk view
+    bool				isNotSpiritWalk; // HUMANHEAD CJR:  Does not show up in spirit view
+
+    //specData_t			specular;	//HUMANHEAD bjk: specular exponent
+#endif
 } shaderStage_t;
 
 typedef enum {
@@ -259,7 +274,11 @@ const int MAX_SHADER_STAGES			= 256;
 
 const int MAX_TEXGEN_REGISTERS		= 4;
 
+#ifdef _HUMANHEAD
+const int MAX_ENTITY_SHADER_PARMS	= 13; // HUMANHEAD pdm: increased from 12
+#else
 const int MAX_ENTITY_SHADER_PARMS	= 12;
+#endif
 
 // material flags
 typedef enum {
@@ -356,6 +375,16 @@ typedef enum {
 	SURFTYPE_CARDBOARD,
 	SURFTYPE_LIQUID,
 	SURFTYPE_GLASS,
+#ifdef _HUMANHEAD
+	SURFTYPE_TILE,
+	SURFTYPE_WALLWALK,
+	SURFTYPE_ALTMETAL,
+	SURFTYPE_FORCEFIELD,
+	SURFTYPE_PIPE,
+	SURFTYPE_SPIRIT,
+	SURFTYPE_CHAFF,
+	NUM_SURFACE_TYPES
+#else
 	SURFTYPE_PLASTIC,
 	SURFTYPE_RICOCHET,
 	SURFTYPE_10,
@@ -364,6 +393,7 @@ typedef enum {
 	SURFTYPE_13,
 	SURFTYPE_14,
 	SURFTYPE_15
+#endif
 } surfTypes_t;
 
 // surface flags
@@ -372,7 +402,7 @@ typedef enum {
 	SURF_TYPE_BIT1				= BIT(1),	// "
 	SURF_TYPE_BIT2				= BIT(2),	// "
 	SURF_TYPE_BIT3				= BIT(3),	// "
-	SURF_TYPE_MASK				= ( 1 << NUM_SURFACE_BITS ) - 1,
+	SURF_TYPE_MASK				= (1 << NUM_SURFACE_BITS) - 1,
 
 	SURF_NODAMAGE				= BIT(4),	// never give falling damage
 	SURF_SLICK					= BIT(5),	// effects game physics
@@ -383,7 +413,10 @@ typedef enum {
 	SURF_DISCRETE				= BIT(10),	// not clipped or merged by utilities
 	SURF_NOFRAGMENT				= BIT(11),	// dmap won't cut surface at each bsp boundary
 	SURF_NULLNORMAL				= BIT(12)	// renderbump will draw this surface as 0x80 0x80 0x80, which
-	                              // won't collect light from any angle
+#ifdef _RAVEN
+	, SURF_BOUNCE = BIT(13),  // projectiles should bounce off this surface
+#endif
+	// won't collect light from any angle
 } surfaceFlags_t;
 
 class idSoundEmitter;
@@ -734,6 +767,9 @@ public:
 		return portalSky;
 	};
 	void				AddReference();
+#ifdef _RAVEN // quake4 material
+	const rvDeclMatType* GetMaterialType(void) const { return(materialType); }
+#endif
 
 private:
 	// parse the entire material
@@ -773,6 +809,25 @@ private:
 	int					entityGui;			// draw a gui with the idUserInterface from the renderEntity_t
 	// non zero will draw gui, gui2, or gui3 from renderEnitty_t
 	mutable idUserInterface	*gui;			// non-custom guis are shared by all users of a material
+#ifdef _RAVEN // quake4 material
+	// RAVEN BEGIN
+// jscott: for material types
+	const rvDeclMatType* materialType;
+	byte* materialTypeArray;	// an array of material type indices generated from the hit image
+	idStr				materialTypeArrayName;
+	int					MTAWidth;
+	int					MTAHeight;
+
+	// rjohnson: started tracking image/material usage
+	int					useCount;
+	int					globalUseCount;
+
+	// AReis: New portal distance culling stuff.
+	float				portalDistanceNear;
+	float				portalDistanceFar;
+	idImage* portalImage;
+// RAVEN END
+#endif
 
 	bool				noFog;				// surface does not create fog interactions
 

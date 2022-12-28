@@ -33,6 +33,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/RenderWorld_local.h"
 #include "renderer/tr_local.h"
 
+#if defined(_RAVEN) || defined(_HUMANHEAD) //k: dynamic model gui trace
+#include "Model_local.h"
+#endif
+
 #include "../game/anim/Anim.h"
 
 /*
@@ -997,10 +1001,28 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, idAnimator* ani
 	}
 
 	model = def->parms.hModel;
+#if defined(_RAVEN) || defined(_HUMANHEAD) //k: for GUI view of dynamic model. e.g. strogg health station
+	if (!def->parms.hModel || def->parms.hModel->IsDynamicModel() == DM_CONTINUOUS) {
+		return pt;
+	}
+	if (def->parms.callback && def->parms.hModel->IsDynamicModel() == DM_STATIC) {
+		return pt;
+	}
+	//k: md5 dynamic model
+	if (def->parms.hModel->IsDynamicModel() == DM_CACHED) {
+		idRenderModelMD5 *md5_model = dynamic_cast<idRenderModelMD5*>(model);
+		if(!md5_model)
+			return pt;
+		model = md5_model->staticModelInstance;
+		if(!model)
+			return pt;
+	}
+#else
 	//if ( def->parms.callback || !def->parms.hModel || def->parms.hModel->IsDynamicModel() != DM_STATIC) {
 	if ( !def->parms.hModel) {
 		return pt;
 	}
+#endif
 
 	// Koz begin
 	// Koz allow the PDA model to be traced.
@@ -1095,6 +1117,64 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, idAnimator* ani
 			pt.y = ( cursor * axis[1] ) / ( axisLen[1] * axisLen[1] );
 			pt.guiId = shader->GetEntityGui();
 			pt.fraction = local.fraction;
+
+#ifdef _RAVEN //k: player focus gui
+			if (tri->silEdges && tri->verts) {
+				idScreenRect	r;
+				idVec3			v;
+				idVec3			ndc;
+				float			windowX, windowY;
+				//int viewportWidth = (backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1);
+				//int viewportHeight = (backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1);
+				const int viewportWidth = 640;
+				const int viewportHeight = 480;
+
+				r.Clear();
+				idDrawVert *ac = (idDrawVert *)tri->verts;
+				int danglePlane = tri->numIndexes / 3;
+				for (int j = 0 ; j < tri->numSilEdges ; j++) {
+					const silEdge_t			*edge = tri->silEdges + j;
+					if (edge->p1 != danglePlane && edge->p2 != danglePlane) {
+						continue;
+					}
+
+					float *ptr = ac[ edge->v1 ].xyz.ToFloatPtr();
+					R_LocalPointToGlobal(def->modelMatrix, idVec3(ptr[0], ptr[1], ptr[2]), v);
+					R_GlobalToNormalizedDeviceCoordinates(v, ndc);
+
+					windowX = 0.5f * (1.0f + ndc[0]) * viewportWidth;
+					windowY = 0.5f * (1.0f + ndc[1]) * viewportHeight;
+
+					r.AddPoint(windowX, windowY);
+
+					ptr = ac[ edge->v2 ].xyz.ToFloatPtr();
+					R_LocalPointToGlobal(def->modelMatrix, idVec3(ptr[0], ptr[1], ptr[2]), v);
+					R_GlobalToNormalizedDeviceCoordinates(v, ndc);
+
+					windowX = 0.5f * (1.0f + ndc[0]) * viewportWidth;
+					windowY = 0.5f * (1.0f + ndc[1]) * viewportHeight;
+
+					r.AddPoint(windowX, windowY);
+				}
+
+				r.Expand();
+
+				idUserInterface	*gui = 0;
+				int guiNum = shader->GetEntityGui() - 1;
+				if (guiNum >= 0 && guiNum < MAX_RENDERENTITY_GUI)
+					gui = def->parms.gui[ guiNum ];
+				if (!gui)
+					gui = shader->GlobalGui();
+				if (gui)
+				{
+					gui->SetStateInt("2d_min_x", r.x1);
+					gui->SetStateInt("2d_min_y", viewportHeight - r.y2);
+					gui->SetStateInt("2d_max_x", r.x2);
+					gui->SetStateInt("2d_max_y", viewportHeight - r.y1);
+					gui->SetStateBool("harm_2d_calc", true);
+				}
+			}
+#endif
 			return pt;
 		}
 	}
@@ -1118,6 +1198,11 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 	const idMaterial *shader;
 
 	trace.fraction = 1.0f;
+#ifdef _RAVEN // quake4 trace
+	// jmarshall
+	trace.materialType = 0;
+	trace.material = NULL; //kc
+#endif
 
 	if ( entityHandle < 0 || entityHandle >= entityDefs.Num() ) {
 //		common->Error( "idRenderWorld::ModelTrace: index = %i", entityHandle );
@@ -1185,6 +1270,11 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 			trace.normal = localTrace.normal * refEnt->axis;
 			trace.material = shader;
 			trace.entity = &def->parms;
+#ifdef _RAVEN // quake4 trace
+// jmarshall
+			trace.materialType = trace.material->GetMaterialType();
+// jmarshall end
+#endif
 			trace.jointNumber = refEnt->hModel->NearestJoint( i, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2] );
 		}
 	}
@@ -2148,3 +2238,73 @@ const idMaterial *R_RemapShaderBySkin( const idMaterial *shader, const idDeclSki
 
 	return skin->RemapShaderBySkin( shader );
 }
+
+#ifdef _RAVEN // particle
+/*
+===================
+AddEffectDef
+===================
+*/
+qhandle_t idRenderWorldLocal::AddEffectDef(const renderEffect_t* reffect, int time) {
+	int effectHandle = effectsDef.FindNull();
+	if (effectHandle == -1) {
+		effectHandle = effectsDef.Append(NULL);
+	}
+
+	if (effectsDef[effectHandle] == NULL) {
+		effectsDef[effectHandle] = new rvRenderEffectLocal();
+	}
+
+	effectsDef[effectHandle]->parms = *reffect;
+	effectsDef[effectHandle]->gameTime = time;
+
+	bse->PlayEffect(effectsDef[effectHandle], tr.frameShaderTime);
+
+	return effectHandle;
+}
+
+/*
+===================
+UpdateEffectDef
+===================
+*/
+bool idRenderWorldLocal::UpdateEffectDef(qhandle_t effectHandle, const renderEffect_t* reffect, int time) {
+	// create new slots if needed
+	if (effectHandle < 0 || effectHandle > LUDICROUS_INDEX) {
+		common->Error("idRenderWorld::UpdateEffectDef: index = %i", effectHandle);
+	}
+	//while (effectHandle >= effectsDef.Num()) {
+	//	effectsDef.Append(NULL);
+	//}
+
+	effectsDef[effectHandle]->parms = *reffect;
+	effectsDef[effectHandle]->gameTime = time;
+
+	return true;
+}
+
+void idRenderWorldLocal::FreeEffectDef(qhandle_t effectHandle) {
+	bse->FreeEffect(effectsDef[effectHandle]);
+
+	if (effectsDef[effectHandle] != NULL)
+		delete effectsDef[effectHandle];
+
+	effectsDef[effectHandle] = NULL;
+}
+
+void idRenderWorldLocal::StopEffectDef(qhandle_t effectHandle) {
+	if (effectsDef[effectHandle] == NULL)
+		return;
+
+	bse->StopEffect(effectsDef[effectHandle]);
+}
+
+const class rvRenderEffectLocal* idRenderWorldLocal::GetEffectDef(qhandle_t effectHandle) const {
+	return effectsDef[effectHandle];
+}
+
+bool idRenderWorldLocal::EffectDefHasSound(const renderEffect_s* reffect) {
+	return false;
+}
+
+#endif
