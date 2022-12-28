@@ -320,7 +320,11 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 		float glyphScale = 1.0f;		// change the scale to be relative to 1 based on 72 dpi ( so dpi of 144 means a scale of .5 )
 		glyphScale *= 48.0f / pointSize;
 
-		idStr::snPrintf( name, sizeof(name), "%s/fontImage_%i.dat", fontName, pointSize );
+#ifdef _RAVEN //k: quake4 font data file
+		idStr::snPrintf(name, sizeof(name), "%s_%i.fontdat", fontName, pointSize);
+#else
+		idStr::snPrintf(name, sizeof(name), "%s/fontImage_%i.dat", fontName, pointSize);
+#endif
 
 		fontInfo_t *outFont;
 		if ( fontCount == 0 ) {
@@ -343,6 +347,20 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 		fdOffset = 0;
 		fdFile = reinterpret_cast<unsigned char*>(faceData);
 		for( i = 0; i < GLYPHS_PER_FONT; i++ ) {
+#ifdef _RAVEN //k: quake4 font: 9 float32 per char
+			outFont->glyphs[i].imageWidth	= readFloat();
+			outFont->glyphs[i].imageHeight	= readFloat();
+			outFont->glyphs[i].xSkip		= readFloat();
+			outFont->glyphs[i].pitch		= readFloat();
+			outFont->glyphs[i].top			= readFloat();
+			outFont->glyphs[i].height		= outFont->glyphs[i].top;
+			outFont->glyphs[i].bottom		= 0;
+			outFont->glyphs[i].s			= readFloat();
+			outFont->glyphs[i].t			= readFloat();
+			outFont->glyphs[i].s2			= readFloat();
+			outFont->glyphs[i].t2			= readFloat();
+			idStr::snPrintf(outFont->glyphs[i].shaderName, sizeof(outFont->glyphs[i].shaderName), "%s_%i.tga", fontName, pointSize);
+#else
 			outFont->glyphs[i].height		= readInt();
 			outFont->glyphs[i].top			= readInt();
 			outFont->glyphs[i].bottom		= readInt();
@@ -354,17 +372,32 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 			outFont->glyphs[i].t			= readFloat();
 			outFont->glyphs[i].s2			= readFloat();
 			outFont->glyphs[i].t2			= readFloat();
-			/* font.glyphs[i].glyph			= */ readInt();
+			int junk /* font.glyphs[i].glyph */		= readInt();
 			//FIXME: the +6, -6 skips the embedded fonts/
-			memcpy( outFont->glyphs[i].shaderName, &fdFile[fdOffset + 6], 32 - 6 );
+			memcpy(outFont->glyphs[i].shaderName, &fdFile[fdOffset + 6], 32 - 6);
 			fdOffset += 32;
+#endif
 		}
+
+#ifdef _RAVEN //k: quake4 font remain 5 float32
+		readFloat(); //k: 12 / 24 / 48
+		int mw = readFloat(); //k: max height?
+		int mh = readFloat(); //k: max width?
+		readFloat(); //k: max width - max height
+		// readFloat(); //k: 0
+		outFont->glyphScale = glyphScale;
+#else
 		outFont->glyphScale = readFloat();
 
 		int mw = 0;
 		int mh = 0;
+#endif
 		for (i = GLYPH_START; i < GLYPH_END; i++) {
+#ifdef _RAVEN //k: quake4 font material
+			idStr::snPrintf(name, sizeof(name), "%s", outFont->glyphs[i].shaderName);
+#else
 			idStr::snPrintf(name, sizeof(name), "%s/%s", fontName, outFont->glyphs[i].shaderName);
+#endif
 			outFont->glyphs[i].glyph = declManager->FindMaterial(name);
 			outFont->glyphs[i].glyph->SetSort( SS_GUI );
 			if (mh < outFont->glyphs[i].height) {

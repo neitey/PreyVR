@@ -47,6 +47,9 @@ public:
 	virtual void			Init();
 	virtual void			Shutdown();
 	virtual idRenderModel *	AllocModel();
+#ifdef _RAVEN // bse model
+	virtual rvRenderModelBSE* AllocBSEModel();
+#endif
 	virtual void			FreeModel( idRenderModel *model );
 	virtual idRenderModel *	FindModel( const char *modelName );
 	virtual idRenderModel *	CheckModel( const char *modelName );
@@ -313,6 +316,11 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 	} else if ( extension.Icmp( "liquid" ) == 0  ) {
 		model = new idRenderModelLiquid;
 		model->InitFromFile( modelName );
+#ifdef _HUMANHEAD //k: TODO beam model
+		} else if (extension.Icmp("beam") == 0) {
+		model = new hhRenderModelBeam;
+		model->InitFromFile(modelName);
+#endif
 	} else {
 
 		if ( extension.Length() ) {
@@ -628,3 +636,15 @@ void idRenderModelManagerLocal::PrintMemInfo( MemInfo_t *mi ) {
 	f->Printf( "\nTotal model bytes allocated: %s\n", idStr::FormatNumber( totalMem ).c_str() );
 	fileSystem->CloseFile( f );
 }
+
+#ifdef _RAVEN // bse model
+/*
+=================
+idRenderModelManagerLocal::AllocBSEModel
+=================
+*/
+rvRenderModelBSE* idRenderModelManagerLocal::AllocBSEModel() {
+	return new rvRenderModelBSE;
+}
+#endif
+

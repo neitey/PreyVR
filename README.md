@@ -8,10 +8,10 @@ Current status of the work (in `Doom3Quest/app/src/main/jni/d3es-multithread-mas
 
 * cm - merged
 * framework - merged
-* game - TODO: this will be per game different
+* game - this is per game different
 * idlib - merged
 * MayaImport - merged
-* renderer - kept
+* renderer - backported
 * sound - kept
 * sys - adjusted
 * tools - merged

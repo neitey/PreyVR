@@ -137,6 +137,10 @@ typedef enum {
 	EXP_REG_GLOBAL6,
 	EXP_REG_GLOBAL7,
 
+#ifdef _HUMANHEAD
+	EXP_REG_DISTANCE, // HUMANHEAD: CJR
+#endif
+
 	EXP_REG_NUM_PREDEFINED
 } expRegister_t;
 
@@ -218,6 +222,17 @@ typedef struct {
 	float				privatePolygonOffset;	// a per-stage polygon offset
 
 	newShaderStage_t	*newStage;			// vertex / fragment program based stage
+
+#ifdef _HUMANHEAD
+	bool				isGlow; // HUMANHEAD CJR:  Glow overlay
+    bool				isScopeView; // HUMANHEAD CJR:  Scope view
+    bool				isShuttleView;	// HUMANHEAD pdm: shuttle view
+    bool				isNotScopeView; // HUMANHEAD CJR:  Does not show up in scope view
+    bool				isSpiritWalk; // HUMANHEAD CJR: Spiritwalk view
+    bool				isNotSpiritWalk; // HUMANHEAD CJR:  Does not show up in spirit view
+
+    //specData_t			specular;	//HUMANHEAD bjk: specular exponent
+#endif
 } shaderStage_t;
 
 typedef enum {
@@ -259,7 +274,11 @@ const int MAX_SHADER_STAGES			= 256;
 
 const int MAX_TEXGEN_REGISTERS		= 4;
 
+#ifdef _HUMANHEAD
+const int MAX_ENTITY_SHADER_PARMS	= 13; // HUMANHEAD pdm: increased from 12
+#else
 const int MAX_ENTITY_SHADER_PARMS	= 12;
+#endif
 
 // material flags
 typedef enum {
@@ -270,6 +289,11 @@ typedef enum {
 	MF_NOSELFSHADOW				= BIT(4),
 	MF_NOPORTALFOG				= BIT(5),	// this fog volume won't ever consider a portal fogged out
 	MF_EDITOR_VISIBLE			= BIT(6)	// in use (visible) per editor
+#ifdef _HUMANHEAD
+	//HUMANHEAD PCF rww 05/11/06 - can be used explicitly by surfaces which use alpha coverage but do not want collision anyway
+    , MF_SKIPCLIP = BIT(9)
+                  //HUMANHEAD END
+#endif
 } materialFlags_t;
 
 // contents flags, NOTE: make sure to keep the defines in doom_defs.script up to date with these!
@@ -291,11 +315,51 @@ typedef enum {
 	CONTENTS_AAS_OBSTACLE		= BIT(14),	// used to compile an obstacle into AAS that can be enabled/disabled
 	CONTENTS_FLASHLIGHT_TRIGGER	= BIT(15),	// used for triggers that are activated by the flashlight
 
-    // contents used by utils
-    CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
-    CONTENTS_NOCSG				= BIT(21),	// don't cut this brush with CSG operations in the editor
+	// contents used by utils
+	CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
+	CONTENTS_NOCSG				= BIT(21),	// don't cut this brush with CSG operations in the editor
 
-    CONTENTS_REMOVE_UTIL		= ~(CONTENTS_AREAPORTAL|CONTENTS_NOCSG)
+#ifdef _RAVEN
+	// RAVEN BEGIN
+// bdube: new clip that blocks monster visibility
+	CONTENTS_SIGHTCLIP			= BIT(16),	// used for blocking sight for actors and cameras
+	CONTENTS_LARGESHOTCLIP		= BIT(17),	// used to block large shots (fence that allows bullets through but not rockets for example)
+// cdr: AASTactical
+	CONTENTS_NOTACTICALFEATURES	= BIT(18),	// don't place tactical features here
+	CONTENTS_VEHICLECLIP		= BIT(19),	// solid to vehicles
+
+	CONTENTS_FLYCLIP			= BIT(22),	// solid to vehicles
+
+// mekberg: added
+	CONTENTS_ITEMCLIP			= BIT(23),	// so items can collide
+	CONTENTS_PROJECTILECLIP		= BIT(24),  // unlike contents_projectile, projectiles only NOT hitscans
+// RAVEN END
+
+// jmarshall - todo
+	CONTENTS_FOG				= BIT(25),
+	CONTENTS_LAVA				= BIT(26),
+	CONTENTS_SLIME				= BIT(27),
+// jmarshall end
+#endif
+
+#ifdef _HUMANHEAD
+	// HUMANHEAD CJR: Content flags.  Note that for simplicity of merging, id's areaportal and nocsg flags were left as is
+	CONTENTS_FORCEFIELD = BIT(16),	// forcefield matter, only passable in spirit mode
+	CONTENTS_SPIRITBRIDGE = BIT(17),	// cjr - Collidable only by spiritwalking players
+	// END HUMANHEAD
+
+	// HUMANHEAD CJR: Content flags.  Note that for simplicity of merging, id's areaportal and nocsg flags were left as is
+	CONTENTS_BLOCK_RADIUSDAMAGE = BIT(18/*20*/),	// aob - used by objects like forcefields and chaff
+	CONTENTS_SHOOTABLE = BIT(19/*21*/),	// pdm - bullets collide with but not player or monsters
+	CONTENTS_DEATHVOLUME = BIT(22),	// AOB: used by death zones so the player can do a simple contents check
+	CONTENTS_VEHICLECLIP = BIT(23),	// PDM: used to clip off vehicle movement
+	CONTENTS_OWNER_TO_OWNER = BIT(24),	// bjk: used to disable owner to owner rejection for collision
+	CONTENTS_GAME_PORTAL = BIT(25),  // cjr: used for clipping against game portals (glow portals, etc)
+	CONTENTS_SHOOTABLEBYARROW = BIT(26),	// pdm: solid to spirit arrows specifically as opposed to other projectiles
+	CONTENTS_HUNTERCLIP = BIT(27), // pdm: solid to hunters, but not hunters in vehicles
+#endif
+
+	CONTENTS_REMOVE_UTIL		= ~(CONTENTS_AREAPORTAL|CONTENTS_NOCSG)
 } contentsFlags_t;
 
 // surface types
@@ -311,6 +375,16 @@ typedef enum {
 	SURFTYPE_CARDBOARD,
 	SURFTYPE_LIQUID,
 	SURFTYPE_GLASS,
+#ifdef _HUMANHEAD
+	SURFTYPE_TILE,
+	SURFTYPE_WALLWALK,
+	SURFTYPE_ALTMETAL,
+	SURFTYPE_FORCEFIELD,
+	SURFTYPE_PIPE,
+	SURFTYPE_SPIRIT,
+	SURFTYPE_CHAFF,
+	NUM_SURFACE_TYPES
+#else
 	SURFTYPE_PLASTIC,
 	SURFTYPE_RICOCHET,
 	SURFTYPE_10,
@@ -319,6 +393,7 @@ typedef enum {
 	SURFTYPE_13,
 	SURFTYPE_14,
 	SURFTYPE_15
+#endif
 } surfTypes_t;
 
 // surface flags
@@ -327,7 +402,7 @@ typedef enum {
 	SURF_TYPE_BIT1				= BIT(1),	// "
 	SURF_TYPE_BIT2				= BIT(2),	// "
 	SURF_TYPE_BIT3				= BIT(3),	// "
-	SURF_TYPE_MASK				= ( 1 << NUM_SURFACE_BITS ) - 1,
+	SURF_TYPE_MASK				= (1 << NUM_SURFACE_BITS) - 1,
 
 	SURF_NODAMAGE				= BIT(4),	// never give falling damage
 	SURF_SLICK					= BIT(5),	// effects game physics
@@ -338,7 +413,10 @@ typedef enum {
 	SURF_DISCRETE				= BIT(10),	// not clipped or merged by utilities
 	SURF_NOFRAGMENT				= BIT(11),	// dmap won't cut surface at each bsp boundary
 	SURF_NULLNORMAL				= BIT(12)	// renderbump will draw this surface as 0x80 0x80 0x80, which
-	                              // won't collect light from any angle
+#ifdef _RAVEN
+	, SURF_BOUNCE = BIT(13),  // projectiles should bounce off this surface
+#endif
+	// won't collect light from any angle
 } surfaceFlags_t;
 
 class idSoundEmitter;
@@ -689,6 +767,9 @@ public:
 		return portalSky;
 	};
 	void				AddReference();
+#ifdef _RAVEN // quake4 material
+	const rvDeclMatType* GetMaterialType(void) const { return(materialType); }
+#endif
 
 private:
 	// parse the entire material
@@ -728,6 +809,25 @@ private:
 	int					entityGui;			// draw a gui with the idUserInterface from the renderEntity_t
 	// non zero will draw gui, gui2, or gui3 from renderEnitty_t
 	mutable idUserInterface	*gui;			// non-custom guis are shared by all users of a material
+#ifdef _RAVEN // quake4 material
+	// RAVEN BEGIN
+// jscott: for material types
+	const rvDeclMatType* materialType;
+	byte* materialTypeArray;	// an array of material type indices generated from the hit image
+	idStr				materialTypeArrayName;
+	int					MTAWidth;
+	int					MTAHeight;
+
+	// rjohnson: started tracking image/material usage
+	int					useCount;
+	int					globalUseCount;
+
+	// AReis: New portal distance culling stuff.
+	float				portalDistanceNear;
+	float				portalDistanceFar;
+	idImage* portalImage;
+// RAVEN END
+#endif
 
 	bool				noFog;				// surface does not create fog interactions
 

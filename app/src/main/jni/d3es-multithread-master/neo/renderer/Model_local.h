@@ -104,6 +104,9 @@ public:
 	bool						DeleteSurfaceWithId( int id );
 	void						DeleteSurfacesWithNegativeId( void );
 	bool						FindSurfaceWithId( int id, int &surfaceNum );
+#ifdef _RAVEN //k: for ShowSurface/HideSurface, static model using surfaces index as mask: 1 << index, name is shader material name
+	virtual int GetSurfaceMask(const char *name) const;
+#endif
 
 public:
 	idList<modelSurface_t>		surfaces;
@@ -185,6 +188,9 @@ public:
 	virtual const char *		GetJointName( jointHandle_t handle ) const;
 	virtual const idJointQuat *	GetDefaultPose( void ) const;
 	virtual int					NearestJoint( int surfaceNum, int a, int b, int c ) const;
+#ifdef _RAVEN //k: for ShowSurface/HideSurface, md5 model using mesh index as mask: 1 << index, name is shader material name
+	virtual int GetSurfaceMask(const char *name) const;
+#endif
 
 private:
 	idList<idMD5Joint>			joints;
@@ -196,6 +202,13 @@ private:
 	void						GetFrameBounds( const renderEntity_t *ent, idBounds &bounds ) const;
 	void						DrawJoints( const renderEntity_t *ent, const struct viewDef_s *view ) const;
 	void						ParseJoint( idLexer &parser, idMD5Joint *joint, idJointQuat *defaultPose );
+#ifdef _RAVEN //k: show/hide surface
+	idList<idStr> surfaceShaderList;
+#endif
+#if defined(_RAVEN) || defined(_HUMANHEAD) //k: for GUI view of dynamic model in idRenderWorld::GuiTrace
+	public:
+		idRenderModelStatic *staticModelInstance;
+#endif
 };
 
 /*
@@ -385,5 +398,46 @@ public:
 	virtual	idRenderModel *	InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
 	virtual	idBounds		Bounds( const struct renderEntity_s *ent ) const;
 };
+
+#ifdef _RAVEN // bse model
+/*
+======================
+rvRenderModelBSE
+======================
+*/
+class rvRenderModelBSE : public idRenderModelStatic {
+public:
+	virtual void				InitFromFile(const char* fileName);
+	virtual void				FinishSurfaces(bool useMikktspace);
+};
+
+#endif
+
+#ifdef _HUMANHEAD
+// HUMANHEAD: Beams
+class hhRenderModelBeam : public idRenderModelStatic {
+public:
+	void				InitFromFile( const char *fileName );
+	void				LoadModel();
+
+	dynamicModel_t		IsDynamicModel() const;
+	virtual idRenderModel*	InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );
+	virtual idBounds	Bounds( const struct renderEntity_s *ent ) const;
+
+private:
+	void				UpdateSurface( const struct renderEntity_s *ent, const int index, const hhBeamNodes_t *beam, modelSurface_t *surf );
+	void				UpdateQuadSurface( const struct renderEntity_s *ent, const int index, int quadIndex, const hhBeamNodes_t *beam, modelSurface_t *surf );
+
+	struct deformInfo_s	*deformInfo;	// used to create srfTriangles_t from base frames and new vertexes
+	idList<idDrawVert>	verts;
+
+	// endpoint quads
+	struct deformInfo_s *quadDeformInfo[2];
+	idList<idDrawVert>	quadVerts[2];
+
+	const hhDeclBeam	*declBeam;
+};
+// END HUMANHEAD
+#endif
 
 #endif /* !__MODEL_LOCAL_H__ */

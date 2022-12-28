@@ -822,7 +822,12 @@ otherwise it will be marked as deferred.
 The results of this are cached and valid until the light or entity change.
 ====================
 */
-void idInteraction::CreateInteraction( const idRenderModel *model ) {
+#ifdef _RAVEN
+void idInteraction::CreateInteraction(const idRenderModel *model, int suppressSurfaceMask)
+#else
+void idInteraction::CreateInteraction(const idRenderModel *model)
+#endif
+{
 	const idMaterial *	lightShader = lightDef->lightShader;
 	const idMaterial*	shader;
 	bool				interactionGenerated;
@@ -858,6 +863,10 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 
 	// check each surface in the model
 	for ( int c = 0 ; c < model->NumSurfaces() ; c++ ) {
+#ifdef _RAVEN //k: for ShowSurface/HideSurface, shader mask is not 0 will skip make shadow and interaction
+		if(SUPPRESS_SURFACE_MASK_CHECK(suppressSurfaceMask, c))
+			continue;
+#endif
 		const modelSurface_t	*surf;
 		srfTriangles_t	*tri;
 
@@ -1080,7 +1089,11 @@ void idInteraction::AddActiveInteraction( void ) {
 
 	// actually create the interaction if needed, building light and shadow surfaces as needed
 	if ( IsDeferred() ) {
-		CreateInteraction( model );
+#ifdef _RAVEN
+		CreateInteraction(model, entityDef->parms.suppressSurfaceMask);
+#else
+		CreateInteraction(model);
+#endif
 	}
 
 	R_GlobalPointToLocal( vEntity->modelMatrix, lightDef->globalLightOrigin, localLightOrigin );

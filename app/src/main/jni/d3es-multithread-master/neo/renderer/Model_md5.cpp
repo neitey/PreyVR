@@ -520,6 +520,10 @@ void idRenderModelMD5::LoadModel() {
 	idMD5Joint	*joint;
 	idJointMat *poseMat3;
 
+#if defined(_RAVEN) || defined(_HUMANHEAD) //k: for GUI view of dynamic model in idRenderWorld::GuiTrace
+	this->staticModelInstance = 0;
+#endif
+
 	if ( !purged ) {
 		PurgeModel();
 	}
@@ -861,6 +865,10 @@ idRenderModel *idRenderModelMD5::InstantiateDynamicModel( const struct renderEnt
 	idMD5Mesh			*mesh;
 	idRenderModelStatic	*staticModel;
 
+#if defined(_RAVEN) || defined(_HUMANHEAD) //k: for GUI view of dynamic model in idRenderWorld::GuiTrace
+	this->staticModelInstance = 0;
+#endif
+
 	if ( cachedModel && !r_useCachedDynamicModels.GetBool() ) {
 		delete cachedModel;
 		cachedModel = NULL;
@@ -943,6 +951,19 @@ idRenderModel *idRenderModelMD5::InstantiateDynamicModel( const struct renderEnt
 		staticModel->bounds.AddPoint( surf->geometry->bounds[0] );
 		staticModel->bounds.AddPoint( surf->geometry->bounds[1] );
 	}
+
+#if defined(_RAVEN) || defined(_HUMANHEAD) //k: for GUI view of dynamic model in idRenderWorld::GuiTrace
+	this->staticModelInstance = staticModel;
+#endif
+
+#ifdef _RAVEN //k: show/hide surface
+	surfaceShaderList.Clear();
+	for(i = 0; i < staticModel->surfaces.Num(); i++)
+	{
+		const modelSurface_t *surf = &staticModel->surfaces[i];
+		surfaceShaderList.Append(surf && surf->shader ? surf->shader->GetName() : "");
+	}
+#endif
 
 	return staticModel;
 }
@@ -1067,6 +1088,9 @@ void idRenderModelMD5::PurgeModel() {
 	joints.Clear();
 	defaultPose.Clear();
 	meshes.Clear();
+#if defined(_RAVEN) || defined(_HUMANHEAD) //k: md5 model ref def->dynamicModel, set to 0
+	staticModelInstance = 0;
+#endif
 }
 
 /*
@@ -1097,3 +1121,26 @@ int	idRenderModelMD5::Memory() const {
 	}
 	return total;
 }
+
+#ifdef _RAVEN //k: for ShowSurface/HideSurface, md5 model using mesh index as mask: 1 << index, name is shader material name
+int idRenderModelMD5::GetSurfaceMask(const char *name) const
+{
+	int i;
+	idMD5Mesh			*mesh;
+
+	if(!name || !name[0] || meshes.Num() == 0)
+		return 0;
+
+	for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
+	{
+		if(i > 31) //k: greate than int bits, it should be happened, but if happen, return 0 for do nothing
+			break;
+		const idMaterial *shader = mesh->shader;
+		if(!shader)
+			continue;
+		if(!idStr::Icmp(name, shader->GetName()))
+			return SUPPRESS_SURFACE_MASK(i);
+	}
+	return  0;
+}
+#endif

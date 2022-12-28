@@ -1173,6 +1173,10 @@ void R_RenderView( viewDef_t *parms ) {
 	// constrain the view frustum to the view lights and entities
 	R_ConstrainViewFrustum();
 
+#ifdef _RAVEN // particle
+	R_AddEffectSurfaces();
+#endif
+
 	// make sure that interactions exist for all light / entity combinations
 	// that are visible
 	// add any pre-generated light shadows, and calculate the light shader values
