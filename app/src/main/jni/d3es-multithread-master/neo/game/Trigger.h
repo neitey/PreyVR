@@ -89,7 +89,7 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-private:
+protected:
 	float				wait;
 	float				random;
 	float				delay;
@@ -137,6 +137,8 @@ private:
 	int					nextTriggerTime;
 	bool				triggerFirst;
 	idStr				entityName;
+
+	bool				testPartialName;
 
 	void				TriggerAction( idEntity *activator );
 	void				Event_TriggerAction( idEntity *activator );
@@ -285,6 +287,30 @@ private:
 	idClipModel *		clipModel;
 
 	void				Event_Trigger( idEntity *activator );
+};
+
+/*
+===============================================================================
+
+  Trigger that responces to CTF flags
+
+===============================================================================
+*/
+class idTrigger_Flag : public idTrigger_Multi
+{
+public:
+CLASS_PROTOTYPE(idTrigger_Flag);
+
+	idTrigger_Flag(void);
+	void				Spawn(void);
+
+private:
+	int					team;
+	bool				player;			// flag must be attached/carried by player
+
+	const idEventDef 	*eventFlag;
+
+	void				Event_Touch(idEntity *other, trace_t *trace);
 };
 
 #endif /* !__GAME_TRIGGER_H__ */

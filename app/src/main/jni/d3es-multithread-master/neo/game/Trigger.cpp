@@ -397,9 +397,9 @@ void idTrigger_Multi::TriggerAction( idEntity *activator ) {
 	if ( wait >= 0 ) {
 		nextTriggerTime = gameLocal.time + SEC2MS( wait + random * gameLocal.random.CRandomFloat() );
 	} else {
-		// we can't just remove (this) here, because this is a touch function
-		// called while looping through area links...
-		nextTriggerTime = gameLocal.time + 1;
+		// If the player spawned inside the trigger, the player Spawn function called Think directly,
+		// allowing for multiple triggers on a trigger_once.  Increasing the nextTriggerTime prevents it.
+		nextTriggerTime = gameLocal.time + 99999;
 		PostEventMS( &EV_Remove, 0 );
 	}
 }
@@ -531,6 +531,7 @@ idTrigger_EntityName::idTrigger_EntityName( void ) {
 	random_delay = 0.0f;
 	nextTriggerTime = 0;
 	triggerFirst = false;
+	testPartialName = false;
 }
 
 /*
@@ -546,6 +547,7 @@ void idTrigger_EntityName::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( nextTriggerTime );
 	savefile->WriteBool( triggerFirst );
 	savefile->WriteString( entityName );
+	savefile->WriteBool( testPartialName );
 }
 
 /*
@@ -561,6 +563,7 @@ void idTrigger_EntityName::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( nextTriggerTime );
 	savefile->ReadBool( triggerFirst );
 	savefile->ReadString( entityName );
+	savefile->ReadBool( testPartialName );
 }
 
 /*
@@ -596,6 +599,12 @@ void idTrigger_EntityName::Spawn( void ) {
 	if ( !spawnArgs.GetBool( "noTouch" ) ) {
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
+
+#ifdef __ANDROID__
+	testPartialName = spawnArgs.GetBool( "testPartialName", testPartialName ? "1" : "0" );
+#else
+	testPartialName = spawnArgs.GetBool( "testPartialName", testPartialName );
+#endif
 }
 
 /*
@@ -642,8 +651,16 @@ void idTrigger_EntityName::Event_Trigger( idEntity *activator ) {
 		return;
 	}
 
-	if ( !activator || ( activator->name != entityName ) ) {
-		return;
+	bool validEntity = false;
+	if ( activator ) {
+		if ( testPartialName ) {
+			if ( activator->name.Find( entityName, false ) >= 0 ) {
+				validEntity = true;
+			}
+		}
+		if ( activator->name == entityName ) {
+			validEntity = true;
+		}
 	}
 
 	if ( triggerFirst ) {
@@ -678,7 +695,19 @@ void idTrigger_EntityName::Event_Touch( idEntity *other, trace_t *trace ) {
 		return;
 	}
 
-	if ( !other || ( other->name != entityName ) ) {
+	bool validEntity = false;
+	if ( other ) {
+		if ( testPartialName ) {
+			if ( other->name.Find( entityName, false ) >= 0 ) {
+				validEntity = true;
+			}
+		}
+		if ( other->name == entityName ) {
+			validEntity = true;
+		}
+	}
+
+	if ( !validEntity ) {
 		return;
 	}
 
@@ -997,8 +1026,21 @@ void idTrigger_Hurt::Event_Touch( idEntity *other, trace_t *trace ) {
 	const char *damage;
 
 	if ( on && other && gameLocal.time >= nextTime ) {
-		damage = spawnArgs.GetString( "def_damage", "damage_painTrigger" );
-		other->Damage( NULL, NULL, vec3_origin, damage, 1.0f, INVALID_JOINT );
+		bool playerOnly = spawnArgs.GetBool("playerOnly");
+
+		if (playerOnly) {
+			if (!other->IsType(idPlayer::Type)) {
+				return;
+			}
+		}
+		idVec3 dir = vec3_origin;
+
+		if (spawnArgs.GetBool("kick_from_center", "0")) {
+			dir = other->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+			dir.Normalize();
+		}
+
+		other->Damage(NULL, NULL, dir, damage, 1.0f, INVALID_JOINT);
 
 		ActivateTargets( other );
 		CallScript();
@@ -1189,4 +1231,116 @@ idTrigger_Touch::Disable
 */
 void idTrigger_Touch::Disable( void ) {
 	BecomeInactive( TH_THINK );
+}
+/*
+===============================================================================
+
+  idTrigger_Flag
+
+===============================================================================
+*/
+
+CLASS_DECLARATION(idTrigger_Multi, idTrigger_Flag)
+				EVENT(EV_Touch, idTrigger_Flag::Event_Touch)
+END_CLASS
+
+idTrigger_Flag::idTrigger_Flag(void)
+{
+	team		= -1;
+	player		= false;
+	eventFlag	= NULL;
+}
+
+void idTrigger_Flag::Spawn(void)
+{
+	team = spawnArgs.GetInt("team", "0");
+	player = spawnArgs.GetBool("player", "0");
+
+	idStr funcname = spawnArgs.GetString("eventflag", "");
+
+	if (funcname.Length()) {
+		eventFlag = idEventDef::FindEvent(funcname);  // gameLocal.program.FindFunction( funcname );//, &idItemTeam::Type );
+
+		if (eventFlag == NULL) {
+			gameLocal.Warning("trigger '%s' at (%s) event unknown '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), funcname.c_str());
+		}
+	} else {
+		eventFlag = NULL;
+	}
+
+	idTrigger_Multi::Spawn();
+}
+
+void idTrigger_Flag::Event_Touch(idEntity *other, trace_t *trace)
+{
+
+	bool bTrigger = false;
+	idItemTeam *flag = NULL;
+
+	if (player) {
+		if (!other->IsType(idPlayer::Type))
+			return;
+
+		idPlayer *player = static_cast<idPlayer *>(other);
+
+		if (player->carryingFlag == false)
+			return;
+
+		if (team != -1 && (player->team != team || (player->team != 0 && player->team != 1)))
+			return;
+
+		idItemTeam *flags[2];
+
+		flags[0] = gameLocal.mpGame.GetTeamFlag(0);
+		flags[1] = gameLocal.mpGame.GetTeamFlag(1);
+
+		int iFriend = 1 - player->team;			// index to the flag player team wants
+		int iOpp	= player->team;				// index to the flag opp team wants
+
+		// flag is captured if :
+		// 1)flag is truely bound to the player
+		// 2)opponent flag has been return
+		if (flags[iFriend]->carried && !flags[iFriend]->dropped &&  //flags[iFriend]->IsBoundTo( player ) &&
+		    !flags[iOpp]->carried && !flags[iOpp]->dropped)
+			flag = flags[iFriend];
+		else
+			return;
+	} else {
+		if (!other->IsType(idItemTeam::Type))
+			return;
+
+		idItemTeam *item = static_cast<idItemTeam *>(other);
+
+		if (item->team == team || team == -1) {
+			flag = item;
+		} else
+			return;
+	}
+
+	if (flag) {
+		switch (eventFlag->GetNumArgs()) {
+			default :
+			case 0 :
+				flag->PostEventMS(eventFlag, 0);
+				break;
+			case 1 :
+				flag->PostEventMS(eventFlag, 0, 0);
+				break;
+			case 2 :
+				flag->PostEventMS(eventFlag, 0, 0, 0);
+				break;
+		}
+
+		/*
+				ServerSendEvent( eventFlag->GetEventNum(), NULL, true, false );
+
+				idThread *thread;
+				if ( scriptFlag ) {
+					thread = new idThread();
+					thread->CallFunction( flag, scriptFlag, false );
+					thread->DelayedStart( 0 );
+				}
+		*/
+		idTrigger_Multi::Event_Touch(other, trace);
+	}
 }

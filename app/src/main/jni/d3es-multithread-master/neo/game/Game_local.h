@@ -112,36 +112,54 @@ typedef struct snapshot_s {
 	struct snapshot_s *		next;
 } snapshot_t;
 
-struct timeState_t
-{
-    int					time;
-    int					previousTime;
-    int					realClientTime;
+struct timeState_t {
+	int					time;
+	int					previousTime;
+	int					msec;
+	int					framenum;
+	int					realClientTime;
 
-    void				Set( int t, int pt, int rct )
-    {
-        time = t;
-        previousTime = pt;
-        realClientTime = rct;
-    };
-    void				Get( int& t, int& pt, int& rct )
-    {
-        t = time;
-        pt = previousTime;
-        rct = realClientTime;
-    };
-    void				Save( idSaveGame* savefile ) const
-    {
-        savefile->WriteInt( time );
-        savefile->WriteInt( previousTime );
-        savefile->WriteInt( realClientTime );
-    }
-    void				Restore( idRestoreGame* savefile )
-    {
-        savefile->ReadInt( time );
-        savefile->ReadInt( previousTime );
-        savefile->ReadInt( realClientTime );
-    }
+	void				Set(int t, int pt, int ms, int f, int rct)		{
+		time = t;
+		previousTime = pt;
+		msec = ms;
+		framenum = f;
+		realClientTime = rct;
+	};
+	void				Get(int &t, int &pt, int &ms, int &f, int &rct)	{
+		t = time;
+		pt = previousTime;
+		ms = msec;
+		f = framenum;
+		rct = realClientTime;
+	};
+	void				Save(idSaveGame *savefile) const	{
+		savefile->WriteInt(time);
+		savefile->WriteInt(previousTime);
+		savefile->WriteInt(msec);
+		savefile->WriteInt(framenum);
+		savefile->WriteInt(realClientTime);
+	}
+	void				Restore(idRestoreGame *savefile)	{
+		savefile->ReadInt(time);
+		savefile->ReadInt(previousTime);
+		savefile->ReadInt(msec);
+		savefile->ReadInt(framenum);
+		savefile->ReadInt(realClientTime);
+	}
+	void				Increment()							{
+		framenum++;
+		previousTime = time;
+		time += msec;
+		realClientTime = time;
+	};
+};
+
+enum slowmoState_t {
+	SLOWMO_STATE_OFF,
+	SLOWMO_STATE_RAMPUP,
+	SLOWMO_STATE_ON,
+	SLOWMO_STATE_RAMPDOWN
 };
 
 const int MAX_EVENT_PARAM_SIZE		= 128;
@@ -195,6 +213,7 @@ typedef enum {
 typedef struct {
 	idEntity	*ent;
 	int			dist;
+	int			team;
 } spawnSpot_t;
 
 //============================================================================
@@ -236,9 +255,6 @@ public:
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
-	/*idEntityPtr<type> &		operator=( type *ent );
-	idEntityPtr& 			operator=( const idEntityPtr& ep );
-	idEntityPtr& 			operator=( const type* ent );*/
 	idEntityPtr& 			operator=( const type* ent );
 	idEntityPtr& 			operator=( const idEntityPtr& ep );
 
@@ -322,7 +338,7 @@ public:
 	int						framenum;
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
-//	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
+	int						msec;					// time since last update in milliseconds
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
@@ -344,8 +360,32 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+	idEntityPtr<idEntity>	portalSkyEnt;
+	bool					portalSkyActive;
+
+	void					SetPortalSkyEnt(idEntity *ent);
+	bool					IsPortalSkyAcive();
+
 	timeState_t				fast;
 	timeState_t				slow;
+
+	slowmoState_t			slowmoState;
+	float					slowmoMsec;
+
+	bool					quickSlowmoReset;
+
+	virtual void			SelectTimeGroup(int timeGroup);
+	virtual int				GetTimeGroupTime(int timeGroup);
+
+	virtual void			GetBestGameType(const char *map, const char *gametype, char buf[ MAX_STRING_CHARS ]);
+
+	void					ComputeSlowMsec();
+	void					RunTimeGroup2();
+
+	void					ResetSlowTimeVars();
+	void					QuickSlowmoReset();
+
+	bool					NeedRestart();
 
 	// ---------------------- Public idGame Interface -------------------
 
@@ -458,6 +498,9 @@ public:
 
 	bool					InPlayerPVS( idEntity *ent ) const;
 	bool					InPlayerConnectedArea( idEntity *ent ) const;
+	pvsHandle_t				GetPlayerPVS()			{
+		return playerPVS;
+	};
 
 	void					SetCamera( idCamera *cam );
 	idCamera *				GetCamera( void ) const;
@@ -524,10 +567,6 @@ public:
 	void					SetScriptFPS( const float com_engineHz );
 	// Koz end
 
-	bool					NeedRestart();
-
-	virtual int				GetTimeGroupTime( int timeGroup );
-
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -575,6 +614,10 @@ private:
 	idStaticList<spawnSpot_t, MAX_GENTITIES> spawnSpots;
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
 	int						currentInitialSpot;
+
+	idStaticList<spawnSpot_t, MAX_GENTITIES> teamSpawnSpots[2];
+	idStaticList<idEntity *, MAX_GENTITIES> teamInitialSpots[2];
+	int						teamCurrentInitialSpot[2];
 
 	idDict					newInfo;
 
@@ -624,10 +667,6 @@ private:
 
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
-
-	virtual void			SelectTimeGroup( int timeGroup );
-
-	virtual void			GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] );
 
 	void					Tokenize( idStrList &out, const char *in );
 

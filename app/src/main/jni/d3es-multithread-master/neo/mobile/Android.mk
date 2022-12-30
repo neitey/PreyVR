@@ -18,6 +18,7 @@ $(SUPPORT_LIBS)/liboggvorbis/include
 
 LOCAL_CPPFLAGS := -DUSE_GLES2
 LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
+LOCAL_CPPFLAGS += -D_D3LE -D_D3XP -DCTF
 
 
 LOCAL_CPPFLAGS += -Wno-sign-compare \

@@ -787,6 +787,14 @@ void idTarget_SetInfluence::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( soundFaded );
 	savefile->WriteBool( restoreOnTrigger );
+
+	savefile->WriteInt(savedGuiList.Num());
+
+	for (i = 0; i < savedGuiList.Num(); i++) {
+		for (int j = 0; j < MAX_RENDERENTITY_GUI; j++) {
+			savefile->WriteUserInterface(savedGuiList[i].gui[j], savedGuiList[i].gui[j] ? savedGuiList[i].gui[j]->IsUniqued() : false);
+		}
+	}
 }
 
 /*
@@ -844,6 +852,18 @@ void idTarget_SetInfluence::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( soundFaded );
 	savefile->ReadBool( restoreOnTrigger );
+
+	savefile->ReadInt(num);
+
+	for (i = 0; i < num; i++) {
+		SavedGui_t temp;
+
+		for (int j = 0; j < MAX_RENDERENTITY_GUI; j++) {
+			savefile->ReadUserInterface(temp.gui[j]);
+		}
+
+		savedGuiList.Append(temp);
+	}
 }
 
 /*
@@ -913,6 +933,7 @@ void idTarget_SetInfluence::Event_GatherEntities() {
 	lightList.Clear();
 	guiList.Clear();
 	soundList.Clear();
+	savedGuiList.Clear();
 
 	if ( spawnArgs.GetBool( "effect_all" ) ) {
 		lights = sounds = guis = models = vision = true;
@@ -941,6 +962,8 @@ void idTarget_SetInfluence::Event_GatherEntities() {
 			}
 			if ( guis && ent->GetRenderEntity() && ent->GetRenderEntity()->gui[ 0 ] && ent->spawnArgs.FindKey( "gui_demonic" ) ) {
 				guiList.Append( ent->entityNumber );
+				SavedGui_t temp;
+				savedGuiList.Append(temp);
 				continue;
 			}
 			if ( ent->IsType( idStaticEntity::Type ) && ent->spawnArgs.FindKey( "color_demonic" ) ) {
@@ -1076,6 +1099,8 @@ void idTarget_SetInfluence::Event_Activate( idEntity *activator ) {
 		update = false;
 		for ( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
 			if ( ent->GetRenderEntity()->gui[ j ] && ent->spawnArgs.FindKey( j == 0 ? "gui_demonic" : va( "gui_demonic%d", j+1 ) ) ) {
+				//Backup the old one
+				savedGuiList[i].gui[j] = ent->GetRenderEntity()->gui[ j ];
 				ent->GetRenderEntity()->gui[ j ] = uiManager->FindGui( ent->spawnArgs.GetString( j == 0 ? "gui_demonic" : va( "gui_demonic%d", j+1 ) ), true );
 				update = true;
 			}
@@ -1199,7 +1224,7 @@ void idTarget_SetInfluence::Event_RestoreInfluence() {
 		update = false;
 		for( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
 			if ( ent->GetRenderEntity()->gui[ j ] ) {
-				ent->GetRenderEntity()->gui[ j ] = uiManager->FindGui( ent->spawnArgs.GetString( j == 0 ? "gui" : va( "gui%d", j+1 ) ) );
+				ent->GetRenderEntity()->gui[ j ] = savedGuiList[i].gui[j];
 				update = true;
 			}
 		}

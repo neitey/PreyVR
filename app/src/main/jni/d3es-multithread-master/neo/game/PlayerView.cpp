@@ -36,6 +36,16 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "PlayerView.h"
 
+int MakePowerOfTwo(int num)
+{
+	int		pot;
+
+	for (pot = 1 ; pot < num ; pot<<=1) {
+	}
+
+	return pot;
+}
+
 const int IMPULSE_DELAY = 150;
 /*
 ==============
@@ -65,6 +75,12 @@ idPlayerView::idPlayerView() {
 	fadeToColor.Zero();
 	fadeColor.Zero();
 	shakeAng.Zero();
+	fxManager = NULL;
+
+	if (!fxManager) {
+		fxManager = new FullscreenFXManager;
+		fxManager->Initialize(this);
+	}
 
 	ClearEffects();
 }
@@ -118,6 +134,10 @@ void idPlayerView::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteObject( player );
 	savefile->WriteRenderView( view );
+
+	if (fxManager) {
+		fxManager->Save(savefile);
+	}
 }
 
 /*
@@ -169,6 +189,10 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( player ) );
 	savefile->ReadRenderView( view );
+
+	if (fxManager) {
+		fxManager->Restore(savefile);
+	}
 }
 
 /*
@@ -516,7 +540,48 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 
 	gameRenderWorld->RenderScene( view );
 
+	// hack the shake in at the very last moment, so it can't cause any consistency problems
+	renderView_t	hackedView = *view;
+	hackedView.viewaxis = hackedView.viewaxis * ShakeAxis();
+
+	if (gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyAcive() && g_enablePortalSky.GetBool()) {
+		renderView_t	portalView = hackedView;
+		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
+
+		// setup global fixup projection vars
+		if (1) {
+			int vidWidth, vidHeight;
+			idVec2 shiftScale;
+
+			renderSystem->GetGLSettings(vidWidth, vidHeight);
+
+			float pot;
+			int	 w = vidWidth;
+			pot = MakePowerOfTwo(w);
+			shiftScale.x = (float)w / pot;
+
+			int	 h = vidHeight;
+			pot = MakePowerOfTwo(h);
+			shiftScale.y = (float)h / pot;
+
+			hackedView.shaderParms[4] = shiftScale.x;
+			hackedView.shaderParms[5] = shiftScale.y;
+		}
+
+		gameRenderWorld->RenderScene(&portalView);
+		renderSystem->CaptureRenderToImage("_currentRender");
+
+		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
+	}
+
+	// process the frame
+	fxManager->Process(&hackedView);
+
 	if ( player->spectating ) {
+		return;
+	}
+
+	if (!hud) {
 		return;
 	}
 
@@ -686,6 +751,7 @@ assumes: color.w is 0 or 1
 =================
 */
 void idPlayerView::Fade( idVec4 color, int time ) {
+	SetTimeState ts(player->timeGroup);
 
 	if ( !fadeTime ) {
 		fadeFromColor.Set( 0.0f, 0.0f, 0.0f, 1.0f - color[ 3 ] );
@@ -721,6 +787,8 @@ void idPlayerView::ScreenFade() {
 	if ( !fadeTime ) {
 		return;
 	}
+
+	SetTimeState ts(player->timeGroup);
 
 	msec = fadeTime - gameLocal.realClientTime;
 
