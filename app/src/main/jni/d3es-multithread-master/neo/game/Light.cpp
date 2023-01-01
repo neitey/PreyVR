@@ -359,6 +359,11 @@ void idLight::Spawn( void ) {
 		Off();
 	}
 
+	// Midnight CTF
+	if (gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool("si_midnight") && !spawnArgs.GetBool("midnight_override")) {
+		Off();
+	}
+
 	health = spawnArgs.GetInt( "health", "0" );
 	spawnArgs.GetString( "broken", "", brokenModel );
 	spawnArgs.GetBool( "break", "0", breakOnTrigger );

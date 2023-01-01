@@ -104,6 +104,8 @@ private:
 	float						bouncyness;
 	idStr						fxFracture;
 
+	bool						isXraySurface;
+
 	// state
 	idPhysics_StaticMulti		physicsObj;
 	idList<shard_t *>			shards;
