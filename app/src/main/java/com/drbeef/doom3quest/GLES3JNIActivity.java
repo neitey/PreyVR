@@ -208,6 +208,7 @@ import java.util.Vector;
 		File root = new File("/sdcard/Doom3Quest");
 		File base = new File(root, "base");
 		File roe = new File(root, "d3xp");
+		File lm = new File(root, "d3le");
 
 		boolean exitAfterCopy = false;
 
@@ -230,6 +231,14 @@ import java.util.Vector;
 			copy_asset(roe.getAbsolutePath(), "pak399roe.pk4", true);
 			copy_asset(roe.getAbsolutePath(), "quest1_default.cfg", true);
 			copy_asset(roe.getAbsolutePath(), "quest2_default.cfg", true);
+		}
+
+		//DLC - The Lost Mission
+		if (lm.exists())
+		{
+			copy_asset(lm.getAbsolutePath(), "pak399lm.pk4", true);
+			copy_asset(lm.getAbsolutePath(), "quest1_default.cfg", true);
+			copy_asset(lm.getAbsolutePath(), "quest2_default.cfg", true);
 		}
 
 		if (exitAfterCopy)
