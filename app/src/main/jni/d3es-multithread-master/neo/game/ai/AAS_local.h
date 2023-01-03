@@ -81,6 +81,61 @@ private:
 	idList<int>					areas;					// areas the bounds are in
 };
 
+//HUMANHEAD nla
+// Helper class/data class for the near point functions
+class hhNearPoint {
+
+public:
+	hhNearPoint(const idVec3 &anAllyOrigin, const idVec3 &anOurOrigin, float desiredDist) :
+			allyOrigin(anAllyOrigin), ourOrigin(anOurOrigin),
+			desiredDistSq(desiredDist * desiredDist),
+			bestBlocked(true), bestDot(0), bestPoint(vec3_origin) {
+
+		direction = anOurOrigin - anAllyOrigin;
+	}
+
+	idVec3		getBestPoint(void) { return(bestPoint); }
+
+	// These really should be protected with accessors, but for the sake
+	//	  of speed, will leave as public access
+public:
+	idVec3		allyOrigin;		// Point where ally is
+	idVec3		ourOrigin;      // Point where we are
+	idVec3		direction;		// Vector from ally to follower
+	float		desiredDistSq;	// Min distance to be, squared
+	float		bestDistSq;		// Current best point distance squared
+	float		bestBlocked;    // Is the best so far blocked?
+	float		bestDot;		// Current best point * direction
+	idVec3		bestPoint;		// Current best point
+
+};
+
+
+//HUMANHEAD nla
+// Typedefs for return codes
+typedef enum {
+	AREA_NO_VALID_POINTS,		// No valid points were found
+	AREA_MIXED,					// Points were a mixture
+	AREA_ALL_DESIRED			// All points were desired points
+} findAreaType_t;
+
+typedef enum {
+	POINT_NOT_VALID = 0,		// Point was on wrong side of origin
+	POINT_VALID = 1,			// Point was within desired distance
+	POINT_DESIRED = 2			// Point was outside desired distance
+} findPointType_t;
+
+//
+// HUMANHEAD jrm
+class hhPathApproach
+{
+public:
+	hhPathApproach() {totalPathDistSqr = 0.0f; totalApproachDistSqr = 0.0f; minDistSqr = 0.0f; maxDistSqr = 0.0f;}
+	float   totalPathDistSqr;		// Total path dist sqr
+	float	totalApproachDistSqr;	// The total distance squared spent approaching the target
+	float   minDistSqr, maxDistSqr;	// The closest and farthest we got from the target
+};
+
 
 class idAASLocal : public idAAS {
 public:
@@ -174,6 +229,10 @@ private:	// debug
 	const idBounds &			DefaultSearchBounds( void ) const;
 	void						DrawCone( const idVec3 &origin, const idVec3 &dir, float radius, const idVec4 &color ) const;
 	void						DrawArea( int areaNum ) const;
+	// HUMANHEAD nla
+	void						DrawBounds( int areaNum ) const;
+	void						DrawBoundsEdge( const idVec3 &p0, const idVec3 &ip1, int keep, int draw ) const;
+	// HUMANHEAD nla - Added color parameter
 	void						DrawFace( int faceNum, bool side ) const;
 	void						DrawEdge( int edgeNum, bool arrow ) const;
 	void						DrawReachability( const idReachability *reach ) const;

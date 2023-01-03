@@ -47,14 +47,15 @@ const float	SQUARE_ROOT_OF_2			= 1.414213562f;
 const float	AI_TURN_PREDICTION			= 0.2f;
 const float	AI_TURN_SCALE				= 60.0f;
 const float	AI_SEEK_PREDICTION			= 0.3f;
-const float	AI_FLY_DAMPENING			= 0.15f;
-const float	AI_HEARING_RANGE			= 2048.0f;
+const float AI_FLY_DAMPENING			= 0.01f;	// HUMANHEAD JRM: Was 0.06
+const float AI_HEARING_RANGE			= 1024.0f;	// HUNANHEAD JRM: Reduced from 2048
 const int	DEFAULT_FLY_OFFSET			= 68;
 
 #define ATTACK_IGNORE			0
 #define ATTACK_ON_DAMAGE		1
 #define ATTACK_ON_ACTIVATE		2
 #define ATTACK_ON_SIGHT			4
+#define ATTACK_ON_TOUCH			8 // HUMANHEAD JRM
 
 // defined in script/ai_base.script.  please keep them up to date.
 typedef enum {
@@ -163,6 +164,13 @@ extern const idEventDef AI_EnableGravity;
 extern const idEventDef AI_DisableGravity;
 extern const idEventDef AI_TriggerParticles;
 extern const idEventDef AI_RandomPath;
+// HUMANHEAD
+extern const idEventDef AI_SetState;
+extern const idEventDef AI_FindEnemy;
+extern const idEventDef AI_Kill;
+extern const idEventDef AI_FindEnemyAI;
+extern const idEventDef AI_LookAtEntity;
+// HUMANHEAD END
 
 class idPathCorner;
 
@@ -209,6 +217,7 @@ public:
 	idVec3					lastMoveOrigin;
 	int						lastMoveTime;
 	int						anim;
+	bool					bEnemyBlocks;		// HUMANHEAD mdl:  Added flag for when we want the enemy to be treated as an obstacle
 };
 
 class idAASFindCover : public idAASCallback {
@@ -222,6 +231,25 @@ private:
 	pvsHandle_t			hidePVS;
 	int					PVSAreas[ idEntity::MAX_PVS_AREAS ];
 };
+
+//HUMANHEAD mdc - added to allow for multiple projectile types for a creature
+// note: this struct just contains all the precomputed info used for projectiles
+//each time you switch projectile types, this info just gets copied to the variables in idAI
+typedef struct projectileInfo_s {
+	projectileInfo_s() {
+		projectileDef = NULL;
+		projectileClipModel = NULL;
+		projectileRadius = 0.f;
+		projectileSpeed = 0.f;
+	};
+	const idDict *			projectileDef;
+	mutable idClipModel		*projectileClipModel;
+	float					projectileRadius;
+	float					projectileSpeed;
+	idVec3					projectileVelocity;
+	idVec3					projectileGravity;
+} projectileInfo_t;
+//HUMANHEAD END
 
 class idAASFindAreaOutOfRange : public idAASCallback {
 public:
@@ -263,6 +291,20 @@ public:
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
+
+	// HUMANHEAD START jrm
+	idAAS*					GetAAS(void)				{return aas;}
+	bool					IsFlying(void)				{return move.moveType == MOVETYPE_FLY;}
+	idVec3					GetLastEnemyPos(void)		{return lastVisibleEnemyPos;}
+	// HUMANHEAD END
+	// HUMANHEAD nla - Moved from AI_navigate
+	int						GetDestEnemyNum( void ) { return( enemyEntityNum ); };
+	// HUMANHEAD jrm
+	int						GetMoveType(void)	{return move.moveType;}
+	idVec3					GetMoveDest(void)	{return move.moveDest;}
+	hhAIVehicleInterface*	GetVehicleInterfaceLocal() { return &vehicleInterfaceLocal; }
+	virtual const char *	GetJointForFrameCommand( const char *cmd ) { return( va( "%s", cmd ) ); }
+	// HUMANHEAD end
 
 	void					Spawn( void );
 	void					HeardSound( idEntity *ent, const char *action );
@@ -314,8 +356,9 @@ protected:
 	float					anim_turn_amount;
 	float					anim_turn_angles;
 
-	// physics
-	idPhysics_Monster		physicsObj;
+	// HUMANHEAD: aob
+	hhPhysics_AI			physicsObj;
+	// HUMANHEAD END
 
 	// flying
 	jointHandle_t			flyTiltJoint;
@@ -344,6 +387,11 @@ protected:
 	float					melee_range;
 	float					projectile_height_to_distance_ratio;	// calculates the maximum height a projectile can be thrown
 	idList<idVec3>			missileLaunchOffset;
+
+//HUMANHEAD mdc - added for multiple projectile support
+	mutable idList<projectileInfo_t>	projectileInfos;	//list of all precomputed info for the projectiles this AI uses
+	int							projectileDefaultDefIndex;	//default projectile index (if == -1, means we don't use the projectileInfos at all)
+//HUMANHEAD END
 
 	const idDict *			projectileDef;
 	mutable idClipModel		*projectileClipModel;
@@ -381,6 +429,10 @@ protected:
 	idAngles				lookMax;
 	idList<jointHandle_t>	lookJoints;
 	idList<idAngles>		lookJointAngles;
+	// HUMANHEAD pdm: Added support for look joints in head entities
+	idList<jointHandle_t>	headLookJoints;
+	idList<idAngles>		headLookJointAngles;
+	// HUMANHEAD END
 	float					eyeVerticalOffset;
 	float					eyeHorizontalOffset;
 	float					eyeFocusRate;
@@ -421,6 +473,16 @@ protected:
 
 	idEntityPtr<idHarvestable>	harvestEnt;
 
+
+	// HUMANHEAD nla
+	// Max size of the clip model in the XY plane.  (diameter of sorts)
+	float					clipModelXYDiameter;
+	bool					frozen;
+	// HUMANHEAD jrm - Moved in from old idNavigate
+	int						enemyEntityNum;	// If is an enemy, what is his number?
+	hhAIVehicleInterface	vehicleInterfaceLocal;
+	// HUMANHEAD END
+
 	// script variables
 	idScriptBool			AI_TALK;
 	idScriptBool			AI_DAMAGE;
@@ -449,9 +511,12 @@ protected:
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
 	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant
 	void					Think( void );
+	virtual			// HUMANHEAD jsh - made virtual
 	void					Activate( idEntity *activator );
+	virtual			// HUMANHEAD JRM - made virtual
 	int						ReactionTo( const idEntity *ent );
 	bool					CheckForEnemy( void );
+	virtual			// HUMANHEAD JRM - made virtual
 	void					EnemyDead( void );
 	virtual bool			CanPlayChatterSounds( void ) const;
 	void					SetChatSound( void );
@@ -463,18 +528,31 @@ protected:
 	void					PlayCinematic( void );
 
 	// movement
+	// HUMANHEAD nla
+	virtual void			ClientImpacts( void );
+	virtual void			ClampZ( idVec3 &delta, idVec3 &goalPos, idVec3 &goalDelta ) { };
+	// HUMANHEAD END
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
+	virtual  // HUMANHEAD JRM - added virtual
 	void					GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delta );
 	void					CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos );
+	virtual // HUMANHEAD mdl - Made virtual
 	void					DeadMove( void );
+	virtual	// HUMANHEAD nla - Made virual for crash logic in hhAI
 	void					AnimMove( void );
+	virtual	// HUMANHEAD nla - Made virual for crash logic in hhAI
 	void					SlideMove( void );
+	virtual // HUMANHEAD mdc - Made virtual
 	void					AdjustFlyingAngles( void );
 	void					AddFlyBob( idVec3 &vel );
+	virtual // HUMANHEAD jsh - Made virtual
 	void					AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos );
 	void					FlySeekGoal( idVec3 &vel, idVec3 &goalPos );
+	virtual // HUMANHEAD jsh - Made virtual
 	void					AdjustFlySpeed( idVec3 &vel );
+	virtual	//HUMANHEAD mdc - made virtual
 	void					FlyTurn( void );
+	virtual	// HUMANHEAD cjr - made virtual
 	void					FlyMove( void );
 	void					StaticMove( void );
 
@@ -484,6 +562,7 @@ protected:
 
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );
+	virtual //HUMANHEAD jsh
 	bool					ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) const;
 	float					TravelDistance( const idVec3 &start, const idVec3 &end ) const;
 	int						PointReachableAreaNum( const idVec3 &pos, const float boundsScale = 2.0f ) const;
@@ -492,6 +571,7 @@ protected:
 	bool					GetMovePos( idVec3 &seekPos );
 	bool					MoveDone( void ) const;
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
+	virtual //HUMANHEAD jsh
 	void					BlockedFailSafe( void );
 
 	// movement control
@@ -504,11 +584,13 @@ protected:
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );
 	bool					MoveToEnemy( void );
 	bool					MoveToEntity( idEntity *ent );
-	bool					MoveToPosition( const idVec3 &pos );
+	virtual				// HUMANHEAD JRM - made virtual
+	bool					MoveToPosition( const idVec3 &pos, bool enemyBlocks = false ); // HUMANHEAD mdl:  Added enemyBlocks flag
 	bool					MoveToCover( idEntity *entity, const idVec3 &pos );
 	bool					SlideToPosition( const idVec3 &pos, float time );
 	bool					WanderAround( void );
 	bool					StepDirection( float dir );
+	virtual				// HUMANHEAD jsh - made virtual
 	bool					NewWanderDir( const idVec3 &dest );
 
 	// effects
@@ -518,25 +600,38 @@ protected:
 
 	// turning
 	bool					FacingIdeal( void );
+	virtual				// HUMANHEAD jsh
 	void					Turn( void );
+	virtual				// HUMANHEAD JRM
 	bool					TurnToward( float yaw );
+	virtual				// HUMANHEAD JRM
 	bool					TurnToward( const idVec3 &pos );
 
 	// enemy management
 	void					ClearEnemy( void );
 	bool					EnemyPositionValid( void ) const;
 	void					SetEnemyPosition( void );
+	virtual // HUMANHEAD cjr - made virtual
 	void					UpdateEnemyPosition( void );
+	virtual	// HUMANHEAD JRM - made virtual
 	void					SetEnemy( idActor *newEnemy );
 
 	// attacks
 	void					CreateProjectileClipModel( void ) const;
 	idProjectile			*CreateProjectile( const idVec3 &pos, const idVec3 &dir );
 	void					RemoveProjectile( void );
-	idProjectile			*LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone );
+	virtual	// HUMANHEAD jsh = made virtual
+	idProjectile			*LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone, const idDict* desiredProjectileDef );	//HUMANHEAD mdc - added desiredProjectileDef
+
+	//HUMANHEAD mdc - added for multiple projectile support
+	void					SetCurrentProjectile( int infoIndex );					//sets up the AI member vars for this projectileInfo
+	int						FindProjectileInfo( const idDict* findDef ) const;		//find a projectileInfo based on a projectileDef
+	//HUMANHEAD END
+
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
 	void					DirectDamage( const char *meleeDefName, idEntity *ent );
 	bool					TestMelee( void ) const;
+	virtual // HUMANHEAD JSH
 	bool					AttackMelee( const char *meleeDefName );
 	void					BeginAttack( const char *name );
 	void					EndAttack( void );
@@ -546,6 +641,7 @@ protected:
 	void					GetMuzzle( const char *jointname, idVec3 &muzzle, idMat3 &axis );
 	void					InitMuzzleFlash( void );
 	void					TriggerWeaponEffects( const idVec3 &muzzle );
+	virtual // HUMANHEAD JRM
 	void					UpdateMuzzleFlash( void );
 	virtual bool			UpdateAnimationControllers( void );
 	void					UpdateParticles( void );
@@ -557,24 +653,31 @@ protected:
 	void					StopEmitter(const char *name);
 
 	// AI script state management
+	virtual // HUMANHEAD
 	void					LinkScriptVariables( void );
 	void					UpdateAIScript( void );
 
 	//
 	// ai/ai_events.cpp
 	//
+	virtual // HUMANHEAD mdl:  Made virtual
 	void					Event_Activate( idEntity *activator );
+	virtual // HUMANHEAD mdl:  Made virtual
 	void					Event_Touch( idEntity *other, trace_t *trace );
+	virtual		// HUMANHEAD JRM - made virtual
 	void					Event_FindEnemy( int useFOV );
+	virtual		// HUMANHEAD JRM - made virtual
 	void					Event_FindEnemyAI( int useFOV );
 	void					Event_FindEnemyInCombatNodes( void );
 	void					Event_ClosestReachableEnemyOfEntity( idEntity *team_mate );
+	virtual //HUMANHEAD jsh - made virtual
 	void					Event_HeardSound( int ignore_team );
 	void					Event_SetEnemy( idEntity *ent );
 	void					Event_ClearEnemy( void );
 	void					Event_MuzzleFlash( const char *jointname );
 	void					Event_CreateMissile( const char *jointname );
-	void					Event_AttackMissile( const char *jointname );
+	virtual		// HUMANHEAD: Made virtual
+	void					Event_AttackMissile( const char *jointname, const idDict *projDef = NULL, int boneDir = 0); 		// HUMANHEAD added projdef as param
 	void					Event_FireMissileAtTarget( const char *jointname, const char *targetname );
 	void					Event_LaunchMissile( const idVec3 &muzzle, const idAngles &ang );
 	void					Event_LaunchHomingMissile();
@@ -587,6 +690,7 @@ protected:
 	void					Event_EndAttack( void );
 	void					Event_MeleeAttackToJoint( const char *jointname, const char *meleeDefName );
 	void					Event_RandomPath( void );
+	virtual		// HUMANHEAD mdl:  Made virtual
 	void					Event_CanBecomeSolid( void );
 	void					Event_BecomeSolid( void );
 	void					Event_BecomeNonSolid( void );
@@ -615,6 +719,9 @@ protected:
 	void					Event_FaceEnemy( void );
 	void					Event_FaceEntity( idEntity *ent );
 	void					Event_WaitAction( const char *waitForState );
+#ifdef HUMANHEAD //jsh made virtual
+	virtual
+#endif
 	void					Event_GetCombatNode( void );
 	void					Event_EnemyInCombatCone( idEntity *ent, int use_current_enemy_location );
 	void					Event_WaitMove( void );
@@ -670,7 +777,13 @@ protected:
 	void					Event_TravelDistanceToEntity( idEntity *ent );
 	void					Event_TravelDistanceBetweenPoints( const idVec3 &source, const idVec3 &dest );
 	void					Event_TravelDistanceBetweenEntities( idEntity *source, idEntity *dest );
+// HUMANHEAD
+	virtual
+// HUMANHEAD END
 	void					Event_LookAtEntity( idEntity *ent, float duration );
+// HUMANHEAD
+	virtual
+// HUMANHEAD END
 	void					Event_LookAtEnemy( float duration );
 	void					Event_SetJointMod( int allowJointMod );
 	void					Event_ThrowMoveable( void );
