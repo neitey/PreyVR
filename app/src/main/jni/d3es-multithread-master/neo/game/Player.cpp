@@ -1218,6 +1218,27 @@ void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, i
 idInventory::HasAmmo
 ===============
 */
+int idInventory::HasAmmo(ammo_t type, int amount)
+{
+	if ((type == 0) || !amount) {
+		// always allow weapons that don't use ammo to fire
+		return -1;
+	}
+
+	// check if we have infinite ammo
+	if (ammo[ type ] < 0) {
+		return -1;
+	}
+
+	// return how many shots we can fire
+	return ammo[ type ] / amount;
+}
+
+/*
+===============
+idInventory::HasAmmo
+===============
+*/
 int idInventory::HasAmmo(const char *weapon_classname, bool includeClip, idPlayer *owner)  		//_D3XP
 {
 	int ammoRequired;
@@ -1249,27 +1270,6 @@ bool idPlayer::HasHoldableFlashlight()
     }
     // Carl: I'm not checking the weapons in the inventory. Maybe I should check that too? But I don't trust those values for the flashlight.
     return flashlight && flashlight->IsLinked() && !spectating && weaponEnabled && !hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" );
-}
-
-/*
-===============
-idInventory::HasAmmo
-===============
-*/
-int idInventory::HasAmmo(ammo_t type, int amount)
-{
-	if ((type == 0) || !amount) {
-		// always allow weapons that don't use ammo to fire
-		return -1;
-	}
-
-	// check if we have infinite ammo
-	if (ammo[ type ] < 0) {
-		return -1;
-	}
-
-	// return how many shots we can fire
-	return ammo[ type ] / amount;
 }
 
 /*
@@ -1884,6 +1884,23 @@ void idPlayer::Init( void ) {
 	influenceSkin			= NULL;
 
 	mountedObject			= NULL;
+
+	if (enviroSuitLight.IsValid()) {
+		enviroSuitLight.GetEntity()->PostEventMS(&EV_Remove, 0);
+	}
+
+	enviroSuitLight			= NULL;
+	healthRecharge			= false;
+	lastHealthRechargeTime	= 0;
+	rechargeSpeed			= 500;
+	new_g_damageScale		= 1.f;
+	bloomEnabled			= false;
+	bloomSpeed				= 1.f;
+	bloomIntensity			= -0.01f;
+	inventory.InitRechargeAmmo(this);
+	hudPowerup				= -1;
+	lastHudPowerup			= -1;
+	hudPowerupDuration		= 0;
 	currentLoggedAccel		= 0;
 
 	handRaised = false;
@@ -2302,7 +2319,7 @@ void idPlayer::Spawn( void ) {
 		}
 	}
 
-//Setup the weapon toggle lists
+	//Setup the weapon toggle lists
 	const idKeyValue *kv;
 	kv = spawnArgs.MatchPrefix("weapontoggle", NULL);
 
@@ -2781,6 +2798,28 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
 		hud->HandleNamedEvent( "Message" );
 	}
+
+	savefile->WriteInt(weaponToggles.Num());
+	for (i = 0; i < weaponToggles.Num(); i++) {
+		WeaponToggle_t *weaponToggle = weaponToggles.GetIndex(i);
+		savefile->WriteString(weaponToggle->name);
+		savefile->WriteInt(weaponToggle->toggleList.Num());
+
+		for (int j = 0; j < weaponToggle->toggleList.Num(); j++) {
+			savefile->WriteInt(weaponToggle->toggleList[j]);
+		}
+	}
+
+	savefile->WriteObject(mountedObject);
+	enviroSuitLight.Save(savefile);
+	savefile->WriteBool(healthRecharge);
+	savefile->WriteInt(lastHealthRechargeTime);
+	savefile->WriteInt(rechargeSpeed);
+	savefile->WriteFloat(new_g_damageScale);
+
+	savefile->WriteBool(bloomEnabled);
+	savefile->WriteFloat(bloomSpeed);
+	savefile->WriteFloat(bloomIntensity);
 }
 
 /*
@@ -4005,6 +4044,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 	_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
 
 	_hud->HandleNamedEvent( "updateArmorHealthAir" );
+	_hud->HandleNamedEvent("updatePowerup");
 
 	if ( healthPulse ) {
 		_hud->HandleNamedEvent( "healthPulse" );
@@ -4087,10 +4127,10 @@ void idPlayer::UpdateHudWeapon( int flashWeaponHand ) {
 		}
 		hud->SetStateInt( hudWeap, weapstate );
 	}
-	//GBFIX Doesnt ever seemed to be called
-	/*if ( flashWeapon ) {
-		hud->HandleNamedEvent( "weaponChange" );
-	}*/
+
+	if (hands[flashWeaponHand].holdingFlashlight()) {
+		hud->HandleNamedEvent("weaponChange");
+	}
 }
 
 /*
@@ -5149,7 +5189,7 @@ bool idPlayer::GivePowerUp( int powerup, int time ) {
 				if ( baseSkinName.Length() ) {
 					powerUpSkin = declManager->FindSkin( baseSkinName + "_berserk" );
 				}
-				if ( !gameLocal.isClient ) {
+				if ( !gameLocal.isClient && gameLocal.isMultiplayer ) {
                     hands[ 0 ].idealWeapon = weapon_fists;
                     hands[ 1 ].idealWeapon = weapon_fists;
 				}
@@ -6117,7 +6157,7 @@ void idPlayerHand::NextBestWeapon()
             continue;
         }
         weap = owner->spawnArgs.GetString( va( "def_weapon%d", w ) );
-        if( !weap[ 0 ] || ( ( owner->inventory.weapons & ( 1 << w ) ) == 0 ) || ( !owner->inventory.HasAmmo( weap ) ) )
+        if( !weap[ 0 ] || ( ( owner->inventory.weapons & ( 1 << w ) ) == 0 ) || ( !owner->inventory.HasAmmo( weap, true, owner ) ) )
         {
             continue;
         }
@@ -6129,10 +6169,10 @@ void idPlayerHand::NextBestWeapon()
         //Some weapons will report having ammo but the clip is empty and
         //will not have enough to fill the clip (i.e. Double Barrel Shotgun with 1 round left)
         //We need to skip these weapons because they cannot be used
-        /*if( owner->inventory.HasEmptyClipCannotRefill( weap, owner, isTheDuplicate ) )
+        if( owner->inventory.HasEmptyClipCannotRefill( weap, owner ) )
         {
             continue;
-        }*/
+        }
 
 
         // Carl: dual wielding
@@ -6312,7 +6352,7 @@ void idPlayerHand::NextWeapon( int dir )
             continue;
         }
 
-        if( owner->inventory.HasAmmo( weap) )
+        if( owner->inventory.HasAmmo( weap, true, owner)  || w == owner->weapon_bloodstone )
         {
             break;
         }
@@ -6566,6 +6606,53 @@ void idPlayerHand::SelectWeapon( int num, bool force, bool specific )
         return;
     }
 
+    //Is the weapon a toggle weapon
+    WeaponToggle_t *weaponToggle;
+
+	if (owner->weaponToggles.Get(va("weapontoggle%d", num), &weaponToggle)) {
+
+        int weaponToggleIndex = 0;
+
+        //Find the current Weapon in the list
+        int currentIndex = -1;
+
+        for (int i = 0; i < weaponToggle->toggleList.Num(); i++) {
+            if (weaponToggle->toggleList[i] == idealWeapon) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) {
+			//Didn't find the current weapon so select the first item
+			weaponToggleIndex = 0;
+		} else {
+			//Roll to the next available item in the list
+			weaponToggleIndex = currentIndex;
+			weaponToggleIndex++;
+
+			if (weaponToggleIndex >= weaponToggle->toggleList.Num()) {
+				weaponToggleIndex = 0;
+			}
+		}
+
+		for (int i = 0; i < weaponToggle->toggleList.Num(); i++) {
+
+			//Is it available
+			if (owner->inventory.weapons & (1 << weaponToggle->toggleList[weaponToggleIndex])) {
+				break;
+			}
+
+			weaponToggleIndex++;
+
+			if (weaponToggleIndex >= weaponToggle->toggleList.Num()) {
+				weaponToggleIndex = 0;
+			}
+		}
+
+		num = weaponToggle->toggleList[weaponToggleIndex];
+	}
+
     // Carl: dual wielding
     int availableWeaponsOfThisType = 0;
     if( num == owner->weapon_fists )
@@ -6589,14 +6676,14 @@ void idPlayerHand::SelectWeapon( int num, bool force, bool specific )
 
     if( force || availableWeaponsOfThisType > 0 )
     {
-        if( !owner->inventory.HasAmmo( weap) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", num ) ) )
+        if( !owner->inventory.HasAmmo( weap, true, owner) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", num ) ) )
         {
             return;
         }
         if( ( previousWeapon >= 0 ) && ( idealWeapon == num ) && ( owner->spawnArgs.GetBool( va( "weapon%d_toggle", num ) ) ) )
         {
             weap = owner->spawnArgs.GetString( va( "def_weapon%d", previousWeapon ) );
-            if( !owner->inventory.HasAmmo( weap ) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", previousWeapon ) ) )
+            if( !owner->inventory.HasAmmo( weap, true, owner ) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", previousWeapon ) ) )
             {
                 return;
             }
@@ -7098,7 +7185,6 @@ void idPlayer::StealWeapon( idPlayer *player ) {
 	ammo_t ammo_i = player->inventory.AmmoIndexForWeaponClass( weapon_classname, NULL );
     hands[ myhand ].idealWeapon = newweap;
 	inventory.ammo[ ammo_i ] += ammoavailable;
-	inventory.clip[ newweap ] = inclip;
 }
 
 /*
@@ -8665,6 +8751,17 @@ void idPlayer::UpdateFocus( void ) {
 						focusUI->SetStateInt( p, 1 );
 					}
 				}
+
+				//BSM: Added for powercells
+				int powerCellCount = 0;
+				for (j = 0; j < inventory.items.Num(); j++) {
+					idDict *item = inventory.items[ j ];
+
+					if (item->GetInt("inv_powercell")) {
+						powerCellCount++;
+					}
+				}
+				focusUI->SetStateInt("powercell_count", powerCellCount);
 
 				int staminapercentage = ( int )( 100.0f * stamina / pm_stamina.GetFloat() );
 				focusUI->SetStateString( "player_health", va("%i", health ) );
@@ -12090,14 +12187,14 @@ void idPlayer::UpdateHud( void ) {
 				count = 3;
 			}
 
-			for ( i = 0; i < 5 && i < c; i++ ) {
+			for (i = 0; i < count, i < c; i++) {   //_D3XP
 				hud->SetStateString( va( "itemtext%i", inventory.nextItemNum ), inventory.pickupItemNames[0].name );
 				hud->SetStateString( va( "itemicon%i", inventory.nextItemNum ), inventory.pickupItemNames[0].icon );
 				hud->HandleNamedEvent( va( "itemPickup%i", inventory.nextItemNum++ ) );
 				inventory.pickupItemNames.RemoveIndex( 0 );
 				if (inventory.nextItemNum == 1 ) {
 					inventory.onePickupTime = gameLocal.time;
-				} else	if ( inventory.nextItemNum > 5 ) {
+                } else if (inventory.nextItemNum > count) {   //_D3XP
 					inventory.nextItemNum = 1;
 					inventory.nextItemPickup = inventory.onePickupTime + 2000;
 				} else {
@@ -12326,21 +12423,18 @@ void idPlayer::Think( void ) {
     // clear the ik before we do anything else so the skeleton doesn't get updated twice
 	walkIK.ClearJointMods();
 
-    // Koz
-    armIK.ClearJointMods();
-
-	if (mountedObject) {
-		usercmd.forwardmove = 0;
-		usercmd.rightmove = 0;
-		usercmd.upmove = 0;
-	}
-
 	// if this is the very first frame of the map, set the delta view angles
 	// based on the usercmd angles
 	if ( !spawnAnglesSet && ( gameLocal.GameState() != GAMESTATE_STARTUP ) ) {
 		spawnAnglesSet = true;
 		SetViewAngles( spawnAngles );
 		oldFlags = usercmd.flags;
+	}
+
+	if (mountedObject) {
+		usercmd.forwardmove = 0;
+		usercmd.rightmove = 0;
+		usercmd.upmove = 0;
 	}
 
 	if ( objectiveSystemOpen || gameLocal.inCinematic || influenceActive ) {
