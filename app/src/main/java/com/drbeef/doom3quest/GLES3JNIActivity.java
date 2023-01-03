@@ -228,6 +228,7 @@ import java.util.Vector;
 		//DLC - Resurrection of Evil support
 		if (roe.exists())
 		{
+			copy_asset(roe.getAbsolutePath(), "pak399.pk4", true);
 			copy_asset(roe.getAbsolutePath(), "pak399roe.pk4", true);
 			copy_asset(roe.getAbsolutePath(), "quest1_default.cfg", true);
 			copy_asset(roe.getAbsolutePath(), "quest2_default.cfg", true);
@@ -236,6 +237,7 @@ import java.util.Vector;
 		//DLC - The Lost Mission
 		if (lm.exists())
 		{
+			copy_asset(lm.getAbsolutePath(), "pak399.pk4", true);
 			copy_asset(lm.getAbsolutePath(), "pak399lm.pk4", true);
 			copy_asset(lm.getAbsolutePath(), "quest1_default.cfg", true);
 			copy_asset(lm.getAbsolutePath(), "quest2_default.cfg", true);
