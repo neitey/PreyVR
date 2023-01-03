@@ -2,6 +2,8 @@
 package com.drbeef.doom3quest;
 
 
+import static android.system.Os.setenv;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -20,20 +22,16 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 
 import com.drbeef.externalhapticsservice.HapticServiceClient;
+import com.drbeef.externalhapticsservice.HapticsConstants;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
-
-import com.drbeef.externalhapticsservice.HapticsConstants;
-
-import static android.system.Os.setenv;
 
 @SuppressLint("SdCardPath") public class GLES3JNIActivity extends Activity implements SurfaceHolder.Callback
 {
@@ -207,25 +205,41 @@ import static android.system.Os.setenv;
 
 	public void create() {
 
+		File root = new File("/sdcard/Doom3Quest");
+		File base = new File(root, "base");
+		File roe = new File(root, "d3xp");
+		File lm = new File(root, "d3le");
+
 		boolean exitAfterCopy = false;
 
 		//If this is first run on clean system, or user hasn't copied anything yet, just exit after we have copied
-		if (!(new File("/sdcard/Doom3Quest/base/pak000.pk4").exists()))
+		if (!(new File(base, "pak000.pk4").exists()))
 		{
 			exitAfterCopy = true;
 		}
+		copy_asset(root.getAbsolutePath(), "commandline.txt", false);
 
-		copy_asset("/sdcard/Doom3Quest", "commandline.txt", false);
+		//Base game
+		base.mkdirs();
+		copy_asset(base.getAbsolutePath(), "pak399.pk4", true);
+		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
+		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 
-		//Create all required folders
-		new File("/sdcard/Doom3Quest/base").mkdirs();
+		//DLC - Resurrection of Evil support
+		if (roe.exists())
+		{
+			copy_asset(roe.getAbsolutePath(), "pak399roe.pk4", true);
+			copy_asset(roe.getAbsolutePath(), "quest1_default.cfg", true);
+			copy_asset(roe.getAbsolutePath(), "quest2_default.cfg", true);
+		}
 
-		copy_asset("/sdcard/Doom3Quest/base", "pak399.pk4", true);
-
-		//Now copy our defaults for the two headsets - These are only our defaults, users shouldn't change
-		//these so forcefully overwrite
-		copy_asset("/sdcard/Doom3Quest/config/base", "quest1_default.cfg", true);
-		copy_asset("/sdcard/Doom3Quest/config/base", "quest2_default.cfg", true);
+		//DLC - The Lost Mission
+		if (lm.exists())
+		{
+			copy_asset(lm.getAbsolutePath(), "pak399lm.pk4", true);
+			copy_asset(lm.getAbsolutePath(), "quest1_default.cfg", true);
+			copy_asset(lm.getAbsolutePath(), "quest2_default.cfg", true);
+		}
 
 		if (exitAfterCopy)
 		{
@@ -234,24 +248,22 @@ import static android.system.Os.setenv;
 		}
 
 		//Read these from a file and pass through
-		commandLineParams = new String("doom3quest");
+		commandLineParams = "doom3quest";
 
 		//See if user is trying to use command line params
-		if(new File("/sdcard/Doom3Quest/commandline.txt").exists()) // should exist now!
+		File cmd = new File(root.getAbsolutePath(), "commandline.txt");
+		if(cmd.exists()) // should exist now!
 		{
 			BufferedReader br;
 			try {
-				br = new BufferedReader(new FileReader("/sdcard/Doom3Quest/commandline.txt"));
+				br = new BufferedReader(new FileReader(cmd));
 				String s;
 				StringBuilder sb=new StringBuilder(0);
 				while ((s=br.readLine())!=null)
-					sb.append(s + " ");
+					sb.append(s).append(" ");
 				br.close();
 
 				commandLineParams = new String(sb.toString());
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -261,7 +273,7 @@ import static android.system.Os.setenv;
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
 
-			setenv("USER_FILES", "/sdcard/Doom3Quest", true);
+			setenv("USER_FILES", root.getAbsolutePath(), true);
 			setenv("GAMELIBDIR", getApplicationInfo().nativeLibraryDir, true);
 			setenv("GAMETYPE", "16", true); // hard coded for now
 		}
@@ -274,12 +286,12 @@ import static android.system.Os.setenv;
 		long refresh = 60; // Default to 60
 		float ss = -1.0F;
 		long msaa = 1; // default for both HMDs
-		String configFileName = "/sdcard/Doom3Quest/config/base/doom3quest.cfg";
-		if(new File(configFileName).exists())
+		File config = new File(base, "doom3quest.cfg");
+		if(config.exists())
 		{
 			BufferedReader br;
 			try {
-				br = new BufferedReader(new FileReader(configFileName));
+				br = new BufferedReader(new FileReader(config));
 				String s;
 				while ((s=br.readLine())!=null) {
 					int i1 = s.indexOf("\"");
@@ -296,14 +308,8 @@ import static android.system.Os.setenv;
 					}
 				}
 				br.close();
-			} catch (FileNotFoundException e) {
+			} catch (IOException | NumberFormatException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NumberFormatException e)
-			{
 				e.printStackTrace();
 			}
 		}

@@ -249,21 +249,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 const float MAX_BOUND_SIZE = 65536.0f;
 #endif
 
-// game
-#if defined(_D3XP)
-
-#ifdef __ANDROID__ //k: for lost mission
-	#ifdef _D3LE
-	#include "../d3le/Game.h"
-	#else
-	#include "../d3xp/Game.h"
-	#endif
-#else
-	#include "../d3xp/Game.h"
-#endif
-
-#else
-
 #ifdef __ANDROID__ //k: for classic doom
 	#ifdef _CDOOM
 	#include "../cdoom/Game.h"
@@ -282,25 +267,9 @@ const float MAX_BOUND_SIZE = 65536.0f;
 	#include "../game/Game.h"
 #endif
 
-#endif
-
 //-----------------------------------------------------
 
 #ifdef GAME_DLL
-
-#if defined(_D3XP)
-
-#ifdef __ANDROID__ //k: for lost mission
-	#ifdef _D3LE
-	#include "../d3le/Game_local.h"
-	#else
-	#include "../d3xp/Game_local.h"
-	#endif
-#else
-#include "../d3xp/Game_local.h"
-#endif
-
-#else
 
 #ifdef __ANDROID__ //k: for classic doom
 	#ifdef _CDOOM
@@ -318,8 +287,6 @@ const float MAX_BOUND_SIZE = 65536.0f;
 	#endif
 #else
 #include "../game/Game_local.h"
-#endif
-
 #endif
 
 #else
@@ -342,7 +309,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
 // stubbed out on non-windows platforms.
 #include "../tools/edit_public.h"
 
-// Compilers for map, model, video etc. processing.
+// Compilers for map, model, video ehhMathtc. processing.
 #include "../tools/compilers/compiler_public.h"
 
 #endif /* !GAME_DLL */
@@ -350,5 +317,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
 //-----------------------------------------------------
 
 #endif	/* __cplusplus */
+
+#include "idlib/math/prey_math.h"
 
 #endif /* !__PRECOMPILED_H__ */
