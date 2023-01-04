@@ -355,6 +355,28 @@ void idSessionLocal::SetMainMenuGuiVars(void)
 	SetPbMenuGuiVars();
 }
 
+const char *TimeStampToFilename( ) {
+	static char timeString[MAX_STRING_CHARS];
+	timeString[0] = '\0';
+
+	time_t t = time(NULL);
+	tm*	time = localtime( &t );
+	idStr out;
+
+	// english gets "month/day/year  hour:min" + "am" or "pm"
+	//out = "Save: ";
+	out = "-";
+	//out += va( "%d", time->tm_year + 1900 );
+	//out += va( "%02d", time->tm_mon + 1 );
+	//out += va( "%02d", time->tm_mday );
+	out += va( "%02d", time->tm_hour );
+	out += va( "%02d", time->tm_min );
+	out += va( "%02d", time->tm_sec );
+	idStr::Copynz( timeString, out, sizeof( timeString ) );
+
+	return timeString;
+}
+
 /*
 ==============
 idSessionLocal::HandleSaveGameMenuCommands
@@ -372,6 +394,12 @@ bool idSessionLocal::HandleSaveGameMenuCommand(idCmdArgs &args, int &icmd)
 			sessLocal.LoadGame(loadGameList[choice]);
 		}
 
+		return true;
+	}
+
+	if ( !idStr::Icmp( cmd, "createNewName" ) ) {
+		guiActive->SetStateString( "saveGameName", "Save: " + GetSaveMapName( mapSpawnData.serverInfo.GetString("si_map")) + TimeStampToFilename() );
+		guiActive->StateChanged( com_frameTime );
 		return true;
 	}
 
