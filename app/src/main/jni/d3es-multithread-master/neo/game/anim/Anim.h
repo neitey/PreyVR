@@ -690,7 +690,7 @@ private:
 	void						FreeData( void );
 	void						PushAnims( int channel, int currentTime, int blendTime );
 
-private:
+protected:
 	const idDeclModelDef *		modelDef;
 	idEntity *					entity;
 

@@ -892,27 +892,6 @@ ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame* savefile )
 }
 
 template< class type >
-ID_INLINE idEntityPtr<type>& idEntityPtr<type>::operator=( const type* ent )
-{
-    if( ent == NULL )
-    {
-        spawnId = 0;
-    }
-    else
-    {
-        spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
-    }
-    return *this;
-}
-
-template< class type >
-ID_INLINE idEntityPtr< type >& idEntityPtr<type>::operator=( const idEntityPtr& ep )
-{
-    spawnId = ep.spawnId;
-    return *this;
-}
-
-template< class type >
 ID_INLINE bool idEntityPtr<type>::SetSpawnId( int id ) {
 	// the reason for this first check is unclear:
 	// the function returning false may mean the spawnId is already set right, or the entity is missing

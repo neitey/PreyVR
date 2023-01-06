@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "physics/Force_Constant.h"
 #include "Entity.h"
 #include "AF.h"
+#include "Prey/game_animatedentity.h"
 
 /*
 ===============================================================================

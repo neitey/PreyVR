@@ -105,7 +105,7 @@ public:																	\
 	static	idTypeInfo						Type;						\
 	static	idClass							*CreateInstance( void );	\
 	virtual	idTypeInfo						*GetType( void ) const;		\
-	static	idEventFunc<nameofclass>		eventCallbacks[]
+	static	idEventFunc<nameofclass>		eventCallbacks[];
 
 /*
 ================
@@ -151,7 +151,7 @@ public:																	\
 	static	idTypeInfo						Type;						\
 	static	idClass							*CreateInstance( void );	\
 	virtual	idTypeInfo						*GetType( void ) const;		\
-	static	idEventFunc<nameofclass>		eventCallbacks[]
+	static	idEventFunc<nameofclass>		eventCallbacks[];
 
 /*
 ================

@@ -38,6 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "gamesys/Class.h"
 #include "gamesys/Event.h"
 #include "Game_local.h"
+#include "Prey/game_woundmanager.h"
 
 /*
 ===============================================================================

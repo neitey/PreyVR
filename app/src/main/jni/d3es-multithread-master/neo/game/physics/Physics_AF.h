@@ -118,8 +118,6 @@ public:
 	virtual void			Save( idSaveGame *saveFile ) const;
 	virtual void			Restore( idRestoreGame *saveFile );
 
-	const idVecX &			GetTotalForce(void) const { return totalForce; } // HUMANHEAD mdl
-
 protected:
 	constraintType_t		type;						// constraint type
 	idStr					name;						// name of constraint
@@ -711,6 +709,8 @@ public:
 
 	void					Save( idSaveGame *saveFile );
 	void					Restore( idRestoreGame *saveFile );
+
+	const idVecX &			GetTotalForce(void) const { return totalForce; } // HUMANHEAD mdl
 
 private:
 							// properties

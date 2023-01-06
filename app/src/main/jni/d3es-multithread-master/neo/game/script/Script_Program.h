@@ -92,6 +92,130 @@ typedef union eval_s {
 	int					entity;
 } eval_t;
 
+
+typedef struct statement_s {
+	unsigned short	op;
+	idVarDef		*a;
+	idVarDef		*b;
+	idVarDef		*c;
+	unsigned short	linenumber;
+	unsigned short	file;
+} statement_t;
+
+/***********************************************************************
+
+idProgram
+
+Handles compiling and storage of script data.  Multiple idProgram objects
+would represent seperate programs with no knowledge of each other.  Scripts
+meant to access shared data and functions should all be compiled by a
+single idProgram.
+
+***********************************************************************/
+
+class idVarDefName;
+
+class idProgram {
+private:
+	idStrList									fileList;
+	idStr										filename;
+	int											filenum;
+
+	int											numVariables;
+	byte										variables[ MAX_GLOBALS ];
+	idStaticList<byte,MAX_GLOBALS>				variableDefaults;
+	idStaticList<function_t,MAX_FUNCS>			functions;
+	idStaticList<statement_t,MAX_STATEMENTS>	statements;
+	idList<idTypeDef *>							types;
+	idList<idVarDefName *>						varDefNames;
+	idHashIndex									varDefNameHash;
+	idList<idVarDef *>							varDefs;
+
+	idVarDef									*sysDef;
+
+	int											top_functions;
+	int											top_statements;
+	int											top_types;
+	int											top_defs;
+	int											top_files;
+
+	void										CompileStats( void );
+	byte										*ReserveMem(int size);
+	idVarDef									*AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope);
+
+public:
+	idVarDef									*returnDef;
+	idVarDef									*returnStringDef;
+
+	idProgram();
+	~idProgram();
+
+	// save games
+	void										Save( idSaveGame *savefile ) const;
+	bool										Restore( idRestoreGame *savefile );
+	int											CalculateChecksum( void ) const;		// Used to insure program code has not
+	//    changed between savegames
+
+	void										Startup( const char *defaultScript );
+	void										Restart( void );
+	bool										CompileText( const char *source, const char *text, bool console );
+	const function_t							*CompileFunction( const char *functionName, const char *text );
+	void										CompileFile( const char *filename );
+	void										BeginCompilation( void );
+	void										FinishCompilation( void );
+	void										DisassembleStatement( idFile *file, int instructionPointer ) const;
+	void										Disassemble( void ) const;
+	void										FreeData( void );
+
+	const char									*GetFilename( int num );
+	int											GetFilenum( const char *name );
+	int											GetLineNumberForStatement( int index );
+	const char									*GetFilenameForStatement( int index );
+
+	idTypeDef									*AllocType( idTypeDef &type );
+	idTypeDef									*AllocType( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+	idTypeDef									*GetType( idTypeDef &type, bool allocate );
+	idTypeDef									*FindType( const char *name );
+
+	idVarDef									*AllocDef( idTypeDef *type, const char *name, idVarDef *scope, bool constant );
+	idVarDef									*GetDef( const idTypeDef *type, const char *name, const idVarDef *scope ) const;
+	void										FreeDef( idVarDef *d, const idVarDef *scope );
+	idVarDef									*FindFreeResultDef( idTypeDef *type, const char *name, idVarDef *scope, const idVarDef *a, const idVarDef *b );
+	idVarDef									*GetDefList( const char *name ) const;
+	void										AddDefToNameList( idVarDef *def, const char *name );
+
+	function_t									*FindFunction( const char *name ) const;						// returns NULL if function not found
+	function_t									*FindFunction( const char *name, const idTypeDef *type ) const;	// returns NULL if function not found
+	function_t									&AllocFunction( idVarDef *def );
+	function_t									*GetFunction( int index );
+	int											GetFunctionIndex( const function_t *func );
+
+	void										SetEntity( const char *name, idEntity *ent );
+
+	statement_t									*AllocStatement( void );
+	statement_t									&GetStatement( int index );
+	int											NumStatements( void ) { return statements.Num(); }
+
+	int											GetReturnedInteger( void );
+
+	//HUMANHEAD: aob - need to return other types
+	float 										GetReturnedFloat( void );
+	bool										GetReturnedBool( void );
+	idVec3 										GetReturnedVector( void );
+	idStr										GetReturnedString( void );
+	int											GetReturnedEntity( void );
+	//HUMANHEAD END
+
+	void										ReturnFloat( float value );
+	void										ReturnInteger( int value );
+	void										ReturnVector( idVec3 const &vec );
+	void										ReturnString( const char *string );
+	void										ReturnEntity( idEntity *ent );
+
+	int											NumFilenames( void ) { return fileList.Num( ); }
+};
+
+
 /***********************************************************************
 
 idTypeDef
@@ -378,8 +502,6 @@ typedef union varEval_s {
 	int						ptrOffset;
 } varEval_t;
 
-class idVarDefName;
-
 class idVarDef {
 	friend class idVarDefName;
 
@@ -486,126 +608,6 @@ extern	idVarDef	def_object;
 extern	idVarDef	def_jumpoffset;		// only used for jump opcodes
 extern	idVarDef	def_argsize;		// only used for function call and thread opcodes
 extern	idVarDef	def_boolean;
-
-typedef struct statement_s {
-	unsigned short	op;
-	idVarDef		*a;
-	idVarDef		*b;
-	idVarDef		*c;
-	unsigned short	linenumber;
-	unsigned short	file;
-} statement_t;
-
-/***********************************************************************
-
-idProgram
-
-Handles compiling and storage of script data.  Multiple idProgram objects
-would represent seperate programs with no knowledge of each other.  Scripts
-meant to access shared data and functions should all be compiled by a
-single idProgram.
-
-***********************************************************************/
-
-class idProgram {
-private:
-	idStrList									fileList;
-	idStr										filename;
-	int											filenum;
-
-	int											numVariables;
-	byte										variables[ MAX_GLOBALS ];
-	idStaticList<byte,MAX_GLOBALS>				variableDefaults;
-	idStaticList<function_t,MAX_FUNCS>			functions;
-	idStaticList<statement_t,MAX_STATEMENTS>	statements;
-	idList<idTypeDef *>							types;
-	idList<idVarDefName *>						varDefNames;
-	idHashIndex									varDefNameHash;
-	idList<idVarDef *>							varDefs;
-
-	idVarDef									*sysDef;
-
-	int											top_functions;
-	int											top_statements;
-	int											top_types;
-	int											top_defs;
-	int											top_files;
-
-	void										CompileStats( void );
-	byte										*ReserveMem(int size);
-	idVarDef									*AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope);
-
-public:
-	idVarDef									*returnDef;
-	idVarDef									*returnStringDef;
-
-												idProgram();
-												~idProgram();
-
-	// save games
-	void										Save( idSaveGame *savefile ) const;
-	bool										Restore( idRestoreGame *savefile );
-	int											CalculateChecksum( void ) const;		// Used to insure program code has not
-																						//    changed between savegames
-
-	void										Startup( const char *defaultScript );
-	void										Restart( void );
-	bool										CompileText( const char *source, const char *text, bool console );
-	const function_t							*CompileFunction( const char *functionName, const char *text );
-	void										CompileFile( const char *filename );
-	void										BeginCompilation( void );
-	void										FinishCompilation( void );
-	void										DisassembleStatement( idFile *file, int instructionPointer ) const;
-	void										Disassemble( void ) const;
-	void										FreeData( void );
-
-	const char									*GetFilename( int num );
-	int											GetFilenum( const char *name );
-	int											GetLineNumberForStatement( int index );
-	const char									*GetFilenameForStatement( int index );
-
-	idTypeDef									*AllocType( idTypeDef &type );
-	idTypeDef									*AllocType( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
-	idTypeDef									*GetType( idTypeDef &type, bool allocate );
-	idTypeDef									*FindType( const char *name );
-
-	idVarDef									*AllocDef( idTypeDef *type, const char *name, idVarDef *scope, bool constant );
-	idVarDef									*GetDef( const idTypeDef *type, const char *name, const idVarDef *scope ) const;
-	void										FreeDef( idVarDef *d, const idVarDef *scope );
-	idVarDef									*FindFreeResultDef( idTypeDef *type, const char *name, idVarDef *scope, const idVarDef *a, const idVarDef *b );
-	idVarDef									*GetDefList( const char *name ) const;
-	void										AddDefToNameList( idVarDef *def, const char *name );
-
-	function_t									*FindFunction( const char *name ) const;						// returns NULL if function not found
-	function_t									*FindFunction( const char *name, const idTypeDef *type ) const;	// returns NULL if function not found
-	function_t									&AllocFunction( idVarDef *def );
-	function_t									*GetFunction( int index );
-	int											GetFunctionIndex( const function_t *func );
-
-	void										SetEntity( const char *name, idEntity *ent );
-
-	statement_t									*AllocStatement( void );
-	statement_t									&GetStatement( int index );
-	int											NumStatements( void ) { return statements.Num(); }
-
-	int											GetReturnedInteger( void );
-
-	//HUMANHEAD: aob - need to return other types
-	float 										GetReturnedFloat( void );
-	bool										GetReturnedBool( void );
-	idVec3 										GetReturnedVector( void );
-	idStr										GetReturnedString( void );
-	int											GetReturnedEntity( void );
-	//HUMANHEAD END
-
-	void										ReturnFloat( float value );
-	void										ReturnInteger( int value );
-	void										ReturnVector( idVec3 const &vec );
-	void										ReturnString( const char *string );
-	void										ReturnEntity( idEntity *ent );
-
-	int											NumFilenames( void ) { return fileList.Num( ); }
-};
 
 /*
 ================

@@ -5,6 +5,7 @@ class hhReactionHandler;
 class hhSunCorona; // CJR
 class hhHand;
 class hhAIInspector;
+class idAI;
 
 #ifdef GAME_DLL
 extern idCVar com_forceGenericSIMD;
