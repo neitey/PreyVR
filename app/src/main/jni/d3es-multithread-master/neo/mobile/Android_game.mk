@@ -14,7 +14,7 @@ $(SDL_INCLUDE_PATHS)
 
 LOCAL_CPPFLAGS := -DGAME_DLL -fPIC -D_K_CLANG
 LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
-LOCAL_CPPFLAGS += -D_D3LE -D_D3XP -DCTF
+LOCAL_CPPFLAGS += -D_HUMANHEAD -DHUMANHEAD -D_PREY
 
 
 LOCAL_CPPFLAGS += -Wno-sign-compare \

@@ -78,8 +78,15 @@ extern const idEventDef EV_Thread_FadeOut;
 extern const idEventDef EV_Thread_FadeTo;
 extern const idEventDef EV_Thread_Restart;
 
+// HUMANHEAD
+extern const idEventDef EV_Thread_SetSilenceCallback;
+extern const idEventDef EV_Thread_WaitPVS;
+extern const idEventDef EV_Thread_TextDDA;
+// HUMANHEAD END
+
 class idThread : public idClass {
-private:
+//HUMANHEAD: aob - changed to protected
+protected:
 	static idThread				*currentThread;
 
 	idThread					*waitingForThread;
@@ -87,6 +94,17 @@ private:
 	int							waitingUntil;
 	idInterpreter				interpreter;
 
+	// HUMANHEAD PDM
+	int							waitingForPVS;	// entity num of PVS wait entity
+	// HUMANHEAD END
+	//HUMANHEAD rww - jim d. suggested this as a method for failsafing premature entity removal.
+	//honestly, it feels a little hacky to me. but i guess it's reasonable since the case can
+	//occur under legitimate circumstances.
+public:
+	idEntityPtr<idEntity>		threadOwner;
+	bool						threadOwnerCheck;
+protected:
+	//HUMANHEAD END
 	idDict						spawnArgs;
 
 	int							threadNum;
@@ -193,6 +211,24 @@ private:
 	void						Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime );
 	void						Event_InfluenceActive( void );
 
+	// HUMANHEAD
+	void						Event_WaitForSilence( idEntity *ent, float plusOrMinusSeconds );
+	void						Event_WaitPVS( idEntity *ent );
+	void						Event_Precache( const char *def );
+	void						Event_PrecacheDecl( int type, const char *name );
+	void						Event_ThreadIsValid( int threadNum );
+	void						Event_GetCVarFloat( const char* name );
+	void						Event_GetCVarVector( const char* name );
+	void						Event_ShowProgressBar(bool turnOn);
+	void						Event_SetProgress(float progress);
+	void						Event_SetProgressState(int state);
+	void						Event_TableLookup(const char *tableName, float index);
+	void						Event_GetDDAValue( void ); // mdl
+	void						Event_GetEntitySpawnId( idEntity *ent ); //rww
+	void						Event_KillMonsters( const char *className ); // mdl
+	void						Event_SpawnProjectile( const char *projectilename, const idVec3 &org, const idVec3 &dir );
+	// HUMANHEAD END
+
 public:
 								CLASS_PROTOTYPE( idThread );
 
@@ -264,6 +300,10 @@ public:
 	static int					CurrentThreadNum( void );
 	static bool					BeginMultiFrameEvent( idEntity *ent, const idEventDef *event );
 	static void					EndMultiFrameEvent( idEntity *ent, const idEventDef *event );
+
+	// HUMANHEAD nla - Added to see if an event was running
+	static bool					RunningEvent( idEntity *ent, const idEventDef *event );
+	// HUMANHEAD END
 
 	static void					ReturnString( const char *text );
 	static void					ReturnFloat( float value );

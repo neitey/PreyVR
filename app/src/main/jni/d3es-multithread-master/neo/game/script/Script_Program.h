@@ -43,11 +43,18 @@ class idEntity;
 class idSaveGame;
 class idRestoreGame;
 
+// HUMANHEAD PCF BG 5/30/06: Added 20% to script max values.
+
 #define MAX_STRING_LEN		128
-#define MAX_GLOBALS			296608			// in bytes - DG: increased this for better support of mods that use the vanilla game dll
+// HUMANHEAD pdm: Ran out of space on some maps.  TODO figure out why this is happening.
+#define MAX_GLOBALS			530840			// in bytes
+//#define MAX_GLOBALS		296608			// in bytes
+// HUMANHEAD END
 #define MAX_STRINGS			1024
-#define MAX_FUNCS			3584
-#define MAX_STATEMENTS		131072			// statement_t - 18 bytes last I checked
+#define MAX_FUNCS			3686
+#define MAX_STATEMENTS		113050			// statement_t - 18 bytes last I checked
+
+// HUMANHEAD END PCF
 
 typedef enum {
 	ev_error = -1, ev_void, ev_scriptevent, ev_namespace, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_function, ev_virtualfunction, ev_pointer, ev_object, ev_jumpoffset, ev_argsize, ev_boolean
@@ -144,7 +151,67 @@ public:
 	int					GetFunctionNumber( const function_t *func ) const;
 	const function_t	*GetFunction( int funcNumber ) const;
 	void				AddFunction( const function_t *func );
+
+	//HUMANHEAD: aob
+	virtual void		PushOntoStack( const char* parm, class hhThread* thread ) const {}
+	virtual const char* GetReturnValueAsString( idProgram& program ) const { return ""; }
+	virtual bool		VerifyData( const char* data ) const { return false; }
+	//HUMANHEAD END
 };
+
+
+//HUMANHEAD: aob
+class idTypeDefString : public idTypeDef {
+public:
+	idTypeDefString( const idTypeDef &other );
+	idTypeDefString( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+
+	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
+	const char* GetReturnValueAsString( idProgram& program ) const;
+	bool		VerifyData( const char* data ) const;
+};
+
+class idTypeDefVector : public idTypeDef {
+public:
+	idTypeDefVector( const idTypeDef &other );
+	idTypeDefVector( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+
+	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
+	const char* GetReturnValueAsString( idProgram& program ) const;
+	bool		VerifyData( const char* data ) const;
+};
+
+class idTypeDefFloat : public idTypeDef {
+public:
+	idTypeDefFloat( const idTypeDef &other );
+	idTypeDefFloat( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+
+	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
+	const char* GetReturnValueAsString( idProgram& program ) const;
+	bool		VerifyData( const char* data ) const;
+};
+
+class idTypeDefEntity : public idTypeDef {
+public:
+	idTypeDefEntity( const idTypeDef &other );
+	idTypeDefEntity( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+
+	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
+	const char* GetReturnValueAsString( idProgram& program ) const;
+	bool		VerifyData( const char* data ) const;
+};
+
+class idTypeDefBool : public idTypeDef {
+public:
+	idTypeDefBool( const idTypeDef &other );
+	idTypeDefBool( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+
+	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
+	const char* GetReturnValueAsString( idProgram& program ) const;
+	bool		VerifyData( const char* data ) const;
+};
+//HUMANHEAD END
+
 
 /***********************************************************************
 
@@ -387,10 +454,12 @@ private:
 extern	idTypeDef	type_void;
 extern	idTypeDef	type_scriptevent;
 extern	idTypeDef	type_namespace;
-extern	idTypeDef	type_string;
-extern	idTypeDef	type_float;
-extern	idTypeDef	type_vector;
-extern	idTypeDef	type_entity;
+//HUMANHEAD: aob - changed types to inherited types
+extern	idTypeDefString	type_string;
+extern	idTypeDefFloat	type_float;
+extern	idTypeDefVector	type_vector;
+extern	idTypeDefEntity	type_entity;
+//HUMANHEAD END
 extern  idTypeDef	type_field;
 extern	idTypeDef	type_function;
 extern	idTypeDef	type_virtualfunction;
@@ -398,7 +467,9 @@ extern  idTypeDef	type_pointer;
 extern	idTypeDef	type_object;
 extern	idTypeDef	type_jumpoffset;	// only used for jump opcodes
 extern	idTypeDef	type_argsize;		// only used for function call and thread opcodes
-extern	idTypeDef	type_boolean;
+//HUMANHEAD: aob - changed types to inherited types
+extern	idTypeDefBool	type_boolean;
+//HUMANHEAD END
 
 extern	idVarDef	def_void;
 extern	idVarDef	def_scriptevent;
@@ -519,6 +590,14 @@ public:
 
 	int											GetReturnedInteger( void );
 
+	//HUMANHEAD: aob - need to return other types
+	float 										GetReturnedFloat( void );
+	bool										GetReturnedBool( void );
+	idVec3 										GetReturnedVector( void );
+	idStr										GetReturnedString( void );
+	int											GetReturnedEntity( void );
+	//HUMANHEAD END
+
 	void										ReturnFloat( float value );
 	void										ReturnInteger( int value );
 	void										ReturnVector( idVec3 const &vec );
@@ -561,7 +640,64 @@ idProgram::GetReturnedInteger
 ================
 */
 ID_INLINE int idProgram::GetReturnedInteger( void ) {
-	return *returnDef->value.intPtr;
+	// HUMANHEAD pdm: Changed to reference the floatPtr, since we send ints as floats
+	return static_cast<int>(*returnDef->value.floatPtr);
+}
+
+/*
+================
+idProgram::GetReturnedFloat
+
+HUMANHEAD: aob
+================
+*/
+ID_INLINE float idProgram::GetReturnedFloat( void ) {
+	return *returnDef->value.floatPtr;
+}
+
+/*
+================
+idProgram::GetReturnedBool
+
+HUMANHEAD: aob
+================
+*/
+ID_INLINE bool idProgram::GetReturnedBool( void ) {
+	// HUMANHEAD pdm: Changed to reference the floatPtr, since we send ints as floats
+	return (*(returnDef->value.floatPtr)) != 0.0f;
+}
+
+/*
+================
+idProgram::GetReturnedVector
+
+HUMANHEAD: aob
+================
+*/
+ID_INLINE idVec3 idProgram::GetReturnedVector( void ) {
+	return *returnDef->value.vectorPtr;
+}
+
+/*
+================
+idProgram::GetReturnedString
+
+HUMANHEAD: aob
+================
+*/
+ID_INLINE idStr idProgram::GetReturnedString( void ) {
+	return idStr( *returnDef->value.stringPtr );
+}
+
+/*
+================
+idProgram::GetReturnedEntity
+
+HUMANHEAD: aob
+================
+*/
+ID_INLINE int idProgram::GetReturnedEntity( void ) {
+	return *returnDef->value.entityNumberPtr;
 }
 
 /*

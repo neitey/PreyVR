@@ -31,6 +31,65 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "framework/CVarSystem.h"
 
+// HUMANHEAD
+extern idCVar	g_tips;
+extern idCVar	g_jawflap;
+extern idCVar	g_wicked;
+extern idCVar	g_casino;
+extern idCVar	g_roadhouseCompleted;
+extern idCVar	g_precache;
+extern idCVar	g_debugProjections;
+extern idCVar	g_showProjectileLaunchPoint;
+extern idCVar	p_tripwireDebug;
+extern idCVar	p_playerPhysicsDebug;
+extern idCVar	p_camRotRateScale;
+extern idCVar	p_camInterpDebug;
+extern idCVar	p_iterRotMoveNumIterations;
+extern idCVar	p_iterRotMoveTransDist;
+extern idCVar	p_disableCamInterp;
+extern idCVar	p_mountedGunDebug;
+extern idCVar	g_mbNumBlurs;
+extern idCVar	g_mbFrameSpan;
+extern idCVar	g_postEventsDebug;
+extern idCVar	g_debugger;
+extern idCVar	g_nodormant;
+extern idCVar	g_robustDormantAll;
+extern idCVar	g_dormanttests;
+extern idCVar	pm_wallwalkstepsize;
+extern idCVar	g_vehicleDebug;
+extern idCVar	sys_SavedPosition;
+extern idCVar	g_crosshair;
+extern idCVar	g_springConstant;
+extern idCVar	g_debugAFs;
+extern idCVar	g_debugFX;
+extern idCVar	ai_debugActions;
+extern idCVar	ai_debugBrain;
+extern idCVar	ai_printSpeech;
+extern idCVar	ai_talonAttack;
+extern idCVar	ai_debugPath;
+extern idCVar	ai_hideSkipThink;
+extern idCVar	g_showDormant;
+extern idCVar	ai_showNoAAS;
+extern idCVar	ai_skipSpeech;
+extern idCVar	ai_skipThink;
+extern idCVar	g_useDDA;
+extern idCVar	g_printDDA;
+extern idCVar	g_trackDDA;
+extern idCVar	g_dumpDDA;
+extern idCVar	g_debugMatter;
+extern idCVar	g_debugImpulse;
+extern idCVar	sys_forceCache;		//mdc - added for forcing caching even if developer is set
+extern idCVar	g_showGamePortals;
+extern idCVar	g_showValidSoundAreas;
+extern idCVar	g_testModelPitch;
+extern idCVar	g_maxEntitiesWarning;
+extern idCVar	g_showEntityCount;
+extern idCVar	g_expensiveMS;
+extern idCVar	g_nogore;
+extern idCVar	g_runMapCycle;
+extern idCVar	g_forceSingleSmokeView;
+//HUMANHEAD END
+
 extern idCVar	developer;
 
 extern idCVar	g_cinematic;
@@ -41,7 +100,7 @@ extern idCVar	r_aspectRatio;
 extern idCVar	g_monsters;
 extern idCVar	g_decals;
 extern idCVar	g_knockback;
-extern idCVar	g_skill;
+//extern idCVar	g_skill;				// HUMANHEAD pdm: not used
 extern idCVar	g_gravity;
 extern idCVar	g_skipFX;
 extern idCVar	g_skipParticles;
@@ -62,13 +121,13 @@ extern idCVar	g_debugMover;
 extern idCVar	g_debugTriggers;
 extern idCVar	g_debugCinematic;
 extern idCVar	g_stopTime;
-extern idCVar	g_armorProtection;
-extern idCVar	g_armorProtectionMP;
-extern idCVar	g_damageScale;
-extern idCVar	g_useDynamicProtection;
-extern idCVar	g_healthTakeTime;
-extern idCVar	g_healthTakeAmt;
-extern idCVar	g_healthTakeLimit;
+//extern idCVar	g_armorProtection;			// HUMANHEAD pdm: not used
+//extern idCVar	g_armorProtectionMP;		// HUMANHEAD pdm: not used
+//extern idCVar	g_damageScale;				// HUMANHEAD pdm: not used
+//extern idCVar	g_useDynamicProtection;		// HUMANHEAD pdm: not used
+//extern idCVar	g_healthTakeTime;			// HUMANHEAD pdm: not used
+//extern idCVar	g_healthTakeAmt;			// HUMANHEAD pdm: not used
+//extern idCVar	g_healthTakeLimit;			// HUMANHEAD pdm: not used
 
 extern idCVar	g_showPVS;
 extern idCVar	g_showTargets;
@@ -83,6 +142,8 @@ extern idCVar	g_showcamerainfo;
 extern idCVar	g_showTestModelFrame;
 extern idCVar	g_showActiveEntities;
 extern idCVar	g_showEnemies;
+
+extern idCVar	g_artificialPlayerCount; //HUMANHEAD rww
 
 extern idCVar	g_frametime;
 extern idCVar	g_timeentities;
@@ -208,9 +269,11 @@ extern idCVar	pm_thirdPersonAngle;
 extern idCVar	pm_thirdPersonClip;
 extern idCVar	pm_thirdPerson;
 extern idCVar	pm_thirdPersonDeath;
+extern idCVar	pm_thirdPersonDeathMP; //HUMANHEAD rww
 extern idCVar	pm_modelView;
 extern idCVar	pm_airTics;
 
+extern idCVar	g_showAimHealth; //HUMANHEAD rww
 extern idCVar	g_showPlayerShadow;
 extern idCVar	g_showHud;
 extern idCVar	g_showProjectilePct;
@@ -321,6 +384,6 @@ extern idCVar timescale;
 
 extern const char *si_gameTypeArgs[];
 
-extern const char *ui_skinArgs[];
+//extern const char *ui_skinArgs[];	// HUMANHEAD pdm: removed
 
 #endif /* !__SYS_CVAR_H__ */

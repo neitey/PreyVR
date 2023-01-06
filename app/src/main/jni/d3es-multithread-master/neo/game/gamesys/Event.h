@@ -51,6 +51,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #define MAX_EVENTS					4096
 
+//HUMANHEAD: aob - needed for networking to send the least amount of bits
+extern const int MAX_EVENTS_NUM_BITS;
+//HUMANHEAD END
+
 class idClass;
 class idTypeInfo;
 
@@ -84,6 +88,10 @@ public:
 	static int					NumEventCommands( void );
 	static const idEventDef		*GetEventCommand( int eventnum );
 	static const idEventDef		*FindEvent( const char *name );
+
+	//HUMANHEAD: aob
+	static const idEventDef		*FindEvent( int eventId );
+	//HUMANHEAD END
 };
 
 class idSaveGame;
@@ -113,6 +121,10 @@ public:
 	void						Free( void );
 	void						Schedule( idClass *object, const idTypeInfo *cls, int time );
 	byte						*GetData( void );
+
+	// HUMANHEAD pdm
+	static int					NumQueuedEvents( const idClass *obj, const idEventDef *evdef = NULL );
+	// HUMANHEAD END
 
 	static void					CancelEvents( const idClass *obj, const idEventDef *evdef = NULL );
 	static void					ClearEventList( void );
