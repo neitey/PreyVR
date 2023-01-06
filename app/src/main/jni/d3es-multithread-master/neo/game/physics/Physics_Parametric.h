@@ -62,6 +62,11 @@ typedef struct parametricPState_s {
 	idCurve_Spline<idVec3> *				spline;					// spline based description of the position over time
 	idInterpolateAccelDecelLinear<float>	splineInterpolate;		// position along the spline over time
 	bool									useSplineAngles;		// set the orientation using the spline
+	// HUMANHEAD mdl:  Added these for accumulating spline angle changes.  They are NULL when splines are inactive.
+	idAngles *								lastSplineAngles;			// If not NULL, The spline angles from the last Evaluate() call
+	idMat3 *								deltaSplineAngles;			// If not NULL, the difference between current.angle and the initial spline angles when SetSpline is called.
+	idMat3 *								deltaSplineAnglesInverse;	// If not NULL, deltaSplineAngles.Inverse()
+	// HUMANHEAD END
 } parametricPState_t;
 
 class idPhysics_Parametric : public idPhysics_Base {
@@ -152,10 +157,14 @@ public:	// common physics interface
 	int						GetLinearEndTime( void ) const;
 	int						GetAngularEndTime( void ) const;
 
+	//HUMANHEAD: aob
+	const idAngles			&GetCurrentAngularSpeed( int id = 0 ) const;
+	//HUMANHEAD END
+
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
-private:
+protected:		// HUMANHEAD nla
 	// parametric physics state
 	parametricPState_t		current;
 	parametricPState_t		saved;

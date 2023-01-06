@@ -151,6 +151,7 @@ src_game = \
 	game/physics/Physics_Monster.cpp \
 	game/physics/Physics_Parametric.cpp \
 	game/physics/Physics_Player.cpp \
+	game/physics/Physics_PreyPlayer.cpp \
 	game/physics/Physics_RigidBody.cpp \
 	game/physics/Physics_Static.cpp \
 	game/physics/Physics_StaticMulti.cpp \

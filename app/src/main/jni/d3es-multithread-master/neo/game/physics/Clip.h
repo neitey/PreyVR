@@ -29,6 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __CLIP_H__
 #define __CLIP_H__
 
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+const int CLIPSECTOR_DEPTH				= 6;
+const int CLIPSECTOR_WIDTH				= 1 << CLIPSECTOR_DEPTH;
+#endif //HUMANHEAD END
+
 #include "idlib/geometry/TraceModel.h"
 #include "cm/CollisionModel.h"
 
@@ -67,6 +72,10 @@ public:
 							explicit idClipModel( const int renderModelHandle );
 							explicit idClipModel( const idClipModel *model );
 							~idClipModel( void );
+
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+	void					UpdateDynamicContents( void );
+#endif //HUMANHEAD END
 
 	bool					LoadModel( const char *name );
 	void					LoadModel( const idTraceModel &trm );
@@ -115,6 +124,9 @@ public:
 
 private:
 	bool					enabled;				// true if this clip model is used for clipping
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+	bool					checked;				// Splash's clip model code
+#endif //HUMANHEAD END
 	idEntity *				entity;					// entity using this clip model
 	int						id;						// id for entities that use multiple clip models
 	idEntity *				owner;					// owner of the entity that owns this clip model
@@ -132,7 +144,9 @@ private:
 	int						touchCount;
 
 	void					Init( void );			// initialize
+#if !_HH_CLIP_FASTSECTORS //HUMANHEAD rww
 	void					Link_r( struct clipSector_s *node );
+#endif //HUMANHEAD END
 
 	static int				AllocTraceModel( const idTraceModel &trm );
 	static void				FreeTraceModel( int traceModelIndex );
@@ -170,6 +184,9 @@ ID_INLINE const idMaterial * idClipModel::GetMaterial( void ) const {
 
 ID_INLINE void idClipModel::SetContents( int newContents ) {
 	contents = newContents;
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+	UpdateDynamicContents();
+#endif //HUMANHEAD END
 }
 
 ID_INLINE int idClipModel::GetContents( void ) const {
@@ -311,7 +328,25 @@ public:
 	void					DrawClipModels( const idVec3 &eye, const float radius, const idEntity *passEntity );
 	bool					DrawModelContactFeature( const contactInfo_t &contact, const idClipModel *clipModel, int lifetime ) const;
 
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+	void					CoordsForBounds( int* coords, idBounds& bounds ) const;
+	static void				UpdateDynamicContents( struct clipSector_s* sector );
+	static void				UpdateDynamicContents( idClipModel* clipModel );
+#endif //HUMANHEAD END
+
+	// HUMANHEAD pdm
+	void DrawClipModelsInTree_r( const struct clipSector_s *node, const idVec3 &eye );
+	// HUMANHEAD ENDDrawModelContactFeature
+
+#if !GOLD //HUMANHEAD rww
+	bool					CheckClipEntMatch( const struct clipSector_s *node, const idClipModel *currentClip, const idEntity *ent ) const;
+#endif //HUMANHEAD END
 private:
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+	idVec3					nodeScale;
+	idVec3					nodeOffset;
+	idVec3					nodeOffsetVisual;
+#endif //HUMANHEAD END
 	int						numClipSectors;
 	struct clipSector_s *	clipSectors;
 	idBounds				worldBounds;
@@ -328,10 +363,15 @@ private:
 
 private:
 	struct clipSector_s *	CreateClipSectors_r( const int depth, const idBounds &bounds, idVec3 &maxSector );
+#if !_HH_CLIP_FASTSECTORS //HUMANHEAD rww
 	void					ClipModelsTouchingBounds_r( const struct clipSector_s *node, struct listParms_s &parms ) const;
+#endif //HUMANHEAD END
 	const idTraceModel *	TraceModelForClipModel( const idClipModel *mdl ) const;
 	int						GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClipModel **clipModelList ) const;
 	void					TraceRenderModel( trace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, const idMat3 &axis, idClipModel *touch ) const;
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+	void					GetClipSectorsStaticContents( void );
+#endif //HUMANHEAD END
 };
 
 
@@ -353,5 +393,29 @@ ID_INLINE const idBounds & idClip::GetWorldBounds( void ) const {
 ID_INLINE idClipModel *idClip::DefaultClipModel( void ) {
 	return &defaultClipModel;
 }
+
+#if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
+ID_INLINE void idClip::CoordsForBounds( int* coords, idBounds& bounds ) const {
+	float fCoords[ 4 ];
+
+	fCoords[ 0 ] = ( bounds[ 0 ].x - nodeOffset.x ) * nodeScale.x;
+	fCoords[ 1 ] = ( bounds[ 0 ].y - nodeOffset.y ) * nodeScale.y;
+	fCoords[ 2 ] = ( bounds[ 1 ].x - nodeOffset.x ) * nodeScale.x;
+	fCoords[ 3 ] = ( bounds[ 1 ].y - nodeOffset.y ) * nodeScale.y;
+
+	int i;
+	for( i = 0; i < 4; i++ ) {
+
+		coords[ i ] = idMath::FtoiFast( fCoords[ i ] );
+
+		if( coords[ i ] < 0 ) {
+			coords[ i ] = 0;
+		} else if( coords[ i ] > CLIPSECTOR_WIDTH - 1 ) {
+			coords[ i ] = CLIPSECTOR_WIDTH - 1;
+		}
+	}
+	coords[ 2 ]++; coords[ 3 ]++;
+}
+#endif //HUMANHEAD END
 
 #endif /* !__CLIP_H__ */

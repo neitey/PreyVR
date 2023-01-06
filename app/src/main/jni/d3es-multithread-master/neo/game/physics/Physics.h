@@ -184,6 +184,10 @@ public:	// common physics interface
 								// networking
 	virtual void				WriteToSnapshot( idBitMsgDelta &msg ) const = 0;
 	virtual void				ReadFromSnapshot( const idBitMsgDelta &msg ) = 0;
+
+	//HUMANHEAD: aob - need declarations so we can call these with GetPhysics()
+	virtual void				ActivateContactEntities( void ) {}
+	//HUMANHEAD END
 };
 
 #endif /* !__PHYSICS_H__ */

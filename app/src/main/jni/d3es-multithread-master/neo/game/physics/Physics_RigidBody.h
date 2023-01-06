@@ -156,7 +156,10 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
-private:
+	//HUMANHEAD: aob
+	const idVec3&			GetCenterOfMass() const { return centerOfMass; }
+
+protected:	// HUMANHEAD
 	// state of the rigid body
 	rigidBodyPState_t		current;
 	rigidBodyPState_t		saved;
@@ -185,9 +188,11 @@ private:
 	bool					hasMaster;
 	bool					isOrientated;
 
-private:
+protected:	// HUMANHEAD
 	friend void				RigidBodyDerivatives( const float t, const void *clientData, const float *state, float *derivatives );
+	virtual	// HUMANHEAD: made virtual
 	void					Integrate( const float deltaTime, rigidBodyPState_t &next );
+	virtual	// HUMANHEAD: made virtual
 	bool					CheckForCollisions( const float deltaTime, rigidBodyPState_t &next, trace_t &collision );
 	bool					CollisionImpulse( const trace_t &collision, idVec3 &impulse );
 	void					ContactFriction( float deltaTime );
@@ -195,6 +200,9 @@ private:
 	bool					TestIfAtRest( void ) const;
 	void					Rest( void );
 	void					DebugDraw( void );
+	// HUMANHEAD pdm: testing
+	void					TestForRotation(const char *text);
+	// HUMANHEAD pdm: testing
 };
 
 #endif /* !__PHYSICS_RIGIDBODY_H__ */

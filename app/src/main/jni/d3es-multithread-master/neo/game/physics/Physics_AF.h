@@ -118,6 +118,8 @@ public:
 	virtual void			Save( idSaveGame *saveFile ) const;
 	virtual void			Restore( idRestoreGame *saveFile );
 
+	const idVecX &			GetTotalForce(void) const { return totalForce; } // HUMANHEAD mdl
+
 protected:
 	constraintType_t		type;						// constraint type
 	idStr					name;						// name of constraint
@@ -954,6 +956,13 @@ public:	// common physics interface
 	const idVec3 &			GetPushedLinearVelocity( const int id = 0 ) const;
 	const idVec3 &			GetPushedAngularVelocity( const int id = 0 ) const;
 
+	// HUMANHEAD nla - Added to allow bound ragdols to be teleported w/out any problem
+	void					Freeze() { frozen = true; };
+	void					Thaw() { frozen = false; };
+	bool					IsFrozen() const { return frozen; }
+	float					GetInvMass() { if ( invMass == 1.0 && totalMass != 0.0f ) { invMass = 1 / totalMass; } return invMass; };
+	// HUMANHEAD END
+
 	void					SetMaster( idEntity *master, const bool orientated = true );
 
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
@@ -1019,6 +1028,11 @@ private:
 
 	idAFBody *				masterBody;						// master body
 	idLCP *					lcp;							// linear complementarity problem solver
+
+	// HUMANHEAD nla - Added to allow bound ragdols to be teleported w/out any problem
+	bool					frozen;
+	float					invMass;	// The inv mass of the body
+	// HUMANHEAD END
 
 private:
 	void					BuildTrees( void );

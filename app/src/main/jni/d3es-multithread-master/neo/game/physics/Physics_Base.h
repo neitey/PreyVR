@@ -133,6 +133,11 @@ public:	// common physics interface
 	const idVec3 &			GetPushedLinearVelocity( const int id = 0 ) const;
 	const idVec3 &			GetPushedAngularVelocity( const int id = 0 ) const;
 
+	//HUMANHEAD: aob
+	bool					HasContacts( void ) const;
+	idVec3					GetGroundContactNormal() const;
+	//HUMANHEAD END
+
 	void					SetMaster( idEntity *master, const bool orientated = true );
 
 	const trace_t *			GetBlockingInfo( void ) const;

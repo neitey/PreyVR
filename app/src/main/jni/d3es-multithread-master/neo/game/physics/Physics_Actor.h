@@ -31,6 +31,11 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "physics/Physics_Base.h"
 
+//HUMANHEAD
+#define	MAXTOUCH					32
+const int c_iNumRotationTraces		= 4;
+//HUMANHEAD END
+
 /*
 ===================================================================================
 
@@ -61,6 +66,21 @@ public:
 							// align the clip model with the gravity direction
 	void					SetClipModelAxis( void );
 
+	//HUMANHEAD nla
+	int						GetNumTouchEnts( void ) const;
+	int						GetTouchEnt( int i ) const;
+	void					ResetNumTouchEnt( int i );
+	// HUMANHEAD END
+
+	//HUMANHEAD: aob - added
+	const trace_t&			GetGroundTrace() const { return groundTrace; }
+	virtual const idMaterial*	GetGroundMaterial() const { if(!HasGroundContacts()) return NULL; return groundTrace.c.material; } // JRM - return NULL if no gc's
+	surfTypes_t				GetGroundMatterType() const { return gameLocal.GetMatterType(groundTrace); }
+	const int				GetGroundSurfaceFlags() const { const idMaterial* mat = GetGroundMaterial(); if( mat ) { return mat->GetSurfaceFlags(); } else { return 0; } }
+	bool					HadGroundContacts() const;
+	virtual void			HadGroundContacts( const bool hadGroundContacts );
+	//HUMANHEAD END
+
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -80,6 +100,7 @@ public:	// common physics interface
 	const idVec3 &			GetOrigin( int id = 0 ) const;
 	const idMat3 &			GetAxis( int id = 0 ) const;
 
+	virtual // HUMANHEAD jsh made virtual
 	void					SetGravity( const idVec3 &newGravity );
 	const idMat3 &			GetGravityAxis( void ) const;
 
@@ -108,8 +129,32 @@ protected:
 	float					masterYaw;
 	float					masterDeltaYaw;
 
+	//HUMANHEAD: aob
+	trace_t					groundTrace;
+	//HUMANHEAD END
+
+	//HUMANHEAD nla
+	// entities touched during last evaluate
+	int						numTouch;
+	int						touchEnts[MAXTOUCH];
+	void					AddTouchEnt( int entityNum );
+	void					AddTouchEntList( idList<int> &list );
+
+	bool					hadGroundContacts;
+
+	idVec3					rotationTraceDirectionTable[ c_iNumRotationTraces ];
+	// HUMANHEAD END
+
 	// results of last evaluate
 	idEntityPtr<idEntity>	groundEntityPtr;
+
+//HUMANHEAD: aob
+protected:
+	virtual bool			IterativeRotateMove( const idVec3& upVector, const idVec3& idealUpVector, const idVec3& rotationOrigin, const idVec3& rotationCheckOrigin, int numIterations );
+	idVec3					DetermineRotationVector( const idVec3& upVector, const idVec3& idealUpVector, const idVec3& rotationOrigin );
+	bool					DirectionIsClear( const idVec3& checkOrigin, const idVec3& direction );
+	void					BuildRotationTraceDirectionTable( const idMat3& Axis );
+//HUMANHEAD END
 };
 
 #endif /* !__PHYSICS_ACTOR_H__ */
