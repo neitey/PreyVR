@@ -57,8 +57,14 @@ extern const idEventDef AI_AnimDone;
 extern const idEventDef AI_SetBlendFrames;
 extern const idEventDef AI_GetBlendFrames;
 extern const idEventDef AI_SetState;
+extern const idEventDef EV_FootprintLeft;	// HUMANHEAD JRM
+extern const idEventDef EV_FootprintRight;	// HUMANHEAD JRM
+extern const idEventDef AI_DisablePain;		// HUMANHEAD JRM
+extern const idEventDef AI_EnablePain;		// HUMANHEAD JRM
 
 class idDeclParticle;
+class hhVehicle;		// HUMANHEAD pdm
+class hhBindController;	// HUMANHEAD pdm
 
 class idAnimState {
 public:
@@ -88,6 +94,11 @@ public:
 	bool					AnimDone( int blendFrames ) const;
 	bool					IsIdle( void ) const;
 	animFlags_t				GetAnimFlags( void ) const;
+
+	bool	   		 		InGravityZone(void); // HUMANHEAD mdl:  Returns true if the player is inside an hhGravityZoneBase entity
+#ifdef HUMANHEAD //jsh
+	void					PlayAnimSkip( int anim, int delay );
+#endif
 
 private:
 	idActor *				self;
@@ -120,6 +131,10 @@ public:
 	idLinkList<idActor>		enemyNode;			// node linked into an entity's enemy list for quick lookups of who is attacking him
 	idLinkList<idActor>		enemyList;			// list of characters that have targeted the player as their enemy
 
+	// HUMANHEAD nla
+	idScriptBool			AI_BOUND;			// HUMANHEAD pdm
+	idScriptBool			AI_VEHICLE;			// HUMANHEAD pdm
+	// HUMANHEAD END
 public:
 							idActor( void );
 	virtual					~idActor( void );
@@ -129,6 +144,13 @@ public:
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
+
+	//HUMANHEAD rww - general network handling of all actors
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			ClientPredictionThink( void );
+	virtual void			SetSkin( const idDeclSkin *skin );
+	//HUMANHEAD END
 
 	virtual void			Hide( void );
 	virtual void			Show( void );
@@ -153,16 +175,72 @@ public:
 	void					SetState( const char *statename );
 
 							// vision testing
+	virtual // HUMANHEAD aob: made virtual
 	void					SetEyeHeight( float height );
+	virtual // HUMANHEAD aob: made virtual
 	float					EyeHeight( void ) const;
+	virtual // HUMANHEAD aob: made virtual
 	idVec3					EyeOffset( void ) const;
+	virtual // HUMANHEAD aob: made virtual
 	idVec3					GetEyePosition( void ) const;
 	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const;
 	void					SetFOV( float fov );
+	virtual // HUMANHEAD jrm - made virtual
 	bool					CheckFOV( const idVec3 &pos ) const;
+	// HUMANHEAD JRM - made virtual
+	virtual
+#ifdef HUMANHEAD
+	bool					CanSee( idEntity *ent, bool useFOV );
+#else
 	bool					CanSee( idEntity *ent, bool useFOV ) const;
+#endif
 	bool					PointVisible( const idVec3 &point ) const;
 	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
+
+
+	// HUMANHEAD
+	void					SetAnimPrefix( const char *prefix );
+	const char *			GetAnimPrefix( void );
+	idMat3					GetGravViewAxis(void)	const;	// HUMANHEAD JRM - returns clipmodel axis * viewAxis
+	virtual float			EyeHeightIdeal( void ) const;
+	virtual bool			ShouldRemainAlignedToAxial() const;
+	virtual bool			IsWallWalking() const { return(false); }
+	virtual bool			Give(const char *statname, const char *value);
+	virtual void			Possess( idEntity *possessor ); // HUMANHEAD aob
+	virtual void			Unpossess(); // HUMANHEAD aob
+	virtual bool			CanBePossessed( void ); // HUMANHEAD cjr
+
+	virtual void			UpdateOrientation( const idAngles& _untransformedViewAngles ) {}
+	virtual void			DetermineOwnerPosition( idVec3 &ownerOrigin, idMat3 &ownerAxis );//aob
+	virtual idVec3			ApplyLandDeflect( const idVec3& pos, float scale ) { return pos; }
+	virtual const idMat3&	GetAxis( int id = 0 ) const { return viewAxis; }
+	virtual void			PlayFootstepSound();
+	virtual void			PlayFootstepSoundMatter( const trace_t& trace );
+	virtual void			Event_AnimSyncLegs();			// nla
+	virtual idVec3 			GetAimPosition() const;
+
+	virtual void			EnterVehicle( hhVehicle* vehicle );
+	virtual void			ExitVehicle( hhVehicle* vehicle );
+	virtual void			GetPilotInput( usercmd_t& pilotCmds, idAngles& pilotViewAngles ) {}
+	virtual void			ResetClipModel();
+	class hhPilotVehicleInterface*	GetVehicleInterface();
+	const hhPilotVehicleInterface*	GetVehicleInterface() const;
+	void					SetVehicleInterface( hhPilotVehicleInterface* newVehicleInterface );
+	bool					InVehicle() const;
+	void					DisableIK()							{	walkIK.DisableAll();	}
+	void					EnableIK()							{	walkIK.EnableAll();		}
+	virtual void			BecameBound(hhBindController *b)	{}
+	virtual void			BecameUnbound(hhBindController *b)	{}
+	bool					PlayCrashLandSound( const trace_t& trace, const float volumeScale );
+	idVec3					DetermineDeltaCollisionVelocity( const idVec3& currentVel, const trace_t& trace );
+	virtual void			PlayPainSound();
+	idAnimState*			GetLegsAnim(void)	{return &legsAnim;}
+	idAnimState*			GetTorsoAnim(void)	{return &torsoAnim;}
+	idAnimState*			GetHeadAnim(void)	{return &headAnim;}
+	virtual void			SetAxis( const idMat3& axis ) { viewAxis = axis; UpdateVisuals(); }
+	virtual void			SetShaderParm( int parmnum, float value );
+	idEntity *				GetHead();
+	// HUMANHEAD END
 
 							// damage
 	void					SetupDamageGroups( void );
@@ -210,6 +288,9 @@ public:
 	void					SetWaitState( const char *_waitstate );
 	bool					AnimDone( int channel, int blendFrames ) const;
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
+
+	bool					InGravityZone( void ); // HUMANHEAD mdl
+	virtual void			Portalled(idEntity *portal); // HUMANHEAD mdl
 
 	idEntity*				GetHeadEntity()
 	{
@@ -265,6 +346,10 @@ protected:
 	int						blink_min;
 	int						blink_max;
 
+	//HUMANHEAD: aob
+	hhPilotVehicleInterface*	vehicleInterface;
+	//HUMANHEAD END
+
 	// script variables
 	idThread *				scriptThread;
 	idStr					waitState;
@@ -284,9 +369,19 @@ protected:
 
 	idList<idAttachInfo>	attachments;
 
+	int						solidTest; // HUMANHEAD mdl
+
+	//HUMANHEAD bjk
+	int						basePushTime;
+	idVec3					basePush;
+	int						basePushJoint;
+	//HUMANHEAD END
+
 	int						damageCap;
 
 	virtual void			Gib( const idVec3 &dir, const char *damageDefName );
+	void					AddBasePush( const idVec3& dir, int location, const idDict* damageDict );	//HUMANHEAD bjk
+	void					ApplyBasePush();	//HUMANHEAD bjk
 
 							// removes attachments with "remove" set for when character dies
 	void					RemoveAttachments( void );
@@ -341,6 +436,15 @@ private:
 	void					Event_SetState( const char *name );
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
+// HUMANHEAD START JRM
+	virtual void			Event_Footprint_Left( void );
+	virtual void			Event_Footprint_Right( void );
+#ifdef HUMANHEAD //jsh
+	virtual void			Event_PlayAnimSkip( int channel, const char *name, float skip );
+#endif
+	void					Event_AFTestSolid(void); // mdl
+// HUMANHEAD END
+
 	void					Event_SetDamageGroupScale(const char *groupName, float scale);
 	void					Event_SetDamageGroupScaleAll(float scale);
 	void					Event_GetDamageGroupScale(const char *groupName);
@@ -348,5 +452,50 @@ private:
 	void					Event_SetWaitState(const char *waitState);
 	void					Event_GetWaitState();
 };
+
+// HUMANHEAD
+/*
+=====================
+idActor::EyeHeightIdeal
+=====================
+*/
+ID_INLINE float idActor::EyeHeightIdeal( void ) const {
+	return eyeOffset.z;
+}
+
+/*
+=====================
+idActor::ShouldRemainAlignedToAxial
+=====================
+*/
+ID_INLINE bool idActor::ShouldRemainAlignedToAxial() const {
+	return false;//true;
+}
+
+/*
+=====================
+idActor::Give
+	HUMANHEAD aob
+AOBFIXME: Why is this function inline?  Move to cpp file and get rid of inline. --pdm
+=====================
+*/
+#define DETERMINE_AMOUNT_GIVEN( current, delta, max ) ( (((current) + (delta)) > (max)) ? (max) - (current) : (delta) )
+ID_INLINE bool idActor::Give( const char *statname, const char *value) {
+	float	deltaAmount = 0.0f;
+	int		localMaxHealth = GetMaxHealth();
+	int		localHealth = GetHealth();
+	bool	processed = false;
+	float	localAmountGiven = 0.0f;
+
+	if ( !idStr::Icmp( statname, "health" ) ) {
+		deltaAmount = atoi( value );
+		localAmountGiven = DETERMINE_AMOUNT_GIVEN( localHealth, deltaAmount, localMaxHealth );
+		SetHealth( localHealth + localAmountGiven );
+		processed = true;
+	}
+
+	return processed;
+}
+// HUMANHEAD END
 
 #endif /* !__GAME_ACTOR_H__ */

@@ -73,6 +73,7 @@ public:
 	virtual void			Stop( void );
 
 protected:
+	void					Event_SetFOV( float fieldOfView, float accelTime, float decelTime, float duration );				// HUMANHEAD pdm
 	void					Event_Activate( idEntity *activator );
 	void					Event_SetAttachments();
 	void					SetAttachment( idEntity **e, const char *p );

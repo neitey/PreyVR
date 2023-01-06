@@ -84,6 +84,9 @@ public:
 	qhandle_t		GetLightDefHandle( void ) const { return lightDefHandle; }
 	void			SetLightParent( idEntity *lparent ) { lightParent = lparent; }
 	void			SetLightLevel( void );
+	//HUMANHEAD: cjr
+	int				GetCurrentLevel() { return( currentLevel ); }
+	//HUMANHEAD END
 
 	virtual void	ShowEditingDialog( void );
 
@@ -97,7 +100,8 @@ public:
 	virtual void	ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
-private:
+//HUMANHEAD: aob - changed to protected
+protected:
 	renderLight_t	renderLight;				// light presented to the renderer
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
 	idMat3			localLightAxis;				// light axis relative to physics axis
@@ -116,7 +120,8 @@ private:
 	int				fadeEnd;
 	bool			soundWasPlaying;
 
-private:
+//HUMANHEAD: aob - changed to protected
+protected:
 	void			PresentLightDefChange( void );
 	void			PresentModelDefChange( void );
 

@@ -68,6 +68,9 @@ protected:
 	idAnimator* 			animator;			// animator on entity
 	int						modifiedAnim;		// animation modified by the IK
 	idVec3					modelOffset;
+	// HUMANHEAD nla - Fixes IK big with changing normals
+	idVec3					normalPrev;
+	// HUMANHEAD END
 };
 
 
@@ -97,6 +100,10 @@ public:
 	void					DisableAll();
 	void					EnableLeg( int num );
 	void					DisableLeg( int num );
+
+	void					InvalidateHeights(void) { oldHeightsValid = false; } //HUMANHEAD rww
+
+	virtual bool			IsActivated() { return ( enabledLegs != 0 ) ? true : false; } //HUMANHEAD jsh
 
 private:
 	static const int		MAX_LEGS		= 8;
@@ -140,6 +147,8 @@ private:
 	float					oldWaistHeight;
 	float					oldAnkleHeights[MAX_LEGS];
 	idVec3					waistOffset;
+
+	int						lastFrame; // HUMANHEAD mdl:  Last frame Evaluate() was called
 };
 
 

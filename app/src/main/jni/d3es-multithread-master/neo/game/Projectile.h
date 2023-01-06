@@ -41,6 +41,10 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+//HUMANHEAD: aob
+extern const idEventDef EV_Fizzle;
+//HUMANHEAD END
+
 extern const idEventDef EV_Explode;
 
 class idProjectile : public idEntity {
@@ -55,6 +59,7 @@ public :
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
+	virtual //HUMANHEAD
 	void					Create( idEntity *owner, const idVec3 &start, const idVec3 &dir );
 	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f, const float motionThrowSpeed = 0.0f );
 	virtual void			FreeLightDef( void );
@@ -70,13 +75,20 @@ public :
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 	virtual void			Explode( const trace_t &collision, idEntity *ignore );
+	virtual //HUMANHEAD
 	void					Fizzle( void );
+
+	//HUMANHEAD: aob - implementation in hhProjectile
+	virtual void			Create( idEntity *owner, const idVec3 &start, const idMat3 &axis ) {}
+	virtual void			Launch( const idVec3 &start, const idMat3 &axis, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f ) {}
+	//HUMANHEAD END
 
 	static idVec3			GetVelocity( const idDict *projectile );
 	static idVec3			GetGravity( const idDict *projectile );
 
 	enum {
 		EVENT_DAMAGE_EFFECT = idEntity::EVENT_MAXEVENTS,
+		EVENT_PROJECTILE_EXPLOSION, //HUMANHEAD rww
 		EVENT_MAXEVENTS
 	};
 
@@ -95,6 +107,9 @@ public :
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	//HUMANHEAD rww
+	virtual void			ClientHideProjectile(void);
+	//HUMANHEAD END
 
 protected:
 	idEntityPtr<idEntity>	owner;
@@ -105,6 +120,7 @@ protected:
 		bool				randomShaderSpin			: 1;
 		bool				isTracer					: 1;
 		bool				noSplashDamage				: 1;
+		bool				isLarge						: 1;	// HUMANHEAD bjk
 	} projectileFlags;
 
 	bool					launchedFromGrabber;
@@ -120,7 +136,8 @@ protected:
 	int						lightEndTime;
 	idVec3					lightColor;
 
-	idForce_Constant		thruster;
+	//HUMANHEAD rww - don't need thruster objects on the projectile, takes up time for constructor
+	//idForce_Constant		thruster;
 	idPhysics_RigidBody		physicsObj;
 
 	const idDeclParticle *	smokeFly;
@@ -136,7 +153,8 @@ protected:
 		CREATED = 1,
 		LAUNCHED = 2,
 		FIZZLED = 3,
-		EXPLODED = 4
+		EXPLODED = 4,
+		COLLIDED = 5	//HUMANHEAD bjk
 	} projectileState_t;
 
 	projectileState_t		state;
@@ -190,68 +208,9 @@ private:
 	float					burstVelocity;
 };
 
-class idSoulCubeMissile : public idGuidedProjectile {
-public:
-	CLASS_PROTOTYPE ( idSoulCubeMissile );
-	~idSoulCubeMissile();
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
+// idSoulCubeMissile (HUMANHEAD pdm: removed)
 
-	void					Spawn( void );
-	virtual void			Think( void );
-	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f, const float motionThrowSpeed = 0.0f );
-
-protected:
-	virtual void			GetSeekPos( idVec3 &out );
-	void					ReturnToOwner( void );
-	void					KillTarget( const idVec3 &dir );
-
-private:
-	idVec3					startingVelocity;
-	idVec3					endingVelocity;
-	float					accelTime;
-	int						launchTime;
-	bool					killPhase;
-	bool					returnPhase;
-	idVec3					destOrg;
-	idVec3					orbitOrg;
-	int						orbitTime;
-	int						smokeKillTime;
-	const idDeclParticle *	smokeKill;
-};
-
-struct beamTarget_t {
-	idEntityPtr<idEntity>	target;
-	renderEntity_t			renderEntity;
-	qhandle_t				modelDefHandle;
-};
-
-class idBFGProjectile : public idProjectile {
-public :
-	CLASS_PROTOTYPE( idBFGProjectile );
-
-							idBFGProjectile();
-							~idBFGProjectile();
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	void					Spawn( void );
-	virtual void			Think( void );
-	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f, const float motionThrowSpeed = 0.0f );
-	virtual void			Explode( const trace_t &collision, idEntity *ignore );
-
-private:
-	idList<beamTarget_t>	beamTargets;
-	renderEntity_t			secondModel;
-	qhandle_t				secondModelDefHandle;
-	int						nextDamageTime;
-	idStr					damageFreq;
-
-	void					FreeBeams();
-	void					Event_RemoveBeams();
-	void					ApplyDamage();
-};
+// idBFGProjectile (HUMANHEAD pdm: removed)
 
 class idHomingProjectile : public idProjectile {
 public :
@@ -316,6 +275,17 @@ public :
 	void					Fizzle( void );
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 
+	//HUMANHEAD rww
+	virtual void			ClientPredictionThink( void );
+	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
+	void					ReadFromSnapshot( const idBitMsgDelta &msg );
+	//HUMANHEAD END
+
+//HUMANHEAD: aob
+protected:
+	s_channelType			DetermineNextChannel();
+	void					AttemptToPlayBounceSound( const trace_t &collision, const idVec3 &velocity );
+//HUMANHEAD END
 
 private:
 	idEntityPtr<idEntity>	owner;
@@ -324,6 +294,12 @@ private:
 	int						smokeFlyTime;
 	const idSoundShader *	sndBounce;
 
+	//HUMANHEAD: aob
+	float					collisionSpeed_max;
+	float					collisionSpeed_min;
+	int						currentChannel;
+	int						solidTest; // mdl
+	//HUMANHEAD END
 
 	void					Event_Explode( void );
 	void					Event_Fizzle( void );

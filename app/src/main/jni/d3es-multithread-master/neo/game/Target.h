@@ -127,7 +127,8 @@ class idTarget_EndLevel : public idTarget {
 public:
 	CLASS_PROTOTYPE( idTarget_EndLevel );
 
-private:
+protected:	// HUMANHEAD pdm
+	virtual	// HUMANHEAD pdm
 	void				Event_Activate( idEntity *activator );
 
 };
