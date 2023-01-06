@@ -2516,10 +2516,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( weapon_bloodstone_active1 );
 	savefile->WriteInt( weapon_bloodstone_active2 );
 	savefile->WriteInt( weapon_bloodstone_active3 );
-	savefile->WriteBool(harvest_lock);
-	savefile->WriteInt(hudPowerup);
-	savefile->WriteInt(lastHudPowerup);
-	savefile->WriteInt(hudPowerupDuration);
 	// Koz
 	savefile->WriteInt( weapon_pistol );
 	savefile->WriteInt( weapon_shotgun );
@@ -2799,16 +2795,10 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		hud->HandleNamedEvent( "Message" );
 	}
 
-	savefile->WriteInt(weaponToggles.Num());
-	for (i = 0; i < weaponToggles.Num(); i++) {
-		WeaponToggle_t *weaponToggle = weaponToggles.GetIndex(i);
-		savefile->WriteString(weaponToggle->name);
-		savefile->WriteInt(weaponToggle->toggleList.Num());
-
-		for (int j = 0; j < weaponToggle->toggleList.Num(); j++) {
-			savefile->WriteInt(weaponToggle->toggleList[j]);
-		}
-	}
+	//lubos format
+	savefile->WriteInt(hudPowerup);
+	savefile->WriteInt(lastHudPowerup);
+	savefile->WriteInt(hudPowerupDuration);
 
 	savefile->WriteObject(mountedObject);
 	enviroSuitLight.Save(savefile);
@@ -2905,11 +2895,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( weapon_bloodstone_active1 );
 	savefile->ReadInt( weapon_bloodstone_active2 );
 	savefile->ReadInt( weapon_bloodstone_active3 );
-	savefile->ReadBool(harvest_lock);
-	savefile->ReadInt(hudPowerup);
-	savefile->ReadInt(lastHudPowerup);
-	savefile->ReadInt(hudPowerupDuration);
-
 
 	// Koz
 	savefile->ReadInt( weapon_pistol );
@@ -3322,29 +3307,22 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
     /*if ( holsterFlag == 666 )
     {
-
         idStr	ehwm;
         savefile->ReadRenderEntity( holsterRenderEntity );
         savefile->ReadString( ehwm );
         extraHolsteredWeaponModel = ehwm.c_str();
-
         if ( extraHolsteredWeapon != weapon_fists )
         {
-
             /*
             If the game was autosaved, the holster and holster model will be correct,
             but if the game was saved through the pause menu, the active weapon was pushed to the holster,
             and the holstered weapon was pushed to extraHolsteredWeapon. This is the only time extraholstered
             will not hold weapon_fists.
-
             Check if the holstered weapon was pushed to the extraholster, and switch it back on load.
-
-
             holsteredWeapon = extraHolsteredWeapon;
             extraHolsteredWeapon = weapon_fists;
             //common->Printf( "Loading holster model %s\n", extraHolsteredWeaponModel );
             holsterRenderEntity.hModel = renderModelManager->FindModel( extraHolsteredWeaponModel );
-
             if ( strcmp( extraHolsteredWeaponModel, "models/weapons/pistol/w_pistol.lwo" ) == 0 )
             {
                 holsterAxis = idAngles( 90, 0, 0 ).ToMat3() * 0.75f;
@@ -3404,6 +3382,22 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	//weapon_flashlight = SlotForWeapon("weapon_flashlight");
 	//SetupFlashlightHolster();
 	//SetupLaserSight();
+
+	//lubos format
+	savefile->ReadInt(hudPowerup);
+	savefile->ReadInt(lastHudPowerup);
+	savefile->ReadInt(hudPowerupDuration);
+
+	savefile->ReadObject(reinterpret_cast<idClass * &>(mountedObject));
+	enviroSuitLight.Restore(savefile);
+	savefile->ReadBool(healthRecharge);
+	savefile->ReadInt(lastHealthRechargeTime);
+	savefile->ReadInt(rechargeSpeed);
+	savefile->ReadFloat(new_g_damageScale);
+
+	savefile->ReadBool(bloomEnabled);
+    savefile->ReadFloat(bloomSpeed);
+    savefile->ReadFloat(bloomIntensity);
 }
 
 void idPlayer::SetupLaserSight()

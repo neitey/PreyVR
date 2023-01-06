@@ -154,6 +154,7 @@ class idSessionLocal : public idSession
 
 		void				ScrubSaveGameFileName(idStr &saveFileName) const;
 		idStr				GetAutoSaveName(const char *mapName) const;
+		idStr				GetSaveMapName( const char *mapName ) const;
 
 		bool				LoadGame(const char *saveName);
 		bool				SaveGame(const char *saveName, bool autosave = false);
