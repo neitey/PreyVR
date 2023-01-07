@@ -264,6 +264,13 @@ bool idPhysics_Static::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 		return ( current.origin != oldOrigin || current.axis != oldAxis );
 	}
+
+	// HUMANHEAD pdm: Statics occasionally get physics activated by things binding to them.
+	// Allow this, but immediately become inactive again since we can't move unless bound to something else.
+	if (self->IsActive(TH_PHYSICS)) {
+		self->BecomeInactive( TH_PHYSICS );
+	}
+
 	return false;
 }
 
@@ -844,3 +851,14 @@ void idPhysics_Static::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	current.axis = quat.ToMat3();
 	current.localAxis = localQuat.ToMat3();
 }
+
+//HUMANHEAD rww
+/*
+================
+idPhysics_Static::GetPState
+================
+*/
+staticPState_t *idPhysics_Static::GetPState(void) {
+	return &current;
+}
+//HUMANHEAD END

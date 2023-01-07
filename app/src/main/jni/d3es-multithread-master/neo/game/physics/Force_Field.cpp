@@ -157,6 +157,8 @@ void idForce_Field::Evaluate( int time ) {
 	idBounds bounds;
 	idVec3 force, torque, angularVelocity;
 	idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+	//HUMANHEAD: aob
+	idVec3 linearVelocity;
 
 	assert( clipModel );
 
@@ -189,6 +191,15 @@ void idForce_Field::Evaluate( int time ) {
 				continue;
 			}
 		}
+
+		//HUMANHEAD: aob - should ignore players that noclip
+		if ( !monsterOnly ) {
+			idEntity* entity = cm->GetEntity();
+			if ( entity->IsType( idPlayer::Type ) && static_cast<idPlayer *>(entity)->noclip ) {
+				continue;
+			}
+		}
+		//HUMANHEAD END
 
 		if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1,
 									clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) {

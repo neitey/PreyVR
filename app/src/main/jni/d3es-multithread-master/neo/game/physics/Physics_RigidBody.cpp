@@ -186,7 +186,20 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 	}
 #endif
 
+#ifdef HUMANHEAD
+	// HUMANHEAD: if orientations are near the same, the transpose should give us the identity matrix.
+	// This was the cause of an error that happened when they were only slightly different.
+	// The rotation then generated a non-unit rotation vector which blows some assertions in collisionmap_rotate
+	#define SMALL_VECTOR_EPSILON	1e-6f
+	if (current.i.orientation.Compare(next.i.orientation, SMALL_VECTOR_EPSILON)) {
+		axis = mat3_identity;
+	}
+	else {
+		TransposeMultiply( current.i.orientation, next.i.orientation, axis );
+	}
+#else	// HUMANHEAD END
 	TransposeMultiply( current.i.orientation, next.i.orientation, axis );
+#endif
 	rotation = axis.ToRotation();
 	rotation.SetOrigin( current.i.position );
 
@@ -449,6 +462,11 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 	current.atRest = -1;
 	current.lastTimeStep = USERCMD_MSEC;
 
+	//HUMANHEAD: aob - current needs some more init'ing
+	current.localOrigin.Zero();
+	current.localAxis.Identity();
+	//HUMANHEAD END
+
 	current.i.position.Zero();
 	current.i.orientation.Identity();
 
@@ -476,6 +494,7 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 #ifdef RB_TIMINGS
 	lastTimerReset = 0;
 #endif
+	testSolid = false; // HUMANHEAD mdl
 }
 
 /*
@@ -954,6 +973,13 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		ent = gameLocal.entities[collision.c.entityNum];
 		if ( ent && ( !cameToRest || !ent->IsAtRest() ) ) {
 			// apply impact to other entity
+
+			// HUMANHEAD pdm
+			if (g_debugImpulse.GetBool()) {
+				gameRenderWorld->DebugArrow(colorGreen, collision.c.point, collision.c.point -impulse, 25, 2000);
+			}
+			// HUMANHEAD END
+
 			ent->ApplyImpulse( self, collision.c.id, collision.c.point, -impulse );
 		}
 	}
@@ -968,8 +994,11 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	current.externalTorque.Zero();
 
 	if ( IsOutsideWorld() ) {
-		gameLocal.Warning( "rigid body moved outside world bounds for entity '%s' type '%s' at (%s)",
-					self->name.c_str(), self->GetType()->classname, current.i.position.ToString(0) );
+		// HUMANHEAD pdm: Allow some things to go outside world without warning
+		if (!self->IsType(hhProjectileRifleSniper::Type)) {
+			gameLocal.Warning( "rigid body moved outside world bounds for entity '%s' type '%s' at (%s)",
+			                   self->name.c_str(), self->GetType()->classname, current.i.position.ToString(0) );
+		}
 		Rest();
 	}
 
@@ -1046,6 +1075,10 @@ void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const
 	if ( noImpact ) {
 		return;
 	}
+	//HUMANHEAD: aob - DEBUG TEST
+	assert( !FLOAT_IS_NAN(impulse) );
+	//HUMANHEAD END
+
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += ( point - ( current.i.position + centerOfMass * current.i.orientation ) ).Cross( impulse );
 	Activate();
@@ -1466,6 +1499,14 @@ void idPhysics_RigidBody::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	quat = current.i.orientation.ToCQuat();
 	localQuat = current.localAxis.ToCQuat();
 
+	//HUMANHEAD rww - we need to gravity direction on the client now
+	msg.WriteFloat( gravityVector.x );
+	msg.WriteFloat( gravityVector.y );
+	msg.WriteFloat( gravityVector.z );
+	//HUMANHEAD END
+
+	msg.WriteBits(dropToFloor, 1); //HUMANHEAD rww
+
 	msg.WriteLong( current.atRest );
 	msg.WriteFloat( current.i.position[0] );
 	msg.WriteFloat( current.i.position[1] );
@@ -1503,6 +1544,17 @@ idPhysics_RigidBody::ReadFromSnapshot
 */
 void idPhysics_RigidBody::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	idCQuat quat, localQuat;
+
+	//HUMANHEAD rww - we need to gravity direction on the client now
+	idVec3 newGrav;
+	newGrav.x = msg.ReadFloat();
+	newGrav.y = msg.ReadFloat();
+	newGrav.z = msg.ReadFloat();
+
+	SetGravity(newGrav);
+	//HUMANHEAD END
+
+	dropToFloor = !!msg.ReadBits(1); //HUMANHEAD rww
 
 	current.atRest = msg.ReadLong();
 	current.i.position[0] = msg.ReadFloat();
