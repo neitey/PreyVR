@@ -1192,7 +1192,8 @@ idVarDef *idCompiler::LookupDef( const char *name, const idVarDef *baseobj ) {
 
 				field = LookupDef( name, scope->scope->TypeDef()->def );
 				if ( !field ) {
-					Error( "Unknown value \"%s\"", name );
+					// HUMANHEAD jrm - need to differntiate errors
+					Error( "LookupDef():: Unknown value \"%s\"", name );
 				}
 
 				// type check
@@ -1279,7 +1280,8 @@ idVarDef *idCompiler::ParseValue( void ) {
 		if ( basetype ) {
 			Error( "%s is not a member of %s", name.c_str(), basetype->TypeDef()->Name() );
 		} else {
-			Error( "Unknown value \"%s\"", name.c_str() );
+			// HUMANHEAD jrm - need to differntiate errors
+			Error( "ParseValue():: Unknown value \"%s\"", name.c_str() );
 		}
 	// if namespace, then look up the variable in that namespace
 	} else if ( def->Type() == ev_namespace ) {
@@ -2299,6 +2301,10 @@ void idCompiler::ParseVariableDef( idTypeDef *type, const char *name ) {
 				EmitOpcode( OP_STORE_FTOBOOL, def2, def );
 			} else if ( ( type == &type_float ) && ( def2->TypeDef() == &type_boolean ) ) {
 				EmitOpcode( OP_STORE_BOOLTOF, def2, def );
+#ifdef _PREY
+			} else if ( ( type == &type_float ) && ( def2->TypeDef()->Type() == type_float.Type() ) ) { //k: for: float fvar = vec3_x;
+				EmitOpcode( OP_STORE_F, def2, def );
+#endif
 			} else {
 				Error( "bad initialization for '%s'", name );
 			}

@@ -118,6 +118,25 @@ const idEventDef EV_Thread_DebugBounds( "debugBounds", "vvvf" );
 const idEventDef EV_Thread_DrawText( "drawText", "svfvdf" );
 const idEventDef EV_Thread_InfluenceActive( "influenceActive", NULL, 'd' );
 
+// HUMANHEAD
+const idEventDef EV_Thread_SetSilenceCallback( "<script_setsilencecallback>", "f" );	// pdm
+const idEventDef EV_Thread_WaitSilence( "waitForSilence", "ef" );		// pdm
+const idEventDef EV_Thread_WaitPVS( "waitPVS", "e" );		// pdm
+const idEventDef EV_Thread_Precache( "precache", "s" );		// pdm
+const idEventDef EV_Thread_PrecacheDecl( "precacheDecl", "ds" );		// mdl
+const idEventDef EV_Thread_ThreadIsValid( "threadIsValid", "d", 'd' );	// pdm
+const idEventDef EV_Thread_GetCVarFloat( "getcvarFloat", "s", 'f' );	// aob
+const idEventDef EV_Thread_GetCVarVector( "getcvarVector", "s", 'v' ); // aob
+const idEventDef EV_ShowProgressBar( "showProgressBar", "d" );
+const idEventDef EV_SetProgress( "setProgress", "f" );
+const idEventDef EV_SetProgressState( "setVictoryState", "d" );
+const idEventDef EV_TableLookup( "tableLookup", "sf", 'f' );
+const idEventDef EV_GetDDAValue( "getDDAValue", "", 'f' ); // mdl
+const idEventDef EV_GetEntitySpawnId( "getEntitySpawnId", "e", 'd' ); //rww
+const idEventDef EV_KillMonsters( "killMonsters", "s" ); // mdl
+const idEventDef EV_SpawnProjectile( "spawnProjectile", "svv"  ); // jsh
+// HUMANHEAD END
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -182,6 +201,23 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_FadeTo,				idThread::Event_FadeTo )
 	EVENT( EV_SetShaderParm,				idThread::Event_SetShaderParm )
 	EVENT( EV_Thread_StartMusic,			idThread::Event_StartMusic )
+	// HUMANHEAD
+	EVENT( EV_Thread_WaitSilence,			idThread::Event_WaitForSilence )	// pdm
+	EVENT( EV_Thread_WaitPVS,				idThread::Event_WaitPVS )			// pdm
+	EVENT( EV_Thread_Precache,				idThread::Event_Precache )			// pdm
+	EVENT( EV_Thread_PrecacheDecl,			idThread::Event_PrecacheDecl )		// mdl
+	EVENT( EV_Thread_ThreadIsValid,			idThread::Event_ThreadIsValid )		// pdm
+	EVENT( EV_Thread_GetCVarFloat,			idThread::Event_GetCVarFloat )		// aob
+	EVENT( EV_Thread_GetCVarVector,			idThread::Event_GetCVarVector )		// aob
+	EVENT( EV_ShowProgressBar,				idThread::Event_ShowProgressBar )	// pdm
+	EVENT( EV_SetProgress,					idThread::Event_SetProgress )		// pdm
+	EVENT( EV_SetProgressState,				idThread::Event_SetProgressState )	// pdm
+	EVENT( EV_TableLookup,					idThread::Event_TableLookup )		// pdm
+	EVENT( EV_GetDDAValue,					idThread::Event_GetDDAValue )		// mdl
+	EVENT( EV_GetEntitySpawnId,				idThread::Event_GetEntitySpawnId)	// rww
+	EVENT( EV_KillMonsters,					idThread::Event_KillMonsters )		// mdl
+	EVENT( EV_SpawnProjectile,				idThread::Event_SpawnProjectile )	// jsh
+	// HUMANHEAD END
 	EVENT( EV_Thread_Warning,				idThread::Event_Warning )
 	EVENT( EV_Thread_Error,					idThread::Event_Error )
 	EVENT( EV_Thread_StrLen,				idThread::Event_StrLen )
@@ -257,10 +293,30 @@ void idThread::EndMultiFrameEvent( idEntity *ent, const idEventDef *event ) {
 
 /*
 ================
+idThread::RunningEvent
+// HUMANHEAD nla - Added to see if an event was running
+================
+*/
+bool idThread::RunningEvent( idEntity *ent, const idEventDef *event ) {
+	if ( !currentThread ) {
+		return false;
+		// gameLocal.Error( "idThread::RunningEvent called without a current thread" );
+	}
+	return currentThread->interpreter.RunningEvent( ent, event );
+}
+// HUMANHEAD END
+
+/*
+================
 idThread::idThread
 ================
 */
 idThread::idThread() {
+	//HUMANHEAD rww
+	threadOwner = NULL;
+	threadOwnerCheck = false;
+	//HUMANHEAD END
+
 	Init();
 	SetThreadName( va( "thread_%d", threadIndex ) );
 	if ( g_debugScript.GetBool() ) {
@@ -275,6 +331,11 @@ idThread::idThread
 */
 idThread::idThread( idEntity *self, const function_t *func ) {
 	assert( self );
+
+	//HUMANHEAD rww
+	threadOwner = self;
+	threadOwnerCheck = true;
+	//HUMANHEAD END
 
 	Init();
 	SetThreadName( self->name );
@@ -292,6 +353,11 @@ idThread::idThread
 idThread::idThread( const function_t *func ) {
 	assert( func );
 
+	//HUMANHEAD rww
+	threadOwner = NULL;
+	threadOwnerCheck = false;
+	//HUMANHEAD END
+
 	Init();
 	SetThreadName( func->Name() );
 	interpreter.EnterFunction( func, false );
@@ -306,6 +372,11 @@ idThread::idThread
 ================
 */
 idThread::idThread( idInterpreter *source, const function_t *func, int args ) {
+	//HUMANHEAD rww
+	threadOwner = NULL;
+	threadOwnerCheck = false;
+	//HUMANHEAD END
+
 	Init();
 	interpreter.ThreadCall( source, func, args );
 	if ( g_debugScript.GetBool() ) {
@@ -320,6 +391,11 @@ idThread::idThread
 */
 idThread::idThread( idInterpreter *source, idEntity *self, const function_t *func, int args ) {
 	assert( self );
+
+	//HUMANHEAD rww
+	threadOwner = self;
+	threadOwnerCheck = true;
+	//HUMANHEAD END
 
 	Init();
 	SetThreadName( self->name );
@@ -389,6 +465,8 @@ void idThread::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( creationTime );
 
 	savefile->WriteBool( manualControl );
+
+	savefile->WriteInt( waitingForPVS ); // HUMANHEAD mdl
 }
 
 /*
@@ -412,6 +490,8 @@ void idThread::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( creationTime );
 
 	savefile->ReadBool( manualControl );
+
+	savefile->ReadInt( waitingForPVS ); // HUMANHEAD mdl
 }
 
 /*
@@ -488,6 +568,10 @@ void idThread::DisplayInfo( void ) {
 			gameLocal.Printf( "Waiting for entity #%3i '%s'\n", waitingFor, gameLocal.entities[ waitingFor ]->name.c_str() );
 		} else if ( waitingUntil ) {
 			gameLocal.Printf( "Waiting until %d (%d ms total wait time)\n", waitingUntil, waitingUntil - lastExecuteTime );
+		// HUMANHEAD pdm
+		} else if ( (waitingForPVS != ENTITYNUM_NONE) && (gameLocal.entities[waitingForPVS]) ) {
+			gameLocal.Printf( "Waiting until %s is in PVS\n", gameLocal.entities[ waitingForPVS ]->name.c_str() );
+		// HUMANHEAD END
 		} else {
 			gameLocal.Printf( "None\n" );
 		}
@@ -663,6 +747,17 @@ bool idThread::Execute( void ) {
 		return false;
 	}
 
+	// HUMANHEAD PDM
+#define WAITFORPVS_TIME 1.0f
+	if ( waitingForPVS != ENTITYNUM_NONE && gameLocal.entities[waitingForPVS]) {
+		if (!gameLocal.InPlayerPVS(gameLocal.entities[waitingForPVS])) {
+			PostEventSec( &EV_Thread_Execute, WAITFORPVS_TIME );
+			return false;
+		}
+		ClearWaitFor();
+	}
+	// HUMANHEAD END
+
 	oldThread = currentThread;
 	currentThread = this;
 
@@ -696,6 +791,11 @@ Checks if thread is still waiting for some event to occur.
 */
 bool idThread::IsWaiting( void ) {
 	if ( waitingForThread || ( waitingFor != ENTITYNUM_NONE ) ) {
+		return true;
+	}
+
+	//  HUMANHEAD PDM
+	if ( waitingForPVS != ENTITYNUM_NONE && gameLocal.InPlayerPVS(gameLocal.entities[waitingForPVS])) {
 		return true;
 	}
 
@@ -740,6 +840,7 @@ void idThread::ClearWaitFor( void ) {
 	waitingFor			= ENTITYNUM_NONE;
 	waitingForThread	= NULL;
 	waitingUntil		= 0;
+	waitingForPVS		= ENTITYNUM_NONE;	// HUMANHEAD PDM
 }
 
 /*
@@ -847,9 +948,15 @@ idThread::ReturnInt
 ================
 */
 void idThread::ReturnInt( int value ) {
+	//FIXME: With this aob change in, return an int (like '1' to a script results in a integer '1' cohersed into a float: *((float*)intPtr)
+	// With it out, arrows don't kill deathwraiths.
+//#ifdef HUMANHEAD //aob
+//	gameLocal.program.ReturnInteger( value );
+//#else
 	// true integers aren't supported in the compiler,
 	// so int values are stored as floats
 	gameLocal.program.ReturnFloat( value );
+//#endif
 }
 
 /*
@@ -1000,13 +1107,84 @@ void idThread::Event_WaitForThread( int num ) {
 	}
 }
 
+
+/*
+================
+idThread::Event_WaitForSilence
+	HUMANHEAD pdm
+================
+*/
+void idThread::Event_WaitForSilence( idEntity *ent, float plusOrMinusSeconds ) {
+	if ( ent && ent->RespondsTo( EV_Thread_SetSilenceCallback ) ) {
+		ent->ProcessEvent( &EV_Thread_SetSilenceCallback, plusOrMinusSeconds );
+		if ( gameLocal.program.GetReturnedInteger() ) {
+			Pause();
+			waitingFor = ent->entityNumber;
+		}
+	}
+}
+
+/*
+================
+idThread::Event_WaitPVS
+	HUMANHEAD pdm
+================
+*/
+void idThread::Event_WaitPVS( idEntity *ent ) {
+	if (!gameLocal.InPlayerPVS(ent)) {
+		Pause();
+		waitingForPVS = ent->entityNumber;
+		PostEventSec( &EV_Thread_Execute, WAITFORPVS_TIME );
+	}
+}
+
+/*
+================
+idThread::Event_Precache
+	HUMANHEAD pdm
+================
+*/
+void idThread::Event_Precache( const char *defname ) {
+	const idDict *dict = gameLocal.FindEntityDefDict(defname, false);
+	gameLocal.CacheDictionaryMedia(dict);
+}
+
+/*
+================
+idThread::Event_PrecacheDecl
+	HUMANHEAD mdl
+================
+*/
+void idThread::Event_PrecacheDecl( int type, const char *name ) {
+	declManager->FindType( (declType_t) type, name, false );
+}
+
+/*
+================
+idThread::Event_ThreadIsValid
+	HUMANHEAD aob
+================
+*/
+void idThread::Event_ThreadIsValid( int threadNum ) {
+	idThread* thread = GetThread( threadNum );
+	ReturnInt( thread && !thread->IsDying() );
+}
+
 /*
 ================
 idThread::Event_Print
 ================
 */
 void idThread::Event_Print( const char *text ) {
+#ifdef HUMANHEAD	// HUMANHEAD pdm: only show script debug text in devmap mode
+	#ifdef _DEBUG
+		gameLocal.Printf( "%s", text );
+	#else
+		gameLocal.DPrintf("%s", text );
+	#endif
+#else
 	gameLocal.Printf( "%s", text );
+#endif
 }
 
 /*
@@ -1015,7 +1193,126 @@ idThread::Event_PrintLn
 ================
 */
 void idThread::Event_PrintLn( const char *text ) {
+#ifdef HUMANHEAD	// HUMANHEAD pdm: only show script debug text in devmap mode
+	gameLocal.DPrintf("%s\n", text );
+#else
 	gameLocal.Printf( "%s\n", text );
+#endif
+}
+
+
+/*
+================
+idThread::Event_GetCVarFloat
+	HUMANHEAD: aob
+================
+*/
+void idThread::Event_GetCVarFloat( const char* name ) {
+	ReturnFloat( cvarSystem->GetCVarFloat(name) );
+}
+
+/*
+================
+idThread::Event_GetCVarVector
+	HUMANHEAD: aob
+================
+*/
+void idThread::Event_GetCVarVector( const char* name ) {
+	idVec3 v;
+
+	sscanf( cvarSystem->GetCVarString(name), "'%.2f %.2f %.2f'", &v.x, &v.y, &v.z );
+	ReturnVector( v );
+}
+
+/*
+================
+idThread::Event_ShowProgressBar
+	HUMANHEAD: pdm
+================
+*/
+void idThread::Event_ShowProgressBar(bool turnOn) {
+	for( int i = 0; i < gameLocal.numClients; ++i ) {
+		if( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType(hhPlayer::Type) ) {
+			hhPlayer* player = static_cast<hhPlayer*>(gameLocal.entities[ i ]);
+			if( player ) {
+				if (gameLocal.AmLocalClient(player)) {	// Run client code directly
+					player->CL_UpdateProgress(turnOn, player->progressBarValue, player->progressBarState);
+				}
+				else {
+					player->bShowProgressBar = turnOn;	// let snapshot relay it
+				}
+			}
+		}
+	}
+}
+
+/*
+================
+idThread::Event_SetProgress
+	HUMANHEAD: pdm
+================
+*/
+void idThread::Event_SetProgress(float progress) {
+	float value = idMath::ClampFloat(0.0f, 1.0f, progress);
+	for( int i = 0; i < gameLocal.numClients; ++i ) {
+		if( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType(hhPlayer::Type) ) {
+			hhPlayer* player = static_cast<hhPlayer*>(gameLocal.entities[ i ]);
+			if( player ) {
+				if (gameLocal.AmLocalClient(player)) {	// Run client code directly
+					player->CL_UpdateProgress(player->bShowProgressBar, value, player->progressBarState);
+				}
+				else {
+					player->progressBarValue = value;	// let snapshot relay it
+				}
+			}
+		}
+	}
+}
+
+/*
+================
+idThread::Event_SetProgressState
+	HUMANHEAD: pdm
+================
+*/
+void idThread::Event_SetProgressState(int state) {
+	if (state < 0 || state > 2) {
+		gameLocal.Warning("Bad value %d to SetProgressState\n", state);
+		state = 0;
+	}
+
+	for( int i = 0; i < gameLocal.numClients; ++i ) {
+		if( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType(hhPlayer::Type) ) {
+			hhPlayer* player = static_cast<hhPlayer*>(gameLocal.entities[ i ]);
+			if( player ) {
+				if (gameLocal.AmLocalClient(player)) {	// Run client code directly
+					player->CL_UpdateProgress(player->bShowProgressBar, player->progressBarValue, state);
+				}
+				else {
+					player->progressBarState = state;	// let snapshot relay it
+				}
+			}
+		}
+	}
+}
+
+/*
+================
+idThread::Event_TableLookup
+	HUMANHEAD: pdm
+================
+*/
+void idThread::Event_TableLookup(const char *tableName, float index) {
+	const idDeclTable *table;
+	float value = 0.0f;
+	table = static_cast<const idDeclTable *>(declManager->FindType( DECL_TABLE, tableName, true ));
+	if (table) {
+		value = table->TableLookup(index);
+	}
+	else {
+		gameLocal.Warning("Table %s not found for lookup\n", tableName);
+	}
+	ReturnFloat( value );
 }
 
 /*
@@ -1905,3 +2202,60 @@ void idThread::Event_InfluenceActive( void ) {
 		idThread::ReturnInt( false );
 	}
 }
+
+
+// HUMANHEAD mdl
+void idThread::Event_SpawnProjectile( const char *projectilename, const idVec3 &org, const idVec3 &dir ) {
+	idEntity *		ent = NULL;
+	const idDict *projectileDef = gameLocal.FindEntityDefDict( projectilename, false );
+	if ( !projectileDef ) {
+		gameLocal.Warning( "unknown projectile '%s' launched", projectilename );
+		return;
+	}
+
+	//spawn projectile
+	gameLocal.SpawnEntityDef( *projectileDef, &ent, false );
+	if ( !ent || !ent->IsType( idProjectile::Type ) ) {
+		gameLocal.Warning( "projectile '%s' launch failed", projectilename );
+	}
+
+	//launch projectile
+	idProjectile *projectile = ( idProjectile * )ent;
+	if ( projectile ) {
+		projectile->Create( NULL, org, dir );
+		projectile->Launch( org, dir, vec3_origin );
+	}
+}
+
+void idThread::Event_GetDDAValue( void ) {
+	idThread::ReturnFloat( gameLocal.GetDDAValue() );
+}
+
+void idThread::Event_KillMonsters( const char *className ) {
+	idTypeInfo *type = idClass::GetClass( className );
+	idEntity *ent;
+	if ( type ) {
+		ent = gameLocal.FindEntityOfType( *type, NULL );
+		while ( ent ) {
+			ent->Damage( NULL, NULL, vec3_origin, "damage_crush", 1.0f, INVALID_JOINT );
+			ent = gameLocal.FindEntityOfType( *type, ent );
+		}
+	}
+}
+// HUMANHEAD END
+
+//HUMANHEAD rww
+/*
+================
+idThread::Event_GetEntitySpawnId
+================
+*/
+void idThread::Event_GetEntitySpawnId( idEntity *ent ) {
+	if (!ent) {
+		idThread::ReturnInt(-1);
+		return;
+	}
+
+	idThread::ReturnInt(gameLocal.GetSpawnId(ent));
+}
+//HUMANHEAD END
