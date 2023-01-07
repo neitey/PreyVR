@@ -110,6 +110,10 @@ public:
 
 	virtual bool			CheckShakesAndOgg( void ) const;
 
+#ifdef _HUMANHEAD
+	float					GetVolume(void) const { return parms.volume; }
+#endif
+
 private:
 	friend class idSoundWorldLocal;
 	friend class idSoundEmitterLocal;

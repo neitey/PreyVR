@@ -778,7 +778,7 @@ void hhWeaponSoulStripper::Event_EndLeech() {
 	UpdateBeam( start, false );
 
 	if( owner.IsValid() ) {
-		owner->WeaponFireFeedback( dict );
+		owner->WeaponFireFeedback( vr_weaponHand.GetInteger(), dict );
 	}
 
 	idThread::ReturnFloat( 0 );

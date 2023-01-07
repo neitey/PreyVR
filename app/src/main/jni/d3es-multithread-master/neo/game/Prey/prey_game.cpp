@@ -917,7 +917,7 @@ gameReturn_t hhGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	// show any debug info for this frame
 	RunDebugInfo();
-	D_DrawDebugLines();
+	//D_DrawDebugLines(); //VR not needed
 
 	//HUMANHEAD rww
 	if (logitechLCDEnabled) {

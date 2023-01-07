@@ -391,6 +391,7 @@ protected:
 
 
 private:
+protected:			// HUMANHEAD nla - Added so we can access.
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
 	void					FinishSetup( void );
 	void					SetupHead( void );

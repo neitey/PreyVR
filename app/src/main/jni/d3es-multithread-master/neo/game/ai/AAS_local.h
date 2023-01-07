@@ -172,6 +172,7 @@ public:
 	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags = TFL_WALK | TFL_AIR ) const;
 	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
+	const char *				GetName( void ) const { return file ? file->GetName() : NULL; }
 
 private:
 	idAASFile *					file;

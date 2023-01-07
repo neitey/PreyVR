@@ -72,6 +72,8 @@ const int	NUM_QUICK_SLOTS = 4;
 
 const int MAX_WEAPONS = 32;
 
+#define MP_PLAYERNOSHADOW_DEFAULT	true //HUMANEHAD rww - subject to (frequent) change
+
 const int weapon_empty_hand = -2; // Carl: todo, maybe a different constant
 
 const int DEAD_HEARTRATE = 0;			// fall to as you die
@@ -222,6 +224,7 @@ public:
 	int						MaxAmmoForAmmoClass( idPlayer *owner, const char *ammo_classname ) const;
 	int						WeaponIndexForAmmoClass( const idDict & spawnArgs, const char *ammo_classname ) const;
 	ammo_t					AmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired );
+	ammo_t					AltAmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired );	//HUMANHEAD bjk
 	const char *			AmmoPickupNameForIndex( ammo_t ammonum ) const;
 	void					AddPickupName(const char *name, const char *icon, idPlayer *owner);   //_D3XP
 
@@ -944,6 +947,8 @@ public:
 	void					AddProjectilesFired( int count );
 	void					AddProjectileHits( int count );
 	void					SetLastHitTime( int time );
+	void					LowerWeapon( void );
+	void					RaiseWeapon( void );
 	void					WeaponLoweringCallback( void );
 	void					WeaponRisingCallback( void );
 	void					RemoveWeapon( const char *weap );
@@ -994,7 +999,7 @@ public:
 	void					SetInfluenceLevel( int level );
 	int						GetInfluenceLevel( void ) { return influenceActive; };
 
-	void					SetPrivateCameraView( idCamera *camView );
+	void					SetPrivateCameraView( idCamera *camView, bool noHide = false ); // HUMANHEAD
 	idCamera *				GetPrivateCameraView( void ) const { return privateCameraView; }
 
 	void					StartFxFov( float duration  );

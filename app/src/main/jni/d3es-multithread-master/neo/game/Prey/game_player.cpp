@@ -222,23 +222,23 @@ void hhPlayer::Spawn( void ) {
 	memset( &lighter, 0, sizeof( lighter ) );
 
 	SetupWeaponFlags();
-	if ( idealWeapon < 1 || idealWeapon > 8 ) {
+	if ( hands[ vr_weaponHand.GetInteger() ].idealWeapon < 1 || hands[ vr_weaponHand.GetInteger() ].idealWeapon > 8 ) {
 		// Go to the highest weapon available if no weapon is current selected (NOTE:  This will be ignored if all weapons are locked)
 		NextBestWeapon();	//HUMANHEAD bjk
 	} 
 
 	//HUMANHEAD PCF mdl 04/26/06 - Made this a separate if block from above so we can disallow locked weapons
-	if ( ! ( weaponFlags & ( 1 << ( idealWeapon - 1 ) ) ) ) {
+	if ( ! ( weaponFlags & ( 1 << ( hands[ vr_weaponHand.GetInteger() ].idealWeapon - 1 ) ) ) ) {
 		// If the current weapon is invalid now, try the next weapon
 		NextWeapon();
-		if ( ! ( weaponFlags & ( 1 << ( idealWeapon - 1 ) ) ) ) {
+		if ( ! ( weaponFlags & ( 1 << ( hands[ vr_weaponHand.GetInteger() ].idealWeapon - 1 ) ) ) ) {
 			// No weapons available
-			if ( weapon.GetEntity() ) {
-				weapon.GetEntity()->PutAway();
-				weapon.GetEntity()->HideWeapon();
+			if ( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() ) {
+				hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->PutAway();
+				hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->HideWeapon();
 			}
-			idealWeapon = 0;
-			currentWeapon = -1;
+			hands[ vr_weaponHand.GetInteger() ].idealWeapon = 0;
+			hands[ vr_weaponHand.GetInteger() ].currentWeapon = -1;
 		}
 	}
 
@@ -576,7 +576,7 @@ hhPlayer::SetupWeaponEntity
 ==============
 */
 void hhPlayer::SetupWeaponEntity( void ) {
-	weapon.Clear();
+	hands[ vr_weaponHand.GetInteger() ].weapon.Clear();
 	InvalidateCurrentWeapon();
 }
 
@@ -819,7 +819,7 @@ void hhPlayer::UpdateHudWeapon(bool flashWeapon) {
 		// HUMANHEAD pdm: changed to suit our needs
 		_hud->SetStateInt( "currentweapon", GetCurrentWeapon() );
 		_hud->SetStateInt( "idealweapon", GetIdealWeapon() );
-		//HUMANHEAD PCF mdl 05/05/06 - Added !IsLocked( GetIdealWeapon() )
+		//HUMANHEAD PCF mdl 05/05/06 - Added !IsLocked( Gethands[ vr_weaponHand.GetInteger() ].idealWeapon() )
 		if ( flashWeapon && !IsLocked( GetIdealWeapon() ) ) {
 			_hud->HandleNamedEvent( "weaponChange" );
 		}
@@ -890,20 +890,20 @@ void hhPlayer::UpdateHudAmmo(idUserInterface *_hud) {
 	ammo = 0;
 	altAmmo = 0;
 
-	if( bLotaTunnelMode || privateCameraView || IsLocked(idealWeapon) || !weapon.IsValid() || !weapon->IsLinked() || currentWeapon == -1) {
+	if( bLotaTunnelMode || privateCameraView || IsLocked(hands[ vr_weaponHand.GetInteger() ].idealWeapon) || !hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || !hands[ vr_weaponHand.GetInteger() ].weapon->IsLinked() || hands[ vr_weaponHand.GetInteger() ].currentWeapon == -1) {
 		// Don't display ammo bar for invalid weapons, or when weapons are locked
 		bDisallowAmmoBars = true;
 	}
 	else {
-		if (currentWeapon >= 0 && currentWeapon < 15) {
-			ammoType = weaponInfo[currentWeapon].ammoType;
-			altAmmoType = altWeaponInfo[currentWeapon].ammoType;
+		if (hands[ vr_weaponHand.GetInteger() ].currentWeapon >= 0 && hands[ vr_weaponHand.GetInteger() ].currentWeapon < 15) {
+			ammoType = weaponInfo[hands[ vr_weaponHand.GetInteger() ].currentWeapon].ammoType;
+			altAmmoType = altWeaponInfo[hands[ vr_weaponHand.GetInteger() ].currentWeapon].ammoType;
 			ammo = inventory.ammo[ammoType];
 			altAmmo = inventory.ammo[altAmmoType];
-			ammoPct = ammo / weaponInfo[currentWeapon].ammoMax;
-			altPct = altAmmo / altWeaponInfo[currentWeapon].ammoMax;
-			ammoLow = ammo > 0 && ammo <= weaponInfo[currentWeapon].ammoLow;
-			altAmmoLow = altAmmo > 0 && altAmmo <= altWeaponInfo[currentWeapon].ammoLow;
+			ammoPct = ammo / weaponInfo[hands[ vr_weaponHand.GetInteger() ].currentWeapon].ammoMax;
+			altPct = altAmmo / altWeaponInfo[hands[ vr_weaponHand.GetInteger() ].currentWeapon].ammoMax;
+			ammoLow = ammo > 0 && ammo <= weaponInfo[hands[ vr_weaponHand.GetInteger() ].currentWeapon].ammoLow;
+			altAmmoLow = altAmmo > 0 && altAmmo <= altWeaponInfo[hands[ vr_weaponHand.GetInteger() ].currentWeapon].ammoLow;
 		}
 
 		if (ammoType == 1) {
@@ -1043,7 +1043,7 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 	UpdateHudStats( _hud );
 
 
-	if(weapon.IsValid()) { // HUMANHEAD
+	if(hands[ vr_weaponHand.GetInteger() ].weapon.IsValid()) { // HUMANHEAD
 		bool allowGuiUpdate = true;
 		//rww - update the weapon gui only if the owner is being spectated by this client, or is this client
 		if ( gameLocal.localClientNum != entityNumber ) {
@@ -1059,7 +1059,7 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 		}
 
 		if (allowGuiUpdate) {
-			weapon->UpdateGUI();
+			hands[ vr_weaponHand.GetInteger() ].weapon->UpdateGUI();
 		}
 	}
 
@@ -1116,9 +1116,9 @@ void hhPlayer::FireWeapon( void ) {
 	}
 
 	//HUMANHEAD: aob - removed ammo check because we allow weapons to change modes
-	if( weapon.IsValid() ) {
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
 		AI_ATTACK_HELD = true;
-		weapon->BeginAttack();
+		hands[ vr_weaponHand.GetInteger() ].weapon->BeginAttack();
 	}
 	//HUMANEHAD END
 }
@@ -1158,9 +1158,9 @@ void hhPlayer::FireWeaponAlt( void ) {
 	}
 
 	//HUMANHEAD: aob - removed ammo check because we allow weapons to change modes
-	if( weapon.IsValid() ) {
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
 		AI_ATTACK_HELD = true;
-		weapon->BeginAltAttack();
+		hands[ vr_weaponHand.GetInteger() ].weapon->BeginAltAttack();
 	}
 	//HUMANEHAD END
 
@@ -1171,8 +1171,8 @@ void hhPlayer::FireWeaponAlt( void ) {
 
 void hhPlayer::StopFiring( void ) {
 	idPlayer::StopFiring();
-	if ( weapon.GetEntity() && weapon->IsType( hhWeaponRifle::Type ) ) {
-		static_cast<hhWeaponRifle*>( weapon.GetEntity() )->ZoomOut();
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType( hhWeaponRifle::Type ) ) {
+		static_cast<hhWeaponRifle*>( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() )->ZoomOut();
 	}
 }
 
@@ -1248,15 +1248,15 @@ void hhPlayer::NextWeapon( void ) {
 	const char *weap;
 	int w, start;
 
-	w = idealWeapon;
+	w = hands[ vr_weaponHand.GetInteger() ].idealWeapon;
 	start = w;
 	while( 1 ) {
 		w++;
 		if ( w >= MAX_WEAPONS ) {
 			// No weapon selected and nothing to select
 			if ( start == -1 ) {
-				idealWeapon = 0;
-				currentWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].idealWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].currentWeapon = 0;
 				return;
 			}
 			w = 0;
@@ -1264,8 +1264,8 @@ void hhPlayer::NextWeapon( void ) {
 		// Keep us from an infinite loop if no weapons are valid
 		if ( w == start ) {
 			if ( ! ( weaponFlags & ( 1 << ( w - 1 ) ) ) ) {
-				idealWeapon = 0;
-				currentWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].idealWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].currentWeapon = 0;
 			}
 			return;
 		}
@@ -1288,9 +1288,9 @@ void hhPlayer::NextWeapon( void ) {
 		}
 	}
 
-	if ( ( w != currentWeapon ) && ( w != idealWeapon ) ) {
-		idealWeapon = w;
-		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
+	if ( ( w != hands[ vr_weaponHand.GetInteger() ].currentWeapon ) && ( w != hands[ vr_weaponHand.GetInteger() ].idealWeapon ) ) {
+		hands[ vr_weaponHand.GetInteger() ].idealWeapon = w;
+		hands[ vr_weaponHand.GetInteger() ].weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
 		UpdateHudWeapon();
 	}
 }
@@ -1320,7 +1320,7 @@ void hhPlayer::PrevWeapon( void ) {
 	}
 
 	const char *weap;
-	int w = idealWeapon, start = w;
+	int w = hands[ vr_weaponHand.GetInteger() ].idealWeapon, start = w;
 	if (w == -1) {
 		w = MAX_WEAPONS - 1;
 	}
@@ -1329,8 +1329,8 @@ void hhPlayer::PrevWeapon( void ) {
 		if ( w < 0 ) {
 			// No weapon selected and nothing to select
 			if ( start == -1 ) {
-				idealWeapon = 0;
-				currentWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].idealWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].currentWeapon = 0;
 				return;
 			}
 
@@ -1339,8 +1339,8 @@ void hhPlayer::PrevWeapon( void ) {
 		// Keep us from an infinite loop if no weapons are valid
 		if ( w == start ) {
 			if ( ! ( weaponFlags & ( 1 << ( w - 1 ) ) ) ) {
-				idealWeapon = 0;
-				currentWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].idealWeapon = 0;
+				hands[ vr_weaponHand.GetInteger() ].currentWeapon = 0;
 			}
 			return;
 		}
@@ -1363,9 +1363,9 @@ void hhPlayer::PrevWeapon( void ) {
 		}
 	}
 
-	if ( ( w != currentWeapon ) && ( w != idealWeapon ) ) {
-		idealWeapon = w;
-		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
+	if ( ( w != hands[ vr_weaponHand.GetInteger() ].currentWeapon ) && ( w != hands[ vr_weaponHand.GetInteger() ].idealWeapon ) ) {
+		hands[ vr_weaponHand.GetInteger() ].idealWeapon = w;
+		hands[ vr_weaponHand.GetInteger() ].weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
 		UpdateHudWeapon();
 	}
 }
@@ -1388,8 +1388,8 @@ HUMANHEAD: aob
 ===============
 */
 void hhPlayer::SnapDownCurrentWeapon() {
-	if( weapon.IsValid() ) {
-		weapon->SnapDown();
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->SnapDown();
 	}
 }
 
@@ -1401,8 +1401,8 @@ HUMANHEAD: aob
 ===============
 */
 void hhPlayer::SnapUpCurrentWeapon() {
-	if( weapon.IsValid() ) {
-		weapon->SnapUp();
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->SnapUp();
 	}
 }
 
@@ -1428,10 +1428,10 @@ void hhPlayer::SelectEtherealWeapon() {
 		weaponHandState.Archive( spiritWeaponName, 0, (InGUIMode()) ? "guihand_normal" : NULL );
 	}
 
-	if ( weapon.IsValid() ) {
-		weapon->SetShaderParm( SHADERPARM_MODE, MS2SEC( gameLocal.time ) ); // Glow in the bow
-		weapon->SetShaderParm( SHADERPARM_MISC, 1.0f ); // Turn on the arrow
-		weapon->SetShaderParm( SHADERPARM_DIVERSITY, MS2SEC( gameLocal.time ) ); // Glow in the arrow
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->SetShaderParm( SHADERPARM_MODE, MS2SEC( gameLocal.time ) ); // Glow in the bow
+		hands[ vr_weaponHand.GetInteger() ].weapon->SetShaderParm( SHADERPARM_MISC, 1.0f ); // Turn on the arrow
+		hands[ vr_weaponHand.GetInteger() ].weapon->SetShaderParm( SHADERPARM_DIVERSITY, MS2SEC( gameLocal.time ) ); // Glow in the arrow
 	}
 }
 
@@ -1470,31 +1470,31 @@ void hhPlayer::UpdateWeapon( void ) {
 	if ( gameLocal.isClient ) {
 		// clients need to wait till the weapon and it's world model entity
 		// are present and synchronized ( weapon.worldModel idEntityPtr to idAnimatedEntity )
-		if ( !weapon.GetEntity()->IsWorldModelReady() ) {
+		if ( !hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->IsWorldModelReady() ) {
 			return;
 		}
 	}
 	else if (gameLocal.isMultiplayer) { //rww - projectile deferring
-		if (weapon.IsValid()) {
-			weapon->CheckDeferredProjectiles();
+		if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid()) {
+			hands[ vr_weaponHand.GetInteger() ].weapon->CheckDeferredProjectiles();
 		}
 	}
 
 	// always make sure the weapon is correctly setup before accessing it
-	if ( weapon.GetEntity() && !weapon.GetEntity()->IsLinked() ) {
-		if ( idealWeapon != -1 ) {
-			animPrefix = spawnArgs.GetString( va( "def_weapon%d", idealWeapon ) );
-			weapon.GetEntity()->GetWeaponDef( animPrefix, inventory.clip[ idealWeapon ] );
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() && !hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->IsLinked() ) {
+		if ( hands[ vr_weaponHand.GetInteger() ].idealWeapon != -1 ) {
+			animPrefix = spawnArgs.GetString( va( "def_weapon%d", hands[ vr_weaponHand.GetInteger() ].idealWeapon ) );
+			hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->GetWeaponDef( animPrefix, inventory.clip[ hands[ vr_weaponHand.GetInteger() ].idealWeapon ] );
 			animPrefix.Strip( "weaponobj_" ); //HUMANHEAD rww
-			assert( weapon.GetEntity()->IsLinked() );
+			assert( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->IsLinked() );
 		} else {
 			return;
 		}
 	}
 
 	//HUMANEHAD rww
-	if (weapon.IsValid() && weapon->IsType(hhWeaponSoulStripper::Type)) {
-		hhWeaponSoulStripper *leechGun = static_cast<hhWeaponSoulStripper *>(weapon.GetEntity());
+	if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType(hhWeaponSoulStripper::Type)) {
+		hhWeaponSoulStripper *leechGun = static_cast<hhWeaponSoulStripper *>(hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity());
 		leechGun->CheckCans();
 	}
 	//HUMANHEAD END
@@ -1503,8 +1503,8 @@ void hhPlayer::UpdateWeapon( void ) {
 		if ( g_dragEntity.GetBool() ) {
 			StopFiring();
 			dragEntity.Update( this );
-			if ( weapon.IsValid() ) {
-				weapon.GetEntity()->FreeModelDef();
+			if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+				hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->FreeModelDef();
 			}
 			return;
 		} else if (ActiveGui()) {
@@ -1515,7 +1515,7 @@ void hhPlayer::UpdateWeapon( void ) {
 		}
 
 		// Determine whether we are in aside state
-		if ( weapon.IsValid() && weapon->IsAside() ) {
+		if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsAside() ) {
 			if ( !AI_ASIDE ) {
 				AI_ASIDE = true;
 				SetState( "AsideWeapon" );
@@ -1527,9 +1527,9 @@ void hhPlayer::UpdateWeapon( void ) {
 	}
 
 	//HUMANHEAD: aob - added weapon validity check
-	if( weapon.IsValid() ) {
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
 		// update weapon state, particles, dlights, etc
-		weapon->PresentWeapon( showWeaponViewModel );
+		hands[ vr_weaponHand.GetInteger() ].weapon->PresentWeapon( showWeaponViewModel );
 	}
 
 	// nla
@@ -1576,20 +1576,20 @@ void hhPlayer::Weapon_Combat( void ) {
 	}	
 	// HUMANHEAD END
 
-	if( idealWeapon != 0 && IsLocked(idealWeapon) ) {		//HUMANHEAD bjk PCF (4-30-06) - fix wrench up in roadhouse
+	if( hands[ vr_weaponHand.GetInteger() ].idealWeapon != 0 && IsLocked(hands[ vr_weaponHand.GetInteger() ].idealWeapon) ) {		//HUMANHEAD bjk PCF (4-30-06) - fix wrench up in roadhouse
 		NextWeapon();
 	}
 
-	if ( idealWeapon == 0 ) {
+	if ( hands[ vr_weaponHand.GetInteger() ].idealWeapon == 0 ) {
 		return;
 	}
 
 	RaiseWeapon();
-	if ( weapon.IsValid() ) {
-		weapon.GetEntity()->PutUpright();
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->PutUpright();
 	}
 
-	if ( weapon.IsValid() && weapon->IsReloading() ) {
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsReloading() ) {
 		if ( !AI_RELOAD ) {
 			AI_RELOAD = true;
 			SetState( "ReloadWeapon" );
@@ -1599,99 +1599,99 @@ void hhPlayer::Weapon_Combat( void ) {
 		AI_RELOAD = false;
 	}
 
-	if ( idealWeapon != currentWeapon && (!gameLocal.isMultiplayer || inventory.lastShot[idealWeapon] < gameLocal.time) ) {	//HUMANHEAD bjk PATCH 7-27-06
+	if ( hands[ vr_weaponHand.GetInteger() ].idealWeapon != hands[ vr_weaponHand.GetInteger() ].currentWeapon && (!gameLocal.isMultiplayer || inventory.lastShot[hands[ vr_weaponHand.GetInteger() ].idealWeapon] < gameLocal.time) ) {	//HUMANHEAD bjk PATCH 7-27-06
 		if ( weaponCatchup ) {
 			assert( gameLocal.isClient );
 #ifndef HUMANHEAD //HUMANHEAD rww FIXME!!!! this also produces horrible memory leaks because of the dirty fire controller stuff
 			//HUMANHEAD rww - our crazy weapon system does not work ok with this. did we change the weapon dictionary parsing?
 			//it seems that it is very much dependant on the base class of weapon at the moment and that of course is going to be
-			//that of currentWeapon and not idealWeapon.
-			//currentWeapon = idealWeapon;
+			//that of hands[ vr_weaponHand.GetInteger() ].currentWeapon and not hands[ vr_weaponHand.GetInteger() ].idealWeapon.
+			//hands[ vr_weaponHand.GetInteger() ].currentWeapon = hands[ vr_weaponHand.GetInteger() ].idealWeapon;
 			//HUMANHEAD END
 			weaponGone = false;
-			animPrefix = spawnArgs.GetString( va( "def_weapon%d", currentWeapon ) );
-			weapon.GetEntity()->GetWeaponDef( animPrefix, inventory.clip[ currentWeapon ] );
+			animPrefix = spawnArgs.GetString( va( "def_weapon%d", hands[ vr_weaponHand.GetInteger() ].currentWeapon ) );
+			hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->GetWeaponDef( animPrefix, inventory.clip[ hands[ vr_weaponHand.GetInteger() ].currentWeapon ] );
 			animPrefix.Strip( "weaponobj_" );	//HUMANHEAD pdm: changed from weapon_ to weaponobj_ per our naming convention
 
-			weapon.GetEntity()->NetCatchup();
+			hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->NetCatchup();
 			const function_t *newstate = GetScriptFunction( "NetCatchup" );
 			if ( newstate ) {
 				SetState( newstate );
 				UpdateScript();
 			}
 #else
-			assert( idealWeapon >= 0 );
-			assert( idealWeapon < MAX_WEAPONS );
+			assert( hands[ vr_weaponHand.GetInteger() ].idealWeapon >= 0 );
+			assert( hands[ vr_weaponHand.GetInteger() ].idealWeapon < MAX_WEAPONS );
 
-			animPrefix = spawnArgs.GetString( va( "def_weapon%d", idealWeapon ) );
-			const char *currentWeaponName = weapon->spawnArgs.GetString("classname", "");
+			animPrefix = spawnArgs.GetString( va( "def_weapon%d", hands[ vr_weaponHand.GetInteger() ].idealWeapon ) );
+			const char *currentWeaponName = hands[ vr_weaponHand.GetInteger() ].weapon->spawnArgs.GetString("classname", "");
 			//make sure the weapon i have from my snapshot, and the weapon i have selected are the same.
 			if (currentWeaponName && !idStr::Cmp(animPrefix, currentWeaponName)) {
 				weaponGone = false;
-				currentWeapon = idealWeapon;
+				hands[ vr_weaponHand.GetInteger() ].currentWeapon = hands[ vr_weaponHand.GetInteger() ].idealWeapon;
 
-				weapon->GetWeaponDef( animPrefix, inventory.clip[ currentWeapon ] );
+				hands[ vr_weaponHand.GetInteger() ].weapon->GetWeaponDef( animPrefix, inventory.clip[ hands[ vr_weaponHand.GetInteger() ].currentWeapon ] );
 				animPrefix.Strip( "weaponobj_" );
-				weapon->Raise();
+				hands[ vr_weaponHand.GetInteger() ].weapon->Raise();
 #endif //HUMANHEAD END
 				weaponCatchup = false;			
 			}
 		} else {
-			if ( weapon.IsValid() && (weapon->IsReady() || weapon->IsRising()) ) {
+			if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && (hands[ vr_weaponHand.GetInteger() ].weapon->IsReady() || hands[ vr_weaponHand.GetInteger() ].weapon->IsRising()) ) {
 				InvalidateCurrentWeapon();//Needed incase we change weapons quickly, we can go back to old weapon
-				weapon->PutAway();
+				hands[ vr_weaponHand.GetInteger() ].weapon->PutAway();
 			}
 
-			if ( ( !weapon.IsValid() || weapon->IsHolstered() ) && !bDeathWalk && ! bReallyDead ) {
-				assert( idealWeapon >= 0 );
-				assert( idealWeapon < MAX_WEAPONS );
+			if ( ( !hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || hands[ vr_weaponHand.GetInteger() ].weapon->IsHolstered() ) && !bDeathWalk && ! bReallyDead ) {
+				assert( hands[ vr_weaponHand.GetInteger() ].idealWeapon >= 0 );
+				assert( hands[ vr_weaponHand.GetInteger() ].idealWeapon < MAX_WEAPONS );
 
-				if ( currentWeapon > 0 && !spawnArgs.GetBool( va( "weapon%d_toggle", currentWeapon ) ) ) {	//HUMANHEAD bjk
-					previousWeapon = currentWeapon;
+				if ( hands[ vr_weaponHand.GetInteger() ].currentWeapon > 0 && !spawnArgs.GetBool( va( "weapon%d_toggle", hands[ vr_weaponHand.GetInteger() ].currentWeapon ) ) ) {	//HUMANHEAD bjk
+					hands[ vr_weaponHand.GetInteger() ].previousWeapon = hands[ vr_weaponHand.GetInteger() ].currentWeapon;
 				}
 				//HUMANHEAD PCF rww 05/03/06 - the local client might get skippiness between switching weapons if we
 				//attempt to raise the weapon again before validating that the weapon ent is of the type that we
 				//already desire to switch to. this bug is introduced by the concept of switching out entities when
 				//changing weapons (not client-friendly).
 				if (gameLocal.isClient && entityNumber == gameLocal.localClientNum) {
-					if (weapon.IsValid() && weapon->GetDict() && idStr::Icmp(weapon->GetDict()->GetString("classname"), GetWeaponName( idealWeapon )) == 0) {
-						currentWeapon = idealWeapon;
+					if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->GetDict() && idStr::Icmp(hands[ vr_weaponHand.GetInteger() ].weapon->GetDict()->GetString("classname"), GetWeaponName( hands[ vr_weaponHand.GetInteger() ].idealWeapon )) == 0) {
+						hands[ vr_weaponHand.GetInteger() ].currentWeapon = hands[ vr_weaponHand.GetInteger() ].idealWeapon;
 						weaponGone = false;
-						animPrefix = GetWeaponName( currentWeapon );
+						animPrefix = GetWeaponName( hands[ vr_weaponHand.GetInteger() ].currentWeapon );
 						animPrefix.Strip( "weaponobj_" );	//HUMANHEAD pdm: changed from weapon_ to weaponobj_ per our naming convention
-						weapon.GetEntity()->Raise();
+						hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->Raise();
 					}
 				}
 				//HUMANHEAD END
 				else {
-					currentWeapon = idealWeapon;
+					hands[ vr_weaponHand.GetInteger() ].currentWeapon = hands[ vr_weaponHand.GetInteger() ].idealWeapon;
 					weaponGone = false;
 				
 					//HUMANHEAD: aob
-					animPrefix = GetWeaponName( currentWeapon );
+					animPrefix = GetWeaponName( hands[ vr_weaponHand.GetInteger() ].currentWeapon );
 					if (!gameLocal.isClient) {
-						SAFE_REMOVE( weapon );
-						weapon = SpawnWeapon( animPrefix.c_str() );
+						SAFE_REMOVE( hands[ vr_weaponHand.GetInteger() ].weapon );
+						hands[ vr_weaponHand.GetInteger() ].weapon = SpawnWeapon( animPrefix.c_str() );
 					}
 					//HUMANHEAD END
 						
 					animPrefix.Strip( "weaponobj_" );	//HUMANHEAD pdm: changed from weapon_ to weaponobj_ per our naming convention
 
 					//HUMANHEAD PCF rww 05/03/06 - safety check, make sure weapon is valid particularly for the client
-					if (weapon.IsValid()) {
-						weapon.GetEntity()->Raise();
+					if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid()) {
+						hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->Raise();
 					}
 				}
 			}
 		}
 	} else if (!bDeathWalk && !bReallyDead) {
 		weaponGone = false;	// if you drop and re-get weap, you may miss the = false above 
-		if ( weapon.IsValid() && weapon.GetEntity()->IsHolstered() ) {
-			if ( !weapon.GetEntity()->AmmoAvailable() ) {
+		if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->IsHolstered() ) {
+			if ( !hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->AmmoAvailable() ) {
 				// weapons can switch automatically if they have no more ammo
 				NextBestWeapon();
-			} else if( !gameLocal.isMultiplayer || inventory.lastShot[idealWeapon] < gameLocal.time ) {		//HUMANHEAD bjk PATCH 9-11-06
-				weapon.GetEntity()->Raise();
+			} else if( !gameLocal.isMultiplayer || inventory.lastShot[hands[ vr_weaponHand.GetInteger() ].idealWeapon] < gameLocal.time ) {		//HUMANHEAD bjk PATCH 9-11-06
+				hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->Raise();
 				state = GetScriptFunction( "RaiseWeapon" );
 				if ( state ) {
 					SetState( state );
@@ -1700,8 +1700,8 @@ void hhPlayer::Weapon_Combat( void ) {
 		}
 	}
 
-	if ( weapon.IsValid() ) {
-		weapon->PrecomputeTraceInfo();
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->PrecomputeTraceInfo();
 	}
 
 	// check for attack
@@ -1710,8 +1710,8 @@ void hhPlayer::Weapon_Combat( void ) {
 		FireWeapon();
 	} else if ( oldButtons & BUTTON_ATTACK ) {
 		AI_ATTACK_HELD = false;
-		if( weapon.IsValid() ) {
-			weapon.GetEntity()->EndAttack();
+		if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+			hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->EndAttack();
 		}
 	}
 
@@ -1720,16 +1720,16 @@ void hhPlayer::Weapon_Combat( void ) {
 		FireWeaponAlt();
 	} else if ( oldButtons & BUTTON_ATTACK_ALT ) {
 		AI_ATTACK_HELD = false;
-		if( weapon.IsValid() ) {
-			weapon.GetEntity()->EndAltAttack();
+		if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->EndAltAttack();
 		}
 	}
 	// HUMANHEAD END
 
 	// update our ammo clip in our inventory
-	if ( weapon.IsValid() && ( currentWeapon >= 0 ) && ( currentWeapon < MAX_WEAPONS ) ) {
-		inventory.clip[ currentWeapon ] = weapon->AmmoInClip();
-		inventory.altMode[ currentWeapon ] = weapon->GetAltMode();
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && ( hands[ vr_weaponHand.GetInteger() ].currentWeapon >= 0 ) && ( hands[ vr_weaponHand.GetInteger() ].currentWeapon < MAX_WEAPONS ) ) {
+		inventory.clip[ hands[ vr_weaponHand.GetInteger() ].currentWeapon ] = hands[ vr_weaponHand.GetInteger() ].weapon->AmmoInClip();
+		inventory.altMode[ hands[ vr_weaponHand.GetInteger() ].currentWeapon ] = hands[ vr_weaponHand.GetInteger() ].weapon->GetAltMode();
 	}
 }
 
@@ -1793,7 +1793,7 @@ hhPlayer::Weapon_GUI
 void hhPlayer::Weapon_GUI( void ) {
 
 	StopFiring();
-	weapon.GetEntity()->LowerWeapon();
+	hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->LowerWeapon();
 
 	// NLANOTE - Same here
 	// disable click prediction for the GUIs. handy to check the state sync does the right thing
@@ -1813,9 +1813,9 @@ void hhPlayer::Weapon_GUI( void ) {
 				hand->Reraise();
 			}
 		}
-		else if ( (!hand.IsValid() && weapon.IsValid() && !weapon->IsAside()  ) || 
+		else if ( (!hand.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && !hands[ vr_weaponHand.GetInteger() ].weapon->IsAside()  ) ||
 				  (hand.IsValid() && !hand->IsType( hhGuiHand::Type ) && !hand->IsLowering() ) ||
-				  (!hand.IsValid() && idealWeapon == 0 ) ) {
+				  (!hand.IsValid() && hands[ vr_weaponHand.GetInteger() ].idealWeapon == 0 ) ) {
 			if (!gameLocal.isClient) { //rww
 				hhHand::AddHand( this, GetGuiHandInfo() );
 			}
@@ -1871,8 +1871,8 @@ void hhPlayer::UpdateCrosshairs() {
 	bool targeting = false;
 	int crosshair = 0;
 
-	if ( !privateCameraView && !IsLocked(idealWeapon) && (!hand.IsValid() || hand->IsLowered()) && !InCinematic() && weapon.IsValid() && g_crosshair.GetInteger() ) {
-		weapon->UpdateCrosshairs(combatCrosshair, targeting);
+	if ( !privateCameraView && !IsLocked(hands[ vr_weaponHand.GetInteger() ].idealWeapon) && (!hand.IsValid() || hand->IsLowered()) && !InCinematic() && hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && g_crosshair.GetInteger() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->UpdateCrosshairs(combatCrosshair, targeting);
 		crosshair = g_crosshair.GetInteger();
 	}
 
@@ -2002,7 +2002,7 @@ void hhPlayer::UpdateFocus( void ) {
 			continue;
 		}
 
-		pt = gameRenderWorld->GuiTrace( ent->GetModelDefHandle(), start, end /*, interactiveMask*/ ); // jamrshall
+		pt = gameRenderWorld->GuiTrace( ent->GetModelDefHandle(), NULL, start, end /*, interactiveMask*/ ); // jamrshall
 
 		if ( ent->fl.accurateGuiTrace ) {
 			trace_t tr;
@@ -2883,8 +2883,8 @@ void hhPlayer::PerformImpulse( int impulse ) {
 
 	switch( impulse ) {
 		case IMPULSE_14: {
-			if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
-				hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
+			if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType( hhWeaponZoomable::Type ) ) {
+				hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity());
 				if ( weap && weap->GetAltMode() ) {
 					weap->ZoomInStep();
 				} else {
@@ -2896,8 +2896,8 @@ void hhPlayer::PerformImpulse( int impulse ) {
 			break;
 		}
 		case IMPULSE_15: {
-			if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
-				hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
+			if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType( hhWeaponZoomable::Type ) ) {
+				hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity());
 				if ( weap && weap->GetAltMode() ) {
 					weap->ZoomOutStep();
 				} else {
@@ -3094,7 +3094,7 @@ bool hhPlayer::Give( const char *statname, const char *value ) {
 		return false;
 	}
 
-	return inventory.Give( this, spawnArgs, statname, value, &idealWeapon, true );
+	return inventory.Give( this, spawnArgs, statname, value, &hands[ vr_weaponHand.GetInteger() ].idealWeapon, true );
 }
 
 /*
@@ -3494,13 +3494,13 @@ void hhPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 
 		LighterOff();
 
-		if (!gameLocal.isClient && weapon.IsValid() && weapon->IsType(hhWeapon::Type) && weapon->CanDrop()) { //when dying in mp, toss my weapon out.
+		if (!gameLocal.isClient && hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType(hhWeapon::Type) && hands[ vr_weaponHand.GetInteger() ].weapon->CanDrop()) { //when dying in mp, toss my weapon out.
 			idVec3 forward, up;
 
 			viewAngles.ToVectors( &forward, NULL, &up );
 			//rww - hackishness to keep the type of ammo in the leechgun that it was dropped with
-			idEntity *dropped = weapon->DropItem( 50.0f * forward + 50.0f * up, 0, 60000, true );
-			if (dropped && weapon->IsType(hhWeaponSoulStripper::Type)) {
+			idEntity *dropped = hands[ vr_weaponHand.GetInteger() ].weapon->DropItem( 50.0f * forward + 50.0f * up, 0, 60000, true );
+			if (dropped && hands[ vr_weaponHand.GetInteger() ].weapon->IsType(hhWeaponSoulStripper::Type)) {
 				dropped->spawnArgs.Set("def_droppedEnergyType", inventory.energyType);
 			}
 		}
@@ -3538,12 +3538,12 @@ void hhPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		deathLookAtEntity = attacker;
 	}
 
-	if ( weapon.IsValid() ) {
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
 		//HUMANHEAD bjk 04/26/06 - no sniper scope when dead
-		if ( weapon->IsType( hhWeaponRifle::Type ) ) {
-			static_cast<hhWeaponRifle*>( weapon.GetEntity() )->ZoomOut();
+		if ( hands[ vr_weaponHand.GetInteger() ].weapon->IsType( hhWeaponRifle::Type ) ) {
+			static_cast<hhWeaponRifle*>( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() )->ZoomOut();
 		}
-		weapon->PutAway();
+		hands[ vr_weaponHand.GetInteger() ].weapon->PutAway();
 	}
 
 	// HUMANHEAD nla
@@ -3601,7 +3601,7 @@ void hhPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		} //HUMANHEAD END
 
 		physicsObj.SetMovementType( PM_DEAD );
-		SAFE_REMOVE( weapon );
+		SAFE_REMOVE( hands[ vr_weaponHand.GetInteger() ].weapon );
 	}
 
 	AI_DEAD = true;
@@ -3940,8 +3940,8 @@ void hhPlayer::StopSpiritWalk(bool forceAllowance) {
 
 	if (IsSpiritOrDeathwalking()) {
 		CancelEvents(&EV_DrainSpiritPower);
-		if( weapon.IsValid() && weapon->IsType(hhWeaponSpiritBow::Type) ) {
-			hhWeaponSpiritBow *bow = static_cast<hhWeaponSpiritBow *>( weapon.GetEntity() );
+		if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType(hhWeaponSpiritBow::Type) ) {
+			hhWeaponSpiritBow *bow = static_cast<hhWeaponSpiritBow *>( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() );
 			if( bow->BowVisionIsEnabled() ) {
 				bow->StopBowVision();
 			}
@@ -4331,8 +4331,8 @@ void hhPlayer::Event_DrainSpiritPower() {
 	}
 
 	// spirit bow alt mode drain
-	if( weapon.IsValid() && weapon->IsType(hhWeaponSpiritBow::Type) ) {
-		hhWeaponSpiritBow *bow = static_cast<hhWeaponSpiritBow *>( weapon.GetEntity() );
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType(hhWeaponSpiritBow::Type) ) {
+		hhWeaponSpiritBow *bow = static_cast<hhWeaponSpiritBow *>( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() );
 		if( bow->BowVisionIsEnabled() ) {
 			if( !UseAmmo(ammo_spiritpower, 1) ) { // Bow vision drains spirit power
 				return;
@@ -4383,8 +4383,8 @@ void hhPlayer::DeathWalk( const idVec3& resurrectOrigin, const idMat3& resurrect
 	PostEventMS( &EV_SetOverlayMaterial, 1, spawnArgs.GetString("mtr_deathWalk"), false );
 
 	//Don't allow weapon use for a bit
-	if ( weapon.GetEntity() ) {
-		weapon.GetEntity()->PutAway();
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->PutAway();
 	}
 
 	// Alert the scripts that death has occured so they can manage music
@@ -4912,15 +4912,16 @@ void hhPlayer::Think( void ) {
 
 	// zooming
 	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM ) {
-		if ( ( usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ) {
-			zoomFov.Init( gameLocal.time, 200.0f, CalcFov( false ), weapon.GetEntity()->GetZoomFov() );
+		if ( ( usercmd.buttons & BUTTON_ZOOM ) && hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() ) {
+			zoomFov.Init( gameLocal.time, 200.0f, CalcFov( false ), hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->GetZoomFov() );
 		} else {
 			zoomFov.Init( gameLocal.time, 200.0f, zoomFov.GetCurrentValue( gameLocal.time ), DefaultFov() );
 		}
 	} 
 
-	if ( g_fov.IsModified() ) {
-		idEntity *weaponEnt = weapon.GetEntity();
+	//NOT INT VR!
+	/*if ( g_fov.IsModified() ) {
+		idEntity *weaponEnt = hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity();
 		if ( ! ( weaponEnt &&
 				 weaponEnt->IsType( hhWeaponZoomable::Type ) &&
 				 reinterpret_cast<hhWeaponZoomable *> (weaponEnt)->IsZoomed() ) )
@@ -4928,7 +4929,7 @@ void hhPlayer::Think( void ) {
 			GetZoomFov().Init( gameLocal.GetTime(), 0.0f, CalcFov(true), g_fov.GetInteger() );
 			g_fov.ClearModified();
 		}
-	}
+	}*/
 
 	// if we have an active gui, we will unrotate the view angles as
 	// we turn the mouse movements into gui events
@@ -4938,8 +4939,8 @@ void hhPlayer::Think( void ) {
 	}
 
 	// set the push velocity on the weapon before running the physics
-	if ( weapon.GetEntity() ) {
-		weapon.GetEntity()->SetPushVelocity( physicsObj.GetPushedLinearVelocity() );
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->SetPushVelocity( physicsObj.GetPushedLinearVelocity() );
 	}
 
 	EvaluateControls();
@@ -4995,7 +4996,7 @@ void hhPlayer::Think( void ) {
 		}
 	//HUMANHEAD: aob - changed heath check to IsDead check.  Player needs to update weapon when deathwalking
 	} else if ( !IsDead() && !bFrozen ) {	//HUMANHEAD bjk PCF (4-27-06) - no setting unnecessary weapon state
-		if ( !gameLocal.isClient || weapon.GetEntity()) {
+		if ( !gameLocal.isClient || hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()) {
 			UpdateWeapon();
 		}
 	}
@@ -5190,7 +5191,7 @@ void hhPlayer::Move( void ) {
 	}
 
 	physicsObj.SetDebugLevel( g_debugMove.GetBool() );
-	physicsObj.SetPlayerInput( usercmd, viewAngles );
+	physicsObj.SetPlayerInput( usercmd, viewAngles.ToForward() );
 
 	//HUMANHEAD: aob - moved down a few lines
 	// FIXME: physics gets disabled somehow
@@ -5418,8 +5419,8 @@ void hhPlayer::ForceWeapon( int weaponNum ) {
 
 	// HUMANHEAD mdl:  Special case - coming out of spirit mode when no physical weapon is available
 	if ( weaponNum == -1 ) {
-		idealWeapon = 0;
-		currentWeapon = -1;
+		hands[ vr_weaponHand.GetInteger() ].idealWeapon = 0;
+		hands[ vr_weaponHand.GetInteger() ].currentWeapon = -1;
 		return;
 	}
 
@@ -5431,9 +5432,9 @@ void hhPlayer::ForceWeapon( int weaponNum ) {
 
 	newWeapon = SpawnWeapon( weaponDef );
 
-	weapon = newWeapon;
+	hands[ vr_weaponHand.GetInteger() ].weapon = newWeapon;
 
-	idealWeapon = currentWeapon = weaponNum;
+	hands[ vr_weaponHand.GetInteger() ].idealWeapon = hands[ vr_weaponHand.GetInteger() ].currentWeapon = weaponNum;
 
 	animPrefix = weaponDef;
 	animPrefix.Strip( "weaponobj_" );
@@ -5449,11 +5450,11 @@ void hhPlayer::ForceWeapon( hhWeapon *newWeapon ) {
 	int weaponNum;
 
 
-	weapon = newWeapon;
+	hands[ vr_weaponHand.GetInteger() ].weapon = newWeapon;
 
-	weaponNum = GetWeaponNum( weapon->GetDict()->GetString( "classname" ) );
+	weaponNum = GetWeaponNum( hands[ vr_weaponHand.GetInteger() ].weapon->GetDict()->GetString( "classname" ) );
 
-	idealWeapon = currentWeapon = weaponNum;
+	hands[ vr_weaponHand.GetInteger() ].idealWeapon = hands[ vr_weaponHand.GetInteger() ].currentWeapon = weaponNum;
 
 }
 
@@ -5706,7 +5707,7 @@ float hhPlayer::CalcFov( bool honorZoom ) {
 	float	fov;
 
 	// HUMANHEAD mdl:  Refactored this to work properly with possessionFOV.  Being zoomed in will ignore possessionFOV, however.
-	idEntity *weaponEnt = weapon.GetEntity();
+	idEntity *weaponEnt = hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity();
 	if ( possessionFOV > 0.0f && 
 		 ! ( weaponEnt &&
 			 weaponEnt->IsType( hhWeaponZoomable::Type ) &&
@@ -5715,8 +5716,9 @@ float hhPlayer::CalcFov( bool honorZoom ) {
 		fov = possessionFOV;
 	} else if ( IsDeathWalking() ) {
 		fov = spawnArgs.GetFloat("deathwalkFOV", "90");
-	} else if ( pm_thirdPerson.GetBool() ) {
-		fov = g_fov.GetFloat();
+	//NOT INT VR!
+	//} else if ( pm_thirdPerson.GetBool() ) {
+		//fov = g_fov.GetFloat();
 	} else if ( InCinematic() ) {
 		fov = cinematicFOV.GetCurrentValue(gameLocal.time);
 	} else {
@@ -5812,7 +5814,7 @@ void hhPlayer::ExitVehicle( hhVehicle* vehicle ) {
 	buttonMask |= BUTTON_ATTACK_ALT;	//HUMANHEAD bjk
 
 	// Reset the animPrefix
-	animPrefix = spawnArgs.GetString( va( "def_weapon%d", currentWeapon ) );
+	animPrefix = spawnArgs.GetString( va( "def_weapon%d", hands[ vr_weaponHand.GetInteger() ].currentWeapon ) );
 	animPrefix.Strip( "weaponobj_" );
 
 	if (vehicle) {
@@ -5837,8 +5839,8 @@ hhPlayer::BecameBound
 ===============
 */
 void hhPlayer::BecameBound(hhBindController *b) {
-	if( !gameLocal.isMultiplayer && weapon.IsValid() ) { //rww - can use weapon while bound in mp
-		weapon->Hide();
+	if( !gameLocal.isMultiplayer && hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) { //rww - can use weapon while bound in mp
+		hands[ vr_weaponHand.GetInteger() ].weapon->Hide();
 	}
 }
 
@@ -5848,8 +5850,8 @@ hhPlayer::BecameUnbound
 ===============
 */
 void hhPlayer::BecameUnbound(hhBindController *b) {
-	if( !gameLocal.isMultiplayer && weapon.IsValid() ) { //rww - can use weapon while bound in mp
-		weapon->Show();
+	if( !gameLocal.isMultiplayer && hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) { //rww - can use weapon while bound in mp
+		hands[ vr_weaponHand.GetInteger() ].weapon->Show();
 	}
 }
 
@@ -6028,9 +6030,9 @@ void hhPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( gameLocal.ServerRemapDecl( -1, DECL_ENTITYDEF, lastDamageDef ), gameLocal.entityDefBits );
 	msg.WriteDir( lastDamageDir, 9 );
 	msg.WriteShort( lastDamageLocation );
-	msg.WriteBits( idealWeapon, idMath::BitsForInteger( MAX_WEAPONS ) );
+	msg.WriteBits( hands[ vr_weaponHand.GetInteger() ].idealWeapon, idMath::BitsForInteger( MAX_WEAPONS ) );
 	msg.WriteBits( inventory.weapons, MAX_WEAPONS );
-	msg.WriteBits( weapon.GetSpawnId(), 32 );
+	msg.WriteBits( hands[ vr_weaponHand.GetInteger() ].weapon.GetSpawnId(), 32 );
 	msg.WriteBits( spectator, idMath::BitsForInteger( MAX_CLIENTS ) );
 	msg.WriteBits( lastHitToggle, 1 );
 	msg.WriteBits( weaponGone, 1 );
@@ -6055,15 +6057,15 @@ void hhPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	//in scripts and so on, and will be predicted wrong for other players (we get our own ammo in the playerstate)
 	//rwwFIXME: if we have proper weapon switching when you run out of ammo will this actually be necessary?
 	//i don't think it's all that costly, but still.
-	if (weapon.IsValid()) {
-		ammo_t ammoType = weapon->GetAmmoType();
+	if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid()) {
+		ammo_t ammoType = hands[ vr_weaponHand.GetInteger() ].weapon->GetAmmoType();
 		if (ammoType > 0) {
 			msg.WriteBits(inventory.ammo[ammoType], ASYNC_PLAYER_INV_AMMO_BITS);
 		}
 		else {
 			msg.WriteBits(0, ASYNC_PLAYER_INV_AMMO_BITS);
 		}
-		ammoType = weapon->GetAltAmmoType();
+		ammoType = hands[ vr_weaponHand.GetInteger() ].weapon->GetAltAmmoType();
 		if (ammoType > 0) {
 			msg.WriteBits(inventory.ammo[ammoType], ASYNC_PLAYER_INV_AMMO_BITS);
 		}
@@ -6118,7 +6120,7 @@ hhPlayer::ReadFromSnapshot
 ===============
 */
 void hhPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	int		i, oldHealth, newIdealWeapon, weaponSpawnId;
+	int		i, oldHealth, newidealWeapon, weaponSpawnId;
 	bool	newHitToggle, stateHitch;
 
 	bool vehControlling = !!msg.ReadBits(1);
@@ -6213,7 +6215,7 @@ void hhPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	lastDamageDef = gameLocal.ClientRemapDecl( DECL_ENTITYDEF, msg.ReadBits( gameLocal.entityDefBits ) );
 	lastDamageDir = msg.ReadDir( 9 );
 	lastDamageLocation = msg.ReadShort();
-	newIdealWeapon = msg.ReadBits( idMath::BitsForInteger( MAX_WEAPONS ) );
+	newidealWeapon = msg.ReadBits( idMath::BitsForInteger( MAX_WEAPONS ) );
 	inventory.weapons = msg.ReadBits( MAX_WEAPONS );
 	weaponSpawnId = msg.ReadBits( 32 );
 	spectator = msg.ReadBits( idMath::BitsForInteger( MAX_CLIENTS ) );
@@ -6240,7 +6242,7 @@ void hhPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	lastWeaponSpirit = msg.ReadBits(32);
 	
 	bool spiritWalking = !!msg.ReadBits(1);
-	if (spiritWalking != bSpiritWalk && (weapon.IsValid() || !spiritWalking)) {
+	if (spiritWalking != bSpiritWalk && (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || !spiritWalking)) {
 		bSpiritWalk = spiritWalking;
 
 		LighterOff(); //make sure lighter is off when switching spiritwalk
@@ -6296,12 +6298,12 @@ void hhPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	int altAmmo = msg.ReadBits(ASYNC_PLAYER_INV_AMMO_BITS);
 	if (entityNumber != gameLocal.localClientNum) {
 		//since we have our own ammo in the playerstate, don't want to stomp it
-		if (weapon.IsValid()) {
-			ammo_t ammoType = weapon->GetAmmoType();
+		if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid()) {
+			ammo_t ammoType = hands[ vr_weaponHand.GetInteger() ].weapon->GetAmmoType();
 			if (ammoType > 0) {
 				inventory.ammo[ammoType] = primAmmo;
 			}
-			ammoType = weapon->GetAltAmmoType();
+			ammoType = hands[ vr_weaponHand.GetInteger() ].weapon->GetAltAmmoType();
 			if (ammoType > 0) {
 				inventory.ammo[ammoType] = altAmmo;
 			}
@@ -6372,16 +6374,16 @@ void hhPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	wallwalkSoundController.ReadFromSnapshot(msg);
 
 	//=========================================== start id code
-	if ( weapon.SetSpawnId( weaponSpawnId ) ) {
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.SetSpawnId( weaponSpawnId ) ) {
 		//HUMANHEAD rww - i am getting crashes here and the stack is all messed up,
 		//claiming that SetOwner is off into null, when supposedly the entity is not.
 		//rearranging this code so it's easier to see what's going on in a crash.
-		hhWeapon *weapEnt = weapon.GetEntity();
+		hhWeapon *weapEnt = hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity();
 		if ( weapEnt ) {
 			// maintain ownership locally
 			weapEnt->SetOwner( this );
 		}
-		currentWeapon = -1;
+		hands[ vr_weaponHand.GetInteger() ].currentWeapon = -1;
 	}
 
 	//HUMANHEAD rww - but we do want ammo count for the leechgun on other players for prediction
@@ -6424,8 +6426,8 @@ void hhPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 			StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
 		}
 		}
-		if ( weapon.GetEntity() ) {
-			weapon.GetEntity()->OwnerDied();
+		if ( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() ) {
+			hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->OwnerDied();
 		}
 
 		//HUMANHEAD rww
@@ -6472,11 +6474,11 @@ void hhPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		SetCombatContents( true );
 	}
 
-	if ( idealWeapon != newIdealWeapon ) {
+	if ( hands[ vr_weaponHand.GetInteger() ].idealWeapon != newidealWeapon ) {
 		if ( stateHitch ) {
 			weaponCatchup = true;
 		}
-		idealWeapon = newIdealWeapon;
+		hands[ vr_weaponHand.GetInteger() ].idealWeapon = newidealWeapon;
 		UpdateHudWeapon();
 	}
 
@@ -6556,8 +6558,8 @@ void hhPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
 
 	//rww - scope and fov handling
 	bool canOverrideView = true;
-	if (weapon.IsValid() && weapon->IsType(hhWeaponZoomable::Type)) { //if we have a zoomed weapon, don't override with snapshot while the prediction fudge timer is on
-		hhWeaponZoomable *weap = static_cast<hhWeaponZoomable *>(weapon.GetEntity());
+	if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() && hands[ vr_weaponHand.GetInteger() ].weapon->IsType(hhWeaponZoomable::Type)) { //if we have a zoomed weapon, don't override with snapshot while the prediction fudge timer is on
+		hhWeaponZoomable *weap = static_cast<hhWeaponZoomable *>(hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity());
 		if (weap->clientZoomTime >= gameLocal.time) {
 			canOverrideView = false;
 		}
@@ -6697,15 +6699,15 @@ hhPlayer::Event_PlayWeaponAnim
 */
 void hhPlayer::Event_PlayWeaponAnim( const char* animName, int numTries ) {
 	//AOB: I would like a better solution then constantly banging until weapon is valid.
-	if( (!weapon.IsValid() || GetCurrentWeapon() != idealWeapon) && numTries > 0 ) {
+	if( (!hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || GetCurrentWeapon() != GetIdealWeapon()) && numTries > 0 ) {
 		CancelEvents( &EV_PlayWeaponAnim );
 		PostEventMS( &EV_PlayWeaponAnim, 50, animName, numTries - 1 ); 
 		return;
 	}
 
 	CancelEvents( &EV_PlayWeaponAnim );
-	if( weapon.IsValid() ) {
-		weapon->ProcessEvent( &EV_PlayAnimWhenReady, animName );
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->ProcessEvent( &EV_PlayAnimWhenReady, animName );
 	}
 }
 
@@ -6793,7 +6795,7 @@ void hhPlayer::Event_Cinematic( int on, int lockView ) {
 
 		//UnlockWeapon(preCinematicWeapon);
 		weaponFlags = preCinematicWeaponFlags;
-		//SetCurrentWeapon(preCinematicWeapon);
+		//Sethands[ vr_weaponHand.GetInteger() ].currentWeapon(preCinematicWeapon);
 		SelectWeapon(preCinematicWeapon, true);
 	}
 }
@@ -7221,8 +7223,8 @@ void hhPlayer::Event_StartHUDTranslation() {
 void hhPlayer::Freeze(float unfreezeDelay) {
 	bFrozen = true;
 	StopFiring();
-	if ( weapon.IsValid() ) {
-		weapon->PutAway();
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->PutAway();
 	}
 	if ( unfreezeDelay > 0.0f ) {
 		PostEventSec( &EV_Unfreeze, unfreezeDelay );
@@ -7231,9 +7233,9 @@ void hhPlayer::Freeze(float unfreezeDelay) {
 
 void hhPlayer::Unfreeze(void) {
 	bFrozen = false;
-	if ( weapon.IsValid() ) {
-		weapon->PostEventMS( &EV_Show, 1000 );
-		weapon->PostEventMS( &EV_Weapon_WeaponRising, 1000 );
+	if ( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		hands[ vr_weaponHand.GetInteger() ].weapon->PostEventMS( &EV_Show, 1000 );
+		hands[ vr_weaponHand.GetInteger() ].weapon->PostEventMS( &EV_Weapon_WeaponRising, 1000 );
 	}
 }
 
@@ -7308,12 +7310,12 @@ void hhPlayer::LockWeapon( int weaponNum ) {
 		if (IsLighterOn()) {
 			LighterOff();
 		}
-		if (weapon.IsValid()) {
-			weapon->PutAway();
+		if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid()) {
+			hands[ vr_weaponHand.GetInteger() ].weapon->PutAway();
 		}
 		weaponFlags = 0;
-		idealWeapon = 0;
-		currentWeapon = 0;
+		hands[ vr_weaponHand.GetInteger() ].idealWeapon = 0;
+		hands[ vr_weaponHand.GetInteger() ].currentWeapon = 0;
 		return;
 	}
 
@@ -7324,9 +7326,9 @@ void hhPlayer::LockWeapon( int weaponNum ) {
 	int flag = ( 1 << ( weaponNum - 1 ) ); 
 	if ( weaponFlags & flag ) { // Only lock if not already locked
 		weaponFlags &= ~flag;
-		if ( idealWeapon == weaponNum ) {
-			if (weapon.IsValid()) {
-				weapon->PutAway();
+		if ( hands[ vr_weaponHand.GetInteger() ].idealWeapon == weaponNum ) {
+			if (hands[ vr_weaponHand.GetInteger() ].weapon.IsValid()) {
+				hands[ vr_weaponHand.GetInteger() ].weapon->PutAway();
 			}
 			NextWeapon();
 		}
@@ -7337,8 +7339,8 @@ void hhPlayer::UnlockWeapon( int weaponNum ) {
 	// Special case, -1 unlocks all weapons
 	if ( weaponNum == -1 ) {
 		weaponFlags = -1;
-		if ( idealWeapon == 0 )  {
-			idealWeapon = 1; // Default to the wrench
+		if ( hands[ vr_weaponHand.GetInteger() ].idealWeapon == 0 )  {
+			hands[ vr_weaponHand.GetInteger() ].idealWeapon = 1; // Default to the wrench
 		}
 		return;
 	}
@@ -7354,7 +7356,7 @@ void hhPlayer::UnlockWeapon( int weaponNum ) {
 	}
 
 	weaponFlags |= flag;
-	idealWeapon = weaponNum;
+	hands[ vr_weaponHand.GetInteger() ].idealWeapon = weaponNum;
 }
 
 bool hhPlayer::IsLocked(int weaponNum) {
@@ -7767,12 +7769,12 @@ void hhPlayer::ThrowGrenade( void ) {
 	if ( privateCameraView || !weaponEnabled || spectating || gameLocal.inCinematic || health < 0 || gameLocal.isClient )
 		return;
 
-	if( weapon.IsValid() ) {
-		if ( inventory.weapons & ( 1 << 12 ) && currentWeapon != 12 && currentWeapon != 3 && idealWeapon == currentWeapon ) {
-			idealWeapon = 12;
-			previousWeapon = currentWeapon;
+	if( hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
+		if ( inventory.weapons & ( 1 << 12 ) && hands[ vr_weaponHand.GetInteger() ].currentWeapon != 12 && hands[ vr_weaponHand.GetInteger() ].currentWeapon != 3 && hands[ vr_weaponHand.GetInteger() ].idealWeapon == hands[ vr_weaponHand.GetInteger() ].currentWeapon ) {
+			hands[ vr_weaponHand.GetInteger() ].idealWeapon = 12;
+			hands[ vr_weaponHand.GetInteger() ].previousWeapon = hands[ vr_weaponHand.GetInteger() ].currentWeapon;
 		}
-		else if( currentWeapon == 3 ) {
+		else if( hands[ vr_weaponHand.GetInteger() ].currentWeapon == 3 ) {
 			FireWeapon();
 			usercmd.buttons = usercmd.buttons | BUTTON_ATTACK;
 		}
@@ -7788,7 +7790,7 @@ void hhPlayer::Event_ReturnToWeapon() {
 		return;
 	}
 
-	if ( ( previousWeapon < 0 ) || ( previousWeapon >= MAX_WEAPONS ) ) {
+	if ( ( hands[ vr_weaponHand.GetInteger() ].previousWeapon < 0 ) || ( hands[ vr_weaponHand.GetInteger() ].previousWeapon >= MAX_WEAPONS ) ) {
 		idThread::ReturnInt(0);
 		return;
 	}
@@ -7798,15 +7800,15 @@ void hhPlayer::Event_ReturnToWeapon() {
 		return;
 	}
 
-	weap = spawnArgs.GetString( va( "def_weapon%d", previousWeapon ) );
+	weap = spawnArgs.GetString( va( "def_weapon%d", hands[ vr_weaponHand.GetInteger() ].previousWeapon ) );
 	if ( !weap[ 0 ] ) {
 		gameLocal.Printf( "Invalid weapon\n" );
 		idThread::ReturnInt(0);
 		return;
 	}
 
-	if ( inventory.weapons & ( 1 << previousWeapon ) ) {
-		idealWeapon = previousWeapon;
+	if ( inventory.weapons & ( 1 << hands[ vr_weaponHand.GetInteger() ].previousWeapon ) ) {
+		hands[ vr_weaponHand.GetInteger() ].idealWeapon = hands[ vr_weaponHand.GetInteger() ].previousWeapon;
 	}
 
 	idThread::ReturnInt(1);
@@ -7819,7 +7821,7 @@ void hhPlayer::Event_CanAnimateTorso(void) {
 		return;
 	}
 
-	if (!weapon.IsValid() || !weapon->IsType(hhWeapon::Type)) { //bad
+	if (!hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || !hands[ vr_weaponHand.GetInteger() ].weapon->IsType(hhWeapon::Type)) { //bad
 		idThread::ReturnInt(0);
 		return;
 	}
@@ -7831,9 +7833,9 @@ void hhPlayer::Show(void) {
 	idActor::Show();
 
 	hhWeapon *weap;
-	weap = weapon.GetEntity();
+	weap = hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity();
 	if ( weap ) {
-		if (!IsLocked(currentWeapon)) {
+		if (!IsLocked(hands[ vr_weaponHand.GetInteger() ].currentWeapon)) {
 			weap->ShowWorldModel();
 		} else {
 			weap->HideWorldModel();

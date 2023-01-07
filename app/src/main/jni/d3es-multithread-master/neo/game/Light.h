@@ -87,6 +87,7 @@ public:
 	//HUMANHEAD: cjr
 	int				GetCurrentLevel() { return( currentLevel ); }
 	//HUMANHEAD END
+	const idMaterial*	GetMaterial() { return renderLight.shader; }
 
 	virtual void	ShowEditingDialog( void );
 

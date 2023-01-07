@@ -640,7 +640,7 @@ protected:
 	// special effects
 	void					GetMuzzle( const char *jointname, idVec3 &muzzle, idMat3 &axis );
 	void					InitMuzzleFlash( void );
-	void					TriggerWeaponEffects( const idVec3 &muzzle );
+	void					TriggerWeaponEffects( const idVec3 &muzzle, const idMat3 &axis );
 	virtual // HUMANHEAD JRM
 	void					UpdateMuzzleFlash( void );
 	virtual bool			UpdateAnimationControllers( void );

@@ -489,11 +489,11 @@ public:
 	// sound
 	virtual bool			CanPlayChatterSounds( void ) const;
 	virtual//HUMANHEAD: aob
-	bool					StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length );
+	bool					StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags = 0, bool broadcast = false, int *length = NULL );
 	virtual//HUMANHEAD: aob
-	bool					StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length );
+	bool					StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags = 0, bool broadcast = false, int *length = NULL );
 	virtual//HUMANHEAD: aob
-	void					StopSound( const s_channelType channel, bool broadcast );	// pass SND_CHANNEL_ANY to stop all sounds
+	void					StopSound( const s_channelType channel, bool broadcast = false);	// pass SND_CHANNEL_ANY to stop all sounds
 	void					SetSoundVolume( float volume );
 	void					UpdateSound( void );
 	int						GetListenerId( void ) const;

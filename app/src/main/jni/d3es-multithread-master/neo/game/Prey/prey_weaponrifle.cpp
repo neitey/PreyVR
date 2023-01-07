@@ -38,7 +38,7 @@ hhWeaponZoomable::ZoomOut
 */
 void hhWeaponZoomable::ZoomOut() {
 	if( owner.IsValid() && dict ) {
-		owner->GetZoomFov().Init( gameLocal.GetTime(), SEC2MS(dict->GetFloat("zoomDuration")), owner->CalcFov(true), g_fov.GetInteger() );
+		owner->GetZoomFov().Init( gameLocal.GetTime(), SEC2MS(dict->GetFloat("zoomDuration")), owner->CalcFov(true), 90/*g_fov.GetInteger()*/ ); //VR hack
 	}
 
 	clientZoomTime = gameLocal.time + CLIENT_ZOOM_FUDGE; //rww

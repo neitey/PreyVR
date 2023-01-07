@@ -280,6 +280,9 @@ public:
 	// clip versus the rest of the world
 	bool					Translation( trace_t &results, const idVec3 &start, const idVec3 &end,
 								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
+	//HUMANEHAD rww - translation with overhead of checking game logic for collision allowance
+	bool					TranslationWithExceptions( trace_t &results, const idVec3 &start, const idVec3 &end, idEntity *ent,
+	                                                   const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
 	bool					Rotation( trace_t &results, const idVec3 &start, const idRotation &rotation,
 								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
 	bool					Motion( trace_t &results, const idVec3 &start, const idVec3 &end, const idRotation &rotation,

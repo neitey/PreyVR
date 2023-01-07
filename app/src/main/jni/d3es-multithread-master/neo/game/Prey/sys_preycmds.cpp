@@ -813,10 +813,10 @@ void Cmd_ToggleShuttle_f( const idCmdArgs &args ) {
 
 void Cmd_KillThis_f( const idCmdArgs &args ) {
 	hhPlayer * player = static_cast<hhPlayer*>( gameLocal.GetLocalPlayer() );
-	if ( !player || !player->weapon.IsValid() || !gameLocal.CheatsOk() ) {
+	if ( !player || !player->hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || !gameLocal.CheatsOk() ) {
 		return;
 	}
-	idEntity *ent = gameLocal.GetTraceEntity( player->weapon->GetEyeTraceInfo() );
+	idEntity *ent = gameLocal.GetTraceEntity( player->hands[ vr_weaponHand.GetInteger() ].weapon->GetEyeTraceInfo() );
 	if ( ent ) {
 		ent->Damage( player, player, vec3_zero, "damage_instantdeath", 9999.0f, 0 );
 	}
@@ -824,10 +824,10 @@ void Cmd_KillThis_f( const idCmdArgs &args ) {
 
 void Cmd_PrintThis_f( const idCmdArgs &args ) {
 	hhPlayer * player = static_cast<hhPlayer*>( gameLocal.GetLocalPlayer() );
-	if ( !player || !player->weapon.IsValid() || !gameLocal.CheatsOk() ) {
+	if ( !player || !player->hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || !gameLocal.CheatsOk() ) {
 		return;
 	}
-	idEntity *ent = gameLocal.GetTraceEntity( player->weapon->GetEyeTraceInfo() );
+	idEntity *ent = gameLocal.GetTraceEntity( player->hands[ vr_weaponHand.GetInteger() ].weapon->GetEyeTraceInfo() );
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 
 	// trace didn't find an entity.  try 
@@ -864,10 +864,10 @@ void Cmd_PrintThis_f( const idCmdArgs &args ) {
 
 void Cmd_TriggerThis_f( const idCmdArgs &args ) {
 	hhPlayer * player = static_cast<hhPlayer*>( gameLocal.GetLocalPlayer() );
-	if ( !player || !player->weapon.IsValid() || !gameLocal.CheatsOk() ) {
+	if ( !player || !player->hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() || !gameLocal.CheatsOk() ) {
 		return;
 	}
-	idEntity *ent = gameLocal.GetTraceEntity( player->weapon->GetEyeTraceInfo() );
+	idEntity *ent = gameLocal.GetTraceEntity( player->hands[ vr_weaponHand.GetInteger() ].weapon->GetEyeTraceInfo() );
 	if ( ent ) {
 		ent->PostEventMS( &EV_Activate, 0, player );
 	}
@@ -964,13 +964,13 @@ void Cmd_GiveEnergy_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	if ( !gameLocal.GetLocalPlayer() || !gameLocal.GetLocalPlayer()->weapon.IsValid() ) {
+	if ( !gameLocal.GetLocalPlayer() || !gameLocal.GetLocalPlayer()->hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) {
 		return;
 	}
-	if ( !gameLocal.GetLocalPlayer()->weapon->IsType( hhWeaponSoulStripper::Type ) ) {
+	if ( !gameLocal.GetLocalPlayer()->hands[ vr_weaponHand.GetInteger() ].weapon->IsType( hhWeaponSoulStripper::Type ) ) {
 		return;
 	}
-	hhWeaponSoulStripper *weapon = static_cast<hhWeaponSoulStripper*>(gameLocal.GetLocalPlayer()->weapon.GetEntity());
+	hhWeaponSoulStripper *weapon = static_cast<hhWeaponSoulStripper*>(gameLocal.GetLocalPlayer()->hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity());
 	weapon->GiveEnergy( va( "fireinfo_%s", args.Argv( 1 ) ), true );
 }
 

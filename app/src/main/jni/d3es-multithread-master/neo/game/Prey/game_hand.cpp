@@ -627,59 +627,59 @@ int hhHand::HandleWeapon( hhPlayer *player, hhHand *hand, int weaponDelay, bool 
 	bool	weaponReady = ( hand == NULL ) && !player->ChangingWeapons();
 
 	// If we don't have a weapon, then just return
-	if ( !player->weapon.IsValid() || player->GetIdealWeapon() == 0 ) {
+	if ( !player->GetWeapon().IsValid() || player->GetIdealWeapon() == 0 ) {
 		return( 0 );
 	}
 
 	// If we have a hand to compare to
 	if ( hand ) {
 		// If the hand wants the weapon lowered
-		if ( hand->lowerWeapon || ( hand->handedness & player->weapon->GetHandedness() ) ) {		
-			player->weapon->PutAway();
+		if ( hand->lowerWeapon || ( hand->handedness & player->GetWeapon()->GetHandedness() ) ) {
+			player->GetWeapon()->PutAway();
 			if ( doNow ) {
-				player->weapon->SetState( "Down", 0 );
+				player->GetWeapon()->SetState( "Down", 0 );
 			}
 			else {
 				// Foce the gun to go, so we can know when it'll be done playing the anim.
-				player->weapon->UpdateScript();
-				raiseHandDelay = player->weapon->GetAnimDoneTime();
+				player->GetWeapon()->UpdateScript();
+				raiseHandDelay = player->GetWeapon()->GetAnimDoneTime();
 			}
 			/*
 			// If it isn't lowered, lower it
-			if ( !player->weapon->IsLowered() ) {
-				player->weapon->PutAway();
-				raiseHandDelay = player->weapon->GetAnimDoneTime();
+			if ( !player->GetWeapon()->IsLowered() ) {
+				player->GetWeapon()->PutAway();
+				raiseHandDelay = player->GetWeapon()->GetAnimDoneTime();
 			}
 			*/
 		}	//. lower the weapon
 		// If the hand wants the weapon to the side
 		else if ( hand->asideWeapon ) {		
-			player->weapon->PutAside();
+			player->GetWeapon()->PutAside();
 			if ( doNow ) {
-				player->weapon->SetState( "Aside", 0 );
+				player->GetWeapon()->SetState( "Aside", 0 );
 			}
 			// We only want a delay if the weapon should pop up?
-			else if ( player->weapon->IsLowered() ) {
+			else if ( player->GetWeapon()->IsLowered() ) {
 				// Foce the gun to go, so we can know when it'll be done playing the anim.
-				player->weapon->UpdateScript();
-				raiseHandDelay = player->weapon->GetAnimDoneTime();
-				player->weapon->SetState( "PutAside", 4 );
+				player->GetWeapon()->UpdateScript();
+				raiseHandDelay = player->GetWeapon()->GetAnimDoneTime();
+				player->GetWeapon()->SetState( "PutAside", 4 );
 			}
 			/*
 			// If it is lowered, 
-			if ( player->weapon->IsLowered() ) {
+			if ( player->GetWeapon()->IsLowered() ) {
 				// First raise it, then set it aside
 				int done = weaponDelay;				
-				idAnim *anim = player->weapon->GetAnimator()->GetAnim( "raise" );	// UGLY Hack, as hardcoded to the name
+				idAnim *anim = player->GetWeapon()->GetAnimator()->GetAnim( "raise" );	// UGLY Hack, as hardcoded to the name
 
-				player->weapon->PostEventMS( &EV_Weapon_WeaponRising, weaponDelay );
+				player->GetWeapon()->PostEventMS( &EV_Weapon_WeaponRising, weaponDelay );
 				if ( anim ) { done = anim->Length(); }
-				player->weapon->PostEventMS( &EV_Weapon_Aside, done );
+				player->GetWeapon()->PostEventMS( &EV_Weapon_Aside, done );
 			}
 			// Else if it is ready/upright and not aside
-			else if ( !player->weapon->IsAside() ) {
+			else if ( !player->GetWeapon()->IsAside() ) {
 				// Just set it aside	
-				player->weapon->PutAside();
+				player->GetWeapon()->PutAside();
 			}
 			*/
 		}
@@ -691,26 +691,26 @@ int hhHand::HandleWeapon( hhPlayer *player, hhHand *hand, int weaponDelay, bool 
 
 	// If we don't have a hand, so just make sure the weapon is raised
 	if ( weaponReady ) {
-		player->weapon->Raise();
+		player->GetWeapon()->Raise();
 		if ( doNow ) {
-			player->weapon->SetState( "Idle", 0 );
+			player->GetWeapon()->SetState( "Idle", 0 );
 		}
 		
 		/*
 
 		// Clear any Aside events that may be posted. Happens when it was lowered, and the previous hand wanted aside		
-		player->weapon->CancelEvents( &EV_Weapon_Aside );
+		player->GetWeapon()->CancelEvents( &EV_Weapon_Aside );
 		
 		// If the weapon is aside, put it upright
-		if ( player->weapon->IsAside() ) {
-			player->weapon->PutUpright();
+		if ( player->GetWeapon()->IsAside() ) {
+			player->GetWeapon()->PutUpright();
 		}
 		// Else if it is lowering, raise it
-		else if ( !player->weapon->IsRising() && player->weapon->IsLowered() ) {
-			player->weapon->Raise();
+		else if ( !player->GetWeapon()->IsRising() && player->GetWeapon()->IsLowered() ) {
+			player->GetWeapon()->Raise();
 		}
 		// Else if we aren't ready, how can we not be??!?
-		else if ( player->weapon->IsLowered() || player->weapon->IsLowered() ) {
+		else if ( player->GetWeapon()->IsLowered() || player->GetWeapon()->IsLowered() ) {
 			gameLocal.Warning( "hhHand::HandleWeapon ERROR: Have a weapon that is lowered/lowering when shouldn't be!" );
 		}
 		*/
@@ -752,8 +752,8 @@ bool hhHand::RemoveHand( void ) {
 	// NLA - If we want to upright the GUI
 	hhHand *prevHand = GetPreviousHand( player );
 	if ( ( !prevHand || !prevHand->asideWeapon ) && 
-		 ( asideWeapon && player->weapon.IsValid() && player->weapon->IsAside() ) ){
-		player->weapon->PutUpright();			
+		 ( asideWeapon && player->GetWeapon().IsValid() && player->GetWeapon()->IsAside() ) ){
+		player->GetWeapon()->PutUpright();			
 	}
 
 	CancelEvents( &EV_Hand_DoRemove );
@@ -1110,9 +1110,9 @@ void hhHand::PrintHandInfo( idPlayer *player ) {
 
 	orphaned = gameLocal.hands;
 
-  	gameLocal.Printf( "Weapon: %p Class: %s  State: %d\n", player->weapon,
-  			(const char *) player->weapon->GetDict()->GetString("classname"), 
-  			(int) player->weapon->GetStatus() );
+  	/*gameLocal.Printf( "Weapon: %p Class: %s  State: %d\n", player->GetWeapon(),
+  			(const char *) player->GetWeapon()->GetDict()->GetString("classname"),
+  			(int) player->GetWeapon()->GetStatus() );*/
 
 	hand = hhplayer->hand.GetEntity();
 	while ( hand != NULL ) {

@@ -159,7 +159,7 @@ protected:
 
 	projectileState_t		state;
 
-private:
+protected: //HUMANHEAD
 	bool					netSyncPhysics;
 
 	idVec3					launchOrigin;

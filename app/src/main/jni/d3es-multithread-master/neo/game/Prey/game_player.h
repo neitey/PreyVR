@@ -66,6 +66,11 @@ class hhPlayer : public idPlayer {
 	CLASS_PROTOTYPE(hhPlayer);
 
 public:
+	idEntityPtr<hhWeapon>   GetWeapon( void )
+	{
+		return hands[ vr_weaponHand.GetInteger() ].weapon;
+	}
+
 	weaponInfo_t				weaponInfo[15];
 	weaponInfo_t				altWeaponInfo[15];
 	float						lighterTemperature;			// Temp of the lighter.  0 = cold, 1 = too hot to use

@@ -34,7 +34,7 @@
 	}fruit_t;
 
 	typedef struct victory_s {
-		int			f1, f2, f3;
+		long		f1, f2, f3;
 		int			payoff;
 	}victory_t;
 
