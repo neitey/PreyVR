@@ -265,6 +265,8 @@ public:
 	bool					pushes;
 	float					pushCosine;
 
+	int						timeGroup;
+
 	int						GetNumReactions(void)				const	{return reactions.Num();}
 	hhReaction*				GetReaction(int i)							{return reactions[i];}
 protected:
@@ -275,8 +277,6 @@ protected:
 	virtual hhWoundManagerRenderEntity* CreateWoundManager() const { return new hhWoundManagerRenderEntity(this); }
 	virtual hhWoundManagerRenderEntity* GetWoundManager() { if(!woundManager) { woundManager = CreateWoundManager(); } return woundManager; }
 	// HUMANHEAD END
-
-	int						timeGroup;
 
 	bool					noGrab;
 

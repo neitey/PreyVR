@@ -41,6 +41,11 @@ Event are used for scheduling tasks and for linking script commands.
 */
 
 #define MAX_EVENTSPERFRAME			4096
+
+//HUMANHEAD: aob - needed for networking to send the least amount of bits
+const int MAX_EVENTS_NUM_BITS		= hhMath::BitsForInteger( MAX_EVENTS );
+//HUMANHEAD END
+
 //#define CREATE_EVENT_CODE
 
 /***********************************************************************
@@ -204,6 +209,21 @@ const idEventDef *idEventDef::FindEvent( const char *name ) {
 	return NULL;
 }
 
+/*
+================
+idEventDef::FindEvent
+
+HUMANHEAD: aob
+================
+*/
+const idEventDef *idEventDef::FindEvent( int eventId ) {
+	if( eventId < 0 || eventId >= numEventDefs ) {
+		return NULL;
+	}
+
+	return eventDefList[ eventId ];
+}
+
 /***********************************************************************
 
   idEvent
@@ -267,10 +287,12 @@ idEvent *idEvent::Alloc( const idEventDef *evdef, int numargs, va_list args ) {
 	for( i = 0; i < numargs; i++ ) {
 		arg = va_arg( args, idEventArg * );
 		if ( format[ i ] != arg->type ) {
+#if !defined(_PREY)
 			// when NULL is passed in for an entity, it gets cast as an integer 0, so don't give an error when it happens
 			if ( !( ( ( format[ i ] == D_EVENT_TRACE ) || ( format[ i ] == D_EVENT_ENTITY ) ) && ( arg->type == 'd' ) && ( arg->value == 0 ) ) ) {
 				gameLocal.Error( "idEvent::Alloc : Wrong type passed in for arg # %d on '%s' event.", i, evdef->GetName() );
 			}
+#endif
 		}
 
 		dataPtr = &ev->data[ evdef->GetArgOffset( i ) ];
@@ -342,10 +364,12 @@ void idEvent::CopyArgs( const idEventDef *evdef, int numargs, va_list args, intp
 	for( i = 0; i < numargs; i++ ) {
 		arg = va_arg( args, idEventArg * );
 		if ( format[ i ] != arg->type ) {
+#if !defined(_PREY)
 			// when NULL is passed in for an entity, it gets cast as an integer 0, so don't give an error when it happens
 			if ( !( ( ( format[ i ] == D_EVENT_TRACE ) || ( format[ i ] == D_EVENT_ENTITY ) ) && ( arg->type == 'd' ) && ( arg->value == 0 ) ) ) {
 				gameLocal.Error( "idEvent::CopyArgs : Wrong type passed in for arg # %d on '%s' event.", i, evdef->GetName() );
 			}
+#endif
 		}
 
 		data[ i ] = arg->value;
@@ -731,6 +755,28 @@ void idEvent::Shutdown( void ) {
 	// say it is now shutdown
 	initialized = false;
 }
+
+// HUMANHEAD pdm
+int idEvent::NumQueuedEvents( const idClass *obj, const idEventDef *evdef ) {
+	idEvent *event;
+	idEvent *next;
+	int count=0;
+
+	if ( !initialized ) {
+		return 0;
+	}
+
+	for( event = EventQueue.Next(); event != NULL; event = next ) {
+		next = event->eventNode.Next();
+		if ( event->object == obj ) {
+			if ( !evdef || ( evdef == event->eventdef ) ) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
+// HUMANHEAD END
 
 /*
 ================

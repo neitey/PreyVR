@@ -456,7 +456,9 @@ void * idClass::operator new( size_t s ) {
 	unsigned int *ptr = (unsigned int *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
-	size >>= 3;
+	// HUMANHEAD tmj: bugfix - shifting by 2 gives the number of DWORDs to fill.
+	// Shifting by 3 is incorrect as it only fills the memory half way.
+	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
 	}
@@ -478,7 +480,9 @@ void * idClass::operator new( size_t s, int, int, char *, int ) {
 	unsigned int *ptr = (unsigned int *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
-	size >>= 3;
+	// HUMANHEAD tmj: bugfix - shifting by 2 gives the number of DWORDs to fill.
+	// Shifting by 3 is incorrect as it only fills the memory half way.
+	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
 	}
@@ -582,6 +586,64 @@ idTypeInfo *idClass::GetType( const int typeNum ) {
 	return NULL;
 }
 
+#ifdef _HH_NET_DEBUGGING //HUMANHEAD rww
+void idClass::PrintHHNetStats_f( const idCmdArgs &args ) {
+	for( int i = 0; i < types.Num(); i++ ) {
+		idTypeInfo *type = types[ i ];
+		idLib::NetworkEntStats(type->classname, type->typeNum);
+	}
+}
+#endif //HUMANHEAD END
+
+#if !GOLD //HUMANHEAD rww
+void idClass::TestSnap_f( const idCmdArgs &args ) {
+	for( int i = 0; i < types.Num(); i++ ) {
+		byte testBuffer[16384];
+		byte testBufferDelta[16384];
+		idBitMsg base;
+		idBitMsg delta;
+		idBitMsgDelta msg;
+
+		memset(testBuffer, 0, sizeof(testBuffer));
+		base.Init(testBuffer, sizeof(testBuffer));
+		int j = 0;
+		while (j < sizeof(testBuffer)/4) { //hack
+			base.WriteBits(0, 32);
+			j++;
+		}
+		delta.Init(testBufferDelta, sizeof(testBufferDelta));
+		msg.Init(&base, (idBitMsg *)NULL, &delta);
+
+		idTypeInfo *type = types[i];
+		if (strcmp(type->classname, "hhDock") &&
+		    strcmp(type->classname, "hhFireController") &&
+		    strcmp(type->classname, "hhGravityZoneBase") &&
+		    strcmp(type->classname, "hhProxDoorSection") &&
+		    strcmp(type->classname, "hhVehicle") &&
+		    strcmp(type->classname, "hhZone") &&
+		    strcmp(type->classname, "idCamera") &&
+		    strcmp(type->classname, "idClass") &&
+		    strcmp(type->classname, "idEntity") &&
+		    strcmp(type->classname, "idPhysics")) { //more hacks
+			idClass *cl = type->CreateInstance();
+			if (cl && cl->IsType(idEntity::Type) &&
+			    !cl->IsType(hhWeapon::Type) && !cl->IsType(idWorldspawn::Type)) {
+				idEntity *ent = (idEntity *)cl;
+
+				ent->SetPhysics(NULL);
+				ent->GetPhysics()->SetSelf(ent);
+				ent->WriteToSnapshot(msg);
+				ent->ReadFromSnapshot(msg);
+				if (delta.GetSize() != delta.GetReadCount()) {
+					gameLocal.Error("Snapshot not aligned for '%s'!", type->classname);
+				}
+				ent->Event_Remove();
+			}
+		}
+	}
+}
+#endif //HUMANHEAD END
+
 /*
 ================
 idClass::GetClassname
@@ -645,7 +707,20 @@ bool idClass::PostEventArgs( const idEventDef *ev, int time, int numargs, ... ) 
 	// we don't want them processed usually, unless when the map is (re)loading.
 	// we allow threads to run fine, though.
 	if ( gameLocal.isClient && ( gameLocal.GameState() != GAMESTATE_STARTUP ) && !IsType( idThread::Type ) ) {
-		return true;
+		//HUMANHEAD rww - take client ents into account.
+		if (IsType(idEntity::Type))
+		{
+			idEntity *ent = static_cast<idEntity *>(this);
+			if (!ent->fl.clientEntity && !ent->fl.clientEvents)
+			{ //we add events for client entities, otherwise get out of here.
+				return true;
+			}
+		}
+		else
+		{
+			return true;
+		}
+		//END HUMANHEAD
 	}
 
 	va_start( args, numargs );
@@ -653,6 +728,11 @@ bool idClass::PostEventArgs( const idEventDef *ev, int time, int numargs, ... ) 
 	va_end( args );
 
 	event->Schedule( this, c, time );
+
+	// HUMANHEAD cjr: for showing all posted events
+	if(g_postEventsDebug.GetBool()) {
+		gameLocal.Printf("PostEvent: %s [%s]\n", ev->GetName(), this->GetClassname() );
+	}
 
 	return true;
 }

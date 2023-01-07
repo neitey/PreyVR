@@ -103,6 +103,7 @@ void idSaveGame::Close( void ) {
 
 	for( i = 1; i < objects.Num(); i++ ) {
 		CallSave_r( objects[ i ]->GetType(), objects[ i ] );
+		WRITE_SAVEDEBUG_MARKER( this, 0xD00F00AA ); // HUMANHEAD mdl
 	}
 
 	objects.Clear();
@@ -142,7 +143,9 @@ void idSaveGame::CallSave_r( const idTypeInfo *cls, const idClass *obj ) {
 		}
 	}
 
+	WRITE_SAVEDEBUG_MARKER( this, 0xD00F00BB ); // HUMANHEAD mdl
 	( obj->*cls->Save )( this );
+	WRITE_SAVEDEBUG_MARKER( this, 0xD00F00CC ); // HUMANHEAD mdl
 }
 
 /*
@@ -546,6 +549,29 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 
 	WriteInt(renderEntity.timeGroup);
 	WriteInt(renderEntity.xrayIndex);
+
+	// HUMANHEAD mdl
+	if( renderEntity.declBeam ) {
+		WriteBool( true );
+		WriteString( renderEntity.declBeam->GetName() );
+	} else {
+		WriteBool( false );
+	}
+
+	if( renderEntity.beamNodes ) {
+		WriteBool( true );
+		for( i = 0; i < MAX_BEAM_NODES; i++ ) {
+			WriteVec3( renderEntity.beamNodes->nodes[i] );
+		}
+	} else {
+		WriteBool( false );
+	}
+
+	WriteBool( renderEntity.onlyVisibleInSpirit );
+	WriteBool( renderEntity.onlyInvisibleInSpirit );
+	WriteBool( renderEntity.lowSkippable );		//HUMANHEAD bjk
+	WriteFloat( renderEntity.eyeDistance );
+	// HUMANHEAD END
 }
 
 /*
@@ -563,6 +589,7 @@ void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 	WriteInt( renderLight.allowLightInViewID );
 	WriteBool( renderLight.noShadows );
 	WriteBool( renderLight.noSpecular );
+	WriteBool( renderLight.lowSkippable );		//HUMANHEAD bjk
 	WriteBool( renderLight.pointLight );
 	WriteBool( renderLight.parallel );
 
@@ -638,6 +665,10 @@ void idSaveGame::WriteRenderView( const renderView_t &view ) {
 	WriteMat3( view.viewaxis );
 
 	WriteBool( view.cramZNear );
+	// HUMANHEAD mdl
+	WriteBool( view.forceUpdate );
+	WriteBool( view.viewSpiritEntities );
+	// HUMANHEAD END
 
 	WriteInt( view.time );
 
@@ -838,16 +869,7 @@ void idRestoreGame::RestoreObjects( void ) {
 	// restore all the objects
 	for( i = 1; i < objects.Num(); i++ ) {
 		CallRestore_r( objects[ i ]->GetType(), objects[ i ] );
-        /*if ( objects[ i ]->IsType( idEntity::Type ) ) {
-            idEntity *ent = static_cast<idEntity *>( objects[i] );
-            if (ent->name.Icmp("player1_weapon_left2") == 0 ||
-                ent->name.Icmp( "player1_weapon_left_worldmodel2" ) == 0 ||
-                ent->name.Icmp("player1_weapon_right2") == 0 ||
-                ent->name.Icmp( "player1_weapon_right_worldmodel2" ) == 0) {
-                delete(ent);
-                //gameLocal.UnregisterEntity(ent);
-            }
-        }*/
+		READ_SAVEDEBUG_MARKER( this, 0xD00F00AA ); // HUMANHEAD mdl
 	}
 
 	// regenerate render entities and render lights because are not saved
@@ -913,7 +935,11 @@ void idRestoreGame::CallRestore_r( const idTypeInfo *cls, idClass *obj ) {
 		}
 	}
 
+	READ_SAVEDEBUG_MARKER( this, 0xD00F00BB ); // HUMANHEAD mdl
+
 	( obj->*cls->Restore )( this );
+
+	READ_SAVEDEBUG_MARKER( this, 0xD00F00CC ); // HUMANHEAD mdl
 }
 
 /*
@@ -1332,6 +1358,40 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 
 	ReadInt(renderEntity.timeGroup);
 	ReadInt(renderEntity.xrayIndex);
+
+	// HUMANHEAD mdl
+	bool bTmp;
+	idStr strTmp;
+	ReadBool( bTmp );
+	if( bTmp ) {
+		ReadString( strTmp );
+		renderEntity.declBeam = declManager->FindBeam( strTmp );
+	} else {
+		renderEntity.declBeam = NULL;
+	}
+
+	ReadBool( bTmp );
+	if( bTmp ) {
+		renderEntity.beamNodes = (hhBeamNodes_t *)Mem_ClearedAlloc(sizeof(hhBeamNodes_t) * renderEntity.declBeam->numBeams);
+
+		for( i = 0; i < MAX_BEAM_NODES; i++ ) {
+			ReadVec3( renderEntity.beamNodes->nodes[i] );
+		}
+	} else {
+		renderEntity.beamNodes = NULL;
+	}
+
+	ReadBool( renderEntity.onlyVisibleInSpirit );
+	ReadBool( renderEntity.onlyInvisibleInSpirit );
+	ReadBool( renderEntity.lowSkippable );	//HUMANHEAD bjk
+	ReadFloat( renderEntity.eyeDistance );
+
+#if _HH_RENDERDEMO_HACKS
+	renderEntity.notInRenderDemos = 0;
+#endif
+	renderEntity.timeGroup = 0;
+//	renderEntity.xrayIndex = 0;
+	// HUMANHEAD END
 }
 
 /*
@@ -1350,6 +1410,7 @@ void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 	ReadInt( renderLight.allowLightInViewID );
 	ReadBool( renderLight.noShadows );
 	ReadBool( renderLight.noSpecular );
+	ReadBool( renderLight.lowSkippable );	//HUMANHEAD bjk
 	ReadBool( renderLight.pointLight );
 	ReadBool( renderLight.parallel );
 
@@ -1422,6 +1483,10 @@ void idRestoreGame::ReadRenderView( renderView_t &view ) {
 	ReadMat3( view.viewaxis );
 
 	ReadBool( view.cramZNear );
+	// HUMANHEAD mdl
+	ReadBool( view.forceUpdate );
+	ReadBool( view.viewSpiritEntities );
+	// HUMANHEAD END
 
 	ReadInt( view.time );
 
@@ -1563,4 +1628,59 @@ idRestoreGame::GetBuildNumber
 */
 int idRestoreGame::GetBuildNumber( void ) {
 	return buildNumber;
+}
+
+
+// HUMANHEAD ADDITIONS
+
+void idSaveGame::WriteEventDef( const idEventDef *event ) {
+	int value = -1;
+	if (event != NULL) {
+		value = event->GetEventNum();
+	}
+	file->Write( &value, sizeof( value ) );
+}
+
+void idRestoreGame::ReadEventDef( const idEventDef *&event ) {
+	int value;
+	file->Read( &value, sizeof( value ) );
+	if (value == -1) {
+		event = NULL;
+	}
+	else {
+		event = idEventDef::FindEvent(value);
+	}
+}
+
+void idSaveGame::WriteQuat( const idQuat &quat ) {
+	WriteFloat( quat.x );
+	WriteFloat( quat.y );
+	WriteFloat( quat.z );
+	WriteFloat( quat.w );
+}
+
+void idRestoreGame::ReadQuat( idQuat &quat ) {
+	ReadFloat( quat.x );
+	ReadFloat( quat.y );
+	ReadFloat( quat.z );
+	ReadFloat( quat.w );
+}
+
+void idSaveGame::WriteStringList( const idList<idStr> &list ) {
+	int num = list.Num();
+	WriteInt( num );
+	for( int i = 0; i < num; i++ ) {
+		WriteString( list[i] );
+	}
+}
+
+void idRestoreGame::ReadStringList( idList<idStr> &list ) {
+	int num;
+	idStr tmp;
+	ReadInt( num );
+	list.Clear();
+	for( int i = 0; i < num; i++ ) {
+		ReadString( tmp );
+		list.Append( tmp );
+	}
 }
