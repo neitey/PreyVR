@@ -123,7 +123,18 @@ void idTestModel::Spawn( void ) {
 
 	physicsObj.SetSelf( this );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
+#ifdef HUMANHEAD
+	if ( g_testModelPitch.GetFloat() != 0.0  ) {
+		idAngles spawnAngles;
+		spawnAngles = GetPhysics()->GetAxis().ToAngles();
+		spawnAngles.pitch = g_testModelPitch.GetFloat();
+		physicsObj.SetAxis( spawnAngles.ToMat3() );
+	} else {
+		physicsObj.SetAxis( GetPhysics()->GetAxis() );
+	}
+#else
 	physicsObj.SetAxis( GetPhysics()->GetAxis() );
+#endif
 
 	if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) ) {
 		spawnArgs.GetVector( "maxs", NULL, bounds[1] );
@@ -139,7 +150,8 @@ void idTestModel::Spawn( void ) {
 	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
 
 	// add the head model if it has one
-	headModel = spawnArgs.GetString( "def_head", "" );
+	// HUMANHEAD pdm: changed from def_head to model_head for precaching
+	headModel = spawnArgs.GetString( "model_head", "" );
 	if ( headModel[ 0 ] ) {
 		jointName = spawnArgs.GetString( "head_joint" );
 		joint = animator.GetJointHandle( jointName );
@@ -154,9 +166,14 @@ void idTestModel::Spawn( void ) {
 				sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
 			}
 
-			head = gameLocal.SpawnEntityType( idAnimatedEntity::Type, &args );
+			head = gameLocal.SpawnEntityType( hhAnimatedEntity::Type, &args );	//HUMANHEAD jsh switched to hhAnimatedEntity from idAnimatedEntity
 			animator.GetJointTransform( joint, gameLocal.time, origin, axis );
+#ifdef HUMANHEAD //added offset
+			idVec3 offset = spawnArgs.GetVector( "head_offset" );
+			origin = GetPhysics()->GetOrigin() + ( origin + modelOffset + offset ) * GetPhysics()->GetAxis();
+#else
 			origin = GetPhysics()->GetOrigin() + ( origin + modelOffset ) * GetPhysics()->GetAxis();
+#endif
 			head.GetEntity()->SetModel( headModel );
 			head.GetEntity()->SetOrigin( origin );
 			head.GetEntity()->SetAxis( GetPhysics()->GetAxis() );
@@ -376,13 +393,23 @@ void idTestModel::Think( void ) {
 
 			joint = animator.GetJointHandle( "origin" );
 			animator.GetJointTransform( joint, gameLocal.time, neworigin, axis );
-			neworigin = ( ( neworigin - animator.ModelDef()->GetVisualOffset() ) * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin();
+			if ( animator.ModelDef() ) { // HUMANHEAD CJR:  Added check for validity of the modelDef
+				neworigin = ( ( neworigin - animator.ModelDef()->GetVisualOffset() ) * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin();
+			} else {
+				neworigin = ( neworigin * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin(); // HUMANHEAD CJR:  old version
+			} // END HUMANHEAD
 			clip->Link( gameLocal.clip, this, 0, neworigin, clip->GetAxis() );
 		}
 	}
 
 	UpdateAnimation();
 	Present();
+
+	// HUMANHEAD nla - Add bounding box to test models
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugBounds( colorMagenta, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin() );
+	}
+	// HUMANHEAD end
 
 	if ( ( gameLocal.testmodel == this ) && g_showTestModelFrame.GetInteger() && anim ) {
 		gameLocal.Printf( "^5 Anim: ^7%s  ^5Frame: ^7%d/%d  Time: %.3f\n", animator.AnimFullName( anim ), animator.CurrentAnim( ANIMCHANNEL_ALL )->GetFrameNumber( gameLocal.time ),
@@ -789,6 +816,12 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 
 	dict.Set( "origin", offset.ToString() );
 	dict.Set( "angle", va( "%f", player->viewAngles.yaw + 180.0f ) );
+	// HUMANHEAD nla - Size key is needed to successfully animate.  Try doing a test model on a non-entity def, and you'll see the problem.
+	if ( !dict.GetString( "size", NULL ) ) {
+		//? Should we dynamically get this?
+		dict.Set( "size", "32 32 32" );
+	}
+	// HUAMNHEAD END
 	gameLocal.testmodel = ( idTestModel * )gameLocal.SpawnEntityType( idTestModel::Type, &dict );
 	gameLocal.testmodel->renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
 }
