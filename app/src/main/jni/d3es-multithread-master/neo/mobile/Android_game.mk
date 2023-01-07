@@ -320,6 +320,7 @@ src_game = \
 	game/Vr.cpp \
 	game/Weapon.cpp \
 	game/WorldSpawn.cpp \
+	#ai/AAS_NearPoint.cpp \
     #game/Prey/ai_Navigator.cpp \
 
 LOCAL_SRC_FILES = $(src_idlib) $(src_game)

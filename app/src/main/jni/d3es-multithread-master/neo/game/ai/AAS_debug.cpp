@@ -66,10 +66,26 @@ idAASLocal::DrawReachability
 ============
 */
 void idAASLocal::DrawReachability( const idReachability *reach ) const {
+#ifdef HUMANHEAD
+	idVec3 dir = (reach->end - reach->start).ToNormal() * 10;
+	gameRenderWorld->DebugArrow( colorCyan, reach->start - dir, reach->end + dir, 2 );
+	gameRenderWorld->DrawText( va( "%d", reach->toAreaNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis );
+#else
 	gameRenderWorld->DebugArrow( colorCyan, reach->start, reach->end, 2 );
 
 	if ( gameLocal.GetLocalPlayer() ) {
 		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis );
+	}
+#endif
+
+	switch( reach->travelType ) {
+		case TFL_WALK: {
+			const idReachability_Walk *walk = static_cast<const idReachability_Walk *>(reach);
+			break;
+		}
+		default: {
+			break;
+		}
 	}
 }
 
@@ -78,16 +94,15 @@ void idAASLocal::DrawReachability( const idReachability *reach ) const {
 idAASLocal::DrawEdge
 ============
 */
-void idAASLocal::DrawEdge( int edgeNum, bool arrow ) const {
+// HUMANHEAD nla - Added color parameterv
+void idAASLocal::DrawEdge( int edgeNum, bool arrow, idVec4 *color ) const {
 	const aasEdge_t *edge;
-	idVec4 *color;
 
 	if ( !file ) {
 		return;
 	}
 
 	edge = &file->GetEdge( edgeNum );
-	color = &colorRed;
 	if ( arrow ) {
 		gameRenderWorld->DebugArrow( *color, file->GetVertex( edge->vertexNum[0] ), file->GetVertex( edge->vertexNum[1] ), 1 );
 	} else {
@@ -104,7 +119,8 @@ void idAASLocal::DrawEdge( int edgeNum, bool arrow ) const {
 idAASLocal::DrawFace
 ============
 */
-void idAASLocal::DrawFace( int faceNum, bool side ) const {
+// HUMANHEAD nla - Added color parameter
+void idAASLocal::DrawFace( int faceNum, bool side, idVec4 *color ) const {
 	int i, j, numEdges, firstEdge;
 	const aasFace_t *face;
 	idVec3 mid, end;
@@ -119,7 +135,7 @@ void idAASLocal::DrawFace( int faceNum, bool side ) const {
 
 	mid = vec3_origin;
 	for ( i = 0; i < numEdges; i++ ) {
-		DrawEdge( abs( file->GetEdgeIndex( firstEdge + i ) ), ( face->flags & FACE_FLOOR ) != 0 );
+		DrawEdge( abs( file->GetEdgeIndex( firstEdge + i ) ), ( face->flags & FACE_FLOOR ) != 0, color );
 		j = file->GetEdgeIndex( firstEdge + i );
 		mid += file->GetVertex( file->GetEdge( abs( j ) ).vertexNum[ j < 0 ] );
 	}
@@ -152,7 +168,9 @@ void idAASLocal::DrawArea( int areaNum ) const {
 	firstFace = area->firstFace;
 
 	for ( i = 0; i < numFaces; i++ ) {
-		DrawFace( abs( file->GetFaceIndex( firstFace + i ) ), file->GetFaceIndex( firstFace + i ) < 0 );
+		// HUMANHEAD nla - added color parameter
+		DrawFace( abs( file->GetFaceIndex( firstFace + i ) ), file->GetFaceIndex( firstFace + i ) < 0,
+		          &colorRed );
 	}
 
 	for ( reach = area->reach; reach; reach = reach->next ) {
@@ -458,6 +476,56 @@ void idAASLocal::ShowPushIntoArea( const idVec3 &origin ) const {
 	areaNum = PointReachableAreaNum( target, DefaultSearchBounds(), (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
 	PushPointIntoAreaNum( areaNum, target );
 	gameRenderWorld->DebugArrow( colorGreen, origin, target, 1 );
+}
+
+/*
+============
+idAASLocal::DrawBounds
+============
+*/
+// HUMANHEAD nla
+void idAASLocal::DrawBounds( int areaNum ) const {
+	const aasArea_t	*area;
+	const idBounds	*bounds;
+	const idVec3		*p0, *p1;
+
+	area = &file->GetArea(areaNum);
+	if (area->numFaces < -1) {	// Not a valid area
+		return;
+	}
+
+	bounds = &area->bounds;
+
+	for (int i = 0; i < 2; ++i) {
+		p0 = &(*bounds)[i];
+		p1 = &(*bounds)[(i + 1) % 2];
+		for (int j = 0; j < 3; ++j) {
+			DrawBoundsEdge(*p0, *p1, j, 0);
+		}
+	}
+}
+
+
+/*
+============
+idAASLocal::DrawBoundsEdge
+============
+*/
+// HUMANHEAD nla
+void idAASLocal::DrawBoundsEdge( const idVec3 &p0, const idVec3 &ip1, int keep, int draw ) const {
+	idVec3 p1((*(keep == 0 ? &p0 : &ip1))[0],
+	          (*(keep == 1 ? &p0 : &ip1))[1],
+	          (*(keep == 2 ? &p0 : &ip1))[2]);
+
+
+	if (draw) {
+		gameRenderWorld->DebugLine( colorWhite, p0, p1);
+	}
+	else {
+		for (int i = 1; i < 3; ++i) {
+			DrawBoundsEdge(p0, p1, (keep + i) % 3, true);
+		}
+	}
 }
 
 /*

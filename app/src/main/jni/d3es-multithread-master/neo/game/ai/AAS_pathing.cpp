@@ -379,11 +379,11 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 			path.secondaryGoal = reach->end;
 			path.reachability = reach;
 			break;
-		case TFL_JUMP:
-			path.type |= PATHTYPE_JUMP;
+/*	    case TFL_FLY:	// HUMANHEAD nla REmoved per AAS error
+			path.type |= PATHTYPE_FLY;
 			path.secondaryGoal = reach->end;
 			path.reachability = reach;
-			break;
+			*/
 		default:
 			break;
 	}

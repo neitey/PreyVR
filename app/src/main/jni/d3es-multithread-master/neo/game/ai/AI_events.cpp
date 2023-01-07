@@ -187,9 +187,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_AttackMissile,					idAI::Event_AttackMissile )
 	EVENT( AI_FireMissileAtTarget,				idAI::Event_FireMissileAtTarget )
 	EVENT( AI_LaunchMissile,					idAI::Event_LaunchMissile )
-	EVENT( AI_LaunchHomingMissile,				idAI::Event_LaunchHomingMissile )
-	EVENT( AI_SetHomingMissileGoal,				idAI::Event_SetHomingMissileGoal )
-	EVENT(AI_LaunchProjectile,					idAI::Event_LaunchProjectile)
 	EVENT( AI_AttackMelee,						idAI::Event_AttackMelee )
 	EVENT( AI_DirectDamage,						idAI::Event_DirectDamage )
 	EVENT( AI_RadiusDamageFromJoint,			idAI::Event_RadiusDamageFromJoint )
@@ -558,7 +555,7 @@ void idAI::Event_MuzzleFlash( const char *jointname ) {
 	idMat3	axis;
 
 	GetMuzzle( jointname, muzzle, axis );
-	TriggerWeaponEffects( muzzle );
+	TriggerWeaponEffects( muzzle, axis );
 }
 
 /*
@@ -592,10 +589,10 @@ void idAI::Event_CreateMissile( const char *jointname ) {
 idAI::Event_AttackMissile
 =====================
 */
-void idAI::Event_AttackMissile( const char *jointname ) {
+void idAI::Event_AttackMissile( const char *jointname, const idDict *projDef, int boneDir ) {
 	idProjectile *proj;
 
-	proj = LaunchProjectile( jointname, enemy.GetEntity(), true );
+	proj = LaunchProjectile( jointname, enemy.GetEntity(), true, projDef );	//HUMANHEAD mdc - pass projDef on for multiple proj support
 	idThread::ReturnEntity( proj );
 }
 
@@ -613,7 +610,7 @@ void idAI::Event_FireMissileAtTarget( const char *jointname, const char *targetn
 		gameLocal.Warning( "Entity '%s' not found for 'fireMissileAtTarget'", targetname );
 	}
 
-	proj = LaunchProjectile( jointname, aent, false );
+	proj = LaunchProjectile( jointname, aent, false, NULL );
 	idThread::ReturnEntity( proj );
 }
 
@@ -667,67 +664,9 @@ void idAI::Event_LaunchMissile( const idVec3 &org, const idAngles &ang ) {
 	projectile.GetEntity()->Launch( tr.endpos, axis[ 0 ], vec3_origin );
 	projectile = NULL;
 
-	TriggerWeaponEffects( tr.endpos );
+	TriggerWeaponEffects( tr.endpos, axis );
 
 	lastAttackTime = gameLocal.time;
-}
-
-/*
-=====================
-idAI::Event_LaunchProjectile
-=====================
-*/
-void idAI::Event_LaunchProjectile(const char *entityDefName)
-{
-	idVec3				muzzle, start, dir;
-	const idDict		*projDef;
-	idMat3				axis;
-	const idClipModel	*projClip;
-	idBounds			projBounds;
-	trace_t				tr;
-	idEntity			*ent;
-	const char			*clsname;
-	float				distance;
-	idProjectile		*proj = NULL;
-
-	projDef = gameLocal.FindEntityDefDict(entityDefName);
-
-	gameLocal.SpawnEntityDef(*projDef, &ent, false);
-
-	if (!ent) {
-		clsname = projectileDef->GetString("classname");
-		gameLocal.Error("Could not spawn entityDef '%s'", clsname);
-	}
-
-	if (!ent->IsType(idProjectile::Type)) {
-		clsname = ent->GetClassname();
-		gameLocal.Error("'%s' is not an idProjectile", clsname);
-	}
-
-	proj = (idProjectile *)ent;
-
-	GetMuzzle("pistol", muzzle, axis);
-	proj->Create(this, muzzle, axis[0]);
-
-	// make sure the projectile starts inside the monster bounding box
-	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	projClip = proj->GetPhysics()->GetClipModel();
-	projBounds = projClip->GetBounds().Rotate(projClip->GetAxis());
-
-	if ((ownerBounds - projBounds).RayIntersection(muzzle, viewAxis[ 0 ], distance)) {
-		start = muzzle + distance * viewAxis[ 0 ];
-	} else {
-		start = ownerBounds.GetCenter();
-	}
-
-	gameLocal.clip.Translation(tr, start, muzzle, projClip, projClip->GetAxis(), MASK_SHOT_RENDERMODEL, this);
-	muzzle = tr.endpos;
-
-	GetAimDir(muzzle, enemy.GetEntity(), this, dir);
-
-	proj->Launch(muzzle, dir, vec3_origin);
-
-	TriggerWeaponEffects(muzzle);
 }
 
 /*
@@ -850,7 +789,6 @@ idAI::Event_CanBecomeSolid
 void idAI::Event_CanBecomeSolid( void ) {
 	int			i;
 	int			num;
-	bool		returnValue = true;
 	idEntity *	hit;
 	idClipModel *cm;
 	idClipModel *clipModels[ MAX_GENTITIES ];
@@ -869,29 +807,13 @@ void idAI::Event_CanBecomeSolid( void ) {
 			continue;
 		}
 
-		if (spawnClearMoveables && hit->IsType(idMoveable::Type) || hit->IsType(idBarrel::Type) || hit->IsType(idExplodingBarrel::Type)) {
-			idVec3 push;
-			push = hit->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-			push.z = 30.f;
-			push.NormalizeFast();
-
-			if ((idMath::Fabs(push.x) < 0.15f) && (idMath::Fabs(push.y) < 0.15f)) {
-				push.x = 10.f;
-				push.y = 10.f;
-				push.z = 15.f;
-				push.NormalizeFast();
-			}
-
-			push *= 300.f;
-			hit->GetPhysics()->SetLinearVelocity(push);
-		}
-
 		if ( physicsObj.ClipContents( cm ) ) {
-			returnValue = false;
+			idThread::ReturnFloat( false );
+			return;
 		}
 	}
 
-	idThread::ReturnFloat(returnValue);
+	idThread::ReturnFloat( true );
 }
 
 /*
@@ -953,7 +875,11 @@ idAI::Event_SetHealth
 =====================
 */
 void idAI::Event_SetHealth( float newHealth ) {
+#ifdef HUMANHEAD
+	SetHealth(newHealth); // JRM
+#else
 	health = newHealth;
+#endif
 	fl.takedamage = true;
 	if ( health > 0 ) {
 		AI_DEAD = false;
@@ -1839,7 +1765,9 @@ void idAI::Event_TestAnimMoveTowardEnemy( const char *animname ) {
 	delta = enemyEnt->GetPhysics()->GetOrigin() - physicsObj.GetOrigin();
 	yaw = delta.ToYaw();
 
-	moveVec = animator.TotalMovementDelta( anim ) * idAngles( 0.0f, yaw, 0.0f ).ToMat3() * physicsObj.GetGravityAxis();
+	// JRMMERGE_GRAVAXIS - GetGravViewAxis() needed here? Here is old
+	//moveVec = GetAnimator()->TotalMovementDelta( anim ) * GetGravViewAxis();// idAngles( 0.0f, ideal_yaw, 0.0f ).ToMat3() * physicsObj.GetGravityAxis(); // HUMANHEAD JRM - removed the ideal_yaw check and gravity /  REMOVED_GRAV_AXIS_MULT
+	moveVec = animator.TotalMovementDelta( anim ) * idAngles( 0.0f, ideal_yaw, 0.0f ).ToMat3() * physicsObj.GetGravityAxis();
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), moveVec, 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
@@ -1957,8 +1885,8 @@ void idAI::Event_Shrivel( float shrivel_time ) {
 		idThread::EndMultiFrameEvent( this, &AI_Shrivel );
 	}
 
-	renderEntity.shaderParms[ SHADERPARM_MD5_SKINSCALE ] = 1.0f - t * 0.5f;
-	UpdateVisuals();
+	// HUMANHEAD pdm: changed to go through our call
+	SetShaderParm(SHADERPARM_MD5_SKINSCALE, 1.0f - t * 0.5f);
 }
 
 /*
@@ -1979,9 +1907,9 @@ idAI::Event_Burn
 =====================
 */
 void idAI::Event_Burn( void ) {
-	renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
 	SpawnParticles( "smoke_burnParticleSystem" );
-	UpdateVisuals();
+	// HUMANHEAD pdm: changed to go through our call
+	SetShaderParm(SHADERPARM_TIME_OF_DEATH, MS2SEC(gameLocal.time));
 }
 
 /*
@@ -1991,8 +1919,8 @@ idAI::Event_ClearBurn
 */
 void idAI::Event_ClearBurn( void ) {
 	renderEntity.noShadow = spawnArgs.GetBool( "noshadows" );
-	renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = 0.0f;
-	UpdateVisuals();
+	// HUMANHEAD pdm: changed to go through our call
+	SetShaderParm(SHADERPARM_TIME_OF_DEATH, 0.0f);
 }
 
 /*
@@ -2886,92 +2814,4 @@ void idAI::Event_GetEmitter(const char *name)
 void idAI::Event_StopEmitter(const char *name)
 {
 	StopEmitter(name);
-}
-
-/*
-=====================
-idAI::Event_LaunchHomingMissile
-=====================
-*/
-void idAI::Event_LaunchHomingMissile() {
-	idVec3		start;
-	trace_t		tr;
-	idBounds	projBounds;
-	const idClipModel *projClip;
-	idMat3		axis;
-	float		distance;
-
-	if ( !projectileDef ) {
-		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-
-	idActor *enemy = GetEnemy();
-	if ( enemy == NULL ) {
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-
-	idVec3 org = GetPhysics()->GetOrigin() + idVec3( 0.0f, 0.0f, 250.0f );
-	idVec3 goal = enemy->GetPhysics()->GetOrigin();
-	homingMissileGoal = goal;
-
-//	axis = ( goal - org ).ToMat3();
-//	axis.Identity();
-	if ( !projectile.GetEntity() ) {
-		idHomingProjectile *homing = ( idHomingProjectile * ) CreateProjectile( org, idVec3( 0.0f, 0.0f, 1.0f ) );
-		if ( homing != NULL ) {
-			homing->SetEnemy( enemy );
-			homing->SetSeekPos( homingMissileGoal );
-		}
-	}
-
-	// make sure the projectile starts inside the monster bounding box
-	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	projClip = projectile.GetEntity()->GetPhysics()->GetClipModel();
-	projBounds = projClip->GetBounds().Rotate( projClip->GetAxis() );
-
-	// check if the owner bounds is bigger than the projectile bounds
-	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
-		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
-		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
-			if ( (ownerBounds - projBounds).RayIntersection( org, viewAxis[ 0 ], distance ) ) {
-				start = org + distance * viewAxis[ 0 ];
-			} else {
-				start = ownerBounds.GetCenter();
-			}
-	} else {
-		// projectile bounds bigger than the owner bounds, so just start it from the center
-		start = ownerBounds.GetCenter();
-	}
-
-	gameLocal.clip.Translation( tr, start, org, projClip, projClip->GetAxis(), MASK_SHOT_RENDERMODEL, this );
-
-	// launch the projectile
-	idThread::ReturnEntity( projectile.GetEntity() );
-	idVec3 dir = homingMissileGoal - org;
-	idAngles ang = dir.ToAngles();
-	ang.pitch = -45.0f;
-	projectile.GetEntity()->Launch( org, ang.ToForward(), vec3_origin );
-	projectile = NULL;
-
-	TriggerWeaponEffects( tr.endpos );
-
-	lastAttackTime = gameLocal.time;
-}
-
-/*
-=====================
-idAI::Event_SetHomingMissileGoal
-=====================
-*/
-void idAI::Event_SetHomingMissileGoal() {
-	idActor *enemy = GetEnemy();
-	if ( enemy == NULL ) {
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-
-	homingMissileGoal = enemy->GetPhysics()->GetOrigin();
 }

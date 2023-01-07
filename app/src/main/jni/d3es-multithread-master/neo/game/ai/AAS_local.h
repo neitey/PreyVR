@@ -234,8 +234,8 @@ private:	// debug
 	void						DrawBounds( int areaNum ) const;
 	void						DrawBoundsEdge( const idVec3 &p0, const idVec3 &ip1, int keep, int draw ) const;
 	// HUMANHEAD nla - Added color parameter
-	void						DrawFace( int faceNum, bool side ) const;
-	void						DrawEdge( int edgeNum, bool arrow ) const;
+	void						DrawFace( int faceNum, bool side, idVec4 *color = &colorRed ) const;
+	void						DrawEdge( int edgeNum, bool arrow, idVec4 *color = &colorRed ) const;
 	void						DrawReachability( const idReachability *reach ) const;
 	void						ShowArea( const idVec3 &origin ) const;
 	void						ShowWallEdges( const idVec3 &origin ) const;

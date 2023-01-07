@@ -1022,7 +1022,7 @@ void idAI::FreeObstacleAvoidanceNodes( void ) {
 ===============================================================================
 */
 
-const float OVERCLIP			= 1.001f;
+//const float OVERCLIP			= 1.001f;
 const int MAX_FRAME_SLIDE		= 5;
 
 typedef struct pathTrace_s {
