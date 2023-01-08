@@ -195,6 +195,7 @@ public:
 	void					LoadState( const idDict &args );
 
 	void					AddBindConstraints( void );
+	void					AddBindConstraint( constraintType_t type, int bodyId, jointHandle_t joint );
 	void					RemoveBindConstraints( void );
 
 	virtual void			ShowEditingDialog( void );

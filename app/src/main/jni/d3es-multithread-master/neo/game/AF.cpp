@@ -140,6 +140,8 @@ bool idAF::UpdateAnimation( void ) {
 	idMat3 axis, renderAxis, bodyAxis;
 	renderEntity_t *renderEntity;
 
+	PROFILE_SCOPE("Animation", PROFMASK_NORMAL);	// HUMANHEAD pdm
+
 	if ( !IsLoaded() ) {
 		return false;
 	}
@@ -228,7 +230,7 @@ idAF::SetupPose
   Transforms the articulated figure to match the current animation pose of the given entity.
 ================
 */
-void idAF::SetupPose( idEntity *ent, int time ) {
+void idAF::SetupPose( idEntity *ent, int time, bool checkPhysics ) { // HUMANHEAD mdl:  Added checkPhysics flag
 	int i;
 	idAFBody *body;
 	idVec3 origin;
@@ -251,7 +253,7 @@ void idAF::SetupPose( idEntity *ent, int time ) {
 	}
 
 	// if the animation is driven by the physics
-	if ( self->GetPhysics() == &physicsObj ) {
+	if ( checkPhysics && self->GetPhysics() == &physicsObj ) { // HUMANHEAD mdl:  Added flag to bypass physics check
 		return;
 	}
 
@@ -603,9 +605,12 @@ bool idAF::LoadBody( const idDeclAF_Body *fb, const idJointMat *joints ) {
 	animator->GetJointList( fb->containedJoints, jointList );
 	for( i = 0; i < jointList.Num(); i++ ) {
 		if ( jointBody[ jointList[ i ] ] != -1 ) {
-			gameLocal.Warning( "%s: joint '%s' is already contained by body '%s'",
-						name.c_str(), animator->GetJointName( (jointHandle_t)jointList[i] ),
-							physicsObj.GetBody( jointBody[ jointList[ i ] ] )->GetName().c_str() );
+			// HUMANHEAD nla - Added the body that is trying to get the joint
+			gameLocal.Warning( "%s: joint '%s' is already contained by body '%s' but adding to body '%s' instead",
+			                   name.c_str(), animator->GetJointName( (jointHandle_t)jointList[i] ),
+			                   physicsObj.GetBody( jointBody[ jointList[ i ] ] )->GetName().c_str(),
+			                   physicsObj.GetBody( id )->GetName().c_str() );
+			// HUMANHEAD END
 		}
 		jointBody[ jointList[ i ] ] = id;
 	}
@@ -1240,6 +1245,75 @@ void idAF::AddBindConstraints( void ) {
 	hasBindConstraints = true;
 }
 
+
+// HUMANHEAD pdm: for adding constraints at run time
+void idAF::AddBindConstraint( constraintType_t type, int bodyId, jointHandle_t joint, idEntity *master  ) {
+	idStr name;
+	idAFBody *body;
+	idVec3 origin, renderOrigin;
+	idMat3 axis, renderAxis;
+	idAFConstraint_Fixed *cFixed;
+	idAFConstraint_BallAndSocketJoint *cBall;
+	idAFConstraint_UniversalJoint *cUniversal;
+
+	if ( !IsLoaded() ) {
+		return;
+	}
+
+	// get the render position
+	origin = physicsObj.GetOrigin( 0 );
+	axis = physicsObj.GetAxis( 0 );
+	renderAxis = baseAxis.Transpose() * axis;
+	renderOrigin = origin - baseOrigin * renderAxis;
+
+	//TODO: Disallow multiple with the same name/bodyname
+
+	sprintf(name, "AddedBindConstraint %i", bodyId);
+	gameLocal.Printf( "Constraint name: %s\n", name.c_str() );
+
+	body = physicsObj.GetBody( BodyForClipModelId(bodyId) );
+	if ( !body ) {
+		gameLocal.Warning( "idAF::AddBindConstraint: body '%i' not found on entity '%s'", bodyId, self->name.c_str() );
+		return;
+	}
+
+	switch(type) {
+		case CONSTRAINT_FIXED:
+			cFixed = new idAFConstraint_Fixed( name, body, NULL );
+			cFixed->SetRelativeOrigin( (body->GetWorldOrigin() - master->GetOrigin()) * master->GetAxis().Transpose() );
+			cFixed->SetRelativeAxis( body->GetWorldAxis() * master->GetAxis().Transpose() );
+			physicsObj.AddConstraint( cFixed );
+			break;
+		case CONSTRAINT_BALLANDSOCKETJOINT:
+			cBall = new idAFConstraint_BallAndSocketJoint( name, body, NULL );
+			physicsObj.AddConstraint( cBall );
+
+			if ( joint == INVALID_JOINT ) {
+				gameLocal.Warning( "idAF::AddBindConstraints: joint invalid" );
+			}
+
+			animator->GetJointTransform( joint, gameLocal.time, origin, axis );
+			cBall->SetAnchor( renderOrigin + origin * renderAxis );
+			break;
+		case CONSTRAINT_UNIVERSALJOINT:
+			cUniversal = new idAFConstraint_UniversalJoint( name, body, NULL );
+			physicsObj.AddConstraint( cUniversal );
+
+			if ( joint == INVALID_JOINT ) {
+				gameLocal.Warning( "idAF::AddBindConstraints: joint invalid" );
+			}
+			animator->GetJointTransform( joint, gameLocal.time, origin, axis );
+			cUniversal->SetAnchor( renderOrigin + origin * renderAxis );
+			cUniversal->SetShafts( idVec3( 0, 0, 1 ), idVec3( 0, 0, -1 ) );
+			break;
+		default:
+			gameLocal.Warning( "idAF::AddBindConstraints: unknown constraint type '%d' on entity '%s'", (int)type, self->name.c_str() );
+			break;
+	}
+
+	hasBindConstraints = true;
+}
+
 /*
 ================
 idAF::RemoveBindConstraints
@@ -1269,3 +1343,46 @@ void idAF::RemoveBindConstraints( void ) {
 
 	hasBindConstraints = false;
 }
+
+// HUMANHEAD mdl
+bool idAF::TestSolidForce( bool &hiForce ) const {
+	int i;
+	idAFBody *body;
+	trace_t trace;
+	idStr str;
+	bool solid;
+	idVecX force;
+	float magnitude;
+
+	if ( !IsLoaded() ) {
+		return false;
+	}
+
+	if ( !af_testSolid.GetBool() ) {
+		return false;
+	}
+
+	solid = false;
+	hiForce = false;
+
+	for ( i = 0; i < physicsObj.GetNumBodies(); i++ ) {
+		body = physicsObj.GetBody( i );
+		force = body->GetTotalForce();
+		magnitude = force.Length();
+		if (magnitude > 300000.0f) {
+			hiForce = true;
+		}
+		if ( gameLocal.clip.Translation( trace, body->GetWorldOrigin(), body->GetWorldOrigin(), body->GetClipModel(), body->GetWorldAxis(), body->GetClipMask(), self ) ) {
+			float depth = idMath::Fabs( trace.c.point * trace.c.normal - trace.c.dist );
+
+			body->SetWorldOrigin( body->GetWorldOrigin() + trace.c.normal * ( depth + 8.0f ) );
+
+			gameLocal.DWarning( "%s: body '%s' stuck in %d (normal = %.2f %.2f %.2f, depth = %.2f)", self->name.c_str(),
+			                    body->GetName().c_str(), trace.c.contents, trace.c.normal.x, trace.c.normal.y, trace.c.normal.z, depth );
+			solid = true;
+
+		}
+	}
+	return solid;
+}
+// HUMANHEAD END

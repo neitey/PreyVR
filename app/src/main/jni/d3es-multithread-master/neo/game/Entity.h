@@ -278,12 +278,6 @@ protected:
 	virtual hhWoundManagerRenderEntity* GetWoundManager() { if(!woundManager) { woundManager = CreateWoundManager(); } return woundManager; }
 	// HUMANHEAD END
 
-	bool					noGrab;
-
-	renderEntity_t			xrayEntity;
-	qhandle_t				xrayEntityHandle;
-	const idDeclSkin 		*xraySkin;
-
 	void					DetermineTimeGroup(bool slowmo);
 
 	void					SetGrabbedState(bool grabbed);

@@ -1895,8 +1895,6 @@ idAI::Event_PreBurn
 =====================
 */
 void idAI::Event_PreBurn( void ) {
-	// No grabbing after the burn has started!
-	noGrab = true;
 	// for now this just turns shadows off
 	renderEntity.noShadow = true;
 }

@@ -3682,8 +3682,6 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		physicsObj.SetLinearVelocity( vec3_zero );
 		physicsObj.PutToRest();
 		physicsObj.DisableImpact();
-		// No grabbing if "model_death"
-		noGrab = true;
 	}
 
 	restartParticles = false;

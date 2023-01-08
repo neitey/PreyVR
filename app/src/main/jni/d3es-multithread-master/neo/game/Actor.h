@@ -183,7 +183,7 @@ public:
 	idVec3					EyeOffset( void ) const;
 	virtual // HUMANHEAD aob: made virtual
 	idVec3					GetEyePosition( void ) const;
-	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const;
+	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis );		//HUMANHEAD
 	void					SetFOV( float fov );
 	virtual // HUMANHEAD jrm - made virtual
 	bool					CheckFOV( const idVec3 &pos ) const;
