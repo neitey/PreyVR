@@ -111,8 +111,6 @@ private:
 	int							cheapShardsTime;
 	//HUMANHEAD END
 
-	bool						isXraySurface;
-
 	// state
 	idPhysics_StaticMulti		physicsObj;
 	idList<shard_t *>			shards;

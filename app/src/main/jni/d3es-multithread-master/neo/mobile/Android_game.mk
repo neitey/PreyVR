@@ -292,9 +292,10 @@ src_game = \
 	game/AF.cpp \
 	game/AFEntity.cpp \
 	game/Actor.cpp \
+	game/BrittleFracture.cpp \
 	game/Camera.cpp \
 	game/Entity.cpp \
-	game/BrittleFracture.cpp \
+	game/EntityAdditions.cpp \
 	game/Fx.cpp \
 	game/GameEdit.cpp \
 	game/Game_local.cpp \

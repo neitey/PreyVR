@@ -417,6 +417,11 @@ public:
 	virtual void		StopSound( const s_channelType channel );
 	virtual void		FadeSound( const s_channelType channel, float to, float over );
 
+#ifdef _HUMANHEAD
+	virtual void		ModifySound(idSoundShader* shader, const s_channelType channel, const hhSoundShaderParmsModifier& parmModifier);
+    virtual soundShaderParms_t* GetSoundParms(idSoundShader* shader, const s_channelType channel);
+#endif
+
 	virtual bool		CurrentlyPlaying( void ) const;
 
 	// can pass SCHANNEL_ANY

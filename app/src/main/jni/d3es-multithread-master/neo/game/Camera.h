@@ -80,6 +80,7 @@ protected:
 	float					fov;
 	idEntity				*attachedTo;
 	idEntity				*attachedView;
+	bool					bPlayerBoundCamera;
 };
 
 

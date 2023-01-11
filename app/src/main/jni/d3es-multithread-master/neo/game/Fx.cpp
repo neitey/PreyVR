@@ -85,6 +85,16 @@ void idEntityFx::Save( idSaveGame *savefile ) const {
 		}
 
 		savefile->WriteFloat( actions[i].delay );
+
+		//HUMANHEAD: aob - needed because I changed particleSystem's type
+		if( actions[i].particleSystem ) {
+			savefile->WriteString( actions[i].particleSystem->GetName() );
+		} else {
+			savefile->WriteString( "" );
+		}
+		savefile->WriteInt( actions[i].particleStartTime );
+		//HUMANHEAD END
+
 		savefile->WriteInt( actions[i].start );
 		savefile->WriteBool( actions[i].soundStarted );
 		savefile->WriteBool( actions[i].shakeStarted );
@@ -134,7 +144,13 @@ void idEntityFx::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( actions[i].delay );
 
 		// let the FX regenerate the particleSystem
-		actions[i].particleSystem = -1;
+		//HUMANHEAD: aob - needed because I changed particleSystem's type
+		idStr particleName;
+		savefile->ReadString( particleName );
+		actions[i].particleSystem = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particleName, false ) );
+		actions[i].particleStartTime = gameLocal.GetTime();
+		savefile->ReadInt( actions[i].particleStartTime );
+		//HUMANHEAD END
 
 		savefile->ReadInt( actions[i].start );
 		savefile->ReadBool( actions[i].soundStarted );
@@ -184,7 +200,10 @@ void idEntityFx::Setup( const char *fx ) {
 			laction.start = -1;
 			laction.lightDefHandle = -1;
 			laction.modelDefHandle = -1;
-			laction.particleSystem = -1;
+			//HUMANHEAD: aob - needed because I changed particleSystem's type
+			laction.particleSystem = NULL;
+			laction.particleStartTime = -1;
+			//HUMANHEAD END
 			laction.shakeStarted = false;
 			laction.decalDropped = false;
 			laction.launched = false;
@@ -258,7 +277,10 @@ void idEntityFx::Start( int time ) {
 		laction.start = time;
 		laction.soundStarted = false;
 		laction.shakeStarted = false;
-		laction.particleSystem = -1;
+		//HUMANHEAD: aob - changed because particleSystem's type changed
+		laction.particleSystem = NULL;
+		laction.particleStartTime = -2; //HUMANHEAD rww - changed from time to -2
+		//HUMANHEAD END
 		laction.decalDropped = false;
 		laction.launched = false;
 	}
@@ -343,6 +365,7 @@ idEntityFx::Run
 ================
 */
 void idEntityFx::Run( int time ) {
+/*	HUMANHEAD pdm: overridden
 	int ieff, j;
 	idEntity *ent = NULL;
 	const idDict *projectileDef = NULL;
@@ -516,7 +539,6 @@ void idEntityFx::Run( int time ) {
 				} else if ( fxaction.trackOrigin ) {
 					useAction->renderEntity.origin = GetPhysics()->GetOrigin() + fxaction.offset;
 					useAction->renderEntity.axis = fxaction.explicitAxis ? fxaction.axis : GetPhysics()->GetAxis();
-					gameRenderWorld->UpdateEntityDef(useAction->modelDefHandle, &useAction->renderEntity);
 				}
 				ApplyFade( fxaction, *useAction, time, actualStart );
 				break;
@@ -545,37 +567,9 @@ void idEntityFx::Run( int time ) {
 				}
 				break;
 			}
-			case FX_SHOCKWAVE: {
-				if (gameLocal.isClient) {
-					useAction->shakeStarted = true;
-					break;
-				}
-
-				if (!useAction->shakeStarted) {
-					idStr	shockDefName;
-					useAction->shakeStarted = true;
-
-					shockDefName = fxaction.data;
-
-					if (!shockDefName.Length()) {
-						shockDefName = "func_shockwave";
-					}
-
-					projectileDef = gameLocal.FindEntityDefDict(shockDefName, false);
-
-					if (!projectileDef) {
-						gameLocal.Warning("shockwave \'%s\' not found", shockDefName.c_str());
-					} else {
-						gameLocal.SpawnEntityDef(*projectileDef, &ent);
-						ent->SetOrigin(GetPhysics()->GetOrigin() + fxaction.offset);
-						ent->PostEventMS(&EV_Remove, ent->spawnArgs.GetInt("duration"));
-					}
-				}
-
-				break;
-			}
 		}
 	}
+*/
 }
 
 /*
@@ -588,6 +582,10 @@ idEntityFx::idEntityFx() {
 	started = -1;
 	nextTriggerTime = -1;
 	fl.networkSync = true;
+
+	//HUMANHEAD rww
+	persistentNetTime = false;
+	//HUMANHEAD END
 }
 
 /*
@@ -611,6 +609,10 @@ void idEntityFx::Spawn( void ) {
 		return;
 	}
 
+	//HUMANHEAD: aob
+	RemoveWhenDone( spawnArgs.GetBool("removeWhenDone") );
+	//HUMANHEAD END
+
 	const char *fx;
 	nextTriggerTime = 0;
 	fxEffect = NULL;
@@ -619,8 +621,13 @@ void idEntityFx::Spawn( void ) {
 	}
 	if ( !spawnArgs.GetBool( "triggered" ) ) {
 		Setup( fx );
-		if ( spawnArgs.GetBool( "test" ) || spawnArgs.GetBool( "start" ) || spawnArgs.GetFloat ( "restart" ) ) {
-			PostEventMS( &EV_Activate, 0, this );
+// HUMANHEAD bg: "deferredRestart" allows a restarting effect to be triggered.
+		if ( spawnArgs.GetBool( "test" ) || spawnArgs.GetBool( "start" )
+		     || (spawnArgs.GetFloat( "restart" ) && !spawnArgs.GetBool( "deferredRestart" )) ) {
+// HUMANHEAD END
+			//HUMANHEAD: aob - changed to processevent because projectiles close to walls toggle fx before it gets started
+			ProcessEvent( &EV_Activate, this );
+			//HUMANHEAD END
 		}
 	}
 }
@@ -756,6 +763,9 @@ void idEntityFx::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	WriteBindToSnapshot( msg );
 	msg.WriteLong( ( fxEffect != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_FX, fxEffect->Index() ) : -1 );
 	msg.WriteLong( started );
+	//HUMANHEAD rww
+	msg.WriteBits(persistentNetTime, 1);
+	//HUMANHEAD END
 }
 
 /*
@@ -770,10 +780,13 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	ReadBindFromSnapshot( msg );
 	fx_index = gameLocal.ClientRemapDecl( DECL_FX, msg.ReadLong() );
 	start_time = msg.ReadLong();
+	//HUMANHEAD rww
+	persistentNetTime = !!msg.ReadBits(1);
+	//HUMANHEAD END
 
 	if ( fx_index != -1 && start_time > 0 && !fxEffect && started < 0 ) {
 		spawnArgs.GetInt( "effect_lapse", "1000", max_lapse );
-		if ( gameLocal.time - start_time > max_lapse ) {
+		if ( (gameLocal.time - start_time > max_lapse) && !persistentNetTime ) { //HUMANHEAD rww - persistentNetTime means to start regardless
 			// too late, skip the effect completely
 			started = 0;
 			return;
@@ -783,6 +796,11 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 			gameLocal.Error( "FX at index %d not found", fx_index );
 		}
 		fxEffect = fx;
+
+		//HUMANHEAD rww - store this in the spawnArgs locally so that normal fx code can reference it without modification
+		spawnArgs.Set("fx", fx->GetName());
+		//HUMANHEAD END
+
 		Setup( fx->GetName() );
 		Start( start_time );
 	}

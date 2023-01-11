@@ -71,10 +71,13 @@ renderView_t *idCamera::GetRenderView() {
 
 ***********************************************************************/
 const idEventDef EV_Camera_SetAttachments( "<getattachments>", NULL );
+const idEventDef EV_Camera_SetFov( "setfov", "ffff" );		// HUMANHEAD pdm: added way for scripters to change camera FOV dynamically
 
 CLASS_DECLARATION( idCamera, idCameraView )
 	EVENT( EV_Activate,				idCameraView::Event_Activate )
 	EVENT( EV_Camera_SetAttachments, idCameraView::Event_SetAttachments )
+	// HUMANHEAD pdm: added way for scripters to change camera FOV dynamically
+	EVENT( EV_Camera_SetFov,		idCameraView::Event_SetFOV )
 END_CLASS
 
 
@@ -85,6 +88,8 @@ idCameraView::idCameraView
 */
 idCameraView::idCameraView() {
 	fov = 90.0f;
+
+	bPlayerBoundCamera = false;		// HUMANHEAD pdm
 	attachedTo = NULL;
 	attachedView = NULL;
 }
@@ -98,6 +103,7 @@ void idCameraView::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( fov );
 	savefile->WriteObject( attachedTo );
 	savefile->WriteObject( attachedView );
+	savefile->WriteBool( bPlayerBoundCamera );		// HUMANHEAD pdm
 }
 
 /*
@@ -109,6 +115,7 @@ void idCameraView::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( fov );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( attachedTo ) );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( attachedView ) );
+	savefile->ReadBool( bPlayerBoundCamera );		// HUMANHEAD pdm
 }
 
 /*
@@ -185,6 +192,8 @@ void idCameraView::Spawn( void ) {
 
 	PostEventMS( &EV_Camera_SetAttachments, 0 );
 
+	bPlayerBoundCamera = spawnArgs.GetBool("playerBoundCamera");		// HUMANHEAD pdm
+
 	UpdateChangeableSpawnArgs(NULL);
 }
 
@@ -209,6 +218,20 @@ void idCameraView::GetViewParms( renderView_t *view ) {
 		ent = this;
 	}
 
+	// HUMANHEAD pdm: allow non-zero viewID when needed for using privateCameraView that is bound to player model
+	if (bPlayerBoundCamera) {
+		view->viewID = gameLocal.GetLocalPlayer()->entityNumber + 1;
+	}
+
+	// HUMANHEAD mdl:  ent and ent->GetPhysics() must be non-NULL
+	if ( !ent || !ent->GetPhysics() ) {
+#if !GOLD
+		gameLocal.Warning( "idCameraView::GetViewParms():  entity or it's physics are NULL.\n");
+#endif
+		return;
+	}
+	// HUMANHEAD END
+
 	view->vieworg = ent->GetPhysics()->GetOrigin();
 	if ( attachedView ) {
 		dir = attachedView->GetPhysics()->GetOrigin() - view->vieworg;
@@ -219,6 +242,15 @@ void idCameraView::GetViewParms( renderView_t *view ) {
 	}
 
 	gameLocal.CalcFov( fov, view->fov_x, view->fov_y );
+}
+
+// HUMANHEAD pdm: added way for scripters to change camera FOV dynamically
+void idCameraView::Event_SetFOV( float fieldOfView, float accelTime, float decelTime, float duration ) {
+	if ( duration > 0.f ) {
+		//fov.Init( gameLocal.time, SEC2MS( accelTime ), SEC2MS( decelTime ), SEC2MS( duration ), fov.GetCurrentValue( gameLocal.GetTime() ), fieldOfView );//VR:nope
+	} else {
+		//fov.Init( gameLocal.time, 0.f, 0.f, 0.f, fov.GetEndValue(), fieldOfView );//VR:nope
+	}
 }
 
 /*

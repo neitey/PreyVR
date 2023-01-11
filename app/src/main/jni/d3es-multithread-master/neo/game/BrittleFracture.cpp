@@ -44,6 +44,10 @@ const int SHARD_FADE_START	= 2000;
 
 static const char *brittleFracture_SnapshotName = "_BrittleFracture_Snapshot_";
 
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww - demos need unique names per fracture entity
+static int brittleFractureUniqueNum = 0;
+#endif //HUMANHEAD END
+
 /*
 ================
 idBrittleFracture::idBrittleFracture
@@ -70,9 +74,12 @@ idBrittleFracture::idBrittleFracture( void ) {
 	lastRenderEntityUpdate = -1;
 	changed = false;
 
-	fl.networkSync = true;
+	//HUMANHEAD rww
+	cheapShards = 0;
+	cheapShardsTime = 0;
+	//HUMANHEAD END
 
-	isXraySurface = false;
+	fl.networkSync = true;
 }
 
 /*
@@ -157,7 +164,10 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 		savefile->WriteStaticObject( shards[i]->physicsObj );
 	}
 
-	savefile->WriteBool(isXraySurface);
+	//HUMANHEAD rww
+	savefile->WriteInt(cheapShards);
+	savefile->WriteInt(cheapShardsTime);
+	//HUMANHEAD END
 }
 
 /*
@@ -169,7 +179,18 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 	int i, j , num;
 
 	renderEntity.hModel = renderModelManager->AllocModel();
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww - demos need unique names per fracture entity
+	idStr::snPrintf(uniqueFractureName, 64, "%s_%i", brittleFracture_SnapshotName, brittleFractureUniqueNum);
+	brittleFractureUniqueNum++;
+	renderEntity.hModel->InitEmpty( uniqueFractureName );
+#else
 	renderEntity.hModel->InitEmpty( brittleFracture_SnapshotName );
+#endif //HUMANHEAD END
+
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww
+	//renderEntity.hModel->SetGameUpdatedModel(true);
+#endif //HUMANHEAD END
+
 	renderEntity.callback = idBrittleFracture::ModelCallback;
 	renderEntity.noShadow = true;
 	renderEntity.noSelfShadow = true;
@@ -246,7 +267,10 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 		}
 	}
 
-	savefile->ReadBool(isXraySurface);
+	//HUMANHEAD rww
+	savefile->ReadInt(cheapShards);
+	savefile->ReadInt(cheapShardsTime);
+	//HUMANHEAD END
 }
 
 /*
@@ -281,31 +305,30 @@ void idBrittleFracture::Spawn( void ) {
 	health = spawnArgs.GetInt( "health", "40" );
 	fl.takedamage = true;
 
+	//HUMANHEAD rww
+	cheapShards = spawnArgs.GetInt("cheapShards", "0");
+	cheapShardsTime = 0;
+	//HUMANHEAD END
+
 	// FIXME: set "bleed" so idProjectile calls AddDamageEffect
 	spawnArgs.SetBool( "bleed", 1 );
-
-	// check for xray surface
-	if (1) {
-		const idRenderModel *model = renderEntity.hModel;
-
-		isXraySurface = false;
-
-		for (int i = 0; i < model->NumSurfaces(); i++) {
-			const modelSurface_t *surf = model->Surface(i);
-
-			if (idStr(surf->shader->GetName()) == "textures/smf/window_scratch") {
-				isXraySurface = true;
-				break;
-			}
-		}
-	}
 
 	CreateFractures( renderEntity.hModel );
 
 	FindNeighbours();
 
 	renderEntity.hModel = renderModelManager->AllocModel();
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww - demos need unique names per fracture entity
+	idStr::snPrintf(uniqueFractureName, 64, "%s_%i", brittleFracture_SnapshotName, brittleFractureUniqueNum);
+	brittleFractureUniqueNum++;
+	renderEntity.hModel->InitEmpty( uniqueFractureName );
+#else
 	renderEntity.hModel->InitEmpty( brittleFracture_SnapshotName );
+#endif //HUMANHEAD END
+
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww
+	//renderEntity.hModel->SetGameUpdatedModel(true);
+#endif //HUMANHEAD END
 	renderEntity.callback = idBrittleFracture::ModelCallback;
 	renderEntity.noShadow = true;
 	renderEntity.noSelfShadow = true;
@@ -391,7 +414,11 @@ bool idBrittleFracture::UpdateRenderEntity( renderEntity_s *renderEntity, const 
 	}
 
 	// FIXME: re-use model surfaces
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww - demos need unique names per fracture entity
+	renderEntity->hModel->InitEmpty( uniqueFractureName );
+#else
 	renderEntity->hModel->InitEmpty( brittleFracture_SnapshotName );
+#endif //HUMANHEAD END
 
 	// allocate triangle surfaces for the fractures and decals
 	tris = renderEntity->hModel->AllocSurfaceTriangles( numTris * 3, material->ShouldCreateBackSides() ? numTris * 6 : numTris * 3 );
@@ -619,10 +646,44 @@ void idBrittleFracture::Think( void ) {
 				continue;
 			}
 
-			shard->physicsObj.Evaluate( endTime - startTime, endTime );
 
-			if ( !shard->physicsObj.IsAtRest() ) {
-				atRest = false;
+			//HUMANHEAD rww
+			if (cheapShards && shard->isCheap) { //stupid fake physics
+				const float fakeVelocityFactor = 0.03f;
+				const float fakeVelocityGravityFactor = 0.03f;
+				float factor = (float)(endTime - startTime)/USERCMD_MSEC;
+				idVec3 origin = shard->physicsObj.GetOrigin();
+				idVec3 vel = shard->physicsObj.GetLinearVelocity();
+				idAngles angVel = shard->physicsObj.GetAngularVelocity().ToAngles();
+				idAngles ang = shard->physicsObj.GetAxis().ToAngles();
+
+				float f = (2.0f-factor);
+				if (f < 0.1f) {
+					f = 0.1f;
+				}
+				else if (f > 0.99f) {
+					f = 0.99f;
+				}
+
+				origin += (vel*fakeVelocityFactor)*factor;
+				vel += (shard->physicsObj.GetGravity()*fakeVelocityGravityFactor);
+				vel *= f;
+
+				ang += (angVel*0.04f);
+
+				shard->physicsObj.SetOrigin(origin);
+				shard->physicsObj.SetLinearVelocity(vel);
+				shard->physicsObj.SetAxis(ang.ToMat3());
+				if ((gameLocal.time-cheapShardsTime) < 3000) { //don't rest for at least 3 seconds after spawning a cheap shard
+					atRest = false;
+				}
+			}
+			else {
+				//HUMANHEAD END
+				shard->physicsObj.Evaluate( endTime - startTime, endTime );
+				if ( !shard->physicsObj.IsAtRest() ) {
+					atRest = false;
+				}
 			}
 		}
 
@@ -714,6 +775,9 @@ void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, co
 		ServerSendEvent( EVENT_PROJECT_DECAL, &msg, true, -1 );
 	}
 
+#if HUMANHEAD
+	// Matter system handles the sound
+#else
 	if ( time >= gameLocal.time ) {
 		// try to get the sound from the damage def
 		const idDeclEntityDef *damageDef = NULL;
@@ -731,6 +795,7 @@ void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, co
 			StartSound( "snd_bullethole", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 	}
+#endif
 
 	a = gameLocal.random.RandomFloat() * idMath::TWO_PI;
 	c = cos( a );
@@ -831,6 +896,14 @@ void idBrittleFracture::DropShard( shard_t *shard, const idVec3 &point, const id
 	dir2 = origin - point;
 	dist = dir2.Normalize();
 	f = dist > maxShatterRadius ? 1.0f : idMath::Sqrt( dist - minShatterRadius ) * ( 1.0f / idMath::Sqrt( maxShatterRadius - minShatterRadius ) );
+
+	//HUMANHEAD rww - randomly create shards with no real physics
+	shard->isCheap = false;
+	if (cheapShards && cheapShards > (rand()%100)) {
+		shard->isCheap = true;
+		cheapShardsTime = gameLocal.time;
+	}
+	//HUMANHEAD END
 
 	// setup the physics
 	shard->physicsObj.SetSelf( this );
@@ -1019,10 +1092,14 @@ void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int dam
 idBrittleFracture::AddDamageEffect
 ================
 */
-void idBrittleFracture::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) {
+void idBrittleFracture::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName, bool broadcast ) { //HUMANHEAD rww - added broadcast
+#ifdef HUMANHEAD		//HUMANHEAD jsh allow decals on fractures that are disabled
+	ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName );
+#else
 	if ( !disableFracture ) {
 		ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName );
 	}
+#endif
 }
 
 /*
@@ -1049,11 +1126,7 @@ void idBrittleFracture::Fracture_r( idFixedWinding &w ) {
 		}
 
 		// randomly create a split plane
-		if (isXraySurface) {
-			a = idMath::TWO_PI / 2.f;
-		} else {
-			a = gameLocal.random.RandomFloat() * idMath::TWO_PI;
-		}
+		a = gameLocal.random.RandomFloat() * idMath::TWO_PI;
 		c = cos( a );
 		s = -sin( a );
 		axis[2] = windingPlane.Normal();
@@ -1122,58 +1195,21 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin(), 0 );
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), 0 );
 
+	for (i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++) {
+		surf = renderModel->Surface(i);
+		material = surf->shader;
 
-	if (isXraySurface) {
-		for (i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++) {
-			surf = renderModel->Surface(i);
-			material = surf->shader;
-
+		for (j = 0; j < surf->geometry->numIndexes; j += 3) {
 			w.Clear();
 
-			int k = 0;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
-
-			k = 1;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
-
-			k = 3;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
-
-			k = 2;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
+			for (k = 0; k < 3; k++) {
+				v = &surf->geometry->verts[ surf->geometry->indexes[ j + 2 - k ] ];
+				w.AddPoint(v->xyz);
+				w[k].s = v->st[0];
+				w[k].t = v->st[1];
+			}
 
 			Fracture_r(w);
-		}
-
-	} else {
-		for (i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++) {
-			surf = renderModel->Surface(i);
-			material = surf->shader;
-
-			for (j = 0; j < surf->geometry->numIndexes; j += 3) {
-				w.Clear();
-
-				for (k = 0; k < 3; k++) {
-					v = &surf->geometry->verts[ surf->geometry->indexes[ j + 2 - k ] ];
-					w.AddPoint(v->xyz);
-					w[k].s = v->st[0];
-					w[k].t = v->st[1];
-				}
-
-				Fracture_r(w);
-			}
 		}
 	}
 
