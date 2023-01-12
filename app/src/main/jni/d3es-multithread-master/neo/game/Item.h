@@ -64,6 +64,7 @@ public:
 	virtual bool			Pickup( idPlayer *player );
 	virtual void			Think( void );
 	virtual void			Present();
+	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis );
 
 	enum {
 		EVENT_PICKUP = idEntity::EVENT_MAXEVENTS,

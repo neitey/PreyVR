@@ -37,12 +37,21 @@ If you have questions concerning this license or the applicable additional terms
 // a key/val pair of "mover" "state" from below.. guis can represent
 // realtime info like this
 // binary only
-static const char *guiBinaryMoverStates[] = {
+#ifdef HUMANHEAD //removed static and added extern to force external linkage
+extern const char *guiBinaryMoverStates[] = {
 	"1",	// pos 1
 	"2",	// pos 2
 	"3",	// moving 1 to 2
 	"4"		// moving 2 to 1
 };
+#else
+static const char *guiBinaryMoverStates[] = {
+		"1",	// pos 1
+		"2",	// pos 2
+		"3",	// moving 1 to 2
+		"4"		// moving 2 to 1
+};
+#endif
 
 
 /*
@@ -73,6 +82,9 @@ const idEventDef EV_MoveDecelerateTo( "decelTo", "ff" );
 const idEventDef EV_RotateDownTo( "rotateDownTo", "df" );
 const idEventDef EV_RotateUpTo( "rotateUpTo", "df" );
 const idEventDef EV_RotateTo( "rotateTo", "v" );
+//HUMANHEAD: aob
+const idEventDef EV_RotateTo_World( "rotateTo_world", "v" );
+//HUMANHEAD END
 const idEventDef EV_Rotate( "rotate", "v" );
 const idEventDef EV_RotateOnce( "rotateOnce", "v" );
 const idEventDef EV_Bob( "bob", "ffv" );
@@ -113,6 +125,9 @@ CLASS_DECLARATION( idEntity, idMover )
 	EVENT( EV_RotateDownTo,			idMover::Event_RotateDownTo )
 	EVENT( EV_RotateUpTo,			idMover::Event_RotateUpTo )
 	EVENT( EV_RotateTo,				idMover::Event_RotateTo )
+	//HUMANHEAD: aob
+	EVENT( EV_RotateTo_World,		idMover::Event_RotateTo_World )
+	//HUMANHEAD END
 	EVENT( EV_Rotate,				idMover::Event_Rotate )
 	EVENT( EV_RotateOnce,			idMover::Event_RotateOnce )
 	EVENT( EV_Bob,					idMover::Event_Bob )
@@ -347,20 +362,36 @@ void idMover::Spawn( void ) {
 	dest_position = GetPhysics()->GetOrigin();
 	dest_angles = GetPhysics()->GetAxis().ToAngles();
 
+	// HUMANHEAD pdm: added support for noclipmodel
+	idClipModel *clipModel = NULL;
+	int clipMask = 0;
+	bool allowPush = false;
+	if (!spawnArgs.GetBool("noclipmodel")) {
+		clipModel = new idClipModel( GetPhysics()->GetClipModel() );
+		clipMask = MASK_SOLID;
+		allowPush = true;
+	}
+
 	physicsObj.SetSelf( this );
-	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
+	physicsObj.SetClipModel( clipModel, 1.0f );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
 	physicsObj.SetAxis( GetPhysics()->GetAxis() );
-	physicsObj.SetClipMask( MASK_SOLID );
+	physicsObj.SetClipMask( clipMask );
 	if ( !spawnArgs.GetBool( "solid", "1" ) ) {
 		physicsObj.SetContents( 0 );
 	}
-	if ( !renderEntity.hModel || !spawnArgs.GetBool( "nopush" ) ) {
+	if ( allowPush && (!renderEntity.hModel || !spawnArgs.GetBool( "nopush" )) ) {
 		physicsObj.SetPusher( 0 );
 	}
+	// HUMANHEAD END
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_position, vec3_origin, vec3_origin );
 	physicsObj.SetAngularExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_angles, ang_zero, ang_zero );
 	SetPhysics( &physicsObj );
+
+	//HUMANHEAD: aob
+	move.stage = FINISHED_STAGE;
+	rot.stage = FINISHED_STAGE;
+	//HUMANHEAD END
 
 	// see if we are on an areaportal
 	areaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
@@ -618,7 +649,16 @@ void idMover::DoneMoving( void ) {
 	idThread::ObjectMoveDone( move_thread, this );
 	move_thread = 0;
 
+// AOBMERGE: check out these channels to see if correct
+#ifdef HUMANHEAD
+	if( rot.stage == FINISHED_STAGE ) {
+		StopSound( SND_CHANNEL_BODY, false );
+		StopSound( SND_CHANNEL_BODY2, false );
+		StartSound( "snd_stop", SND_CHANNEL_ANY, 0, false, NULL );
+	}
+#else
 	StopSound( SND_CHANNEL_BODY, false );
+#endif
 }
 
 /*
@@ -629,8 +669,16 @@ idMover::UpdateMoveSound
 void idMover::UpdateMoveSound( moveStage_t stage ) {
 	switch( stage ) {
 		case ACCELERATION_STAGE: {
+#ifdef HUMANHEAD //play snd_move by default if snd_accel isnt set
+			if( !StartSound( "snd_accel", SND_CHANNEL_BODY2, 0, false, NULL ) ) {
+				StartSound( "snd_move", SND_CHANNEL_BODY2, 0, false, NULL );
+			}
+#else
 			StartSound( "snd_accel", SND_CHANNEL_BODY2, 0, false, NULL );
-			StartSound( "snd_move", SND_CHANNEL_BODY, 0, false, NULL );
+#endif
+			//HUMANHEAD: aob - changed start move sound to stop move sound as per Mike L. request
+			StopSound( SND_CHANNEL_BODY, false );
+			//HUMANHEAD END
 			break;
 		}
 		case LINEAR_STAGE: {
@@ -639,7 +687,13 @@ void idMover::UpdateMoveSound( moveStage_t stage ) {
 		}
 		case DECELERATION_STAGE: {
 			StopSound( SND_CHANNEL_BODY, false );
+#ifdef HUMANHEAD //play snd_move by default if snd_decel isnt set
+			if( !StartSound( "snd_decel", SND_CHANNEL_BODY2, 0, false, NULL ) ) {
+				StartSound( "snd_move", SND_CHANNEL_BODY2, 0, false, NULL );
+			}
+#else
 			StartSound( "snd_decel", SND_CHANNEL_BODY2, 0, false, NULL );
+#endif
 			break;
 		}
 		case FINISHED_STAGE: {
@@ -806,7 +860,16 @@ void idMover::DoneRotating( void ) {
 	idThread::ObjectMoveDone( rotate_thread, this );
 	rotate_thread = 0;
 
+#ifdef HUMANHEAD
+	//HUMANHEAD: aob
+	if( move.stage == FINISHED_STAGE ) {
+		StopSound( SND_CHANNEL_BODY, false );
+		StopSound( SND_CHANNEL_BODY2, false );
+		StartSound( "snd_stop", SND_CHANNEL_ANY, 0, false, NULL );
+	}
+#else
 	StopSound( SND_CHANNEL_BODY, false );
+#endif
 }
 
 /*
@@ -817,8 +880,16 @@ idMover::UpdateRotationSound
 void idMover::UpdateRotationSound( moveStage_t stage ) {
 	switch( stage ) {
 		case ACCELERATION_STAGE: {
+#ifdef HUMANHEAD //play snd_move by default if snd_accel isnt set
+			if ( !StartSound( "snd_accel", SND_CHANNEL_BODY2, 0, false, NULL ) ) {
+				StartSound( "snd_move", SND_CHANNEL_BODY2, 0, false, NULL );
+			}
+#else
 			StartSound( "snd_accel", SND_CHANNEL_BODY2, 0, false, NULL );
-			StartSound( "snd_move", SND_CHANNEL_BODY, 0, false, NULL );
+#endif
+			//HUMANHEAD: aob - changed start move sound to stop move sound as per Mike L. request
+			StopSound( SND_CHANNEL_BODY, false );
+			//HUMANHEAD END
 			break;
 		}
 		case LINEAR_STAGE: {
@@ -827,7 +898,13 @@ void idMover::UpdateRotationSound( moveStage_t stage ) {
 		}
 		case DECELERATION_STAGE: {
 			StopSound( SND_CHANNEL_BODY, false );
+#ifdef HUMANHEAD //play snd_move by default if snd_decel isnt set
+			if( !StartSound( "snd_decel", SND_CHANNEL_BODY2, 0, false, NULL ) ) {
+				StartSound( "snd_move", SND_CHANNEL_BODY2, 0, false, NULL );
+			}
+#else
 			StartSound( "snd_decel", SND_CHANNEL_BODY2, 0, false, NULL );
+#endif
 			break;
 		}
 		case FINISHED_STAGE: {
@@ -1001,6 +1078,7 @@ void idMover::Event_PartBlocked( idEntity *blockingEntity ) {
 	if ( damage > 0.0f ) {
 		blockingEntity->Damage( this, this, vec3_origin, "damage_moverCrush", damage, INVALID_JOINT );
 	}
+	blockingEntity->SquishedByDoor(this);	// HUMANHEAD pdm
 	if ( g_debugMover.GetBool() ) {
 		gameLocal.Printf( "%d: '%s' blocked by '%s'\n", gameLocal.time, name.c_str(), blockingEntity->name.c_str() );
 	}
@@ -1247,6 +1325,22 @@ idMover::Event_RotateTo
 void idMover::Event_RotateTo( idAngles &angles ) {
 	dest_angles = angles;
 	BeginRotation( idThread::CurrentThread(), true );
+}
+
+/*
+================
+idMover::Event_RotateTo_World
+
+HUMANHEAD: aob
+================
+*/
+void idMover::Event_RotateTo_World( idAngles &angles ) {
+	idAngles currentAngles( GetAxis()[0].ToAngles() );
+
+	idAngles rotOnceAngles( angles - currentAngles );
+	rotOnceAngles.Normalize180();
+
+	Event_RotateOnce( rotOnceAngles );
 }
 
 /*
@@ -1532,7 +1626,11 @@ idMover::SetPortalState
 */
 void idMover::SetPortalState( bool open ) {
 	assert( areaPortal );
+#if HUMANHEAD
+	gameLocal.SetPortalState( areaPortal, open ? PS_BLOCK_NONE : PS_BLOCK_VIEW );
+#else
 	gameLocal.SetPortalState( areaPortal, open ? PS_BLOCK_NONE : PS_BLOCK_ALL );
+#endif
 }
 
 /*
@@ -1543,7 +1641,12 @@ void idMover::SetPortalState( bool open ) {
 ===============================================================================
 */
 
+const idEventDef EV_GetSplineLength( "getSplineLength", NULL, 'f' ); //HUMANHEAD rdr
+const idEventDef EV_GetPositionForLength( "getPositionForLength", "f", 'v' ); //HUMANHEAD rdr
+
 CLASS_DECLARATION( idEntity, idSplinePath )
+				EVENT( EV_GetSplineLength,		idSplinePath::Event_GetSplineLength ) //HUMANHEAD rdr
+				EVENT( EV_GetPositionForLength,	idSplinePath::Event_GetPositionForLength ) //HUMANHEAD rdr
 END_CLASS
 
 /*
@@ -1555,12 +1658,65 @@ idSplinePath::idSplinePath() {
 }
 
 /*
+===============
+idSplinePath::Save
+
+HUMANHEAD rdr
+===============
+*/
+void idSplinePath::Save( idSaveGame *savefile ) const {
+	savefile->WriteFloat( splineLength );
+}
+
+/*
+===============
+idSplinePath::Restore
+
+HUMANHEAD rdr
+===============
+*/
+void idSplinePath::Restore( idRestoreGame *savefile ) {
+	savefile->ReadFloat( splineLength );
+}
+
+/*
 ================
 idSplinePath::Spawn
 ================
 */
 void idSplinePath::Spawn( void ) {
+	//HUMANHEAD START rdr
+
+	idCurve_Spline<idVec3>	*spline;
+	spline = this->GetSpline();
+
+	if ( spline ) {
+		float splineEndTime = spline->GetTime( spline->GetNumValues() - 1 );
+		splineLength = spline->GetLengthForTime( splineEndTime );
+	}
+	//HUMANHEAD END rdr
 }
+
+//HUMANHEAD START rdr - returns spline length in units
+void idSplinePath::Event_GetSplineLength() {
+	idThread::ReturnFloat( splineLength );
+}
+//HUMANHEAD END rdr
+
+//HUMANHEAD START rdr - returns world position for the length along the spline
+void idSplinePath::Event_GetPositionForLength( float length ) {
+	idCurve_Spline<idVec3>	*spline;
+	spline = this->GetSpline();
+
+	float time = 0.f;
+	idVec3 position;
+
+	time = spline->GetTimeForLength( length, 0.1f );
+	position = spline->GetCurrentValue( time );
+
+	idThread::ReturnVector( position );
+}
+//HUMANHEAD END rdr
 
 
 /*
@@ -1820,6 +1976,11 @@ bool idElevator::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 
 	if ( token.Icmp( "changefloor" ) == 0 ) {
 		if ( src->ReadToken( &token ) ) {
+			// HUMANHEAD pdm: Eat unused commands so it doesn't warn about them
+			if ( controlsDisabled ) {
+				return true;
+			}
+
 			int newFloor = atoi( token );
 			if ( newFloor == currentFloor ) {
 				// open currentFloor and interior doors
@@ -2066,6 +2227,18 @@ void idElevator::EnableProperDoors( void ) {
 	}
 }
 
+/*
+================
+idElevator::Event_PartBlocked
+	HUMANHEAD pdm
+================
+*/
+void idElevator::Event_PartBlocked( idEntity *blockingEntity ) {
+	if ( damage > 0.0f ) {
+		blockingEntity->Damage( this, this, vec3_origin, "damage_moverCrush", damage, INVALID_JOINT );
+	}
+	blockingEntity->SquishedByDoor(this);
+}
 
 /*
 ===============================================================================
@@ -2411,14 +2584,28 @@ void idMover_Binary::UpdateMoverSound( moverState_t state ) {
 	if ( moveMaster == this ) {
 		switch( state ) {
 			case MOVER_POS1:
+				//HUMANHEAD: aob - changed channel to a specific one so the old
+				//sound is stopped when a we update
+				StartSound( "snd_closed", SND_CHANNEL_BODY, 0, false, NULL );
+				//HUMANHEAD END
 				break;
 			case MOVER_POS2:
+				//HUMANHEAD: aob - changed channel to a specific one so the old
+				//sound is stopped when a we update
+				StartSound( "snd_opened", SND_CHANNEL_BODY, 0, false, NULL );
+				//HUMANHEAD END
 				break;
 			case MOVER_1TO2:
-				StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+				//HUMANHEAD: aob - changed channel to a specific one so the old
+				//sound is stopped when a we update
+				StartSound( "snd_open", SND_CHANNEL_BODY, 0, false, NULL );
+				//HUMANHEAD END
 				break;
 			case MOVER_2TO1:
-				StartSound( "snd_close", SND_CHANNEL_ANY, 0, false, NULL );
+				//HUMANHEAD: aob - changed channel to a specific one so the old
+				//sound is stopped when a we update
+				StartSound( "snd_close", SND_CHANNEL_BODY, 0, false, NULL );
+				//HUMANHEAD END
 				break;
 		}
 	}
@@ -2435,7 +2622,8 @@ void idMover_Binary::SetMoverState( moverState_t newstate, int time ) {
 	moverState = newstate;
 	move_thread = 0;
 
-	UpdateMoverSound( newstate );
+	if ( gameLocal.time > 0 ) // HUMANHEAD mdl:  Don't update sound at spawn time
+		UpdateMoverSound( newstate );
 
 	stateStartTime = time;
 	switch( moverState ) {
@@ -2544,7 +2732,9 @@ void idMover_Binary::Event_Enable( void ) {
 	idMover_Binary *slave;
 
 	for ( slave = moveMaster; slave != NULL; slave = slave->activateChain ) {
-		slave->Enable( false );
+		//HUMANHEAD: aob - changed from false to true
+		slave->Enable( true );
+		//HUMANHEAD END
 	}
 }
 
@@ -2626,9 +2816,11 @@ void idMover_Binary::Event_Reached_BinaryMover( void ) {
 		idThread::ObjectMoveDone( move_thread, this );
 		move_thread = 0;
 
+/*	HUMANHEAD aob - removed
 		if ( moveMaster == this ) {
 			StartSound( "snd_opened", SND_CHANNEL_ANY, 0, false, NULL );
 		}
+	HUMANHEAD END */
 
 		SetMoverState( MOVER_POS2, gameLocal.time );
 
@@ -2771,18 +2963,19 @@ idMover_Binary::UpdateBuddies
 ================
 */
 void idMover_Binary::UpdateBuddies( int val ) {
+/*	HUMANHEAD pdm: undocumented, unused
 	int i, c;
 
 	if ( updateStatus == 2 ) {
-		 c = buddies.Num();
+		c = buddies.Num();
 		for ( i = 0; i < c; i++ ) {
 			idEntity *buddy = gameLocal.FindEntity( buddies[i] );
 			if ( buddy ) {
 				buddy->SetShaderParm( SHADERPARM_MODE, val );
-				buddy->UpdateVisuals();
 			}
 		}
 	}
+*/
 }
 
 /*
@@ -3088,7 +3281,11 @@ idMover_Binary::SetPortalState
 */
 void idMover_Binary::SetPortalState( bool open ) {
 	assert( areaPortal );
+#if HUMANHEAD
+	gameLocal.SetPortalState( areaPortal, open ? PS_BLOCK_NONE : PS_BLOCK_VIEW );
+#else
 	gameLocal.SetPortalState( areaPortal, open ? PS_BLOCK_NONE : PS_BLOCK_ALL );
+#endif
 }
 
 /*
@@ -3193,6 +3390,10 @@ void idDoor::Save( idSaveGame *savefile ) const {
 	savefile->WriteClipModel( sndTrigger );
 
 	savefile->WriteObject( companionDoor );
+
+	// HUMANHEAD mdl
+	savefile->WriteStringList( buddyNames );
+	// HUMANHEAD END
 }
 
 /*
@@ -3222,6 +3423,10 @@ void idDoor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadClipModel( sndTrigger );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( companionDoor ) );
+
+	// HUMANHEAD mdl
+	savefile->ReadStringList( buddyNames );
+	// HUMANHEAD END
 }
 
 /*
@@ -3267,12 +3472,19 @@ void idDoor::Spawn( void ) {
 	spawnArgs.GetBool( "crusher", "0", crusher );
 	spawnArgs.GetBool( "start_open", "0", start_open );
 	spawnArgs.GetBool( "no_touch", "0", noTouch );
-	spawnArgs.GetBool("player_only", "0", playerOnly);
+
+	// HUMANHEAD pdm: alwaysLocked implies noTouch, don't make trigger
+	if (spawnArgs.GetBool("alwaysLocked")) {
+		noTouch = true;
+	}
 
 	// expects syncLock to be a door that must be closed before this door will open
 	spawnArgs.GetString( "syncLock", "", syncLock );
 
 	spawnArgs.GetString( "buddy", "", buddyStr );
+	// HUMANHEAD nla
+	hhUtils::GetValues( spawnArgs, "buddy", buddyNames, true );
+	// HUMANHEAD END
 
 	spawnArgs.GetString( "requires", "", requires );
 	spawnArgs.GetInt( "removeItem", "0", removeItem );
@@ -3291,11 +3503,13 @@ void idDoor::Spawn( void ) {
 	distance = ( abs_movedir * size ) - lip;
 	pos2 = pos1 + distance * movedir;
 
+#if !HUMANHEAD//aob - we are just going to set moverState to POS2
 	// if "start_open", reverse position 1 and 2
 	if ( start_open ) {
 		// post it after EV_SpawnBind
 		PostEventMS( &EV_Door_StartOpen, 1 );
 	}
+#endif
 
 	if ( spawnArgs.GetFloat( "time", "1", time ) ) {
 		InitTime( pos1, pos2, time, 0, 0 );
@@ -3303,11 +3517,15 @@ void idDoor::Spawn( void ) {
 		InitSpeed( pos1, pos2, speed, 0, 0 );
 	}
 
+#ifdef HUMANHEAD//aob - need to do this here because InitTime and InitSpeed both set moverState
+	SetMoverState( (start_open) ? MOVER_POS2 : MOVER_POS1, gameLocal.time );
+#endif
+
 	if ( moveMaster == this ) {
 		if ( health ) {
 			fl.takedamage = true;
 		}
-		if ( noTouch || health ) {
+		if ( noTouch ) { // || health ) {  // HUMANHEAD nla - The EV_Door_SpawnDoorTrigger needs to be called
 			// non touch/shoot doors
 			PostEventMS( &EV_Mover_MatchTeam, 0, moverState, gameLocal.time );
 
@@ -3326,10 +3544,6 @@ void idDoor::Spawn( void ) {
 	if ( !start_open ) {
 		// start closed
 		ProcessEvent( &EV_Mover_ClosePortal );
-
-		if (playerOnly) {
-			gameLocal.SetAASAreaState(GetPhysics()->GetAbsBounds(), AREACONTENTS_CLUSTERPORTAL, true);
-		}
 	}
 
 	int locked = spawnArgs.GetInt( "locked" );
@@ -3337,6 +3551,9 @@ void idDoor::Spawn( void ) {
 		// make sure all members of the team get locked
 		PostEventMS( &EV_Door_Lock, 0, locked );
 	}
+
+	// HUMANHEAD pdm
+	SetShaderParm( SHADERPARM_MODE, GetDoorShaderParm( locked != 0, true ) );	// 2=locked, 1=unlocked, 0=never locked
 
 	if ( spawnArgs.GetBool( "continuous" ) ) {
 		PostEventSec( &EV_Activate, spawnArgs.GetFloat( "delay" ), this );
@@ -3563,6 +3780,20 @@ void idDoor::Lock( int f ) {
 				}
 			}
 			door->spawnArgs.SetInt( "locked", f );
+
+			// HUMANHEAD pdm: set shader parm properly of door parts as well as buddies
+			float parmValue = GetDoorShaderParm( f != 0, false );
+			door->SetShaderParm( SHADERPARM_MODE, parmValue );	// 2=locked, 1=unlocked, 0=never locked
+
+			for ( int i = 0; i < buddyNames.Num(); ++i ) {
+				if ( buddyNames[i].Length() ) {
+					idEntity *buddy = gameLocal.FindEntity( buddyNames[i] );
+					if ( buddy ) {
+						buddy->SetShaderParm( SHADERPARM_MODE, parmValue );	// 2=locked, 1=unlocked, 0=non-openable
+					}
+				}
+			}
+			// HUMANHEAD END
 			if ( ( f == 0 ) || ( !IsHidden() && ( door->moverState == MOVER_POS1 ) ) ) {
 				door->SetAASAreaState( f != 0 );
 			}
@@ -3627,8 +3858,12 @@ void idDoor::CalcTriggerBounds( float size, idBounds &bounds ) {
 	int				i;
 	int				best;
 
+#ifdef HUMANHEAD//aob - used to allow trigger in correct place when we start open
+	bounds.FromTransformedBounds( GetPhysics()->GetBounds(), pos1, GetPhysics()->GetAxis() );
+#else
 	// find the bounds of everything on the team
 	bounds = GetPhysics()->GetAbsBounds();
+#endif
 
 	fl.takedamage = true;
 	for( other = activateChain; other != NULL; other = other->GetActivateChain() ) {
@@ -3766,23 +4001,9 @@ idDoor::Event_Reached_BinaryMover
 void idDoor::Event_Reached_BinaryMover( void ) {
 	if ( moverState == MOVER_2TO1 ) {
 		SetBlocked( false );
-		const idKeyValue *kv = spawnArgs.MatchPrefix( "triggerClosed" );
-		while( kv ) {
-			idEntity *ent = gameLocal.FindEntity( kv->GetValue() );
-			if ( ent ) {
-				ent->PostEventMS( &EV_Activate, 0, moveMaster->GetActivator() );
-			}
-			kv = spawnArgs.MatchPrefix( "triggerClosed", kv );
-		}
+		ActivatePrefixed("triggerClosed", moveMaster->GetActivator());	// HUMANHEAD pdm: replaced with our simplified version
 	} else if ( moverState == MOVER_1TO2 ) {
-		const idKeyValue *kv = spawnArgs.MatchPrefix( "triggerOpened" );
-		while( kv ) {
-			idEntity *ent = gameLocal.FindEntity( kv->GetValue() );
-			if ( ent ) {
-				ent->PostEventMS( &EV_Activate, 0, moveMaster->GetActivator() );
-			}
-			kv = spawnArgs.MatchPrefix( "triggerOpened", kv );
-		}
+		ActivatePrefixed("triggerOpened", moveMaster->GetActivator());	// HUMANHEAD pdm: replaced with our simplified version
 	}
 	idMover_Binary::Event_Reached_BinaryMover();
 }
@@ -3825,6 +4046,7 @@ void idDoor::Event_PartBlocked( idEntity *blockingEntity ) {
 	if ( damage > 0.0f ) {
 		blockingEntity->Damage( this, this, vec3_origin, "damage_moverCrush", damage, INVALID_JOINT );
 	}
+	blockingEntity->SquishedByDoor(this);	// HUMANHEAD pdm
 }
 
 /*
@@ -3901,13 +4123,8 @@ void idDoor::Event_Activate( idEntity *activator ) {
 		if ( !trigger ) {
 			PostEventMS( &EV_Door_SpawnDoorTrigger, 0 );
 		}
-		if ( buddyStr.Length() ) {
-			idEntity *buddy = gameLocal.FindEntity( buddyStr );
-			if ( buddy ) {
-				buddy->SetShaderParm( SHADERPARM_MODE, 1 );
-				buddy->UpdateVisuals();
-			}
-		}
+
+		// HUMANHEAD pdm: removed buddy shaderparm logic, now handled within the lock call
 
 		old_lock = spawnArgs.GetInt( "locked" );
 		Lock( 0 );
@@ -3927,8 +4144,9 @@ void idDoor::Event_Activate( idEntity *activator ) {
 
 	ActivateTargets( activator );
 
-	renderEntity.shaderParms[ SHADERPARM_MODE ] = 1;
-	UpdateVisuals();
+// HUMANHEAD pdm: all shaderparm logic moved to lock function
+//	renderEntity.shaderParms[ SHADERPARM_MODE ] = 1;
+//	UpdateVisuals();
 
 	Use_BinaryMover( activator );
 }
@@ -4264,6 +4482,7 @@ void idPlat::Event_PartBlocked( idEntity *blockingEntity ) {
 	if ( damage > 0.0f ) {
 		blockingEntity->Damage( this, this, vec3_origin, "damage_moverCrush", damage, INVALID_JOINT );
 	}
+	blockingEntity->SquishedByDoor(this);	// HUMANHEAD pdm
 }
 
 
@@ -4355,6 +4574,7 @@ void idMover_Periodic::Event_PartBlocked( idEntity *blockingEntity ) {
 	if ( damage > 0.0f ) {
 		blockingEntity->Damage( this, this, vec3_origin, "damage_moverCrush", damage, INVALID_JOINT );
 	}
+	blockingEntity->SquishedByDoor(this);	// HUMANHEAD pdm
 }
 
 /*
@@ -4409,14 +4629,26 @@ idRotater::Spawn
 ===============
 */
 void idRotater::Spawn( void ) {
+
+	// HUMANHEAD pdm: added support for noclipmodel
+	idClipModel *clipModel = NULL;
+	int clipMask = 0;
+	bool allowPush = false;
+	if (!spawnArgs.GetBool("noclipmodel")) {
+		clipModel = new idClipModel( GetPhysics()->GetClipModel() );
+		clipMask = MASK_SOLID;
+		allowPush = true;
+	}
+
 	physicsObj.SetSelf( this );
-	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
+	physicsObj.SetClipModel( clipModel, 1.0f );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
 	physicsObj.SetAxis( GetPhysics()->GetAxis() );
-	physicsObj.SetClipMask( MASK_SOLID );
-	if ( !spawnArgs.GetBool( "nopush" ) ) {
+	physicsObj.SetClipMask( clipMask );
+	if ( allowPush && (!renderEntity.hModel || !spawnArgs.GetBool( "nopush" )) ) {
 		physicsObj.SetPusher( 0 );
 	}
+	// HUMANHEAD END
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, gameLocal.time, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
 	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, GetPhysics()->GetAxis().ToAngles(), ang_zero, ang_zero );
 	SetPhysics( &physicsObj );

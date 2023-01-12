@@ -261,6 +261,7 @@ protected:
 	void					SpawnTrigger( const idVec3 &pos );
 	void					GetLocalTriggerPosition();
 	void					Event_Touch( idEntity *other, trace_t *trace );
+	void					Event_PartBlocked( idEntity *blockingEntity );
 
 private:
 	typedef enum {

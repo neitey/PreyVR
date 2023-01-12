@@ -65,6 +65,9 @@ idIK::idIK()
 	animator = NULL;
 	modifiedAnim = 0;
 	modelOffset.Zero();
+	// HUMANHEAD nla
+	normalPrev.Zero();
+	// HUMANHEAD
 }
 
 /*
@@ -88,6 +91,7 @@ void idIK::Save( idSaveGame* savefile ) const
 	savefile->WriteObject( self );
 	savefile->WriteString( animator != NULL && animator->GetAnim( modifiedAnim ) ? animator->GetAnim( modifiedAnim )->Name() : "" );
 	savefile->WriteVec3( modelOffset );
+	savefile->WriteVec3( normalPrev ); 	// HUMANHEAD mdl
 }
 
 /*
@@ -126,6 +130,7 @@ void idIK::Restore( idRestoreGame* savefile )
 		animator = NULL;
 		modifiedAnim = 0;
 	}
+	savefile->ReadVec3( normalPrev ); 	// HUMANHEAD mdl
 }
 
 /*
@@ -439,6 +444,8 @@ idIK_Walk::idIK_Walk()
 	oldHeightsValid = false;
 	oldWaistHeight = 0.0f;
 	waistOffset.Zero();
+
+	lastFrame = 0; // HUMANHEAD mdl:  Does not need to be saved
 }
 
 /*
@@ -598,6 +605,8 @@ bool idIK_Walk::Init( idEntity* self, const char* anim, const idVec3& modelOffse
 	const char* jointName;
 	idVec3 dir, ankleOrigin, kneeOrigin, hipOrigin, dirOrigin;
 	idMat3 axis, ankleAxis, kneeAxis, hipAxis;
+	idVec3 forceDir[MAX_LEGS]; // HUMANHEAD mdl
+	idMat3 rotateMatrix[MAX_LEGS]; // HUMANHEAD mdl
 
 	static idVec3 footWinding[4] =
 			{
@@ -663,8 +672,18 @@ bool idIK_Walk::Init( idEntity* self, const char* anim, const idVec3& modelOffse
 			gameLocal.Error( "idIK_Walk::Init: invalid hip joint '%s'\n", jointName );
 		}
 
-		jointName = self->spawnArgs.GetString( va( "ik_dir%d", i + 1 ) );
-		dirJoints[i] = animator->GetJointHandle( jointName );
+		// HUMANHEAD mdl
+		rotateMatrix[i] = self->spawnArgs.GetAngles( va( "ik_dir_rotation%d", i+1 ), "0 0 0" ).ToMat3();
+
+		if ( self->spawnArgs.FindKey( va( "ik_force_dir%d", i+1 ) ) ) {
+			dirJoints[i] = INVALID_JOINT;
+			forceDir[i] = self->spawnArgs.GetVector( va( "ik_force_dir%d", i+1 ) );
+		} else {
+			jointName = self->spawnArgs.GetString( va( "ik_dir%d", i+1 ) );
+			dirJoints[i] = animator->GetJointHandle( jointName );
+			forceDir[i] = idVec3( -1.0f, -1.0f, -1.0f );
+		}
+		// HUMANHEAD end
 
 		enabledLegs |= 1 << i;
 	}
@@ -690,16 +709,27 @@ bool idIK_Walk::Init( idEntity* self, const char* anim, const idVec3& modelOffse
 		hipAxis = joints[ hipJoints[ i ] ].ToMat3();
 		hipOrigin = joints[ hipJoints[ i ] ].ToVec3();
 
-		// get the IK direction
-		if( dirJoints[i] != INVALID_JOINT )
-		{
+
+		// HUMANHEAD mdl:
+		dirOrigin = idVec3( -1.0f, -1.0f, -1.0f );
+		if ( forceDir[i] != idVec3( -1.0f, -1.0f, -1.0f ) ) {
+			dir = forceDir[i];
+		} else // HUMANHEAD END
+			// get the IK direction
+		if ( dirJoints[i] != INVALID_JOINT ) {
 			dirOrigin = joints[ dirJoints[ i ] ].ToVec3();
 			dir = dirOrigin - kneeOrigin;
-		}
-		else
-		{
+		} else {
 			dir.Set( 1.0f, 0.0f, 0.0f );
 		}
+		// HUMANHEAD mdl
+		dir = dir * rotateMatrix[i];
+
+		if (ik_debug.GetBool()) {
+			gameLocal.Printf("IK for entity '%s' joint %i:  dir(%f, %f, %f), dirOrigin(%f, %f, %f), kneeOrigin(%f, %f, %f)\n", self->name.c_str(), i+1, dir.x, dir.y, dir.z, dirOrigin.x, dirOrigin.y, dirOrigin.z, kneeOrigin.x, kneeOrigin.y, kneeOrigin.z);
+		}
+		// HUMANHEAD END
+
 
 		hipForward[i] = dir * hipAxis.Transpose();
 		kneeForward[i] = dir * kneeAxis.Transpose();
@@ -780,6 +810,13 @@ void idIK_Walk::Evaluate()
 		return;
 	}
 
+	// HUMANHEAD mdl:  Prevent re-entry on the same frame
+	if ( lastFrame == gameLocal.framenum ) {
+		return;
+	}
+	lastFrame = gameLocal.framenum;
+	// HUMANHEAD END
+
 	normal = - self->GetPhysics()->GetGravityNormal();
 	modelOrigin = self->GetPhysics()->GetOrigin();
 	modelAxis = self->GetRenderEntity()->axis;
@@ -792,6 +829,10 @@ void idIK_Walk::Evaluate()
 
 	// get the joint positions for the feet
 	lowestHeight = idMath::INFINITY;
+	// HUMANHEAD nla - Need to init this, as a funky state can be reached in wallwalk, and jointHeight is never less that idMath::INF
+	newPivotFoot = 0;
+	// HUMANHEAD END
+
 	for( i = 0; i < numLegs; i++ )
 	{
 		animator->GetJointTransform( footJoints[i], gameLocal.time, footOrigin, axis );
@@ -865,6 +906,12 @@ void idIK_Walk::Evaluate()
 			break;
 		}
 	}
+
+	// HUMANHEAD nla - If the normal changed, the old values are no longer valid
+	if ( normal != normalPrev ) {
+		oldHeightsValid = false;
+	}
+	// HUMANHEAD END
 
 	// adjust heights of the ankles
 	smallestShift = idMath::INFINITY;
@@ -946,10 +993,11 @@ void idIK_Walk::Evaluate()
 	if( minWaistAnkleDist > 0.0f )
 	{
 		height = ( waistOrigin + waistOffset ) * normal;
-		if( height - largestAnkleHeight < minWaistAnkleDist )
-		{
-			waistOffset += ( minWaistAnkleDist - ( height - largestAnkleHeight ) ) * normal;
+		// HUMANHEAD nla - Sometimes our distances can be negative, need to take thatinto account
+		if ( fabsf( height - largestAnkleHeight ) < minWaistAnkleDist ) {
+			waistOffset += ( minWaistAnkleDist - fabsf( height - largestAnkleHeight ) ) * normal;
 		}
+		// HUMANHEAD END
 	}
 
 	if( oldHeightsValid )
@@ -962,6 +1010,10 @@ void idIK_Walk::Evaluate()
 
 	// save height of waist for smoothing
 	oldWaistHeight = ( waistOrigin + waistOffset ) * normal;
+
+	// HUMANHEAD nla - Do this before we exit - Already used above
+	normalPrev = normal;
+	// HUMANHEAD END
 
 	if( !oldHeightsValid )
 	{

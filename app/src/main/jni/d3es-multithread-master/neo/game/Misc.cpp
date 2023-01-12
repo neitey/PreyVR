@@ -544,6 +544,12 @@ void idDamagable::BecomeBroken( idEntity *activator ) {
 
 	ActivateTargets( activator );
 
+	// HUMANHEAD pdm
+	if ( spawnArgs.GetBool( "nonSolidWhenBroken" ) ) {
+		GetPhysics()->SetContents(0);
+	}
+	// HUMANHEAD END
+
 	if ( spawnArgs.GetBool( "hideWhenBroken" ) ) {
 		Hide();
 		PostEventMS( &EV_RestoreDamagable, nextTriggerTime - gameLocal.time );
@@ -603,6 +609,7 @@ idDamagable::Event_RestoreDamagable
 */
 void idDamagable::Event_RestoreDamagable( void ) {
 	health = spawnArgs.GetInt( "health", "5" );
+	GetPhysics()->SetContents(CONTENTS_SOLID);	// HUMANHEAD pdm
 	Show();
 }
 
@@ -718,7 +725,7 @@ void idSpring::Event_LinkSpring( void ) {
 
 	if ( name1.Length() ) {
 		ent1 = gameLocal.FindEntity( name1 );
-		if ( !ent1 ) {
+		if ( !ent1.IsValid() ) { // HUMANHEAD mdl:  Added .IsValid()
 			gameLocal.Error( "idSpring '%s' at (%s): cannot find first entity '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), name1.c_str() );
 		}
 	}
@@ -728,14 +735,14 @@ void idSpring::Event_LinkSpring( void ) {
 
 	if ( name2.Length() ) {
 		ent2 = gameLocal.FindEntity( name2 );
-		if ( !ent2 ) {
+		if ( !ent2.IsValid() ) { // HUMANHEAD mdl:  Added IsValid()
 			gameLocal.Error( "idSpring '%s' at (%s): cannot find second entity '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), name2.c_str() );
 		}
 	}
 	else {
 		ent2 = gameLocal.entities[ENTITYNUM_WORLD];
 	}
-	spring.SetPosition( ent1->GetPhysics(), id1, p1, ent2->GetPhysics(), id2, p2 );
+	spring.SetPosition( ent1.GetEntity(), id1, p1, ent2.GetEntity(), id2, p2 ); // HUMANHEAD mdl:  Changed to passing in entities instead of their physics objects
 	BecomeActive( TH_THINK );
 }
 
@@ -761,6 +768,31 @@ void idSpring::Spawn( void ) {
 
 	PostEventMS( &EV_PostSpawn, 0 );
 }
+
+
+// HUMANHEAD mdl
+void idSpring::Save( idSaveGame *savefile ) const {
+	ent1.Save( savefile );
+	ent2.Save( savefile );
+
+	savefile->WriteInt( id1 );
+	savefile->WriteInt( id2 );
+	savefile->WriteVec3( p1 );
+	savefile->WriteVec3( p2 );
+	savefile->WriteStaticObject( spring );
+}
+
+void idSpring::Restore( idRestoreGame *savefile ) {
+	ent1.Restore( savefile );
+	ent2.Restore( savefile );
+
+	savefile->ReadInt( id1 );
+	savefile->ReadInt( id2 );
+	savefile->ReadVec3( p1 );
+	savefile->ReadVec3( p2 );
+	savefile->ReadStaticObject( spring );
+}
+// HUMANHEAD END
 
 /*
 ===============================================================================
@@ -1003,7 +1035,11 @@ void idAnimated::Spawn( void ) {
 	joint = spawnArgs.GetString( "sound_bone", "origin" );
 	soundJoint = animator.GetJointHandle( joint );
 	if ( soundJoint == INVALID_JOINT ) {
-		gameLocal.Warning( "idAnimated '%s' at (%s): cannot find joint '%s' for sound playback", name.c_str(), GetPhysics()->GetOrigin().ToString(0), joint );
+		//HUMANHEAD jsh only warn if it's using an animated model
+		if ( GetAnimator() && GetAnimator()->ModelDef() ) {
+			gameLocal.Warning( "idAnimated '%s' at (%s): cannot find joint '%s' for sound playback", name.c_str(), GetPhysics()->GetOrigin().ToString(0), joint );
+		}
+		//HUMANHEAD END
 	}
 
 	LoadAF();
@@ -1463,6 +1499,11 @@ void idStaticEntity::Spawn( void ) {
 
 	// an inline static model will not do anything at all
 	if ( spawnArgs.GetBool( "inline" ) || gameLocal.world->spawnArgs.GetBool( "inlineAllStatics" ) ) {
+		// HUMANHEAD mdl:  This should never happen
+		if ( idStr::Icmp( spawnArgs.GetString( "classname" ), "func_static" ) == 0 ) {
+			gameLocal.Error( "Attempted to spawn inline func_static '%s'\n", spawnArgs.GetString( "name" ) );
+		}
+		// HUMANHEAD END
 		Hide();
 		return;
 	}
@@ -1588,7 +1629,9 @@ void idStaticEntity::Event_Activate( idEntity *activator ) {
 	active = !active;
 
 	const idKeyValue *kv = spawnArgs.FindKey( "hide" );
-	if ( kv ) {
+	// HUMANHEAD nla - Changed so that func_statics can always be triggered, at the request of the mappers
+	if ( 1 || kv ) {
+		// HUMANHEAD END
 		if ( IsHidden() ) {
 			Show();
 		} else {
@@ -1596,12 +1639,14 @@ void idStaticEntity::Event_Activate( idEntity *activator ) {
 		}
 	}
 
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( spawnTime );
-	renderEntity.shaderParms[5] = active;
-	// this change should be a good thing, it will automatically turn on
-	// lights etc.. when triggered so that does not have to be specifically done
-	// with trigger parms.. it MIGHT break things so need to keep an eye on it
-	renderEntity.shaderParms[ SHADERPARM_MODE ] = ( renderEntity.shaderParms[ SHADERPARM_MODE ] ) ?  0.0f : 1.0f;
+	if (!spawnArgs.GetBool("noparmchange")) {	// HUMANHEAD pdm: hack to allow vpaints to not get their shaderparms screwed
+		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( spawnTime );
+		renderEntity.shaderParms[5] = active;
+		// this change should be a good thing, it will automatically turn on
+		// lights etc.. when triggered so that does not have to be specifically done
+		// with trigger parms.. it MIGHT break things so need to keep an eye on it
+		renderEntity.shaderParms[ SHADERPARM_MODE ] = ( renderEntity.shaderParms[ SHADERPARM_MODE ] ) ?  0.0f : 1.0f;
+	}
 	BecomeActive( TH_UPDATEVISUALS );
 }
 
@@ -1931,17 +1976,38 @@ idFuncSplat::Event_Splat
 ================
 */
 void idFuncSplat::Event_Splat( void ) {
-	const char *splat = NULL;
+	// HUMANHEAD pdm: reworked to include overlays
+	const char *mtr = NULL;
+	float size, dist, angle;
+	int i,j;
+
+	// Project decals
 	int count = spawnArgs.GetInt( "splatCount", "1" );
-	for ( int i = 0; i < count; i++ ) {
-		splat = spawnArgs.RandomPrefix( "mtr_splat", gameLocal.random );
-		if ( splat && *splat ) {
-			float size = spawnArgs.GetFloat( "splatSize", "128" );
-			float dist = spawnArgs.GetFloat( "splatDistance", "128" );
-			float angle = spawnArgs.GetFloat( "splatAngle", "0" );
-			gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetAxis()[2], dist, true, size, splat, angle );
+	for ( i=0; i < count; i++ ) {
+		mtr = spawnArgs.RandomPrefix( "mtr_splat", gameLocal.random );
+		if ( mtr && *mtr ) {
+			size = spawnArgs.GetFloat( "splatSize", "128" );
+			dist = spawnArgs.GetFloat( "splatDistance", "128" );
+			angle = spawnArgs.GetFloat( "splatAngle", "0" );
+			gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetAxis()[2], dist, true, size, mtr, angle );
 		}
 	}
+
+	// Project overlays onto each target
+	count = spawnArgs.GetInt( "overlayCount" );
+	for ( i=0; i < count; i++ ) {
+		mtr = spawnArgs.RandomPrefix( "mtr_overlay", gameLocal.random );
+		if ( mtr && *mtr ) {
+			size = spawnArgs.GetFloat( "overlaySize", "16" );
+
+			for( j=0; j<targets.Num(); j++ ) {
+				if ( targets[j].IsValid() ) {
+					targets[j]->ProjectOverlay( GetPhysics()->GetOrigin(), GetPhysics()->GetAxis()[2], size, mtr );
+				}
+			}
+		}
+	}
+
 	StartSound( "snd_splat", SND_CHANNEL_ANY, 0, false, NULL );
 }
 
@@ -2014,8 +2080,9 @@ void idFuncSmoke::Spawn( void ) {
 		smoke = NULL;
 	}
 	if ( spawnArgs.GetBool( "start_off" ) ) {
-		smokeTime = 0;
+		smokeTime = -1;			// HUMANHEAD pdm
 		restart = false;
+		fl.hidden = true;		// HUMANHEAD pdm
 	} else if ( smoke ) {
 		smokeTime = gameLocal.time;
 		BecomeActive( TH_UPDATEPARTICLES );
@@ -2030,13 +2097,24 @@ idFuncSmoke::Event_Activate
 ================
 */
 void idFuncSmoke::Event_Activate( idEntity *activator ) {
-	if ( thinkFlags & TH_UPDATEPARTICLES ) {
-		restart = false;
-		return;
-	} else {
-		BecomeActive( TH_UPDATEPARTICLES );
-		restart = true;
+	// HUMANHEAD pdm: reworked to match our logic
+	if (spawnArgs.GetBool("cycletrigger")) {
+		// Restart the effect
+		fl.hidden = false;
 		smokeTime = gameLocal.time;
+		BecomeActive( TH_UPDATEPARTICLES );
+	}
+	else {	// Straight toggle on/off
+		if (IsHidden()) {
+			fl.hidden = false;
+			smokeTime = gameLocal.time;
+			BecomeActive( TH_UPDATEPARTICLES );
+		}
+		else {
+			fl.hidden = true;
+			smokeTime = -1;
+			BecomeInactive( TH_UPDATEPARTICLES );
+		}
 	}
 }
 
@@ -2046,23 +2124,19 @@ idFuncSmoke::Think
 ================
 */
 void idFuncSmoke::Think( void ) {
+	if ( thinkFlags & TH_UPDATEVISUALS ) {	// HUMANHEAD pdm
+		BecomeInactive(TH_UPDATEVISUALS);
+	}
 
-	// if we are completely closed off from the player, don't do anything at all
-	if ( CheckDormant() || smoke == NULL || smokeTime == -1 ) {
+	if ( smoke == NULL || smokeTime == -1 ) {
 		return;
 	}
 
 	if ( ( thinkFlags & TH_UPDATEPARTICLES) && !IsHidden() ) {
-		if (!gameLocal.smokeParticles->EmitSmoke(smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/)) {
-			if ( restart ) {
-				smokeTime = gameLocal.time;
-			} else {
-				smokeTime = 0;
-				BecomeInactive( TH_UPDATEPARTICLES );
-			}
+		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() ) ) {
+			BecomeInactive( TH_UPDATEPARTICLES );		// HUMANHEAD pdm
 		}
 	}
-
 }
 
 
@@ -2233,7 +2307,13 @@ void idLocationSeparatorEntity::Spawn() {
 	if ( !portal ) {
 		gameLocal.Warning( "LocationSeparator '%s' didn't contact a portal", spawnArgs.GetString( "name" ) );
 	}
+#if HUMANHEAD	// HUMANHEAD pdm: Don't wipe out the old flags
+	int flags = gameRenderWorld->GetPortalState(portal);
+	flags |= PS_BLOCK_LOCATION;
+	gameLocal.SetPortalState( portal, flags );
+#else
 	gameLocal.SetPortalState( portal, PS_BLOCK_LOCATION );
+#endif
 }
 
 
@@ -2284,6 +2364,8 @@ idLocationEntity::Spawn
 ======================
 */
 void idLocationEntity::Spawn() {
+#if HUMANHEAD	// HUMANHEAD pdm: save some space by just leaving these keys on name since they're not used in final game
+#else
 	idStr realName;
 
 	// this just holds dict information
@@ -2292,6 +2374,7 @@ void idLocationEntity::Spawn() {
 	if ( !spawnArgs.GetString( "location", "", realName ) ) {
 		spawnArgs.Set( "location", name );
 	}
+#endif
 }
 
 /*
@@ -2300,7 +2383,11 @@ idLocationEntity::GetLocation
 ======================
 */
 const char *idLocationEntity::GetLocation( void ) const {
+#if HUMANHEAD	// HUMANHEAD pdm: save some space by just leaving these keys on name since they're not used in final game
+	return GetName();
+#else
 	return spawnArgs.GetString( "location" );
+#endif
 }
 
 /*
@@ -2853,6 +2940,10 @@ idFuncPortal::Save
 void idFuncPortal::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( (int)portal );
 	savefile->WriteBool( state );
+#if HUMANHEAD	// HUMANHEAD pdm: Func_portals shouldn't wipe out other flags, just affect PS_BLOCK_VIEW
+	int flags = gameRenderWorld->GetPortalState(portal);
+	savefile->WriteInt(flags);
+#endif
 }
 
 /*
@@ -2863,7 +2954,13 @@ idFuncPortal::Restore
 void idFuncPortal::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)portal );
 	savefile->ReadBool( state );
+#if HUMANHEAD	// HUMANHEAD pdm: Func_portals shouldn't wipe out other flags, just affect PS_BLOCK_VIEW
+	int flags;
+	savefile->ReadInt( flags );
+	gameLocal.SetPortalState( portal, flags );
+#else
 	gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
+#endif
 }
 
 /*
@@ -2875,7 +2972,19 @@ void idFuncPortal::Spawn( void ) {
 	portal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds().Expand( 32.0f ) );
 	if ( portal > 0 ) {
 		state = spawnArgs.GetBool( "start_on" );
+
+#if HUMANHEAD	// HUMANHEAD pdm: Func_portals shouldn't wipe out other flags, just affect PS_BLOCK_VIEW
+		int flags = gameRenderWorld->GetPortalState(portal);
+		if (state) {
+			flags |= PS_BLOCK_VIEW;
+		}
+		else {
+			flags &= ~PS_BLOCK_VIEW;
+		}
+		gameLocal.SetPortalState( portal, flags );
+#else
 		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
+#endif
 	}
 }
 
@@ -2887,7 +2996,18 @@ idFuncPortal::Event_Activate
 void idFuncPortal::Event_Activate( idEntity *activator ) {
 	if ( portal > 0 ) {
 		state = !state;
+#if HUMANHEAD	// HUMANHEAD pdm: Func_portals shouldn't wipe out other flags, just affect PS_BLOCK_VIEW
+		int flags = gameRenderWorld->GetPortalState(portal);
+		if (state) {
+			flags |= PS_BLOCK_VIEW;
+		}
+		else {
+			flags &= ~PS_BLOCK_VIEW;
+		}
+		gameLocal.SetPortalState( portal, flags );
+#else
 		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
+#endif
 	}
 }
 

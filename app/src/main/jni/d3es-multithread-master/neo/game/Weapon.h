@@ -34,9 +34,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "Light.h"
 #include "Actor.h"
 #include "Misc.h"
-#include "Grabber.h"
-
-class idGrabber;
 
 /*
 ===============================================================================
@@ -311,7 +308,6 @@ public:
     friend class idWeaponHolder;
     friend class idHolster;
     friend class idPlayerHand;
-	friend class idGrabber;
 
 protected:	// HUMANHEAD
 	// script control
@@ -549,12 +545,7 @@ protected:	// HUMANHEAD
     void					Event_IsMotionControlled();
     void					CalculateHideRise( idVec3& origin, idMat3& axis );
     // Koz end
-    idGrabber				grabber;
-	int						grabberState;
 
-	void					Event_Grabber(int enable);
-	void					Event_GrabberHasTarget(void);
-	void					Event_GrabberSetGrabDistance(float dist);
 	void					Event_LaunchProjectilesEllipse(int num_projectiles, float spreada, float spreadb, float fuseOffset, float power);
 	void					Event_LaunchPowerup(const char *powerup, float duration, int useAmmo);
 

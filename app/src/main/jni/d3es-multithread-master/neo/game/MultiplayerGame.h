@@ -44,7 +44,6 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 class idPlayer;
-class idItemTeam;
 
 typedef enum {
 	GAME_SP,
@@ -55,14 +54,6 @@ typedef enum {
 	GAME_CTF,
 	GAME_COUNT
 } gameType_t;
-
-// Used by the UI
-typedef enum {
-	FLAGSTATUS_INBASE = 0,
-	FLAGSTATUS_TAKEN  = 1,
-	FLAGSTATUS_STRAY  = 2,
-	FLAGSTATUS_NONE   = 3
-} flagStatus_t;
 
 typedef enum {
 		PLAYER_VOTE_NONE,
@@ -253,7 +244,19 @@ public:
 	static void		CallVote_f( const idCmdArgs &args );
 	void			ClientCallVote( vote_flags_t voteIndex, const char *voteValue );
 	void			ServerCallVote( int clientNum, const idBitMsg &msg );
+#if _HH_LOCALIZE_VOTESTRINGS
+	typedef enum {
+		VOTESTR_JUSTONE,
+		VOTESTR_TIMELIMIT,
+		VOTESTR_FRAGLIMIT,
+		VOTESTR_VALUE,
+		VOTESTR_CLNUMNAME,
+		VOTESTR_NAMEVAL
+	} voteStringType_e;
+	void			ClientStartVote( int clientNum, voteStringType_e strType, const int numStrings, const char **strings );
+#else
 	void			ClientStartVote( int clientNum, const char *voteString );
+#endif
 	void			ServerStartVote( int clientNum, vote_flags_t voteIndex, const char *voteValue );
 	void			ClientUpdateVote( vote_result_t result, int yesCount, int noCount );
 	void			CastVote( int clientNum, bool vote );
@@ -380,7 +383,6 @@ private:
 
 	bool			bTeamsTied;				//HUMANHEAD rww - needs to be set in TDM before any calls to UpdateWinsLosses with removal of suddendeath concept
 
-	idItemTeam 	*teamFlags[ 2 ];
 	int				teamPoints[ 2 ];
 
 	bool			flagMsgOn;
@@ -391,9 +393,10 @@ private:
 	void			UpdatePlayerRanks();
 
 	// updates the passed gui with current score information
-	void			UpdateRankColor( idUserInterface *gui, const char *mask, int i, const idVec3 &vec );
 	void			UpdateScoreboard( idUserInterface *scoreBoard, idPlayer *player );
-	void			UpdateCTFScoreboard(idUserInterface *scoreBoard, idPlayer *player);
+	void            UpdateCTFScoreboard(idUserInterface *scoreBoard, idPlayer *player);
+	void			UpdateDMScoreboard( idUserInterface *scoreBoard, idPlayer *player );
+	void			UpdateTeamScoreboard( idUserInterface *scoreBoard, idPlayer *player );
 
 	void			DrawScoreBoard( idPlayer *player );
 	void			UpdateHud( idPlayer *player, idUserInterface *hud );
@@ -418,6 +421,7 @@ private:
 	// walk through the tourneyRank to build a wait list for the clients
 	void			UpdateTourneyLine( void );
 	const char *	GameTime( void );
+	const char *	GameFrags( idPlayer *localPlayer );
 	void			Clear( void );
 	bool			EnoughClientsToPlay( void );
 	void			ClearChatData( void );
@@ -433,21 +437,13 @@ private:
 	void			DisableMenu( void );
 	void			SetMapShot( void );
 	// scores in TDM
+	int				GetTeamScore(int team);
 	void			TeamScore( int entityNumber, int team, int delta );
 	void			VoiceChat( const idCmdArgs &args, bool team );
 	void			DumpTourneyLine( void );
 	void			SuddenRespawn( void );
-	void			FindTeamFlags(void);
 
 public:
-	idItemTeam 	*GetTeamFlag(int team);
-	flagStatus_t    GetFlagStatus(int team);
-	void			TeamScoreCTF(int team, int delta);
-	void			PlayerScoreCTF(int playerIdx, int delta);
-	// returns entityNum to team flag carrier, -1 if no flag carrier
-	int				GetFlagCarrier(int team);
-	void            UpdateScoreboardFlagStatus(void);
-
 	void			SetBestGametype(const char *map);
 	void			ReloadScoreboard();
 
