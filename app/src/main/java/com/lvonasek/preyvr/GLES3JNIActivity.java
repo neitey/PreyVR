@@ -1,5 +1,5 @@
 
-package com.drbeef.doom3quest;
+package com.lvonasek.preyvr;
 
 
 import static android.system.Os.setenv;
@@ -56,7 +56,7 @@ import java.util.Vector;
 	private static final int WRITE_EXTERNAL_STORAGE_PERMISSION_ID = 2;
 
 
-	private static final String APPLICATION = "Doom3Quest";
+	private static final String APPLICATION = "PreyVR";
 
 	private String commandLineParams;
 
@@ -256,17 +256,15 @@ import java.util.Vector;
 			setenv("USER_FILES", root.getAbsolutePath(), true);
 			setenv("GAMELIBDIR", getApplicationInfo().nativeLibraryDir, true);
 			setenv("GAMETYPE", "16", true); // hard coded for now
-		}
-		catch (Exception e)
-		{
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		//Parse the config file for these values
 		long refresh = 60; // Default to 60
 		float ss = -1.0F;
 		long msaa = 1; // default for both HMDs
-		File config = new File(base, "doom3quest.cfg");
+		File config = new File(base, "preyconfig.cfg");
 		if(config.exists())
 		{
 			BufferedReader br;

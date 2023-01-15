@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.drbeef.doom3quest'
+    namespace 'com.lvonasek.preyvr'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.drbeef.doom3quest"
+        applicationId "com.lvonasek.preyvr"
         minSdk 26
         targetSdk 26
         versionCode 1

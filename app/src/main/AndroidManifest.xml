@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		package="com.drbeef.doom3quest"
+		package="com.lvonasek.preyvr"
 		android:versionCode="27"
 		android:versionName="1.2.3"
 		android:installLocation="auto">
@@ -31,7 +31,7 @@
         <!-- If targeting API level 24+, configChanges should additionally include 'density'. -->
         <!-- If targeting API level 24+, android:resizeableActivity="false" should be added. -->
 		<activity
-				android:name="com.drbeef.doom3quest.GLES3JNIActivity"
+				android:name=".GLES3JNIActivity"
 				android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
 				android:launchMode="singleTask"
 				android:screenOrientation="landscape"
