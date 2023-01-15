@@ -206,9 +206,7 @@ import java.util.Vector;
 	public void create() {
 
 		File root = new File("/sdcard/Doom3Quest");
-		File base = new File(root, "base");
-		File roe = new File(root, "d3xp");
-		File lm = new File(root, "d3le");
+		File base = new File(root, "preybase");
 
 		boolean exitAfterCopy = false;
 
@@ -221,27 +219,8 @@ import java.util.Vector;
 
 		//Base game
 		base.mkdirs();
-		copy_asset(base.getAbsolutePath(), "pak399.pk4", true);
 		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
-
-		//DLC - Resurrection of Evil support
-		if (roe.exists())
-		{
-			copy_asset(roe.getAbsolutePath(), "pak399.pk4", true);
-			copy_asset(roe.getAbsolutePath(), "pak399roe.pk4", true);
-			copy_asset(roe.getAbsolutePath(), "quest1_default.cfg", true);
-			copy_asset(roe.getAbsolutePath(), "quest2_default.cfg", true);
-		}
-
-		//DLC - The Lost Mission
-		if (lm.exists())
-		{
-			copy_asset(lm.getAbsolutePath(), "pak399.pk4", true);
-			copy_asset(lm.getAbsolutePath(), "pak399lm.pk4", true);
-			copy_asset(lm.getAbsolutePath(), "quest1_default.cfg", true);
-			copy_asset(lm.getAbsolutePath(), "quest2_default.cfg", true);
-		}
 
 		if (exitAfterCopy)
 		{

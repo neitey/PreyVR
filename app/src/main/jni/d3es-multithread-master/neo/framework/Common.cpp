@@ -2901,7 +2901,7 @@ idCommonLocal::LoadGameDLL
 #ifdef _RAVEN // quake4 game dll
 #define _HARM_BASE_GAME_DLL "q4game"
 #elif defined(_HUMANHEAD) // prey game dll
-#define _HARM_BASE_GAME_DLL "preygame"
+#define _HARM_BASE_GAME_DLL "game"
 #else
 #define _HARM_BASE_GAME_DLL "game"
 #endif
@@ -2997,7 +2997,7 @@ void idCommonLocal::LoadGameDLL(void)
 			{
 				common->Printf("[Harmattan]: Load Prey game......\n");
 				idStr dllFile(dir);
-				dllFile.AppendPath("libpreygame.so");
+				dllFile.AppendPath("libgame.so");
 				gameDLL = sys->DLL_Load(dllFile);
 				common->Printf("[Harmattan]: Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
 			}
