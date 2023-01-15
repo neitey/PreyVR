@@ -205,7 +205,7 @@ import java.util.Vector;
 
 	public void create() {
 
-		File root = new File("/sdcard/Doom3Quest");
+		File root = new File("/sdcard/PreyVR");
 		File base = new File(root, "preybase");
 
 		boolean exitAfterCopy = false;
@@ -244,9 +244,8 @@ import java.util.Vector;
 					sb.append(s).append(" ");
 				br.close();
 
-				commandLineParams = new String(sb.toString());
+				commandLineParams = sb.toString();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

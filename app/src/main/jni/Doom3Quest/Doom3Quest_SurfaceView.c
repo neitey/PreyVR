@@ -1594,7 +1594,7 @@ void * AppThreadFunction(void * parm ) {
 
 	EglInitExtensions();
 
-    chdir("/sdcard/Doom3Quest");
+    chdir("/sdcard/PreyVR");
 
 	// This app will handle android gamepad events itself.
 	vrapi_SetPropertyInt(&gAppState.Java, VRAPI_EAT_NATIVE_GAMEPAD_EVENTS, 0);

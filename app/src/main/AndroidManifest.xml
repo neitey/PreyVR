@@ -19,8 +19,8 @@
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
 	<application android:allowBackup="false"
-		android:icon="@drawable/ic_qquest"
-		android:label="@string/doom3quest"
+		android:icon="@drawable/ic_launcher"
+		android:label="@string/app_name"
 		android:extractNativeLibs="true">
 
 		<meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only"/>
@@ -33,7 +33,6 @@
 		<activity
 				android:name="com.drbeef.doom3quest.GLES3JNIActivity"
 				android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
-				android:label="@string/doom3quest"
 				android:launchMode="singleTask"
 				android:screenOrientation="landscape"
 				android:resizeableActivity="false"
