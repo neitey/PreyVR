@@ -106,11 +106,13 @@ private:
 
 template< class type >
 hhStack<type>::hhStack(int newgranularity) {
+	list = NULL;
 	SetGranularity(newgranularity);
 }
 
 template< class type >
 hhStack<type>::~hhStack(void) {
+	Clear();
 }
 
 template< class type >

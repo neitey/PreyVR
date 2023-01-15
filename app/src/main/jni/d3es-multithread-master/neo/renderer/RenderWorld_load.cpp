@@ -135,8 +135,6 @@ idRenderModel *idRenderWorldLocal::ParseModel( idLexer *src ) {
 	src->ExpectTokenString("{");
 #endif
 
-	src->ExpectTokenString( "{" );
-
 	// parse the name
 	src->ExpectAnyToken( &token );
 
