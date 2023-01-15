@@ -303,6 +303,7 @@ private:
 
 	void					Event_Explode( void );
 	void					Event_Fizzle( void );
+	void					Event_CheckClip( void ); // HUMANHEAD mdl
 };
 
 #endif /* !__GAME_PROJECTILE_H__ */

@@ -144,7 +144,8 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( thrust_end );
 
 	savefile->WriteRenderLight( renderLight );
-	savefile->WriteInt( (int)lightDefHandle );
+	//HUMANHEAD PCF mdl 05/04/06 - Don't save light handles
+	//savefile->WriteInt( (int)lightDefHandle );
 	savefile->WriteVec3( lightOffset );
 	savefile->WriteInt( lightStartTime );
 	savefile->WriteInt( lightEndTime );
@@ -153,14 +154,16 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteParticle( smokeFly );
 	savefile->WriteInt( smokeFlyTime );
 
-	savefile->WriteInt(originalTimeGroup);
-
 	savefile->WriteInt( (int)state );
 
 	savefile->WriteFloat( damagePower );
 
 	savefile->WriteStaticObject( physicsObj );
-	savefile->WriteStaticObject( thruster );
+	//HUMANHEAD rww
+	//savefile->WriteStaticObject( thruster );
+
+	//HUMANHEAD PCF mdl 05/04/06 - Save whether the light handle is active
+	savefile->WriteBool( lightDefHandle != -1 );
 }
 
 /*
@@ -179,7 +182,8 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( thrust_end );
 
 	savefile->ReadRenderLight( renderLight );
-	savefile->ReadInt( (int &)lightDefHandle );
+	//HUMANHEAD PCF mdl 05/04/06 - Don't save light handles
+	//savefile->ReadInt( (int &)lightDefHandle );
 	savefile->ReadVec3( lightOffset );
 	savefile->ReadInt( lightStartTime );
 	savefile->ReadInt( lightEndTime );
@@ -188,8 +192,6 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadParticle( smokeFly );
 	savefile->ReadInt( smokeFlyTime );
 
-	savefile->ReadInt(originalTimeGroup);
-
 	savefile->ReadInt( (int &)state );
 
 	savefile->ReadFloat( damagePower );
@@ -197,18 +199,22 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
 
-	savefile->ReadStaticObject( thruster );
-	thruster.SetPhysics( &physicsObj );
+	//HUMANHEAD rww
+	//savefile->ReadStaticObject( thruster );
+	//thruster.SetPhysics( &physicsObj );
+
+	//HUMANHEAD PCF mdl 05/04/06 - Save whether the light handle is active
+	bool bLight;
+	savefile->ReadBool( bLight );
+	if ( bLight ) {
+		lightDefHandle = gameRenderWorld->AddLightDef( &renderLight );
+	}
 
 	if ( smokeFly != NULL ) {
 		idVec3 dir;
 		dir = physicsObj.GetLinearVelocity();
 		dir.NormalizeFast();
-		gameLocal.smokeParticles->EmitSmoke(smokeFly, gameLocal.time, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/);
-	}
-
-	if (lightDefHandle >= 0) {
-		lightDefHandle = gameRenderWorld->AddLightDef(&renderLight);
+		gameLocal.smokeParticles->EmitSmoke( smokeFly, gameLocal.time, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 	}
 }
 
@@ -224,9 +230,12 @@ idEntity *idProjectile::GetOwner( void ) const {
 /*
 ================
 idProjectile::Create
+
+HUMANHEAD: AOBMERGE - Overridden
 ================
 */
 void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &dir ) {
+/* HUMANHEAD pdm: Overridden
 	idDict		args;
 	idStr		shaderName;
 	idVec3		light_color;
@@ -283,6 +292,7 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 	if ( spawnArgs.GetBool( "net_fullphysics" ) ) {
 		netSyncPhysics = true;
 	}
+HUMANHEAD END */
 }
 
 /*
@@ -310,9 +320,12 @@ void idProjectile::FreeLightDef( void ) {
 /*
 =================
 idProjectile::Launch
+
+HUMANHEAD: AOBMERGE - Overridden
 =================
 */
 void idProjectile::Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire, const float launchPower, const float dmgPower, const float motionThrowSpeed ) {
+/* HUMANHEAD pdm: overridden
 	float			fuse;
     float			startthrust;
 	float			endthrust;
@@ -481,6 +494,7 @@ void idProjectile::Launch( const idVec3& start, const idVec3& dir, const idVec3&
 	UpdateVisuals();
 
 	state = LAUNCHED;
+HUMANHEAD END */
 }
 
 /*
@@ -489,7 +503,7 @@ idProjectile::Think
 ================
 */
 void idProjectile::Think( void ) {
-
+/* HUMANHEAD pdm: overridden
 	if ( thinkFlags & TH_THINK ) {
 		if ( thrust && ( gameLocal.time < thrust_end ) ) {
 			// evaluate force
@@ -513,7 +527,7 @@ void idProjectile::Think( void ) {
 		dir.Normalize();
 		SetTimeState ts(originalTimeGroup);
 
-		if (!gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), dir.ToMat3(), timeGroup /*_D3XP*/)) {
+		if (!gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), dir.ToMat3(), timeGroup)) {
 			smokeFlyTime = gameLocal.time;
 		}
 	}
@@ -538,6 +552,7 @@ void idProjectile::Think( void ) {
 			lightDefHandle = gameRenderWorld->AddLightDef( &renderLight );
 		}
 	}
+ */
 }
 
 /*
@@ -546,6 +561,7 @@ idProjectile::Collide
 =================
 */
 bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
+/* HUMANHEAD pdm: overridden
 	idEntity	*ent;
 	idEntity	*ignore;
 	const char	*damageDefName;
@@ -664,6 +680,8 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	Explode( collision, ignore );
 
 	return true;
+*/
+	return false;	// HUMANHEAD pdm: overridden
 }
 
 /*
@@ -672,6 +690,7 @@ idProjectile::DefaultDamageEffect
 =================
 */
 void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity ) {
+/* HUMANHEAD pdm: not used
 	const char *decal, *sound, *typeName;
 	surfTypes_t materialType;
 
@@ -704,6 +723,7 @@ void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projec
 	if ( *decal != '\0' ) {
 		gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, projectileDef.GetFloat( "decal_size", "6.0" ), decal );
 	}
+*/
 }
 
 /*
@@ -712,7 +732,7 @@ idProjectile::AddDefaultDamageEffect
 =================
 */
 void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity ) {
-
+/* HUMANHEAD pdm: Overridden
 	DefaultDamageEffect( this, spawnArgs, collision, velocity );
 
 	if ( gameLocal.isServer && fl.networkSync ) {
@@ -738,6 +758,7 @@ void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec
 		msg.WriteFloat( velocity[2], 5, 10 );
 		ServerSendEvent( EVENT_DAMAGE_EFFECT, &msg, false, excludeClient );
 	}
+ */
 }
 
 /*
@@ -769,7 +790,7 @@ idProjectile::Fizzle
 */
 void idProjectile::Fizzle( void ) {
 
-	if ( state == EXPLODED || state == FIZZLED ) {
+	if ( state == EXPLODED || state == FIZZLED || state == COLLIDED ) {	//HUMANHEAD bjk
 		return;
 	}
 
@@ -867,6 +888,7 @@ idProjectile::Explode
 ================
 */
 void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
+/* HUMANHEAD pdm: overridden
 	const char *fxname, *light_shader, *sndExplode;
 	float		light_fadetime;
 	idVec3		normal;
@@ -1112,6 +1134,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	CancelEvents( &EV_Explode );
 	PostEventMS( &EV_Remove, removeTime );
+*/
 }
 
 /*
@@ -1144,6 +1167,7 @@ idProjectile::Event_Explode
 ================
 */
 void idProjectile::Event_Explode( void ) {
+/* HUMANHEAD pdm: overridden
 	trace_t collision;
 
 	memset( &collision, 0, sizeof( collision ) );
@@ -1153,6 +1177,7 @@ void idProjectile::Event_Explode( void ) {
 	collision.c.normal.Set( 0, 0, 1 );
 	AddDefaultDamageEffect( collision, collision.c.normal );
 	Explode( collision, NULL );
+*/
 }
 
 /*
@@ -1170,7 +1195,7 @@ idProjectile::Event_Touch
 ================
 */
 void idProjectile::Event_Touch( idEntity *other, trace_t *trace ) {
-
+/* HUMANHEAD pdm: Overridden
 	if ( IsHidden() ) {
 		return;
 	}
@@ -1190,6 +1215,7 @@ void idProjectile::Event_Touch( idEntity *other, trace_t *trace ) {
 		AddDefaultDamageEffect( collision, collision.c.normal );
 		Explode( collision, NULL );
 	}
+*/
 }
 
 /*
@@ -1237,6 +1263,7 @@ idProjectile::ClientPredictionCollide
 =================
 */
 bool idProjectile::ClientPredictionCollide( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity, bool addDamageEffect ) {
+/* HUMANHEAD pdm: not used
 	idEntity *ent;
 
 	// remove projectile when a 'noimpact' surface is hit
@@ -1273,6 +1300,7 @@ bool idProjectile::ClientPredictionCollide( idEntity *soundEnt, const idDict &pr
 			DefaultDamageEffect( soundEnt, projectileDef, collision, velocity );
 		}
 	}
+*/
 	return true;
 }
 
@@ -1282,9 +1310,19 @@ idProjectile::ClientPredictionThink
 ================
 */
 void idProjectile::ClientPredictionThink( void ) {
-	if ( !renderEntity.hModel ) {
+	if (!gameLocal.isNewFrame) { //HUMANHEAD rww
 		return;
 	}
+	//HUMANHEAD rww - let the crawler grenade continue regardless because it uses a proxy model.
+	if ( !IsType(hhProjectileCrawlerGrenade::Type) ) {
+		if (!renderEntity.hModel) {
+			return;
+		}
+		if (IsHidden()) {
+			BecomeInactive(TH_PHYSICS);
+		}
+	}
+	//HUMANHEAD END
 	Think();
 }
 
@@ -1297,6 +1335,16 @@ void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( owner.GetSpawnId(), 32 );
 	msg.WriteBits( state, 3 );
 	msg.WriteBits( fl.hidden, 1 );
+
+//RWWMERGE: They added some logic here
+#if HUMANHEAD
+	//HUMANHEAD rww
+	if (netSyncPhysics) {
+		WriteBindToSnapshot(msg);
+		physicsObj.WriteToSnapshot( msg );
+	}
+	//HUMANHEAD END
+#else
 	if ( netSyncPhysics ) {
 		msg.WriteBits( 1, 1 );
 		physicsObj.WriteToSnapshot( msg );
@@ -1313,6 +1361,7 @@ void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
 		msg.WriteDeltaFloat( 0.0f, velocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 		msg.WriteDeltaFloat( 0.0f, velocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 	}
+#endif
 }
 
 /*
@@ -1320,6 +1369,137 @@ void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
 idProjectile::ReadFromSnapshot
 ================
 */
+void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
+	projectileState_t newState;
+
+	owner.SetSpawnId( msg.ReadBits( 32 ) );
+	newState = (projectileState_t) msg.ReadBits( 3 );
+	if ( msg.ReadBits( 1 ) ) {
+		Hide();
+		if (IsType(hhProjectile::Type) && teamChain) { //HUMANHEAD rww - if server hid the projectile clear it on the client.
+			hhProjectile *hhSelf = static_cast<hhProjectile *>(this);
+			hhSelf->RemoveProjectile(3000);
+		}
+	} else {
+		if (state == EXPLODED) { //HUMANHEAD rww
+			Hide();
+		}
+		else {
+			Show();
+		}
+	}
+
+	//HUMANHEAD rww
+	if (netSyncPhysics) {
+		ReadBindFromSnapshot(msg);
+		physicsObj.ReadFromSnapshot( msg );
+	}
+	//HUMANHEAD END
+
+	//store
+	idMat3 ax = GetAxis();
+	idVec3 dir = ax[0];
+	idVec3 origin = physicsObj.GetOrigin();
+	idVec3 pushVel = physicsObj.GetPushedLinearVelocity();
+
+	//HUMANHEAD rww - i have seen this happen, not yet sure what causes it.
+	assert(newState <= COLLIDED);
+	//HUMANHEAD END
+
+	if (state != EXPLODED && state != FIZZLED || state != COLLIDED) { //HUMANHEAD rww
+		while( state != newState ) {
+			switch( state ) {
+				case SPAWNED: {
+					//HUMANHEAD rww - supply origin/axis
+					//Create( owner.GetEntity(), origin, ax );
+					state = CREATED;
+					break;
+				}
+				case CREATED: {
+					// the right origin and direction are required if you want bullet traces
+					//HUMANHEAD rww
+					if (IsType(hhProjectile::Type)) {
+						hhProjectile *hhSelf = static_cast<hhProjectile *>(this);
+						origin = hhSelf->launchPos;
+						ax = hhSelf->launchQuat.ToMat3();
+						Create( owner.GetEntity(), origin, ax );
+						hhSelf->Launch(origin, ax, pushVel);
+					}
+					//HUMAMHEAD END
+					break;
+				}
+				case LAUNCHED: {
+					if (netSyncPhysics) { //HUMANHEAD rww - only things with full physics sync will bother with this
+						if ( newState == FIZZLED ) {
+							Fizzle();
+						} else {
+							trace_t collision;
+							memset( &collision, 0, sizeof( collision ) );
+							collision.c.entityNum = ENTITYNUM_WORLD;
+							collision.endAxis = GetPhysics()->GetAxis();
+							collision.endpos = GetPhysics()->GetOrigin();
+							collision.c.point = GetPhysics()->GetOrigin();
+							collision.c.normal.Set( 0, 0, 1 );
+							//HUMANHEAD rww
+							if (IsType(hhProjectile::Type)) {
+								hhProjectile *hhSelf = static_cast<hhProjectile *>(this);
+								hhSelf->ProcessCollision(&collision, GetPhysics()->GetLinearVelocity());
+								hhSelf->ProcessCollisionEvent(&collision, GetPhysics()->GetLinearVelocity());
+								if (newState == EXPLODED && state != EXPLODED) { //crawler grenades etc
+									hhSelf->Explode(&collision, pushVel, 0);
+								}
+								else if (newState == COLLIDED) { //crawler secondary etc
+									state = COLLIDED;
+								}
+							}
+							else {
+								Explode( collision, NULL );
+							}
+							//HUMANHEAD END
+						}
+					}
+					else {
+						/*
+						netSyncPhysics = true;
+						int lies = gameLocal.time+200;
+						GetPhysics()->Evaluate(lies-gameLocal.previousTime, lies);
+						netSyncPhysics = false;
+						*/
+						ClientHideProjectile();
+						state = newState;
+					}
+					break;
+				}
+				case FIZZLED:
+				case COLLIDED:	//HUMANHEAD bjk
+				case EXPLODED: {
+					StopSound( SND_CHANNEL_BODY2, false );
+					gameEdit->ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
+					state = SPAWNED;
+					break;
+				}
+			}
+		}
+	}
+
+	//HUMANHEAD rww - moved to up above
+	//physicsObj.ReadFromSnapshot( msg );
+	//HUMANHEAD END
+
+	if ( msg.HasChanged() ) {
+		//Show();
+		UpdateVisuals();
+	}
+}
+
+
+//HUMANHEAD rww
+void idProjectile::ClientHideProjectile(void) {
+}
+//HUMANHEAD END
+
+//RWWMERGE: Id's new version: handmerge this
+/*
 void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	projectileState_t newState;
 
@@ -1398,13 +1578,79 @@ void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		UpdateVisuals();
 	}
 }
+*/
 
 /*
 ================
 idProjectile::ClientReceiveEvent
 ================
 */
+extern const int	RB_VELOCITY_EXPONENT_BITS; //HUMANHEAD rww
+extern const int	RB_VELOCITY_MANTISSA_BITS; //HUMANHEAD rww
 bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
+	//HUMANHEAD rww
+	if (!IsType(hhProjectile::Type)) { //desperate attempts to catch terrible hateful crash bug
+		gameLocal.Error("idProjectile::ClientReceiveEvent: this is not of type hhProjectile!");
+	}
+
+	switch (event) {
+		case EVENT_PROJECTILE_EXPLOSION: {
+			trace_t collision;
+			memset(&collision, 0, sizeof(collision));
+
+			collision.c.contents = msg.ReadBits(32);
+			collision.c.dist = msg.ReadFloat();
+			collision.c.entityNum = msg.ReadBits(GENTITYNUM_BITS);
+			collision.c.id = msg.ReadShort();
+
+			int materialIndex = msg.ReadShort();
+			const idMaterial *collisionMaterial = NULL;
+			if (materialIndex != -1) {
+				collisionMaterial = static_cast<const idMaterial *>( declManager->DeclByIndex( DECL_MATERIAL, materialIndex ) );
+			}
+			collision.c.material = collisionMaterial;
+			collision.c.modelFeature = msg.ReadBits(32);
+			collision.c.normal = msg.ReadDir(24);
+			collision.c.point.x = msg.ReadFloat();
+			collision.c.point.y = msg.ReadFloat();
+			collision.c.point.z = msg.ReadFloat();
+			collision.c.trmFeature = msg.ReadBits(32);
+			collision.c.type = (contactType_t)msg.ReadBits(4);
+			collision.fraction = msg.ReadFloat();
+
+			//unfortunately, this is needed for proper decal projections
+			idVec3 collisionVel;
+			collisionVel.x = msg.ReadFloat(RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS);
+			collisionVel.y = msg.ReadFloat(RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS);
+			collisionVel.z = msg.ReadFloat(RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS);
+
+			collision.c.normal.Normalize(); //renormalize the normal
+			collision.endpos = collision.c.point;
+			idVec3 endDir = msg.ReadDir(24);
+			endDir.Normalize();
+			collision.endAxis = endDir.ToMat3();
+
+			//make sure the ent we hit is still valid on the client before doing anything.
+			if (gameLocal.entities[collision.c.entityNum] && gameLocal.entities[collision.c.entityNum]->IsType(idEntity::Type)) {
+				projectileState_t oldState = state;
+				state = LAUNCHED;
+				assert(IsType(hhProjectile::Type));
+
+				hhProjectile *hhSelf = static_cast<hhProjectile *>(this);
+				hhSelf->ProcessCollisionEvent(&collision, collisionVel);
+
+				state = oldState;
+			}
+			return true;
+		}
+		default: {
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
+
+	}
+	return false;
+	//HUMANHEAD END
+/* HUMANHEAD pdm: not used
 	trace_t collision;
 	idVec3 velocity;
 
@@ -1423,11 +1669,12 @@ bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg 
 			DefaultDamageEffect( this, spawnArgs, collision, velocity );
 			return true;
 		}
-		default:
-			break;
+		default: {
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
 	}
-
-	return idEntity::ClientReceiveEvent( event, time, msg );
+	return false;
+*/
 }
 
 /*
@@ -1667,668 +1914,19 @@ void idGuidedProjectile::Event_SetEnemy(idEntity *ent)
 /*
 ===============================================================================
 
-idSoulCubeMissile
+idSoulCubeMissile (HUMANHEAD pdm: removed)
 
 ===============================================================================
 */
-
-CLASS_DECLARATION( idGuidedProjectile, idSoulCubeMissile )
-END_CLASS
-
-/*
-================
-idSoulCubeMissile::Spawn( void )
-================
-*/
-void idSoulCubeMissile::Spawn( void ) {
-	startingVelocity.Zero();
-	endingVelocity.Zero();
-	accelTime = 0.0f;
-	launchTime = 0;
-	killPhase = false;
-	returnPhase = false;
-	smokeKillTime = 0;
-	smokeKill = NULL;
-}
-
-/*
-=================
-idSoulCubeMissile::~idSoulCubeMissile
-=================
-*/
-idSoulCubeMissile::~idSoulCubeMissile() {
-}
-
-/*
-================
-idSoulCubeMissile::Save
-================
-*/
-void idSoulCubeMissile::Save( idSaveGame *savefile ) const {
-	savefile->WriteVec3( startingVelocity );
-	savefile->WriteVec3( endingVelocity );
-	savefile->WriteFloat( accelTime );
-	savefile->WriteInt( launchTime );
-	savefile->WriteBool( killPhase );
-	savefile->WriteBool( returnPhase );
-	savefile->WriteVec3( destOrg);
-	savefile->WriteInt( orbitTime );
-	savefile->WriteVec3( orbitOrg );
-	savefile->WriteInt( smokeKillTime );
-	savefile->WriteParticle( smokeKill );
-}
-
-/*
-================
-idSoulCubeMissile::Restore
-================
-*/
-void idSoulCubeMissile::Restore( idRestoreGame *savefile ) {
-	savefile->ReadVec3( startingVelocity );
-	savefile->ReadVec3( endingVelocity );
-	savefile->ReadFloat( accelTime );
-	savefile->ReadInt( launchTime );
-	savefile->ReadBool( killPhase );
-	savefile->ReadBool( returnPhase );
-	savefile->ReadVec3( destOrg);
-	savefile->ReadInt( orbitTime );
-	savefile->ReadVec3( orbitOrg );
-	savefile->ReadInt( smokeKillTime );
-	savefile->ReadParticle( smokeKill );
-}
-
-/*
-================
-idSoulCubeMissile::KillTarget
-================
-*/
-void idSoulCubeMissile::KillTarget( const idVec3 &dir ) {
-	idEntity	*ownerEnt;
-	const char	*smokeName;
-	idActor		*act;
-
-	ReturnToOwner();
-	if ( enemy.GetEntity() && enemy.GetEntity()->IsType( idActor::Type ) ) {
-		act = static_cast<idActor*>( enemy.GetEntity() );
-		killPhase = true;
-		orbitOrg = act->GetPhysics()->GetAbsBounds().GetCenter();
-		orbitTime = gameLocal.time;
-		smokeKillTime = 0;
-		smokeName = spawnArgs.GetString( "smoke_kill" );
-		if ( *smokeName != '\0' ) {
-			smokeKill = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
-			smokeKillTime = gameLocal.time;
-		}
-		ownerEnt = owner.GetEntity();
-		if ( ( act->health > 0 ) && ownerEnt && ownerEnt->IsType( idPlayer::Type ) && ( ownerEnt->health > 0 ) && !act->spawnArgs.GetBool( "boss" ) ) {
-			static_cast<idPlayer *>( ownerEnt )->GiveHealthPool( act->health );
-		}
-		act->Damage( this, owner.GetEntity(), dir,  spawnArgs.GetString( "def_damage" ), 1.0f, INVALID_JOINT );
-		act->GetAFPhysics()->SetTimeScale( 0.25 );
-		StartSound( "snd_explode", SND_CHANNEL_BODY, 0, false, NULL );
-	}
-}
-
-/*
-================
-idSoulCubeMissile::Think
-================
-*/
-void idSoulCubeMissile::Think( void ) {
-	float		pct;
-	idVec3		seekPos;
-	idEntity	*ownerEnt;
-
-	if ( state == LAUNCHED ) {
-		if ( killPhase ) {
-			// orbit the mob, cascading down
-			if ( gameLocal.time < orbitTime + 1500 ) {
-				if (!gameLocal.smokeParticles->EmitSmoke(smokeKill, smokeKillTime, gameLocal.random.CRandomFloat(), orbitOrg, mat3_identity, timeGroup /*_D3XP*/)) {
-					smokeKillTime = gameLocal.time;
-				}
-			}
-		} else  {
-			if ( accelTime && gameLocal.time < launchTime + accelTime * 1000 ) {
-				pct = ( gameLocal.time - launchTime ) / ( accelTime * 1000 );
-				speed = ( startingVelocity + ( startingVelocity + endingVelocity ) * pct ).Length();
-			}
-		}
-		idGuidedProjectile::Think();
-		GetSeekPos( seekPos );
-		if ( ( seekPos - physicsObj.GetOrigin() ).Length() < 32.0f ) {
-			if ( returnPhase ) {
-				StopSound( SND_CHANNEL_ANY, false );
-				StartSound( "snd_return", SND_CHANNEL_BODY2, 0, false, NULL );
-				Hide();
-				PostEventSec( &EV_Remove, 2.0f );
-
-				ownerEnt = owner.GetEntity();
-				if ( ownerEnt && ownerEnt->IsType( idPlayer::Type ) ) {
-					static_cast<idPlayer *>( ownerEnt )->SetSoulCubeProjectile( NULL );
-				}
-
-				state = FIZZLED;
-			} else if ( !killPhase ){
-				KillTarget( physicsObj.GetAxis()[0] );
-			}
-		}
-	}
-}
-
-/*
-================
-idSoulCubeMissile::GetSeekPos
-================
-*/
-void idSoulCubeMissile::GetSeekPos( idVec3 &out ) {
-	if ( returnPhase && owner.GetEntity() && owner.GetEntity()->IsType( idActor::Type ) ) {
-		idActor *act = static_cast<idActor*>( owner.GetEntity() );
-		out = act->GetEyePosition();
-		return;
-	}
-	if ( destOrg != vec3_zero ) {
-		out = destOrg;
-		return;
-	}
-	idGuidedProjectile::GetSeekPos( out );
-}
-
-
-/*
-================
-idSoulCubeMissile::Event_ReturnToOwner
-================
-*/
-void idSoulCubeMissile::ReturnToOwner() {
-	speed *= 0.65f;
-	killPhase = false;
-	returnPhase = true;
-	smokeFlyTime = 0;
-}
-
-
-/*
-=================
-idSoulCubeMissile::Launch
-=================
-*/
-void idSoulCubeMissile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire, const float launchPower, const float dmgPower, const float motionThrowSpeed ) {
-	idVec3		newStart;
-	idVec3		offs;
-	idEntity	*ownerEnt;
-
-	// push it out a little
-	newStart = start + dir * spawnArgs.GetFloat( "launchDist" );
-	offs = spawnArgs.GetVector( "launchOffset", "0 0 -4" );
-	newStart += offs;
-	idGuidedProjectile::Launch( newStart, dir, pushVelocity, timeSinceFire, launchPower, dmgPower );
-	if ( enemy.GetEntity() == NULL || !enemy.GetEntity()->IsType( idActor::Type ) ) {
-		destOrg = start + dir * 256.0f;
-	} else {
-		destOrg.Zero();
-	}
-	physicsObj.SetClipMask( 0 ); // never collide.. think routine will decide when to detonate
-	startingVelocity = spawnArgs.GetVector( "startingVelocity", "15 0 0" );
-	endingVelocity = spawnArgs.GetVector( "endingVelocity", "1500 0 0" );
-	accelTime = spawnArgs.GetFloat( "accelTime", "5" );
-	physicsObj.SetLinearVelocity( startingVelocity.Length() * physicsObj.GetAxis()[2] );
-	launchTime = gameLocal.time;
-	killPhase = false;
-	UpdateVisuals();
-
-	ownerEnt = owner.GetEntity();
-	if ( ownerEnt && ownerEnt->IsType( idPlayer::Type ) ) {
-		static_cast<idPlayer *>( ownerEnt )->SetSoulCubeProjectile( this );
-	}
-
-}
 
 
 /*
 ===============================================================================
 
-idBFGProjectile
+idBFGProjectile (HUMANHEAD pdm: removed)
 
 ===============================================================================
 */
-const idEventDef EV_RemoveBeams( "<removeBeams>", NULL );
-
-CLASS_DECLARATION( idProjectile, idBFGProjectile )
-	EVENT( EV_RemoveBeams,		idBFGProjectile::Event_RemoveBeams )
-END_CLASS
-
-
-/*
-=================
-idBFGProjectile::idBFGProjectile
-=================
-*/
-idBFGProjectile::idBFGProjectile() {
-	memset( &secondModel, 0, sizeof( secondModel ) );
-	secondModelDefHandle = -1;
-	nextDamageTime = 0;
-}
-
-/*
-=================
-idBFGProjectile::~idBFGProjectile
-=================
-*/
-idBFGProjectile::~idBFGProjectile() {
-	FreeBeams();
-
-	if ( secondModelDefHandle >= 0 ) {
-		gameRenderWorld->FreeEntityDef( secondModelDefHandle );
-		secondModelDefHandle = -1;
-	}
-}
-
-/*
-================
-idBFGProjectile::Spawn
-================
-*/
-void idBFGProjectile::Spawn( void ) {
-	beamTargets.Clear();
-	memset( &secondModel, 0, sizeof( secondModel ) );
-	secondModelDefHandle = -1;
-	const char *temp = spawnArgs.GetString( "model_two" );
-	if ( temp && *temp ) {
-		secondModel.hModel = renderModelManager->FindModel( temp );
-		secondModel.bounds = secondModel.hModel->Bounds( &secondModel );
-		secondModel.shaderParms[ SHADERPARM_RED ] =
-		secondModel.shaderParms[ SHADERPARM_GREEN ] =
-		secondModel.shaderParms[ SHADERPARM_BLUE ] =
-		secondModel.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-		secondModel.noSelfShadow = true;
-		secondModel.noShadow = true;
-	}
-	nextDamageTime = 0;
-	damageFreq = NULL;
-}
-
-/*
-================
-idBFGProjectile::Save
-================
-*/
-void idBFGProjectile::Save( idSaveGame *savefile ) const {
-	int i;
-
-	savefile->WriteInt( beamTargets.Num() );
-	for ( i = 0; i < beamTargets.Num(); i++ ) {
-		beamTargets[i].target.Save( savefile );
-		savefile->WriteRenderEntity( beamTargets[i].renderEntity );
-		savefile->WriteInt( beamTargets[i].modelDefHandle );
-	}
-
-	savefile->WriteRenderEntity( secondModel );
-	savefile->WriteInt( secondModelDefHandle );
-	savefile->WriteInt( nextDamageTime );
-	savefile->WriteString( damageFreq );
-}
-
-/*
-================
-idBFGProjectile::Restore
-================
-*/
-void idBFGProjectile::Restore( idRestoreGame *savefile ) {
-	int i, num;
-
-	savefile->ReadInt( num );
-	beamTargets.SetNum( num );
-	for ( i = 0; i < num; i++ ) {
-		beamTargets[i].target.Restore( savefile );
-		savefile->ReadRenderEntity( beamTargets[i].renderEntity );
-		savefile->ReadInt( beamTargets[i].modelDefHandle );
-
-		if ( beamTargets[i].modelDefHandle >= 0 ) {
-			beamTargets[i].modelDefHandle = gameRenderWorld->AddEntityDef( &beamTargets[i].renderEntity );
-		}
-	}
-
-	savefile->ReadRenderEntity( secondModel );
-	savefile->ReadInt( secondModelDefHandle );
-	savefile->ReadInt( nextDamageTime );
-	savefile->ReadString( damageFreq );
-
-	if ( secondModelDefHandle >= 0 ) {
-		secondModelDefHandle = gameRenderWorld->AddEntityDef( &secondModel );
-	}
-}
-
-/*
-=================
-idBFGProjectile::FreeBeams
-=================
-*/
-void idBFGProjectile::FreeBeams() {
-	for ( int i = 0; i < beamTargets.Num(); i++ ) {
-		if ( beamTargets[i].modelDefHandle >= 0 ) {
-			gameRenderWorld->FreeEntityDef( beamTargets[i].modelDefHandle );
-			beamTargets[i].modelDefHandle = -1;
-		}
-	}
-
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		player->playerView.EnableBFGVision( false );
-	}
-}
-
-/*
-================
-idBFGProjectile::Think
-================
-*/
-void idBFGProjectile::Think( void ) {
-	if ( state == LAUNCHED ) {
-
-		// update beam targets
-		for ( int i = 0; i < beamTargets.Num(); i++ ) {
-			if ( beamTargets[i].target.GetEntity() == NULL ) {
-				continue;
-			}
-			idPlayer *player = ( beamTargets[i].target.GetEntity()->IsType( idPlayer::Type ) ) ? static_cast<idPlayer*>( beamTargets[i].target.GetEntity() ) : NULL;
-
-			// Major hack for end boss.  :(
-			idAnimatedEntity	*beamEnt;
-			idVec3				org;
-			bool				forceDamage = false;
-
-			beamEnt = static_cast<idAnimatedEntity *>(beamTargets[i].target.GetEntity());
-
-			if (!idStr::Cmp(beamEnt->GetEntityDefName(), "monster_boss_d3xp_maledict")) {
-				SetTimeState	ts(beamEnt->timeGroup);
-				idMat3			temp;
-				jointHandle_t	bodyJoint;
-
-				bodyJoint = beamEnt->GetAnimator()->GetJointHandle("Chest1");
-				beamEnt->GetJointWorldTransform(bodyJoint, gameLocal.time, org, temp);
-
-				forceDamage = true;
-			} else {
-				org = beamEnt->GetPhysics()->GetAbsBounds().GetCenter();
-			}
-
-			beamTargets[i].renderEntity.origin = GetPhysics()->GetOrigin();
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_X ] = org.x;
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_Y ] = org.y;
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BEAM_END_Z ] = org.z;
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_RED ] =
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_GREEN ] =
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BLUE ] =
-			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-			if ( gameLocal.time > nextDamageTime ) {
-				bool bfgVision = true;
-				if (damageFreq && *(const char *)damageFreq && beamTargets[i].target.GetEntity() && (forceDamage || beamTargets[i].target.GetEntity()->CanDamage(GetPhysics()->GetOrigin(), org))) {
-					org = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-					org.Normalize();
-					beamTargets[i].target.GetEntity()->Damage( this, owner.GetEntity(), org, damageFreq, ( damagePower ) ? damagePower : 1.0f, INVALID_JOINT );
-				} else {
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_RED ] =
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_GREEN ] =
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_BLUE ] =
-					beamTargets[i].renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 0.0f;
-					bfgVision = false;
-				}
-				if ( player ) {
-					player->playerView.EnableBFGVision( bfgVision );
-				}
-				nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
-			}
-			gameRenderWorld->UpdateEntityDef( beamTargets[i].modelDefHandle, &beamTargets[i].renderEntity );
-		}
-
-		if ( secondModelDefHandle >= 0 ) {
-			secondModel.origin = GetPhysics()->GetOrigin();
-			gameRenderWorld->UpdateEntityDef( secondModelDefHandle, &secondModel );
-		}
-
-		idAngles ang;
-
-		ang.pitch = ( gameLocal.time & 4095 ) * 360.0f / -4096.0f;
-		ang.yaw = ang.pitch;
-		ang.roll = 0.0f;
-		SetAngles( ang );
-
-		ang.pitch = ( gameLocal.time & 2047 ) * 360.0f / -2048.0f;
-		ang.yaw = ang.pitch;
-		ang.roll = 0.0f;
-		secondModel.axis = ang.ToMat3();
-
-		UpdateVisuals();
-	}
-
-	idProjectile::Think();
-}
-
-/*
-=================
-idBFGProjectile::Launch
-=================
-*/
-void idBFGProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire, const float power, const float dmgPower, const float motionThrowSpeed ) {
-	idProjectile::Launch( start, dir, pushVelocity, 0.0f, power, dmgPower );
-
-	// dmgPower * radius is the target acquisition area
-	// acquisition should make sure that monsters are not dormant
-	// which will cut down on hitting monsters not actively fighting
-	// but saves on the traces making sure they are visible
-	// damage is not applied until the projectile explodes
-
-	idEntity *	ent;
-	idEntity *	entityList[ MAX_GENTITIES ];
-	int			numListedEntities;
-	idBounds	bounds;
-	idVec3		damagePoint;
-
-	float radius;
-	spawnArgs.GetFloat( "damageRadius", "512", radius );
-	bounds = idBounds( GetPhysics()->GetOrigin() ).Expand( radius );
-
-	float beamWidth = spawnArgs.GetFloat( "beam_WidthFly" );
-	const char *skin = spawnArgs.GetString( "skin_beam" );
-
-	memset( &secondModel, 0, sizeof( secondModel ) );
-	secondModelDefHandle = -1;
-	const char *temp = spawnArgs.GetString( "model_two" );
-	if ( temp && *temp ) {
-		secondModel.hModel = renderModelManager->FindModel( temp );
-		secondModel.bounds = secondModel.hModel->Bounds( &secondModel );
-		secondModel.shaderParms[ SHADERPARM_RED ] =
-		secondModel.shaderParms[ SHADERPARM_GREEN ] =
-		secondModel.shaderParms[ SHADERPARM_BLUE ] =
-		secondModel.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-		secondModel.noSelfShadow = true;
-		secondModel.noShadow = true;
-		secondModel.origin = GetPhysics()->GetOrigin();
-		secondModel.axis = GetPhysics()->GetAxis();
-		secondModelDefHandle = gameRenderWorld->AddEntityDef( &secondModel );
-	}
-
-	idVec3 delta( 15.0f, 15.0f, 15.0f );
-	//physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles(), delta, ang_zero );
-
-	// get all entities touching the bounds
-	numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_BODY, entityList, MAX_GENTITIES );
-	for ( int e = 0; e < numListedEntities; e++ ) {
-		ent = entityList[ e ];
-		assert( ent );
-
-		if ( ent == this || ent == owner.GetEntity() || ent->IsHidden() || !ent->IsActive() || !ent->fl.takedamage || ent->health <= 0 || !ent->IsType( idActor::Type ) ) {
-			continue;
-		}
-
-		if ( !ent->CanDamage( GetPhysics()->GetOrigin(), damagePoint ) ) {
-			continue;
-		}
-
-		if ( ent->IsType( idPlayer::Type ) ) {
-			idPlayer *player = static_cast<idPlayer*>( ent );
-			player->playerView.EnableBFGVision( true );
-		}
-
-		beamTarget_t bt;
-		memset( &bt.renderEntity, 0, sizeof( renderEntity_t ) );
-		bt.renderEntity.origin = GetPhysics()->GetOrigin();
-		bt.renderEntity.axis = GetPhysics()->GetAxis();
-		bt.renderEntity.shaderParms[ SHADERPARM_BEAM_WIDTH ] = beamWidth;
-		bt.renderEntity.shaderParms[ SHADERPARM_RED ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_BLUE ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-		bt.renderEntity.shaderParms[ SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
-		bt.renderEntity.hModel = renderModelManager->FindModel( "_beam" );
-		bt.renderEntity.callback = NULL;
-		bt.renderEntity.numJoints = 0;
-		bt.renderEntity.joints = NULL;
-		bt.renderEntity.bounds.Clear();
-		bt.renderEntity.customSkin = declManager->FindSkin( skin );
-		bt.target = ent;
-		bt.modelDefHandle = gameRenderWorld->AddEntityDef( &bt.renderEntity );
-		beamTargets.Append( bt );
-	}
-
-	// Major hack for end boss.  :(
-	idAnimatedEntity *maledict = static_cast<idAnimatedEntity *>(gameLocal.FindEntity("monster_boss_d3xp_maledict_1"));
-
-	if (maledict) {
-		SetTimeState	ts(maledict->timeGroup);
-
-		idVec3			realPoint;
-		idMat3			temp;
-		float			dist;
-		jointHandle_t	bodyJoint;
-
-		bodyJoint = maledict->GetAnimator()->GetJointHandle("Chest1");
-		maledict->GetJointWorldTransform(bodyJoint, gameLocal.time, realPoint, temp);
-
-		dist = idVec3(realPoint - GetPhysics()->GetOrigin()).Length();
-
-		if (dist < radius) {
-			beamTarget_t bt;
-			memset(&bt.renderEntity, 0, sizeof(renderEntity_t));
-			bt.renderEntity.origin = GetPhysics()->GetOrigin();
-			bt.renderEntity.axis = GetPhysics()->GetAxis();
-			bt.renderEntity.shaderParms[ SHADERPARM_BEAM_WIDTH ] = beamWidth;
-			bt.renderEntity.shaderParms[ SHADERPARM_RED ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_BLUE ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-			bt.renderEntity.shaderParms[ SHADERPARM_DIVERSITY] = gameLocal.random.CRandomFloat() * 0.75;
-			bt.renderEntity.hModel = renderModelManager->FindModel("_beam");
-			bt.renderEntity.callback = NULL;
-			bt.renderEntity.numJoints = 0;
-			bt.renderEntity.joints = NULL;
-			bt.renderEntity.bounds.Clear();
-			bt.renderEntity.customSkin = declManager->FindSkin(skin);
-			bt.target = maledict;
-			bt.modelDefHandle = gameRenderWorld->AddEntityDef(&bt.renderEntity);
-			beamTargets.Append(bt);
-
-			numListedEntities++;
-		}
-	}
-
-	if ( numListedEntities ) {
-		StartSound( "snd_beam", SND_CHANNEL_BODY2, 0, false, NULL );
-	}
-	damageFreq = spawnArgs.GetString( "def_damageFreq" );
-	nextDamageTime = gameLocal.time + BFG_DAMAGE_FREQUENCY;
-	UpdateVisuals();
-}
-
-/*
-================
-idProjectile::Event_RemoveBeams
-================
-*/
-void idBFGProjectile::Event_RemoveBeams() {
-	FreeBeams();
-	UpdateVisuals();
-}
-
-/*
-================
-idProjectile::Explode
-================
-*/
-void idBFGProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
-	int			i;
-	idVec3		dmgPoint;
-	idVec3		dir;
-	float		beamWidth;
-	float		damageScale;
-	const char *damage;
-	idPlayer *	player;
-	idEntity *	ownerEnt;
-
-	ownerEnt = owner.GetEntity();
-	if ( ownerEnt && ownerEnt->IsType( idPlayer::Type ) ) {
-		player = static_cast< idPlayer * >( ownerEnt );
-	} else {
-		player = NULL;
-	}
-
-	beamWidth = spawnArgs.GetFloat( "beam_WidthExplode" );
-	damage = spawnArgs.GetString( "def_damage" );
-
-	for ( i = 0; i < beamTargets.Num(); i++ ) {
-		if ( ( beamTargets[i].target.GetEntity() == NULL ) || ( ownerEnt == NULL ) ) {
-			continue;
-		}
-
-		if ( !beamTargets[i].target.GetEntity()->CanDamage( GetPhysics()->GetOrigin(), dmgPoint ) ) {
-			continue;
-		}
-
-		beamTargets[i].renderEntity.shaderParms[SHADERPARM_BEAM_WIDTH] = beamWidth;
-
-		// if the hit entity takes damage
-		if ( damagePower ) {
-			damageScale = damagePower;
-		} else {
-			damageScale = 1.0f;
-		}
-
-		// if the projectile owner is a player
-		if ( player ) {
-			// if the projectile hit an actor
-			if ( beamTargets[i].target.GetEntity()->IsType( idActor::Type ) ) {
-				player->SetLastHitTime( gameLocal.time );
-				player->AddProjectileHits( 1 );
-				damageScale *= player->PowerUpModifier( PROJECTILE_DAMAGE );
-			}
-		}
-
-		if ( damage[0] && ( beamTargets[i].target.GetEntity()->entityNumber > gameLocal.numClients - 1 ) ) {
-			dir = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-			dir.Normalize();
-			beamTargets[i].target.GetEntity()->Damage( this, ownerEnt, dir, damage, damageScale, ( collision.c.id < 0 ) ? CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ) : INVALID_JOINT );
-		}
-	}
-
-	if ( secondModelDefHandle >= 0 ) {
-		gameRenderWorld->FreeEntityDef( secondModelDefHandle );
-		secondModelDefHandle = -1;
-	}
-
-	if ( ignore == NULL ) {
-		projectileFlags.noSplashDamage = true;
-	}
-
-	if ( !gameLocal.isClient ) {
-		if ( ignore != NULL ) {
-			PostEventMS( &EV_RemoveBeams, 750 );
-		} else {
-			PostEventMS( &EV_RemoveBeams, 0 );
-		}
-	}
-
-	return idProjectile::Explode( collision, ignore );
-}
 
 
 /*
@@ -2339,9 +1937,12 @@ void idBFGProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 ===============================================================================
 */
 
+const idEventDef EV_CheckClip( "<checkclip>" ); // HUMANHEAD mdl
+
 CLASS_DECLARATION( idEntity, idDebris )
 EVENT( EV_Explode,			idDebris::Event_Explode )
 EVENT( EV_Fizzle,			idDebris::Event_Fizzle )
+EVENT( EV_CheckClip,		idDebris::Event_CheckClip ) // HUMANHEAD mdl
 END_CLASS
 
 /*
@@ -2353,6 +1954,19 @@ void idDebris::Spawn( void ) {
 	owner = NULL;
 	smokeFly = NULL;
 	smokeFlyTime = 0;
+
+	//HUMANHEAD: aob
+	float gravityMagnitude = physicsObj.GetGravity().Length();
+	collisionSpeed_max = hhUtils::DetermineFinalFallVelocityMagnitude( spawnArgs.GetFloat("collideDist_max", "25"), gravityMagnitude );
+	collisionSpeed_min = hhUtils::DetermineFinalFallVelocityMagnitude( spawnArgs.GetFloat("collideDist_min", "1"), gravityMagnitude );
+	//HUMANHEAD END
+
+	//HUMANHEAD rww
+	solidTest = 0; // mdl
+	if (gameLocal.isClient) {
+		Launch();
+	}
+	//HUMANHEAD END
 }
 
 /*
@@ -2369,7 +1983,6 @@ void idDebris::Create( idEntity *owner, const idVec3 &start, const idMat3 &axis 
 	smokeFly = NULL;
 	smokeFlyTime = 0;
 	sndBounce = NULL;
-	noGrab = true;
 	UpdateVisuals();
 }
 
@@ -2406,6 +2019,12 @@ void idDebris::Save( idSaveGame *savefile ) const {
 	savefile->WriteParticle( smokeFly );
 	savefile->WriteInt( smokeFlyTime );
 	savefile->WriteSoundShader( sndBounce );
+
+	// HUMANHEAD mdl
+	savefile->WriteFloat( collisionSpeed_max );
+	savefile->WriteFloat( collisionSpeed_min );
+	savefile->WriteInt( currentChannel );
+	// HUMANHEAD END
 }
 
 /*
@@ -2422,7 +2041,47 @@ void idDebris::Restore( idRestoreGame *savefile ) {
 	savefile->ReadParticle( smokeFly );
 	savefile->ReadInt( smokeFlyTime );
 	savefile->ReadSoundShader( sndBounce );
+
+	// HUMANHEAD mdl
+	savefile->ReadFloat( collisionSpeed_max );
+	savefile->ReadFloat( collisionSpeed_min );
+	savefile->ReadInt( currentChannel );
+	solidTest = 0; // Don't worry about saving this
+	// HUMANHEAD END
 }
+
+
+//HUMANHEAD rww
+/*
+=================
+idDebris::ClientPredictionThink
+=================
+*/
+void idDebris::ClientPredictionThink( void ) {
+	if (!gameLocal.isNewFrame) {
+		return;
+	}
+	Think();
+}
+
+/*
+================
+idDebris::WriteToSnapshot
+================
+*/
+void idDebris::WriteToSnapshot( idBitMsgDelta &msg ) const {
+	GetPhysics()->WriteToSnapshot(msg);
+}
+
+/*
+================
+idDebris::ReadFromSnapshot
+================
+*/
+void idDebris::ReadFromSnapshot( const idBitMsgDelta &msg ) {
+	GetPhysics()->ReadFromSnapshot(msg);
+}
+//HUMANHEAD END
 
 /*
 =================
@@ -2471,6 +2130,15 @@ void idDebris::Launch( void ) {
 		fl.takedamage = true;
 	}
 
+	//HUMANHEAD rww
+	fl.networkSync = true;
+	//HUMANHEAD END
+
+	// HUMANHEAD pdm: use local gravity on debris
+	idBounds pointBounds(vec3_origin);
+	gravVec = hhUtils::GetLocalGravity( GetOrigin(), pointBounds );
+	// HUMANHEAD END
+
 	gravVec = gameLocal.GetGravity();
 	gravVec.NormalizeFast();
 	axis = GetPhysics()->GetAxis();
@@ -2511,7 +2179,7 @@ void idDebris::Launch( void ) {
 	physicsObj.SetAxis( axis );
 	SetPhysics( &physicsObj );
 
-	if ( !gameLocal.isClient ) {
+	if ( !gameLocal.isClient || fl.clientEntity ) { //HUMANHEAD rww - if clientEntity, post events.
 		if ( fuse <= 0 ) {
 			// run physics for 1 second
 			RunPhysics();
@@ -2532,13 +2200,15 @@ void idDebris::Launch( void ) {
 
 	StartSound( "snd_fly", SND_CHANNEL_BODY, 0, false, NULL );
 
+	//ProcessEvent( &EV_CheckClip ); 	// HUMANHEAD mdl:  Check to see if we're inside a solid
+
 	smokeFly = NULL;
 	smokeFlyTime = 0;
 	const char *smokeName = spawnArgs.GetString( "smoke_fly" );
 	if ( *smokeName != '\0' ) {
 		smokeFly = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
 		smokeFlyTime = gameLocal.time;
-		gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/);
+		gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis());
 	}
 
 	const char *sndName = spawnArgs.GetString( "snd_bounce" );
@@ -2561,7 +2231,7 @@ void idDebris::Think( void ) {
 	Present();
 
 	if ( smokeFly && smokeFlyTime ) {
-		if (!gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/)) {
+		if (!gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis())) {
 			smokeFlyTime = 0;
 		}
 	}
@@ -2586,13 +2256,46 @@ idDebris::Collide
 =================
 */
 bool idDebris::Collide( const trace_t &collision, const idVec3 &velocity ) {
-	if ( sndBounce != NULL ) {
-		StartSoundShader( sndBounce, SND_CHANNEL_BODY, 0, false, NULL );
-	}
-	sndBounce = NULL;
+	//HUMANHEAD: aob - replaced id's bounce sound code
+	AttemptToPlayBounceSound( collision, velocity );
+	//HUMANHEAD END
 	return false;
 }
 
+/*
+================
+idDebris::DetermineNextChannel
+
+HUMANHEAD: aob - copied from hhMovable
+================
+*/
+s_channelType idDebris::DetermineNextChannel() {
+	static int NUM_CHANNELS = 6;
+
+	currentChannel = (currentChannel + 1) % NUM_CHANNELS;
+	return (s_channelType)((currentChannel == SCHANNEL_ANY) ? ++currentChannel : currentChannel);
+}
+
+/*
+================
+idDebris::AttemptToPlayBounceSound
+
+HUMANHEAD: aob - copied from hhMovable
+================
+*/
+void idDebris::AttemptToPlayBounceSound( const trace_t &collision, const idVec3 &velocity ) {
+	s_channelType channel;
+
+	float len = velocity * -collision.c.normal;
+	if( len > collisionSpeed_min && collision.c.material && !(collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT) ) {
+		channel = DetermineNextChannel();
+		if( StartSoundShader(sndBounce, channel, 0, true, NULL) ) {
+			// Change volume only after we know the sound played
+			float volume = hhUtils::CalculateSoundVolume( len, collisionSpeed_min, collisionSpeed_max );
+			HH_SetSoundVolume( volume, channel );
+		}
+	}
+}
 
 /*
 ================
@@ -2613,7 +2316,7 @@ void idDebris::Fizzle( void ) {
 	if ( *smokeName != '\0' ) {
 		smokeFly = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
 		smokeFlyTime = gameLocal.time;
-		gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/);
+		gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis());
 	}
 
 	fl.takedamage = false;
@@ -2622,7 +2325,7 @@ void idDebris::Fizzle( void ) {
 
 	Hide();
 
-	if ( gameLocal.isClient ) {
+	if ( gameLocal.isClient && !fl.clientEntity ) { //HUMANHEAD rww - continue with events for clientEntities.
 		return;
 	}
 
@@ -2653,7 +2356,7 @@ void idDebris::Explode( void ) {
 	if ( *smokeName != '\0' ) {
 		smokeFly = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
 		smokeFlyTime = gameLocal.time;
-		gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/);
+		gameLocal.smokeParticles->EmitSmoke(smokeFly, smokeFlyTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis());
 	}
 
 	fl.takedamage = false;
@@ -2681,6 +2384,31 @@ idDebris::Event_Fizzle
 void idDebris::Event_Fizzle( void ) {
 	Fizzle();
 }
+
+// HUMANHEAD mdl:  Derived from AF solid test code
+void idDebris::Event_CheckClip( void ) {
+	trace_t trace;
+
+	solidTest++;
+	if (solidTest > 10) {
+		gameLocal.DWarning( "%s STILL STUCK, removing.\n", name.c_str() );
+		PostEventMS(&EV_Remove, 100);
+		return;
+	}
+
+	if ( gameLocal.clip.Translation( trace, physicsObj.GetOrigin(), physicsObj.GetOrigin(), physicsObj.GetClipModel(), physicsObj.GetAxis(), physicsObj.GetClipMask(), this ) ) {
+		float depth = idMath::Fabs( trace.c.point * trace.c.normal - trace.c.dist );
+
+		physicsObj.SetOrigin( physicsObj.GetOrigin() + trace.c.normal * ( depth + 8.0f ) );
+
+		gameLocal.DWarning( "%s: debris stuck in %d (normal = %.2f %.2f %.2f, depth = %.2f)", this->name.c_str(), trace.c.contents, trace.c.normal.x, trace.c.normal.y, trace.c.normal.z, depth );
+		PostEventMS(&EV_CheckClip, 100);
+	} else {
+		gameLocal.DPrintf("Cleared solid after %d tries. \n", solidTest);
+	}
+}
+// HUMANHEAD END
+
 
 /*
 ===============================================================================

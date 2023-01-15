@@ -61,7 +61,13 @@ void idWorldspawn::Spawn( void ) {
 	assert( gameLocal.world == NULL );
 	gameLocal.world = this;
 
-	g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
+	if (!gameLocal.isMultiplayer) { //HUMANHEAD rww
+		g_gravity.SetFloat( spawnArgs.GetFloat( "gravity", va( "%f", DEFAULT_GRAVITY ) ) );
+	}
+
+#if _HH_INLINED_PROC_CLIPMODELS
+	gameLocal.CreateInlinedProcClip(this); //HUMANHEAD rww
+#endif
 
 	// disable stamina on hell levels
 	if ( spawnArgs.GetBool( "no_stamina" ) ) {
@@ -127,6 +133,7 @@ idWorldspawn::~idWorldspawn
 */
 idWorldspawn::~idWorldspawn() {
 	if ( gameLocal.world == this ) {
+		gameLocal.ClearStaticData(); // HUMANHEAD mdl
 		gameLocal.world = NULL;
 	}
 }

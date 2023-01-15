@@ -484,21 +484,19 @@ idTarget_Tip
 
 class idTarget_Tip : public idTarget {
 public:
-	CLASS_PROTOTYPE( idTarget_Tip );
+CLASS_PROTOTYPE( idTarget_Tip );
 
-						idTarget_Tip( void );
-
+	idTarget_Tip();
 	void				Spawn( void );
-
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
+	void				Disable();
 
 private:
-	idVec3				playerPos;
-
 	void				Event_Activate( idEntity *activator );
-	void				Event_TipOff( void );
-	void				Event_GetPlayerPos( void );
+	void				Event_CheckPlayerPos( void );
+
+	bool				bDisabled;
 };
 
 /*

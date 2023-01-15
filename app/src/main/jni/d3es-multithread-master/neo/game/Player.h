@@ -297,30 +297,6 @@ public:
     virtual bool isEmpty();
 };
 
-class idHolster : public idWeaponHolder
-{
-public:
-    slotIndex_t slot;
-    idVec3 origin;
-    float radiusSq;
-    renderEntity_t			renderEntity;					// used to present a model to the renderer
-    qhandle_t				modelDefHandle;					// handle to static renderer model
-    idMat3					holsterAxis;
-public:
-    idHolster();
-    virtual	~idHolster();
-    void Init( idPlayer* player );
-    void FreeSlot();
-    void HolsterModelByName( const char* modelname, idRenderModel* renderModel = NULL );
-    void HolsterPDA();
-    void HolsterFlashlight();
-    void EmptyHolster();
-    void HolsterCurrentWeapon( int stashed, int hand );
-    void StashToExtraHolster();
-    void RestoreFromExtraHolster();
-    void UpdateSlot();
-};
-
 class idPlayerHand : public idWeaponHolder {
 public:
 	int whichHand;
@@ -398,7 +374,6 @@ public:
 	virtual bool
 	floatingWeapon(); // the soul cube and the artifact float next to your hand rather than being held
 	virtual bool controllingWeapon(); // holding or floating
-	virtual bool holdingPDA();
 
 	virtual bool holdingPhysics();
 
@@ -609,7 +584,7 @@ public:
 	hhInventory				inventory;			// HUMANHEAD - Changed to our version
 
     int						flashlightBattery;
-    idEntityPtr<idWeapon>   flashlight;
+    idEntityPtr<hhWeapon>   flashlight;
 
 	idUserInterface *		hud;				// MP: is NULL if not local player
 	idUserInterface *		objectiveSystem;
@@ -739,21 +714,12 @@ public:
 	virtual				// HUMANHEAD
 	void					Think( void );
 
-    void					SetupPDASlot( bool holsterPDA );
-    void					FreePDASlot();
-    void					UpdatePDASlot();
-
-    void					SetupHolsterSlot( int hand, int stashed = -1 );
-    void					FreeHolsterSlot();
-    void					UpdateHolsterSlot();
-
     void					UpdateLaserSight( int hand );
     bool					GetHandOrHeadPositionWithHacks( int hand, idVec3& origin, idMat3& axis );
 
     // Koz begin
     void					UpdateTeleportAim();
     bool					GetTeleportBeamOrigin( idVec3 &beamOrigin, idMat3 &beamAxis);
-    void					UpdatePlayerSkinsPoses();
     void					SetWeaponHandPose();
     void					SetFlashHandPose(); // Set flashlight hand pose
     void					ToggleLaserSight();
@@ -955,12 +921,9 @@ public:
 	bool					CanShowWeaponViewmodel( void ) const;
 	// Carl: Dual wielding
 	bool					CanDualWield( int num ) const;
-    idWeapon*				GetWeaponInHand( int hand ) const;
+    hhWeapon*				GetWeaponInHand( int hand ) const;
     // Carl: when the code needs just one weapon, guess which one is the "main" one
     idWeapon*				GetMainWeapon();
-	idWeapon*				GetGrabberWeapon() const;
-    idWeapon*				GetPDAWeapon() const;
-    idWeapon*				GetWeaponWithMountedFlashlight();
     int						GetBestWeaponHand();
     int						GetBestWeaponHandToSteal( idPlayer* thief );
     // Carl: get the specific weapon used to harvest souls (Soul Cube or Artifact)
@@ -987,7 +950,6 @@ public:
 	void					PerformImpulse( int impulse );
 	void					Spectate( bool spectate );
 	int 					MapWeaponHudId( int inGame );
-	void					TogglePDA( int hand );
 	void					ToggleScoreboard( void );
 	void					RouteGuiMouse( idUserInterface *gui );
 	virtual				// HUMANHEAD
@@ -1013,7 +975,7 @@ public:
     bool					IsSoundChannelPlaying( const s_channelType channel = SND_CHANNEL_ANY );
 	void					StartAudioLog( void );
 	void					StopAudioLog( void );
-	void					ShowTip( const char *title, const char *tip, bool autoHide );
+	void					ShowTip( const char *keyMaterial, const char *tip, const char *key, const char *topMaterial, bool keywide, int xOffset=0, int yOffset=0 );
 	void					HideTip( void );
 
 	bool					IsTipVisible( void ) { return tipUp; };
@@ -1082,9 +1044,6 @@ public:
 	void					StopHelltime(bool quick = true);
 	void					PlayHelltimeStopSound();
 
-	void					DropFlag(void);	// drop CTF item
-	void					ReturnFlag();
-
 	bool					SelfSmooth( void );
 	void					SetSelfSmooth( bool b );
     int					    GetCurrentWeaponId();
@@ -1120,7 +1079,6 @@ public:
     gameExpansionType_t		GetExpansionType() const;
 
     friend class idWeaponHolder;
-    friend class idHolster;
     friend class idPlayerHand;
 
 	idUserInterface *		ActiveGui( void ); //HUMANHEAD rww - made public
@@ -1230,10 +1188,6 @@ protected:				// HUMANHEAD nla - need to be protected for access by hhPlayer
 	int						oldMouseX;
 	int						oldMouseY;
 
-	idStr					pdaAudio;
-	idStr					pdaVideo;
-	idStr					pdaVideoWave;
-
 	bool					tipUp;
 	bool					objectiveUp;
 
@@ -1289,9 +1243,6 @@ protected:				// HUMANHEAD nla - need to be protected for access by hhPlayer
 	void					Weapon_GUI( void );
 	virtual				// HUMANHEAD
 	void					UpdateWeapon( void );
-    void					UpdateFlashlight();
-    void					FlashlightOn();
-    void					FlashlightOff();
 	void					UpdateSpectating( void );
 	void					SpectateFreeFly( bool force );	// ignore the timeout to force when followed spec is no longer valid
 	void					SpectateCycle( void );
@@ -1330,13 +1281,8 @@ protected:				// HUMANHEAD nla - need to be protected for access by hhPlayer
 
 	virtual				// HUMANHEAD
 	void					UpdateFocus( void );
-    void					SendPDAEvent( const sysEvent_t* sev );
-    bool					UpdateFocusPDA( void );
-	virtual				// HUMANHEAD
+    virtual				// HUMANHEAD
 	void					UpdateLocation( void );
-	void					UpdatePDAInfo( bool updatePDASel );
-	int						AddGuiPDAData( const declType_t dataType, const char *listName, const idDeclPDA *src, idUserInterface *gui );
-	void					ExtractEmailInfo( const idStr &email, const char *scan, idStr &out );
 	void					UpdateObjectiveInfo( void );
 
     bool					WeaponAvailable( const char* name );
@@ -1354,7 +1300,6 @@ protected:				// HUMANHEAD nla - need to be protected for access by hhPlayer
 	void					Event_SelectWeapon( const char *weaponName );
 	void					Event_GetWeaponEntity( void );
 	void					Event_OpenPDA( void );
-	void					Event_PDAAvailable( void );
 	void					Event_InPDA( void );
 	void					Event_ExitTeleporter( void );
 	void					Event_HideTip( void );
@@ -1375,9 +1320,6 @@ protected:				// HUMANHEAD nla - need to be protected for access by hhPlayer
     // Koz
     void					Event_GetWeaponHand();
     void					Event_GetWeaponHandState();
-    void					Event_GetFlashHand(); // get flashlight hand
-    void					Event_GetFlashHandState(); // get flashlight hand state
-    void					Event_GetFlashState(); // get flashlight state
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

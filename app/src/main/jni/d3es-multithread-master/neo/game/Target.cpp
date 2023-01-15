@@ -195,12 +195,22 @@ idTarget_EndLevel::Event_Activate
 void idTarget_EndLevel::Event_Activate( idEntity *activator ) {
 	idStr nextMap;
 
-	if ( spawnArgs.GetBool( "endOfGame" ) ) {
+#ifdef ID_DEMO_BUILD
+	//HUMANHEAD jsh - if the next map is DEMO_END_LEVEL, demo is over
+	//this check is done to avoid having to change map assets
+	//if ( spawnArgs.GetBool( "endOfGame" ) ) {
+	if ( idStr::Icmp( spawnArgs.GetString( "nextMap" ), DEMO_END_LEVEL ) == 0 ) {
 		cvarSystem->SetCVarBool( "g_nightmare", true );
-		gameLocal.sessionCommand = "disconnect";
+		gameLocal.sessionCommand = "endofDemo";
 		return;
 	}
-
+#else
+	if ( spawnArgs.GetBool( "endOfGame" ) ) {
+		cvarSystem->SetCVarBool( "g_nightmare", true );
+		gameLocal.sessionCommand = "disconnect";	// HUMANHEAD pdm: changed from disconnect
+		return;
+	}
+#endif
 	if ( !spawnArgs.GetString( "nextMap", "", nextMap ) ) {
 		gameLocal.Printf( "idTarget_SessionCommand::Event_Activate: no nextMap key\n" );
 		return;
@@ -657,8 +667,6 @@ void idTarget_GiveEmail::Event_Activate( idEntity *activator ) {
 	const idDeclPDA *pda = player->GetPDA();
 	if ( pda ) {
 		player->GiveEmail( spawnArgs.GetString( "email" ) );
-	} else {
-		player->ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_PDANeeded" ), true );
 	}
 }
 
@@ -1525,128 +1533,98 @@ void idTarget_EnableLevelWeapons::Event_Activate( idEntity *activator ) {
 	}
 }
 
+
 /*
 ===============================================================================
 
 idTarget_Tip
-
+	HUMANHEAD pdm: rewritten
 ===============================================================================
 */
 
-const idEventDef EV_TipOff( "<TipOff>" );
-extern const idEventDef EV_GetPlayerPos( "<getplayerpos>" );
+const idEventDef EV_CheckPos( "<checkplayerpos>" );
 
 CLASS_DECLARATION( idTarget, idTarget_Tip )
-	EVENT( EV_Activate,		idTarget_Tip::Event_Activate )
-	EVENT( EV_TipOff,		idTarget_Tip::Event_TipOff )
-	EVENT( EV_GetPlayerPos,	idTarget_Tip::Event_GetPlayerPos )
+				EVENT( EV_Activate,		idTarget_Tip::Event_Activate )
+				EVENT( EV_CheckPos,		idTarget_Tip::Event_CheckPlayerPos )
 END_CLASS
 
-
-/*
-================
-idTarget_Tip::idTarget_Tip
-================
-*/
-idTarget_Tip::idTarget_Tip( void ) {
-	playerPos.Zero();
+idTarget_Tip::idTarget_Tip() {
+	bDisabled = false;
 }
 
-/*
-================
-idTarget_Tip::Spawn
-================
-*/
 void idTarget_Tip::Spawn( void ) {
 }
 
-/*
-================
-idTarget_Tip::Save
-================
-*/
 void idTarget_Tip::Save( idSaveGame *savefile ) const {
-	savefile->WriteVec3( playerPos );
+	savefile->WriteBool(bDisabled);
 }
 
-/*
-================
-idTarget_Tip::Restore
-================
-*/
 void idTarget_Tip::Restore( idRestoreGame *savefile ) {
-	savefile->ReadVec3( playerPos );
+	savefile->ReadBool(bDisabled);
 }
 
-/*
-================
-idTarget_Tip::Event_Activate
-================
-*/
-void idTarget_Tip::Event_GetPlayerPos( void ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		playerPos = player->GetPhysics()->GetOrigin();
-		PostEventMS( &EV_TipOff, 100 );
+void idTarget_Tip::Disable() {
+	CancelEvents( &EV_CheckPos);
+	if (!spawnArgs.GetBool("tip_repeatable")) {
+		bDisabled = true;
 	}
 }
 
-/*
-================
-idTarget_Tip::Event_Activate
-================
-*/
 void idTarget_Tip::Event_Activate( idEntity *activator ) {
+
 	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		if ( player->IsTipVisible() ) {
-			PostEventSec( &EV_Activate, 5.1f, activator );
+	if( player ) {
+
+		if (!g_tips.GetBool()) {
+			player->HideTip();
 			return;
 		}
-		player->ShowTip( spawnArgs.GetString( "text_title" ), spawnArgs.GetString( "text_tip" ), false );
-		PostEventMS( &EV_GetPlayerPos, 2000 );
-	}
-}
 
-/*
-================
-idTarget_Tip::Event_TipOff
-================
-*/
-void idTarget_Tip::Event_TipOff( void ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		idVec3 v = player->GetPhysics()->GetOrigin() - playerPos;
-		if ( v.Length() > 96.0f ) {
+		if( spawnArgs.GetBool( "tip_remove" ) ) {
+			// Disable all targets
+			for( int i = 0; i < targets.Num(); i++ ) {
+				idEntity *target = targets[ i ].GetEntity();
+				if ( target && target->IsType(idTarget_Tip::Type) ) {
+					static_cast<idTarget_Tip*>(target)->Disable();
+				}
+			}
 			player->HideTip();
-		} else {
-			PostEventMS( &EV_TipOff, 100 );
+			return;
+		}
+
+		if( bDisabled || player->IsTipVisible() ) {
+			return;
+		}
+
+		// Determine key material to display
+		idStr keyMaterial, key;
+		bool keyWide = false;
+		if ( !spawnArgs.GetString("mtr_override", "", keyMaterial) ) {
+			const char *keyBinding = spawnArgs.GetString("tip_key", NULL);
+			if (keyBinding) {
+				gameLocal.GetTip(keyBinding, keyMaterial, key, keyWide);
+			}
+		}
+
+		if (keyMaterial.Length()) {
+			int xOffset = spawnArgs.GetInt("tipOffsetX");
+			int yOffset = spawnArgs.GetInt("tipOffsetY");
+			player->ShowTip( keyMaterial.c_str(), spawnArgs.GetString("text_tip"), key.c_str(), spawnArgs.GetString("mtr_top", NULL), keyWide, xOffset, yOffset );
+			PostEventMS( &EV_CheckPos, 1000 );
 		}
 	}
 }
 
-
-/*
-===============================================================================
-
-idTarget_GiveSecurity
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_GiveSecurity )
-EVENT( EV_Activate,	idTarget_GiveSecurity::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_GiveEmail::Event_Activate
-================
-*/
-void idTarget_GiveSecurity::Event_Activate( idEntity *activator ) {
+void idTarget_Tip::Event_CheckPlayerPos( void ) {
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player ) {
-		player->GiveSecurity( spawnArgs.GetString( "text_security" ) );
+		idVec3 v = player->GetOrigin() - GetOrigin();
+		if ( v.Length() > spawnArgs.GetFloat( "tip_distance" ) || !g_tips.GetBool() ) {
+			player->HideTip();
+		} else {
+			PostEventMS( &EV_CheckPos, 1000 );
+		}
 	}
 }
 
@@ -1660,7 +1638,7 @@ idTarget_RemoveWeapons
 */
 
 CLASS_DECLARATION( idTarget, idTarget_RemoveWeapons )
-EVENT( EV_Activate,	idTarget_RemoveWeapons::Event_Activate )
+				EVENT( EV_Activate,	idTarget_RemoveWeapons::Event_Activate )
 END_CLASS
 
 /*
@@ -1672,13 +1650,11 @@ void idTarget_RemoveWeapons::Event_Activate( idEntity *activator ) {
 	for( int i = 0; i < gameLocal.numClients; i++ ) {
 		if ( gameLocal.entities[ i ] ) {
 			idPlayer *player = static_cast< idPlayer* >( gameLocal.entities[i] );
-
-			int wIndex[10] = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10};
-			int index = 0;
-			for ( index = 0; index < 10; index++ ) {
-				player->RemoveWeapon( va( "def_weapon%d", wIndex[index] ) );
+			const idKeyValue *kv = spawnArgs.MatchPrefix( "weapon", NULL );
+			while ( kv ) {
+				player->RemoveWeapon( kv->GetValue() );
+				kv = spawnArgs.MatchPrefix( "weapon", kv );
 			}
-
 			player->SelectWeapon( player->weapon_fists, true );
 		}
 	}
@@ -1694,7 +1670,7 @@ idTarget_LevelTrigger
 */
 
 CLASS_DECLARATION( idTarget, idTarget_LevelTrigger )
-EVENT( EV_Activate,	idTarget_LevelTrigger::Event_Activate )
+				EVENT( EV_Activate,	idTarget_LevelTrigger::Event_Activate )
 END_CLASS
 
 /*
@@ -1721,7 +1697,7 @@ idTarget_EnableStamina
 */
 
 CLASS_DECLARATION( idTarget, idTarget_EnableStamina )
-EVENT( EV_Activate,	idTarget_EnableStamina::Event_Activate )
+				EVENT( EV_Activate,	idTarget_EnableStamina::Event_Activate )
 END_CLASS
 
 /*
@@ -1752,8 +1728,8 @@ idTarget_FadeSoundClass
 
 const idEventDef EV_RestoreVolume( "<RestoreVolume>" );
 CLASS_DECLARATION( idTarget, idTarget_FadeSoundClass )
-EVENT( EV_Activate,	idTarget_FadeSoundClass::Event_Activate )
-EVENT( EV_RestoreVolume, idTarget_FadeSoundClass::Event_RestoreVolume )
+				EVENT( EV_Activate,			idTarget_FadeSoundClass::Event_Activate )
+				EVENT( EV_RestoreVolume,	idTarget_FadeSoundClass::Event_RestoreVolume )
 END_CLASS
 
 /*
@@ -1767,7 +1743,7 @@ void idTarget_FadeSoundClass::Event_Activate( idEntity *activator ) {
 	float fadeDuration = spawnArgs.GetFloat( "fadeDuration" );
 	int fadeClass = spawnArgs.GetInt( "fadeClass" );
 	// start any sound fading now
-	if ( fadeTime ) {
+	if ( fadeTime >= 0 ) { // HUMANHEAD rdr - was if ( fadeTime ), changed to allow 0 for instant fade
 		gameSoundWorld->FadeSoundClasses( fadeClass, spawnArgs.GetBool( "fadeIn" ) ? fadeDB : 0.0f - fadeDB, fadeTime );
 		if ( fadeDuration ) {
 			PostEventSec( &EV_RestoreVolume, fadeDuration );
@@ -1781,8 +1757,8 @@ idTarget_FadeSoundClass::Event_RestoreVolume
 ================
 */
 void idTarget_FadeSoundClass::Event_RestoreVolume() {
-	float fadeTime = spawnArgs.GetFloat( "fadeTime" );
-	float fadeDB = spawnArgs.GetFloat( "fadeDB" );
+	float restoreTime = spawnArgs.GetFloat( "restoreTime" ); // HUMANHEAD rdr - added to allow different restoreTime
+	int fadeClass = spawnArgs.GetInt( "fadeClass" );
 	// restore volume
-	gameSoundWorld->FadeSoundClasses( 0, fadeDB, fadeTime );
+	gameSoundWorld->FadeSoundClasses( fadeClass, 0, restoreTime ); // HUMANHEAD rdr - changed from ->FadeSoundClasses( 0, fadeDB, fadeTime );
 }

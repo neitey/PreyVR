@@ -4653,13 +4653,7 @@ void idMultiplayerGame::SwitchToTeam( int clientNum, int oldteam, int newteam ) 
 			p->SetPrivateCameraView( NULL );
 		}
 		p->Kill( true, true );
-		if (IsGametypeFlagBased())
-			p->DropFlag();
 		CheckAbortGame();
-	}
-	else if (IsGametypeFlagBased() && oldteam != -1) {
-		idPlayer *p = static_cast<idPlayer *>(gameLocal.entities[ clientNum ]);
-		p->DropFlag();
 	}
 }
 

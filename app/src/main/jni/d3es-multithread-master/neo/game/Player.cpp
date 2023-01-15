@@ -48,6 +48,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "sys/sys_public.h"
 #include "framework/DeclSkin.h"
 
+#include "Prey/game_portal.h" // HUMANHEAD
+
 
 const int ASYNC_PLAYER_INV_AMMO_BITS = idMath::BitsForInteger( 999 );	// 9 bits to cover the range [0, 999]
 const int ASYNC_PLAYER_INV_CLIP_BITS = -7;								// -7 bits to cover the range [-1, 60]
@@ -145,7 +147,8 @@ const int WEAPON_DROP_TIME = 20 * 1000;
 const int WEAPON_SWITCH_DELAY = 150;
 
 // how many units to raise spectator above default view height so it's in the head of someone
-const int SPECTATE_RAISE = 25;
+const int SPECTATE_RAISE = -39;//25	//HUMANHEAD rww - this is no longer acceptable because of the crazy placement of our spawns (especially in grav zones)
+//unfortunately those spawns don't have proper axis values, so we can't offset based on that either.
 
 const int HEALTHPULSE_TIME = 333;
 
@@ -168,7 +171,7 @@ const idEventDef EV_Player_ExitTeleporter( "exitTeleporter" );
 const idEventDef EV_Player_StopAudioLog( "stopAudioLog" );
 const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
-const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
+const idEventDef EV_SpectatorTouch( "<spectatorTouch>", "et" );	// HUMANHEAD pdm: <hide> from scripts since it's got a trace parm
 const idEventDef EV_Player_GiveInventoryItem("giveInventoryItem", "s");
 const idEventDef EV_Player_RemoveInventoryItem("removeInventoryItem", "s");
 const idEventDef EV_Player_GetIdealWeapon( "getIdealWeapon", NULL, 's' );
@@ -218,15 +221,12 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT(EV_Player_SetBloomParms,			idPlayer::Event_SetBloomParms)
     // Koz begin
     EVENT( EV_Player_GetWeaponHand, 		idPlayer::Event_GetWeaponHand )
-    EVENT( EV_Player_GetFlashHand,			idPlayer::Event_GetFlashHand ) // get flashlight hand
     EVENT( EV_Player_GetWeaponHandState,	idPlayer::Event_GetWeaponHandState )
-    EVENT( EV_Player_GetFlashHandState,		idPlayer::Event_GetFlashHandState ) // get flashlight hand state
-    EVENT( EV_Player_GetFlashState,			idPlayer::Event_GetFlashState ) // get flashlight state
     // Koz end
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
-const int RAGDOLL_DEATH_TIME = 3000;
+const int RAGDOLL_DEATH_TIME = 500; //HUMANHEAD rww - was 3000
 const int MAX_PDAS = 64;
 const int MAX_PDA_ITEMS = 128;
 const int STEPUP_TIME = 200;
@@ -356,7 +356,6 @@ void idInventory::Clear( void ) {
 	nextItemNum = 1;
 	onePickupTime = 0;
 	pickupItemNames.Clear();
-	objectiveNames.Clear();
 
 	ammoPredictTime = 0;
 
@@ -422,6 +421,7 @@ idInventory::GetPersistantData
 ==============
 */
 void idInventory::GetPersistantData( idDict &dict ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	int		i;
 	int		num;
 	idDict	*item;
@@ -508,6 +508,7 @@ void idInventory::GetPersistantData( idDict &dict ) {
 		sprintf( key, "levelTrigger_Trigger_%i", i );
 		dict.Set( key, levelTriggers[i].triggerName );
 	}
+ */
 }
 
 /*
@@ -516,6 +517,7 @@ idInventory::RestoreInventory
 ==============
 */
 void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	int			i;
 	int			num;
 	idDict		*item;
@@ -621,7 +623,7 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 		lti.triggerName = dict.GetString( itemname );
 		levelTriggers.Append( lti );
 	}
-
+*/
 }
 
 /*
@@ -634,24 +636,13 @@ void idInventory::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( maxHealth );
 	savefile->WriteInt( weapons );
-	savefile->WriteInt( powerups );
-	savefile->WriteInt( armor );
-	savefile->WriteInt( maxarmor );
 	savefile->WriteInt( ammoPredictTime );
-	savefile->WriteInt( deplete_armor );
-	savefile->WriteFloat( deplete_rate );
-	savefile->WriteInt( deplete_ammount );
-	savefile->WriteInt( nextArmorDepleteTime );
 
 	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
 		savefile->WriteInt( ammo[ i ] );
 	}
 	for( i = 0; i < MAX_WEAPONS; i++ ) {
 		savefile->WriteInt( clip[ i ] );
-		//savefile->WriteInt( clip[i] + clipDuplicate[ i ]);
-	}
-	for( i = 0; i < MAX_POWERUPS; i++ ) {
-		savefile->WriteInt( powerupEndTime[ i ] );
 	}
 
 	savefile->WriteInt( items.Num() );
@@ -659,53 +650,17 @@ void idInventory::Save( idSaveGame *savefile ) const {
 		savefile->WriteDict( items[ i ] );
 	}
 
-	savefile->WriteInt( pdasViewed[0] );
-	savefile->WriteInt( pdasViewed[1] );
-	savefile->WriteInt( pdasViewed[2] );
-	savefile->WriteInt( pdasViewed[3] );
-
-	savefile->WriteInt( selPDA );
-	savefile->WriteInt( selVideo );
-	savefile->WriteInt( selEMail );
-	savefile->WriteInt( selAudio );
-	savefile->WriteBool( pdaOpened );
-	savefile->WriteBool( turkeyScore );
-
-	savefile->WriteInt( pdas.Num() );
-	for( i = 0; i < pdas.Num(); i++ ) {
-		savefile->WriteString( pdas[ i ] );
-	}
-
-	savefile->WriteInt( pdaSecurity.Num() );
-	for( i=0; i < pdaSecurity.Num(); i++ ) {
-		savefile->WriteString( pdaSecurity[ i ] );
-	}
-
-	savefile->WriteInt( videos.Num() );
-	for( i = 0; i < videos.Num(); i++ ) {
-		savefile->WriteString( videos[ i ] );
-	}
-
-	savefile->WriteInt( emails.Num() );
-	for ( i = 0; i < emails.Num(); i++ ) {
-		savefile->WriteString( emails[ i ] );
-	}
-
-	savefile->WriteInt( nextItemPickup );
-	savefile->WriteInt( nextItemNum );
-	savefile->WriteInt( onePickupTime );
-
 	savefile->WriteInt( pickupItemNames.Num() );
 	for( i = 0; i < pickupItemNames.Num(); i++ ) {
 		savefile->WriteString( pickupItemNames[i].icon );
 		savefile->WriteString( pickupItemNames[i].name );
-	}
 
-	savefile->WriteInt( objectiveNames.Num() );
-	for( i = 0; i < objectiveNames.Num(); i++ ) {
-		savefile->WriteString( objectiveNames[i].screenshot );
-		savefile->WriteString( objectiveNames[i].text );
-		savefile->WriteString( objectiveNames[i].title );
+		// HUMANHEAD pdm
+		savefile->WriteInt( pickupItemNames[i].time );
+		savefile->WriteInt( pickupItemNames[i].slotZeroTime );
+		savefile->WriteFloat( pickupItemNames[i].matcolorAlpha );
+		savefile->WriteBool( pickupItemNames[i].bDoubleWide );
+		// HUMANHEAD END
 	}
 
 	savefile->WriteInt( levelTriggers.Num() );
@@ -716,15 +671,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( ammoPulse );
 	savefile->WriteBool( weaponPulse );
-	savefile->WriteBool( armorPulse );
-
-	savefile->WriteInt( lastGiveTime );
-
-	for (i = 0; i < AMMO_NUMTYPES; i++) {
-		savefile->WriteInt(rechargeAmmo[i].ammo);
-		savefile->WriteInt(rechargeAmmo[i].rechargeTime);
-		savefile->WriteString(rechargeAmmo[i].ammoName);
-	}
 }
 
 /*
@@ -737,23 +683,13 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( maxHealth );
 	savefile->ReadInt( weapons );
-	savefile->ReadInt( powerups );
-	savefile->ReadInt( armor );
-	savefile->ReadInt( maxarmor );
 	savefile->ReadInt( ammoPredictTime );
-	savefile->ReadInt( deplete_armor );
-	savefile->ReadFloat( deplete_rate );
-	savefile->ReadInt( deplete_ammount );
-	savefile->ReadInt( nextArmorDepleteTime );
 
 	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
 		savefile->ReadInt( ammo[ i ] );
 	}
 	for( i = 0; i < MAX_WEAPONS; i++ ) {
 		savefile->ReadInt( clip[ i ] );
-	}
-	for( i = 0; i < MAX_POWERUPS; i++ ) {
-		savefile->ReadInt( powerupEndTime[ i ] );
 	}
 
 	savefile->ReadInt( num );
@@ -764,53 +700,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 		items.Append( itemdict );
 	}
 
-	// pdas
-	savefile->ReadInt( pdasViewed[0] );
-	savefile->ReadInt( pdasViewed[1] );
-	savefile->ReadInt( pdasViewed[2] );
-	savefile->ReadInt( pdasViewed[3] );
-
-	savefile->ReadInt( selPDA );
-	savefile->ReadInt( selVideo );
-	savefile->ReadInt( selEMail );
-	savefile->ReadInt( selAudio );
-	savefile->ReadBool( pdaOpened );
-	savefile->ReadBool( turkeyScore );
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idStr strPda;
-		savefile->ReadString( strPda );
-		pdas.Append( strPda );
-	}
-
-	// pda security clearances
-	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) {
-		idStr invName;
-		savefile->ReadString( invName );
-		pdaSecurity.Append( invName );
-	}
-
-	// videos
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idStr strVideo;
-		savefile->ReadString( strVideo );
-		videos.Append( strVideo );
-	}
-
-	// email
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idStr strEmail;
-		savefile->ReadString( strEmail );
-		emails.Append( strEmail );
-	}
-
-	savefile->ReadInt( nextItemPickup );
-	savefile->ReadInt( nextItemNum );
-	savefile->ReadInt( onePickupTime );
 	savefile->ReadInt( num );
 	for( i = 0; i < num; i++ ) {
 		idItemInfo info;
@@ -818,18 +707,14 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString( info.icon );
 		savefile->ReadString( info.name );
 
+		// HUMANHEAD pdm
+		savefile->ReadInt( info.time );
+		savefile->ReadInt( info.slotZeroTime );
+		savefile->ReadFloat( info.matcolorAlpha );
+		savefile->ReadBool( info.bDoubleWide );
+		// HUMANHEAD END
+
 		pickupItemNames.Append( info );
-	}
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idObjectiveInfo obj;
-
-		savefile->ReadString( obj.screenshot );
-		savefile->ReadString( obj.text );
-		savefile->ReadString( obj.title );
-
-		objectiveNames.Append( obj );
 	}
 
 	savefile->ReadInt( num );
@@ -842,18 +727,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( ammoPulse );
 	savefile->ReadBool( weaponPulse );
-	savefile->ReadBool( armorPulse );
-
-	savefile->ReadInt( lastGiveTime );
-
-	for (i = 0; i < AMMO_NUMTYPES; i++) {
-		savefile->ReadInt(rechargeAmmo[i].ammo);
-		savefile->ReadInt(rechargeAmmo[i].rechargeTime);
-
-		idStr name;
-		savefile->ReadString(name);
-		strcpy(rechargeAmmo[i].ammoName, name);
-	}
 }
 
 /*
@@ -954,11 +827,47 @@ idInventory::AmmoIndexForWeaponClass
 ==============
 */
 ammo_t idInventory::AmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired ) {
+#if HUMANHEAD
+	const idDeclEntityDef *weaponObjDecl = gameLocal.FindEntityDef( weapon_classname, false );
+	if ( !weaponObjDecl ) {
+		gameLocal.Error( "Unknown weapon in decl '%s'", weapon_classname );
+	}
+	const char *fireInfoName = weaponObjDecl->dict.GetString("def_fireInfo");
+	const idDeclEntityDef *decl = gameLocal.FindEntityDef( fireInfoName, false );
+	if ( !decl ) {
+		gameLocal.Error( "Unknown fireinfo in decl '%s'", fireInfoName );
+	}
+#else
 	const idDeclEntityDef *decl = gameLocal.FindEntityDef( weapon_classname, false );
 	if ( !decl ) {
-	    return 0;
-		//gameLocal.Error( "Unknown weapon in decl '%s'", weapon_classname );
+		gameLocal.Error( "Unknown weapon in decl '%s'", weapon_classname );
 	}
+#endif
+	if ( ammoRequired ) {
+		*ammoRequired = decl->dict.GetInt( "ammoRequired" );
+	}
+	ammo_t ammo_i = AmmoIndexForAmmoClass( decl->dict.GetString( "ammoType" ) );
+	return ammo_i;
+}
+
+
+/*
+==============
+idInventory::AltAmmoIndexForWeaponClass
+HUMANHEAD bjk
+==============
+*/
+ammo_t idInventory::AltAmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired ) {
+	const idDeclEntityDef *weaponObjDecl = gameLocal.FindEntityDef( weapon_classname, false );
+	if ( !weaponObjDecl ) {
+		gameLocal.Error( "Unknown weapon in decl '%s'", weapon_classname );
+	}
+	const char *fireInfoName = weaponObjDecl->dict.GetString("def_altFireInfo");
+	const idDeclEntityDef *decl = gameLocal.FindEntityDef( fireInfoName, false );
+	if ( !decl ) {
+		gameLocal.Error( "Unknown fireinfo in decl '%s'", fireInfoName );
+	}
+
 	if ( ammoRequired ) {
 		*ammoRequired = decl->dict.GetInt( "ammoRequired" );
 	}
@@ -973,6 +882,7 @@ idInventory::AddPickupName
 */
 void idInventory::AddPickupName(const char *name, const char *icon, idPlayer *owner)     //_D3XP
 {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	int num;
 
 	num = pickupItemNames.Num();
@@ -997,7 +907,7 @@ void idInventory::AddPickupName(const char *name, const char *icon, idPlayer *ow
 			owner->ServerSendEvent(idPlayer::EVENT_PICKUPNAME, &msg, false, -1);
 		}
 	}
-
+*/
 }
 
 /*
@@ -1006,6 +916,7 @@ idInventory::Give
 ==============
 */
 bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon, bool updateHud ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	int						i;
 	const char				*pos;
 	const char				*end;
@@ -1179,7 +1090,7 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 		gameLocal.Warning( "Unknown stat '%s' added to player's inventory", statname );
 		return false;
 	}
-
+*/
 	return true;
 }
 
@@ -1251,25 +1162,6 @@ int idInventory::HasAmmo(const char *weapon_classname, bool includeClip, idPlaye
 	}
 
 	return ammoCount;
-}
-
-bool idPlayer::HasHoldableFlashlight()
-{
-    int fm = commonVr->currentFlashlightMode;
-    if( vr_flashlightStrict.GetBool() )
-    {
-        if( fm != FLASHLIGHT_HAND && fm != FLASHLIGHT_INVENTORY )
-            return false;
-    }
-    else
-    {
-        // In non-strict mode you can move the flashlight from your armour or helmet to your hand,
-        // but you can't move it from your weapon.
-        if( fm == FLASHLIGHT_GUN || fm == FLASHLIGHT_PISTOL || fm == FLASHLIGHT_NONE )
-            return false;
-    }
-    // Carl: I'm not checking the weapons in the inventory. Maybe I should check that too? But I don't trust those values for the flashlight.
-    return flashlight && flashlight->IsLinked() && !spectating && weaponEnabled && !hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" );
 }
 
 /*
@@ -1502,6 +1394,7 @@ idPlayer::idPlayer() {
 	healthPool				= 0.0f;
 	nextHealthPulse			= 0;
 	healthPulse				= false;
+	spiritPulse				= false;	// HUMANHEAD pdm
 	nextHealthTake			= 0;
 	healthTake				= false;
 
@@ -1524,6 +1417,8 @@ idPlayer::idPlayer() {
 
 	firstPersonViewOrigin	= vec3_zero;
 	firstPersonViewAxis		= mat3_identity;
+	
+	MPLastSpawnSpot			= NULL; //HUMANHEAD rww - does NOT need to be saved/restored, mp-only
 
 	hipJoint				= INVALID_JOINT;
 	chestJoint				= INVALID_JOINT;
@@ -1597,6 +1492,9 @@ idPlayer::idPlayer() {
 	gibsLaunched			= false;
 	gibsDir					= vec3_zero;
 
+	//HUMANHEAD: aob
+	//NOT VR FRIENDLY: zoomFov.Init( gameLocal.GetTime(), 0, g_fov.GetFloat(), g_fov.GetFloat() );
+	//HUMANHEAD END
 	zoomFov.Init( 0, 0, 0, 0 );
 	centerView.Init( 0, 0, 0, 0 );
 	fxFov					= false;
@@ -1624,10 +1522,6 @@ idPlayer::idPlayer() {
 
 	oldMouseX				= 0;
 	oldMouseY				= 0;
-
-	pdaAudio				= "";
-	pdaVideo				= "";
-	pdaVideoWave			= "";
 
 	lastDamageDef			= 0;
 	lastDamageDir			= vec3_zero;
@@ -1660,10 +1554,12 @@ idPlayer::idPlayer() {
 	lastSnapshotSequence	= 0;
 
 	MPAim					= -1;
+#if !HUMANHEAD	// HUMANHEAD pdm
 	lastMPAim				= -1;
 	lastMPAimTime			= 0;
 	MPAimFadeTime			= 0;
 	MPAimHighlight			= false;
+#endif			// HUMANHEAD END
 
 	spawnedTime				= 0;
 	lastManOver				= false;
@@ -1679,6 +1575,8 @@ idPlayer::idPlayer() {
 
     ResetControllerShake();
     blink = false;
+	
+	bBufferNextSnapAngles	= false; //HUMANHEAD rww - doesn't need to be saved/restored, for networking only
 }
 
 /*
@@ -1708,6 +1606,7 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_TELEPORT.LinkTo(			scriptObject, "AI_TELEPORT" );
 	AI_TURN_LEFT.LinkTo(		scriptObject, "AI_TURN_LEFT" );
 	AI_TURN_RIGHT.LinkTo(		scriptObject, "AI_TURN_RIGHT" );
+	AI_REALLYFALL.LinkTo(		scriptObject, "AI_REALLYFALL" ); //HUMANHEAD rww
 }
 
 /*
@@ -1716,6 +1615,7 @@ idPlayer::SetupWeaponEntity
 ==============
 */
 void idPlayer::SetupWeaponEntity( void ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	int w;
 	const char *weap;
 
@@ -1754,6 +1654,7 @@ void idPlayer::SetupWeaponEntity( void ) {
 			idWeapon::CacheWeapon( weap );
 		}
 	}
+*/
 }
 
 /*
@@ -1872,6 +1773,9 @@ void idPlayer::Init( void ) {
 	bobFrac					= 0.0f;
 	landChange				= 0;
 	landTime				= 0;
+	//HUMANHEAD: aob
+	//NOT VR FRIENDLY:zoomFov.Init( gameLocal.GetTime(), 0, g_fov.GetFloat(), g_fov.GetFloat() );
+	//HUMANHEAD END
 	zoomFov.Init( 0, 0, 0, 0 );
 	centerView.Init( 0, 0, 0, 0 );
 	fxFov					= false;
@@ -1936,6 +1840,7 @@ void idPlayer::Init( void ) {
 	healthPool		= 0.0f;
 	nextHealthPulse = 0;
 	healthPulse		= false;
+	spiritPulse		= false;	// HUMANHEAD pdm
 	nextHealthTake	= 0;
 	healthTake		= false;
 
@@ -1987,14 +1892,13 @@ void idPlayer::Init( void ) {
 	viewBobAngles.Zero();
 	viewBob.Zero();
 
-	value = spawnArgs.GetString( "model" );
-	if ( value && ( *value != 0 ) ) {
-		SetModel( value );
-	}
+	//HUMANHEAD rww - changed from SetModel
+	SetPlayerModel( false );
+	//HUMANHEAD END
 
 	if ( cursor ) {
 		cursor->SetStateInt( "talkcursor", 0 );
-		cursor->SetStateString( "combatcursor", "1" );
+		cursor->SetStateString( "activecombatcursor", "1" );	// HUMANHEAD pdm
 		cursor->SetStateString( "itemcursor", "0" );
 		cursor->SetStateString( "guicursor", "0" );
 		cursor->SetStateString("grabbercursor", "0");
@@ -2030,6 +1934,7 @@ void idPlayer::Init( void ) {
 	AI_DEAD			= false;
 	AI_CROUCH		= false;
 	AI_ONGROUND		= true;
+	AI_REALLYFALL	= false; //HUMANHEAD rww
 	AI_ONLADDER		= false;
 	AI_HARDLANDING	= false;
 	AI_SOFTLANDING	= false;
@@ -2078,8 +1983,7 @@ void idPlayer::Init( void ) {
 	}
 
 	cvarSystem->SetCVarBool( "ui_chat", false );
-
-	SetupPDASlot( true );
+	fl.neverDormant = true; // HUMANHEAD JRM
 
 	//Dr Beef - Implementation
 	//SetupFlashlightHolster();
@@ -2148,7 +2052,8 @@ void idPlayer::Spawn( void ) {
 	if ( !gameLocal.isMultiplayer || entityNumber == gameLocal.localClientNum ) {
 
 		// load HUD
-		if ( gameLocal.isMultiplayer ) {
+		// HUMANHEAD pdm: changed to IsCompetitive() to allow for coop
+		if ( gameLocal.IsCompetitive() ) {
 			hud = uiManager->FindGui( "guis/mphud.gui", true, false, true );
 		} else if ( spawnArgs.GetString( "hud", "", temp ) ) {
 			hud = uiManager->FindGui( temp, true, false, true );
@@ -2200,7 +2105,7 @@ void idPlayer::Spawn( void ) {
 	SetCombatModel();
 
 	// init the damage effects
-	playerView.SetPlayerEntity( this );
+	playerView.SetPlayerEntity( static_cast<hhPlayer*>(this) );		//HUMANHEAD bjk: for god sakes we need to stop this hh version bullshit
 
 	// supress model in non-player views, but allow it in mirrors and remote views
 	//renderEntity.suppressSurfaceInViewID = entityNumber+1;
@@ -2208,13 +2113,23 @@ void idPlayer::Spawn( void ) {
     renderEntity.suppressSurfaceInViewID = 0;
 
 	// don't project shadow on self or weapon
-	renderEntity.noSelfShadow = true;
+	//HUMANHEAD rww - preserve the same look in sp where we have been self-shadowing
+	if (gameLocal.isMultiplayer)
+	//HUMANHEAD END
+	{
+		renderEntity.noShadow = MP_PLAYERNOSHADOW_DEFAULT;
+		renderEntity.noSelfShadow = true;
+	}
 
-	idAFAttachment *headEnt = head;
+	idAFAttachment *headEnt = head.GetEntity();
 	if ( headEnt ) {
 		// supress head in non-player views, but allow it in mirrors and remote views
-		headEnt->GetRenderEntity()->suppressSurfaceInViewID = entityNumber+1;
-		headEnt->GetRenderEntity()->noSelfShadow = true;
+		//HUMANHEAD rww - preserve the same look in sp where we have been self-shadowing
+		if (gameLocal.isMultiplayer)
+		//HUMANHEAD END
+		{
+			headEnt->GetRenderEntity()->noSelfShadow = true;
+		}
 	}
 
 	if ( gameLocal.isMultiplayer ) {
@@ -2235,13 +2150,15 @@ void idPlayer::Spawn( void ) {
 	// trigger playtesting item gives, if we didn't get here from a previous level
 	// the devmap key will be set on the first devmap, but cleared on any level
 	// transitions
-	if ( !gameLocal.isMultiplayer && gameLocal.serverInfo.FindKey( "devmap" ) ) {
+	// HUMANHEAD pdm: changed to IsCompetitve() to allow for coop
+	if ( !gameLocal.IsCompetitive() && gameLocal.serverInfo.FindKey( "devmap" ) ) {
 		// fire a trigger with the name "devmap"
 		idEntity *ent = gameLocal.FindEntity( "devmap" );
 		if ( ent ) {
 			ent->ActivateTargets( this );
 		}
 	}
+
 	if ( hud ) {
 		// We can spawn with a full soul cube, so we need to make sure the hud knows this
 		if (weapon_soulcube > 0 && (inventory.weapons & (1 << weapon_soulcube))) {
@@ -2275,7 +2192,7 @@ void idPlayer::Spawn( void ) {
         // Carl: dual wielding
         for( int h = 0; h < 2; h++ )
         {
-            if( hands[h].weapon )
+            if( hands[h].weapon.GetEntity() )
             {
                 if( !game->isVR ) hands[ h ].weapon->LowerWeapon(); // Koz
             }
@@ -2287,6 +2204,7 @@ void idPlayer::Spawn( void ) {
 
 	if ( hud ) {
 		UpdateHudWeapon(vr_weaponHand.GetInteger());
+		//TODO:check this UpdateHudWeapon(false);	// HUMANHEAD pdm: Don't display weapon switch
 		hud->StateChanged( gameLocal.time );
 	}
 
@@ -2300,7 +2218,8 @@ void idPlayer::Spawn( void ) {
 	inventory.pdaOpened = false;
 	inventory.selPDA = 0;
 
-	if ( !gameLocal.isMultiplayer ) {
+	//TODO:should this be here?
+	/*if ( !gameLocal.isMultiplayer ) {
 		if ( g_skill.GetInteger() < 2 ) {
 			if ( health < 25 ) {
 				health = 25;
@@ -2317,7 +2236,7 @@ void idPlayer::Spawn( void ) {
 				nextHealthTake = gameLocal.time + g_healthTakeTime.GetInteger() * 1000;
 			}
 		}
-	}
+	}*/
 
 	//Setup the weapon toggle lists
 	const idKeyValue *kv;
@@ -2350,24 +2269,6 @@ void idPlayer::Spawn( void ) {
 		kv = spawnArgs.MatchPrefix("weapontoggle", kv);
 	}
 
-	if (g_skill.GetInteger() >= 3) {
-		if (!WeaponAvailable("weapon_bloodstone_passive")) {
-			GiveInventoryItem("weapon_bloodstone_passive");
-		}
-
-		if (!WeaponAvailable("weapon_bloodstone_active1")) {
-			GiveInventoryItem("weapon_bloodstone_active1");
-		}
-
-		if (!WeaponAvailable("weapon_bloodstone_active2")) {
-			GiveInventoryItem("weapon_bloodstone_active2");
-		}
-
-		if (!WeaponAvailable("weapon_bloodstone_active3")) {
-			GiveInventoryItem("weapon_bloodstone_active3");
-		}
-	}
-
 	bloomEnabled			= false;
 	bloomSpeed				= 1;
 	bloomIntensity			= -0.01f;
@@ -2383,9 +2284,6 @@ Release any resources used by the player.
 ==============
 */
 idPlayer::~idPlayer() {
-	FreePDASlot();
-	FreeHolsterSlot();
-
 	delete flashlight.GetEntity();
 	flashlight = NULL;
 
@@ -2395,11 +2293,6 @@ idPlayer::~idPlayer() {
 
 	if (enviroSuitLight.IsValid()) {
 		enviroSuitLight.GetEntity()->ProcessEvent(&EV_Remove);
-	}
-
-	// have to do this here, idMultiplayerGame::DisconnectClient() is too late
-	if (gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased()) {
-		ReturnFlag();
 	}
 }
 
@@ -2412,7 +2305,7 @@ Release any resources used by the player's hand.
 */
 idPlayerHand::~idPlayerHand()
 {
-    delete weapon;
+    delete weapon.GetEntity();
     weapon = NULL;
 }
 
@@ -2480,6 +2373,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	// don't save spawnAnglesSet, since we'll have to reset them after loading the savegame
 	savefile->WriteAngles( spawnAngles );
+	savefile->WriteBool( !InVehicle() ); // HUMANHEAD mdl:  We need to know this on restore
 	savefile->WriteAngles( viewAngles );
 	savefile->WriteAngles( cmdAngles );
 
@@ -2705,10 +2599,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( oldMouseX );
 	savefile->WriteInt( oldMouseY );
 
-	savefile->WriteString( pdaAudio );
-	savefile->WriteString( pdaVideo );
-	savefile->WriteString( pdaVideoWave );
-
 	savefile->WriteBool( tipUp );
 	savefile->WriteBool( objectiveUp );
 
@@ -2726,6 +2616,10 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( lastSpectateChange );
 	savefile->WriteInt( lastTeleFX );
 
+	// HUMANHEAD pdm
+	savefile->WriteBool( bDialogDamageMode );
+	savefile->WriteBool( bDialogWeaponMode );
+
 	savefile->WriteFloat( pm_stamina.GetFloat() );
 
 	savefile->WriteInt( weaponToggles.Num() );
@@ -2740,7 +2634,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
         }
     }
 
-    savefile->WriteObject( flashlight );
     savefile->WriteInt( flashlightBattery );
 
     // Koz begin
@@ -2829,11 +2722,17 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(godmode);
 
 	savefile->ReadAngles(spawnAngles);
+	// HUMANHEAD mdl
+	bool restoreAngles;
+	savefile->ReadBool( restoreAngles );
+	// HUMANHEAD END
 	savefile->ReadAngles(viewAngles);
 	savefile->ReadAngles(cmdAngles);
 
 	memset(usercmd.angles, 0, sizeof(usercmd.angles));
-	SetViewAngles(viewAngles);
+	if( restoreAngles ) { // HUMANHEAD mdl:  View angles are zeroed out if we're in a vehicle
+		SetViewAngles( viewAngles );
+	}
 	spawnAnglesSet = true;
 
 	savefile->ReadInt(buttonMask);
@@ -2855,14 +2754,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
         hands[hand].Init( this, hand );
 
     inventory.Restore(savefile);
-	idEntityPtr<idWeapon> weapon;
+	idEntityPtr<hhWeapon> weapon;
 	weapon.Restore(savefile);
-    // Carl: if it's the PDA, then we saved the PDA hand, otherwise we saved the weapon hand.
-    int savedWeaponHand;
-    if( weapon && weapon->IdentifyWeapon() == WEAPON_PDA )
-        savedWeaponHand = 1 - vr_weaponHand.GetInteger();
-    else
-        savedWeaponHand = vr_weaponHand.GetInteger();
+
+    int savedWeaponHand = vr_weaponHand.GetInteger();
     hands[savedWeaponHand].weapon = weapon;
 
 	weapon.Restore(savefile);
@@ -3119,10 +3014,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(oldMouseX);
 	savefile->ReadInt(oldMouseY);
 
-	savefile->ReadString(pdaAudio);
-	savefile->ReadString(pdaVideo);
-	savefile->ReadString(pdaVideoWave);
-
 	savefile->ReadBool(tipUp);
 	savefile->ReadBool(objectiveUp);
 
@@ -3139,6 +3030,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(leader);
 	savefile->ReadInt(lastSpectateChange);
 	savefile->ReadInt(lastTeleFX);
+
+	// HUMANHEAD pdm
+	savefile->ReadBool( bDialogDamageMode );
+	savefile->ReadBool( bDialogWeaponMode );
 
 	// set the pm_ cvars
 	const idKeyValue *kv;
@@ -3177,10 +3072,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
     }
 
     // flashlight
-    idWeapon* tempWeapon;
-    savefile->ReadObject( reinterpret_cast<idClass*&>( tempWeapon ) );
-    tempWeapon->SetIsPlayerFlashlight( true );
-    flashlight = tempWeapon;
     savefile->ReadInt( flashlightBattery );
 
     holsteredWeapon = weapon_fists;
@@ -3423,12 +3314,28 @@ idPlayer::PrepareForRestart
 ================
 */
 void idPlayer::PrepareForRestart( void ) {
+	//HUMANHEAD rww - some local spirit stuff needs to be updated on the client
+	if (gameLocal.isMultiplayer) {
+		CancelEvents(&EV_SetOverlayMaterial);
+		playerView.SetViewOverlayMaterial( NULL );
+		if (gameLocal.isClient) {
+			assert(IsType(hhPlayer::Type));
+			hhPlayer *hhSelf = static_cast<hhPlayer *>(this);
+			if (hhSelf->bSpiritWalk) {
+				if (gameLocal.localClientNum == entityNumber) {
+					if (hud) {
+						hud->HandleNamedEvent("SwitchFromEthereal");
+					}
+					gameLocal.SpiritWalkSoundMode( false );
+				}
+				SetSkinByName( NULL );
+			}
+		}
+	}
+	//HUMANHEAD END
 	ClearPowerUps();
 	Spectate( true );
 	forceRespawn = true;
-
-	// Confirm reset hud states
-	DropFlag();
 
 	if (hud) {
 		hud->SetStateInt("red_flagstatus", 0);
@@ -3490,11 +3397,19 @@ void idPlayer::ServerSpectate( bool spectate ) {
 	}
 	if ( !spectate ) {
 		SpawnFromSpawnSpot();
-	}
+		
+		//HUMANHEAD rww - play a respawn effect after respawning (don't do on client and let it broadcast)
+		if (!gameLocal.isClient) {
+			hhFxInfo	fxInfo;
+			idVec3		boneOffset;
+			idMat3		boneAxis;
 
-	// drop the flag if player was carrying it
-	if (spectate && gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased() && carryingFlag) {
-		DropFlag();
+			GetJointWorldTransform( "waist", boneOffset, boneAxis );	
+			fxInfo.RemoveWhenDone( true );
+			fxInfo.SetNormal( boneAxis[1] );
+			BroadcastFxInfo( spawnArgs.GetString( "fx_spiritReturn" ), boneOffset, GetAxis(), &fxInfo );
+		}
+		//HUMANHEAD END
 	}
 }
 
@@ -3506,7 +3421,7 @@ Try to find a spawn point marked 'initial', otherwise
 use normal spawn selection.
 ============
 */
-void idPlayer::SelectInitialSpawnPoint( idVec3 &origin, idAngles &angles ) {
+void idPlayer::SelectInitialSpawnPoint( idVec3 &origin, idAngles &angles, idMat3 *axis ) {
 	idEntity *spot;
 	idStr skin;
 
@@ -3552,6 +3467,7 @@ when called here with spectating set to true, just place yourself and init
 ============
 */
 void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_angles ) {
+/* HUMANHEAD pdm: Overridden
 	idVec3 spec_origin;
 
 	assert( !gameLocal.isClient );
@@ -3647,6 +3563,7 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 	lastManOver			= false;
 	lastManPlayAgain	= false;
 	isTelefragged		= false;
+*/
 }
 
 /*
@@ -3663,6 +3580,7 @@ void idPlayer::SavePersistantInfo( void ) {
 	inventory.GetPersistantData( playerInfo );
 	playerInfo.SetInt( "health", health );
     playerInfo.SetInt( "current_weapon", hands[ GetBestWeaponHand() ].currentWeapon );
+	playerInfo.SetInt( "max_ammo_energy", spawnArgs.GetInt( "max_ammo_energy" ) );	//HUMANHEAD bjk: possibly unneeded but def works with it in
     // Koz begin
     playerInfo.SetBool( "laserSightActive", hands[0].laserSightActive || hands[1].laserSightActive ); // Carl: don't change save format
     playerInfo.SetBool( "hudActive", hudActive );
@@ -3696,6 +3614,10 @@ void idPlayer::RestorePersistantInfo( void ) {
 	health = spawnArgs.GetInt( "health", "100" );
     hands[vr_weaponHand.GetInteger()].idealWeapon = spawnArgs.GetInt( "current_weapon", "1" );
     hands[ 1 - vr_weaponHand.GetInteger() ].idealWeapon = weapon_fists;
+	// HUMANHEAD pdm: Evaluate requirements anytime the inventory items may have changed
+	inventory.EvaluateRequirements(this);
+	// HUMANHEAD END
+	
     // Koz begin
     bool laserSightActive = spawnArgs.GetBool( "laserSightActive", "1" );
     hands[ 0 ].laserSightActive = laserSightActive;
@@ -3735,6 +3657,125 @@ idDict *idPlayer::GetUserInfo( void ) {
 	return &gameLocal.userInfo[ entityNumber ];
 }
 
+
+//HUMANHEAD rww
+/*
+==============
+idPlayer::SetPlayerModel
+==============
+*/
+void idPlayer::SetPlayerModel( bool preserveChannels ) {
+	int i;
+	const int strLen = 128;
+	char *strMem = NULL;
+	const char *modelname;
+	idStr customModel, currentModel;
+
+	int modelNum;
+	if (GetUserInfo()->GetInt("ui_modelNum", "0", modelNum)) {
+		if (!spawnArgs.GetString(va("model_mp%i", modelNum), "", customModel)) {
+			if (!spawnArgs.GetString("model", "", customModel)) { //use default model if invalid one specified
+				gameLocal.Error("MP player def has no model specified.\n");
+			}
+		}
+
+		modelname = customModel.c_str();
+	}
+	else {
+		modelname = spawnArgs.GetString( "model" );
+	}
+
+	if (!modelname || !modelname[0]) {
+		gameLocal.Error("idPlayer::SetPlayerModel: player model could not be determined.");
+	}
+
+	spawnArgs.GetString("playerModel", "", currentModel);
+	if (!strcmp(currentModel, modelname)) { //if the player is already using this model, don't bother.
+		return;
+	}
+
+	spawnArgs.Set("playerModel", modelname);
+
+	FreeModelDef();
+
+	if (preserveChannels) {
+		strMem = (char *)_alloca(ANIM_NumAnimChannels*strLen);
+		for( i = ANIMCHANNEL_TORSO; i < ANIMCHANNEL_EYELIDS; i++ ) {
+			char *buf = strMem+(i*strLen);
+			strcpy(buf, GetAnimState(i));
+		}
+	}
+
+	renderEntity.hModel = animator.SetModel( modelname );
+	if ( !renderEntity.hModel ) {
+		idEntity::SetModel( modelname );
+		return;
+	}
+
+	if (strMem) { //restore anim states
+		for( i = ANIMCHANNEL_TORSO; i < ANIMCHANNEL_EYELIDS; i++ ) {
+			char *buf = strMem+(i*strLen);
+			if (buf[0]) {
+				SetAnimState(i, buf, 4);
+			}
+		}
+	}
+
+	if (IsType(hhPlayer::Type)) {
+		hhPlayer *hhSelf = static_cast<hhPlayer *>(this);
+		if (!hhSelf->IsSpiritOrDeathwalking()) { //do not override the skin if they changed skins while spirit walking
+			renderEntity.customSkin = animator.ModelDef()->GetDefaultSkin();
+		}
+	}
+
+	// set the callback to update the joints
+	renderEntity.callback = idEntity::ModelCallback;
+	animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
+	animator.GetBounds( gameLocal.time, renderEntity.bounds );
+
+	UpdateVisuals();
+}
+
+/*
+==============
+idPlayer::SetSkin
+overriding to deal with custom grandfather mp model skin (and possibly others)
+==============
+*/
+void idPlayer::SetSkin( const idDeclSkin *skin ) {
+	if (!skin) { //if null skin specified, see if our modelDef has an overriden default
+		const idDeclModelDef *modelDef = animator.ModelDef();
+		if (modelDef) {
+			skin = modelDef->GetDefaultSkin();
+		}
+	}
+	idActor::SetSkin(skin);
+}
+
+/*
+==============
+idPlayer::GetModelPortraitName
+==============
+*/
+const char *idPlayer::GetModelPortraitName(bool bThumb) {
+	int modelNum = GetUserInfo()->GetInt("ui_modelNum");
+	const char *modelPortraitName;
+	if (bThumb) {
+		modelPortraitName = spawnArgs.GetString(va("mtr_modelPortraitThumb%i", modelNum));
+	}
+	else {
+		modelPortraitName = spawnArgs.GetString(va("mtr_modelPortrait%i", modelNum));
+	}
+	if (!modelPortraitName || !modelPortraitName[0]) { //if invalid model number, use the default
+		modelPortraitName = spawnArgs.GetString("mtr_modelPortrait0");
+		HH_ASSERT(modelPortraitName && modelPortraitName[0]);
+	}
+
+	return modelPortraitName;
+}
+//HUMANHEAD END
+
+
 /*
 ==============
 idPlayer::UpdateSkinSetup
@@ -3747,6 +3788,18 @@ idPlayer::UpdateSkinSetup
 */
 void idPlayer::UpdateSkinSetup()
 {
+#ifdef HUMANHEAD //HUMANHEAD rww
+	team = ( idStr::Icmp( GetUserInfo()->GetString( "ui_team" ), "Blue" ) == 0 );
+	colorBarIndex = (team == 0) ? 1 : 3;	// team0==red, team1==blue (table: red=1, blue=3, yellow=4)
+	colorBar = colorBarTable[ colorBarIndex ];
+	SetPlayerModel(true);
+	if ( gameLocal.gameType == GAME_TDM ) {
+		if ( !gameLocal.isClient && team != latchedTeam ) {
+			gameLocal.mpGame.SwitchToTeam( entityNumber, latchedTeam, team );
+		}
+		latchedTeam = team;
+	}
+#else //HUMANHEAD END
     const char* handsOnly = "/vrHandsOnly";
     const char* weaponOnly = "/vrWeaponsOnly";
     const char* body = "/vrBody";
@@ -3862,6 +3915,7 @@ void idPlayer::UpdateSkinSetup()
         spawnArgs.GetString( "skin_invisibility", "", &invisibleSkin );
         powerUpSkin = declManager->FindSkin( invisibleSkin );
     }*/
+#endif
 }
 
 /*
@@ -3968,6 +4022,7 @@ idPlayer::UpdateHudAmmo
 ===============
 */
 void idPlayer::UpdateHudAmmo( idUserInterface *_hud, int hand ) {
+/*	HUMANHEAD pdm: Overridden
 	int inclip;
 	int ammoamount;
 
@@ -4010,6 +4065,7 @@ void idPlayer::UpdateHudAmmo( idUserInterface *_hud, int hand ) {
 	_hud->HandleNamedEvent("bloodstoneAmmoUpdate");
 
 	_hud->HandleNamedEvent( "updateAmmo" );
+*/
 }
 
 /*
@@ -4018,6 +4074,7 @@ idPlayer::UpdateHudStats
 ===============
 */
 void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
+/*	HUMANHEAD pdm: Overridden
 	int staminapercentage;
 	float max_stamina;
 
@@ -4083,6 +4140,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 	_hud->HandleNamedEvent("selfTeam");
 
 	UpdateHudAmmo( _hud, vr_weaponHand.GetInteger());
+*/
 }
 
 /*
@@ -4091,6 +4149,7 @@ idPlayer::UpdateHudWeapon
 ===============
 */
 void idPlayer::UpdateHudWeapon( int flashWeaponHand ) {
+/*	HUMANHEAD pdm: Overridden
 	idUserInterface *hud = idPlayer::hud;
 
 	// if updating the hud of a followed client
@@ -4125,6 +4184,7 @@ void idPlayer::UpdateHudWeapon( int flashWeaponHand ) {
 	if (hands[flashWeaponHand].holdingFlashlight()) {
 		hud->HandleNamedEvent("weaponChange");
 	}
+*/
 }
 
 /*
@@ -4133,7 +4193,7 @@ idPlayer::DrawHUD
 ===============
 */
 void idPlayer::DrawHUD( idUserInterface *_hud ) {
-
+/*	HUMANHEAD pdm: Overridden
     // Koz begin
     if ( game->isVR && vr_hudType.GetInteger() == VR_HUD_NONE)
     {
@@ -4173,6 +4233,7 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 			//cursor->Redraw( gameLocal.realClientTime );
 		}
 	}
+*/
 }
 
 /*
@@ -4420,15 +4481,11 @@ void idPlayer::EnterCinematic( void ) {
 	if ( weaponEnabled ) {
         for( int h = 0; h < 2; h++ )
         {
-            idWeapon* weapon = GetWeaponInHand( h );
+            hhWeapon* weapon = GetWeaponInHand( h );
             if ( weapon )
                 weapon->EnterCinematic();
         }
 	}
-    if( flashlight )
-    {
-        flashlight->EnterCinematic();
-    }
 
 	AI_FORWARD		= false;
 	AI_BACKWARD		= false;
@@ -4440,6 +4497,7 @@ void idPlayer::EnterCinematic( void ) {
 	AI_JUMP			= false;
 	AI_CROUCH		= false;
 	AI_ONGROUND		= true;
+	AI_REALLYFALL	= false; //HUMANHEAD rww
 	AI_ONLADDER		= false;
 	AI_DEAD			= ( health <= 0 );
 	AI_RUN			= false;
@@ -4464,21 +4522,10 @@ void idPlayer::ExitCinematic( void ) {
     {
         for( int h = 0; h < 2; h++ )
         {
-            idWeapon* weapon = GetWeaponInHand( h );
+            hhWeapon* weapon = GetWeaponInHand( h );
             if( weapon )
                 weapon->ExitCinematic();
         }
-    }
-    if( flashlight )
-    {
-        flashlight->ExitCinematic();
-    }
-    // long cinematics would have surpassed the healthTakeTime, causing the player to take damage
-    // immediately after the cinematic ends.  Instead we start the healthTake cooldown again once
-    // the cinematic ends.
-    if( g_skill.GetInteger() == 3 )
-    {
-        nextHealthTake = gameLocal.time + g_healthTakeTime.GetInteger() * 1000;
     }
 
 	SetState( "ExitCinematic" );
@@ -4497,6 +4544,8 @@ void idPlayer::UpdateConditions( void ) {
 
 	// minus the push velocity to avoid playing the walking animation and sounds when riding a mover
 	velocity = physicsObj.GetLinearVelocity() - physicsObj.GetPushedLinearVelocity();
+
+	assert(!influenceActive); //HUMANHEAD rww
 
 	if ( influenceActive ) {
 		AI_FORWARD		= false;
@@ -4567,32 +4616,22 @@ bool idPlayer::WeaponHandImpulseSlot()
 			{
 				hands[ hand ].previousWeapon = holsteredWeapon;
 			}
-			TogglePDA( hand );
 		}
 		else
 		{
 			// if our hand is too full, we can't pick up the weapon
 			if( hands[ hand ].tooFullToInteract() && holsteredWeapon != weapon_fists )
 				return false;
-			SetupHolsterSlot( hand );
 		}
 		return true;
 	}
 	if( weaponHandSlot == SLOT_WEAPON_BACK_BOTTOM )
 	{
-		if ( objectiveSystemOpen )
-		{
-			TogglePDA( hand );
-		}
 		hands[ hand ].PrevWeapon();
 		return true;
 	}
 	if( weaponHandSlot == SLOT_WEAPON_BACK_TOP )
 	{
-		if ( objectiveSystemOpen )
-		{
-			TogglePDA( hand );
-		}
 		hands[ hand ].NextWeapon();
 		return true;
 	}
@@ -4615,15 +4654,12 @@ bool idPlayer::WeaponHandImpulseSlot()
 			else if( objectiveSystemOpen )
 			{
 				SwapWeaponHand();
-				TogglePDA( hand );
 			}
 			else if( weapon_pda >= 0 )
 			{
 				if( hands[ hand ].tooFullToInteract() )
 					return false;
 				SwapWeaponHand();
-				SetupPDASlot( false );
-				SetupHolsterSlot( 1 - hand, false );
 				hands[ hand ].SelectWeapon( weapon_pda, true, false );
 			}
 		}
@@ -4683,9 +4719,9 @@ void idPlayer::StopFiring( void ) {
 	AI_RELOAD		= false;
     for( int h = 0; h < 2; h++ )
     {
-        if( hands[h].weapon )
+        if( hands[h].weapon.GetEntity() )
         {
-            hands[h].weapon->EndAttack();
+            hands[h].weapon.GetEntity()->EndAttack();
         }
     }
 }
@@ -4696,6 +4732,7 @@ idPlayer::FireWeapon
 ===============
 */
 void idPlayer::FireWeapon( int hand, idWeapon *weap ) {
+/*	HUMANHEAD pdm: Overridden
     if( vr_debugHands.GetBool() )
     {
         common->Printf( "Before FireWeapon(%d):\n", hand );
@@ -4758,103 +4795,7 @@ void idPlayer::FireWeapon( int hand, idWeapon *weap ) {
 			HideObjective();
 		}
 	}
-}
-
-/*
-===============
-idPlayer::FlashlightOff
-===============
 */
-void idPlayer::FlashlightOff()
-{
-    if( !flashlight.IsValid() )
-    {
-        return;
-    }
-    if( !flashlight->lightOn )
-    {
-        return;
-    }
-    //flashlight->FlashlightOff();
-    flashlight->FlashlightOff();
-
-
-    // Koz
-    const function_t* func;
-    func = scriptObject.GetFunction( "SetFlashHandPose" ); // Set flashlight hand pose
-    if ( func )
-    {
-        // use the frameCommandThread since it's safe to use outside of framecommands
-        // Koz debug common->Printf( "Calling SetFlashHandPose\n" ); // Set flashlight hand pose
-        gameLocal.frameCommandThread->CallFunction( this, func, true );
-        gameLocal.frameCommandThread->Execute();
-
-    }
-    else
-    {
-        common->Warning( "Can't find function 'SetFlashHandPose' in object '%s'", scriptObject.GetTypeName() ); // Set flashlight hand pose
-        return;
-    }
-    // Koz
-}
-
-/*
-===============
-idPlayer::FlashlightOn
-===============
-*/
-void idPlayer::FlashlightOn()
-{
-	if( commonVr->currentFlashlightPosition == FLASHLIGHT_NONE || commonVr->currentFlashlightPosition == FLASHLIGHT_INVENTORY )
-		return;
-
-	if( !flashlight.IsValid() )
-	{
-		return;
-	}
-	if( flashlightBattery < idMath::Ftoi( flashlight_minActivatePercent.GetFloat() * flashlight_batteryDrainTimeMS.GetFloat() ) )
-	{
-		return;
-	}
-	if( gameLocal.inCinematic)
-	{
-		return;
-	}
-	if( flashlight->lightOn )
-	{
-		return;
-	}
-	if( health <= 0 )
-	{
-		return;
-	}
-	if( spectating )
-	{
-		return;
-	}
-
-	flashlight->FlashlightOn();
-
-	// Koz pose the hand
-	const function_t* func;
-
-	func = scriptObject.GetFunction( "SetFlashHandPose" ); // Set flashlight hand pose
-	if ( func )
-	{
-		// use the frameCommandThread since it's safe to use outside of framecommands
-		// Koz debug common->Printf( "Calling SetFlashHandPose\n" ); // Set flashlight hand pose
-		gameLocal.frameCommandThread->CallFunction( this, func, true );
-		gameLocal.frameCommandThread->Execute();
-
-	}
-	else
-	{
-		common->Warning( "Can't find function 'SetFlashHandPose' in object '%s'", scriptObject.GetTypeName() ); // Set flashlight hand pose
-		return;
-	}
-	// Koz end
-
-
 }
 
 void idPlayer::FreeModelDef()
@@ -4863,34 +4804,6 @@ void idPlayer::FreeModelDef()
 
 	if (gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased())
 		playerIcon.FreeIcon();
-}
-
-/*
-==============
-idPlayer::FreePDASlot
-==============
-*/
-void idPlayer::FreePDASlot()
-{
-    if( pdaModelDefHandle != -1 )
-    {
-        gameRenderWorld->FreeEntityDef( pdaModelDefHandle );
-        pdaModelDefHandle = -1;
-    }
-}
-
-/*
-==============
-idPlayer::FreeHolsterSlot
-==============
-*/
-void idPlayer::FreeHolsterSlot()
-{
-	if( holsterModelDefHandle != -1 )
-	{
-		gameRenderWorld->FreeEntityDef( holsterModelDefHandle );
-		holsterModelDefHandle = -1;
-	}
 }
 
 /*
@@ -4936,6 +4849,7 @@ idPlayer::Give
 ===============
 */
 bool idPlayer::Give( const char *statname, const char *value, int hand  ) {
+/*	HUMANHEAD pdm: Overridden
 	int amount;
 
 	if ( AI_DEAD ) {
@@ -5010,6 +4924,7 @@ bool idPlayer::Give( const char *statname, const char *value, int hand  ) {
 		return ret;
 	}
 	return true;
+*/
 }
 
 
@@ -5021,18 +4936,7 @@ adds health to the player health pool
 ===============
 */
 void idPlayer::GiveHealthPool( float amt ) {
-
-	if ( AI_DEAD ) {
-		return;
-	}
-
-	if ( health > 0 ) {
-		healthPool += amt;
-		if ( healthPool > inventory.maxHealth - health ) {
-			healthPool = inventory.maxHealth - health;
-		}
-		nextHealthPulse = gameLocal.time;
-	}
+//	HUMANHEAD pdm: not used
 }
 
 /*
@@ -5047,30 +4951,33 @@ bool idPlayer::GiveItem( idItem *item ) {
 	const idKeyValue	*arg;
 	idDict				attr;
 	bool				gave;
+#if !HUMANHEAD
 	int					numPickup;
+#endif
 
 	if ( gameLocal.isMultiplayer && spectating ) {
 		return false;
 	}
 
-    if( idStr::FindText( item->GetName(), "weapon_flashlight_new" ) > -1 )
-    {
-        return false;
-    }
-
-    if( idStr::FindText( item->GetName(), "weapon_flashlight" ) > -1 )
-    {
-        // don't allow flashlight weapon unless classic mode is enabled
-        return false;
-    }
+	//HUMANHEAD rww
+	if (gameLocal.isServer && gameLocal.localClientNum != entityNumber) {
+		//on a server for other players, these otherwise wouldn't be zero'd back out
+		healthPulse = false;
+		spiritPulse = false;
+		inventory.ammoPulse = false;
+		inventory.weaponPulse = false;
+	}
+	//HUMANHEAD END
 
 	item->GetAttributes( attr );
-
+	
 	gave = false;
+#if !HUMANHEAD
 	numPickup = inventory.pickupItemNames.Num();
+#endif
 	for( i = 0; i < attr.GetNumKeyVals(); i++ ) {
 		arg = attr.GetKeyVal( i );
-		if ( Give( arg->GetKey(), arg->GetValue(), -1) ) {
+		if ( Give( arg->GetKey(), arg->GetValue() ) ) {
 			gave = true;
 		}
 	}
@@ -5082,17 +4989,51 @@ bool idPlayer::GiveItem( idItem *item ) {
 		// frame no matter what
 		UpdateHudWeapon( false );
 		hud->HandleNamedEvent( "weaponPulse" );
-
-		if (gave)
-		{
-			common->HapticEvent("pickup_weapon", 0, 0, 100, 0, 0);
-		}
 	}
+
+	// HUMANHEAD CJR:  Force certain items to be picked up when touched (specifically, lifeforce)
+	if ( !gave && item->spawnArgs.GetBool( "forcePickup", "0" ) ) {
+		gave = true;
+	} // END HUMANHEAD
 
 	// display the pickup feedback on the hud
-	if ( gave && ( numPickup == inventory.pickupItemNames.Num() ) ) {
-		inventory.AddPickupName(item->spawnArgs.GetString("inv_name"), item->spawnArgs.GetString("inv_icon"), this);       //_D3XP
+#if HUMANHEAD
+	if ( gave ) {
+		inventory.AddPickupName( item->spawnArgs.GetString( "inv_name" ), item->spawnArgs.GetString( "inv_icon" ), item->spawnArgs.MatchPrefix("inv_weapon", NULL)!=NULL );
+		//HUMANHEAD rww - player prediction purposely does not touch triggers and that is how we pick up our items, so we send events for pickups.
+		if (gameLocal.isServer && gameLocal.localClientNum != entityNumber) {
+			idBitMsg	msg;
+			byte		msgBuf[MAX_EVENT_PARAM_SIZE];
+
+			int menuSendEvents = (1<<MENU_NET_EVENT_INVPICKUP);
+
+			if ( healthPulse ) {
+				menuSendEvents |= (1<<MENU_NET_EVENT_HEALTHPULSE);
+			}
+			if ( spiritPulse ) {
+				menuSendEvents |= (1<<MENU_NET_EVENT_SPIRITPULSE);
+			}
+			if ( inventory.ammoPulse ) { 
+				menuSendEvents |= (1<<MENU_NET_EVENT_AMMOPULSE);
+			}
+			if ( inventory.weaponPulse ) {
+				menuSendEvents |= (1<<MENU_NET_EVENT_WEAPONPULSE);
+			}
+
+			msg.Init(msgBuf, sizeof(msgBuf));
+			msg.WriteBits(menuSendEvents, MENU_NET_EVENT_NUM);
+			if (menuSendEvents & (1<<MENU_NET_EVENT_INVPICKUP)) {
+				msg.WriteBits(gameLocal.GetSpawnId(item), 32);
+			}
+			ServerSendEvent(EVENT_MENUEVENT, &msg, false, -1, entityNumber);
+		}
+		//HUMANHEAD END
 	}
+#else
+	if ( gave && ( numPickup == inventory.pickupItemNames.Num() ) ) {
+		inventory.AddPickupName( item->spawnArgs.GetString( "inv_name" ), item->spawnArgs.GetString( "inv_icon" ) );
+	}
+#endif
 
 	return gave;
 }
@@ -5150,326 +5091,6 @@ bool idPlayer::PowerUpActive( int powerup ) const {
 
 /*
 ===============
-idPlayer::GivePowerUp
-===============
-*/
-bool idPlayer::GivePowerUp( int powerup, int time ) {
-	const char *sound;
-	const char *skin;
-
-	if ( powerup >= 0 && powerup < MAX_POWERUPS ) {
-
-		if ( gameLocal.isServer ) {
-			idBitMsg	msg;
-			byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-			msg.Init( msgBuf, sizeof( msgBuf ) );
-			msg.WriteShort( powerup );
-			msg.WriteBits( 1, 1 );
-			ServerSendEvent( EVENT_POWERUP, &msg, false, -1 );
-		}
-
-		if ( powerup != MEGAHEALTH ) {
-			inventory.GivePowerUp( this, powerup, time );
-		}
-
-		const idDeclEntityDef *def = NULL;
-
-		switch( powerup ) {
-			case BERSERK: {
-				if ( spawnArgs.GetString( "snd_berserk_third", "", &sound ) ) {
-					StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_DEMONIC, 0, false, NULL );
-				}
-				if ( baseSkinName.Length() ) {
-					powerUpSkin = declManager->FindSkin( baseSkinName + "_berserk" );
-				}
-				if ( !gameLocal.isClient && gameLocal.isMultiplayer ) {
-                    hands[ 0 ].idealWeapon = weapon_fists;
-                    hands[ 1 ].idealWeapon = weapon_fists;
-				}
-				break;
-			}
-			case INVISIBILITY: {
-				spawnArgs.GetString( "skin_invisibility", "", &skin );
-				powerUpSkin = declManager->FindSkin( skin );
-				// remove any decals from the model
-				if ( modelDefHandle != -1 ) {
-					gameRenderWorld->RemoveDecals( modelDefHandle );
-				}
-				for( int h = 0; h < 2; h++ )
-				{
-					if( hands[h].weapon.GetEntity() )
-					{
-						hands[h].weapon.GetEntity()->UpdateSkin();
-					}
-				}
-				if( flashlight.GetEntity() )
-				{
-					flashlight.GetEntity()->UpdateSkin();
-				}
-				if ( spawnArgs.GetString( "snd_invisibility", "", &sound ) ) {
-					StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_ANY, 0, false, NULL );
-				}
-				break;
-			}
-			case ADRENALINE: {
-				inventory.AddPickupName("#str_00100799", "", this);
-				stamina = 100.0f;
-				break;
-			 }
-			case MEGAHEALTH: {
-				if ( spawnArgs.GetString( "snd_megahealth", "", &sound ) ) {
-					StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_ANY, 0, false, NULL );
-				}
-				def = gameLocal.FindEntityDef( "powerup_megahealth", false );
-				if ( def ) {
-					health = def->dict.GetInt( "inv_health" );
-				}
-				break;
-			 }
-			case HELLTIME: {
-				if (spawnArgs.GetString("snd_helltime_start", "", &sound)) {
-					PostEventMS(&EV_StartSoundShader, 0, sound, SND_CHANNEL_ANY);
-				}
-
-				if (spawnArgs.GetString("snd_helltime_loop", "", &sound)) {
-					PostEventMS(&EV_StartSoundShader, 0, sound, SND_CHANNEL_DEMONIC);
-				}
-
-				break;
-			}
-			case ENVIROSUIT: {
-				// Turn on the envirosuit sound
-				if (gameSoundWorld) {
-					gameSoundWorld->SetEnviroSuit(true);
-				}
-
-				// Put the helmet and lights on the player
-				idDict	args;
-
-				// Light
-				const idDict *lightDef = gameLocal.FindEntityDefDict("envirosuit_light", false);
-
-				if (lightDef) {
-					idEntity *temp;
-					gameLocal.SpawnEntityDef(*lightDef, &temp, false);
-
-					idLight *eLight = static_cast<idLight *>(temp);
-					eLight->GetPhysics()->SetOrigin(firstPersonViewOrigin);
-					eLight->UpdateVisuals();
-					eLight->Present();
-
-					enviroSuitLight = eLight;
-				}
-
-				break;
-			}
-			case ENVIROTIME: {
-				hudPowerup = ENVIROTIME;
-				// The HUD display bar is fixed at 60 seconds
-				hudPowerupDuration = 60000;
-				break;
-			}
-			case INVULNERABILITY: {
-				if (gameLocal.isMultiplayer && !gameLocal.isClient) {
-					inventory.AddPickupName("#str_00100630", "", this);
-				}
-
-				if (gameLocal.isMultiplayer) {
-					/*if ( spawnArgs.GetString( "snd_invulnerable", "", &sound ) ) {
-						StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_DEMONIC, 0, false, NULL );
-					}*/
-					if (baseSkinName.Length()) {
-						powerUpSkin = declManager->FindSkin(baseSkinName + "_invuln");
-					}
-				}
-
-				break;
-			}
-			/*case HASTE: {
-				if(gameLocal.isMultiplayer && !gameLocal.isClient) {
-					inventory.AddPickupName("#str_00100631", "", this);
-				}
-
-				if ( baseSkinName.Length() ) {
-					powerUpSkin = declManager->FindSkin( baseSkinName + "_haste" );
-				}
-				break;
-			}*/
-		}
-
-		if ( hud ) {
-			hud->HandleNamedEvent( "itemPickup" );
-		}
-
-		return true;
-	} else {
-		gameLocal.Warning( "Player given power up %i\n which is out of range", powerup );
-	}
-	return false;
-}
-
-/*
-==============
-idPlayer::ClearPowerup
-==============
-*/
-void idPlayer::ClearPowerup( int i ) {
-
-	if ( gameLocal.isServer ) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.WriteShort( i );
-		msg.WriteBits( 0, 1 );
-		ServerSendEvent( EVENT_POWERUP, &msg, false, -1 );
-	}
-
-	powerUpSkin = NULL;
-	inventory.powerups &= ~( 1 << i );
-	inventory.powerupEndTime[ i ] = 0;
-	switch( i ) {
-		case BERSERK: {
-			StopSound( SND_CHANNEL_DEMONIC, false );
-			if (!gameLocal.isMultiplayer) {
-				StopHealthRecharge();
-			}
-			break;
-		}
-		case INVISIBILITY: {
-			for( int h = 0; h < 2; h++ )
-			{
-				if( hands[ h ].weapon.GetEntity() )
-				{
-					hands[ h ].weapon.GetEntity()->UpdateSkin();
-				}
-			}
-			if( flashlight.GetEntity() )
-			{
-				flashlight.GetEntity()->UpdateSkin();
-			}
-			break;
-		}
-		case HELLTIME: {
-			StopSound(SND_CHANNEL_DEMONIC, false);
-			break;
-		}
-		case ENVIROSUIT: {
-
-			hudPowerup = -1;
-
-			// Turn off the envirosuit sound
-			if (gameSoundWorld) {
-				gameSoundWorld->SetEnviroSuit(false);
-			}
-
-			// Take off the helmet and lights
-			if (enviroSuitLight.IsValid()) {
-				enviroSuitLight.GetEntity()->PostEventMS(&EV_Remove, 0);
-			}
-
-			enviroSuitLight = NULL;
-			break;
-		}
-		case INVULNERABILITY: {
-			if (gameLocal.isMultiplayer) {
-				StopSound(SND_CHANNEL_DEMONIC, false);
-			}
-		}
-		/*case HASTE: {
-			if(gameLocal.isMultiplayer) {
-				StopSound( SND_CHANNEL_DEMONIC, false );
-			}
-		}*/
-	}
-}
-
-/*
-==============
-idPlayer::UpdatePowerUps
-==============
-*/
-void idPlayer::UpdatePowerUps( void ) {
-	int i;
-
-	if ( !gameLocal.isClient ) {
-		for ( i = 0; i < MAX_POWERUPS; i++ ) {
-			
-			if ((inventory.powerups & (1 << i)) && inventory.powerupEndTime[i] > gameLocal.time) {
-				switch (i) {
-					case ENVIROSUIT: {
-						if (enviroSuitLight.IsValid()) {
-							idAngles lightAng = firstPersonViewAxis.ToAngles();
-							idVec3 lightOrg = firstPersonViewOrigin;
-							const idDict *lightDef = gameLocal.FindEntityDefDict("envirosuit_light", false);
-
-							idVec3 enviroOffset = lightDef->GetVector("enviro_offset");
-							idVec3 enviroAngleOffset = lightDef->GetVector("enviro_angle_offset");
-
-							lightOrg += (enviroOffset.x * firstPersonViewAxis[0]);
-							lightOrg += (enviroOffset.y * firstPersonViewAxis[1]);
-							lightOrg += (enviroOffset.z * firstPersonViewAxis[2]);
-							lightAng.pitch += enviroAngleOffset.x;
-							lightAng.yaw += enviroAngleOffset.y;
-							lightAng.roll += enviroAngleOffset.z;
-
-							enviroSuitLight.GetEntity()->GetPhysics()->SetOrigin(lightOrg);
-							enviroSuitLight.GetEntity()->GetPhysics()->SetAxis(lightAng.ToMat3());
-							enviroSuitLight.GetEntity()->UpdateVisuals();
-							enviroSuitLight.GetEntity()->Present();
-						}
-
-						break;
-					}
-					default: {
-						break;
-					}
-				}
-			}
-			if ( PowerUpActive( i ) && inventory.powerupEndTime[i] <= gameLocal.time ) {
-				ClearPowerup( i );
-			}
-		}
-	}
-
-	if ( health > 0 ) {
-		if ( powerUpSkin ) {
-			renderEntity.customSkin = powerUpSkin;
-		} else {
-			renderEntity.customSkin = skin;
-		}
-	}
-
-	if ( healthPool && gameLocal.time > nextHealthPulse && !AI_DEAD && health > 0 ) {
-		assert( !gameLocal.isClient );	// healthPool never be set on client
-		int amt = ( healthPool > 5 ) ? 5 : healthPool;
-		health += amt;
-		if ( health > inventory.maxHealth ) {
-			health = inventory.maxHealth;
-			healthPool = 0;
-		} else {
-			healthPool -= amt;
-		}
-		nextHealthPulse = gameLocal.time + HEALTHPULSE_TIME;
-		healthPulse = true;
-	}
-
-	if ( !gameLocal.inCinematic && influenceActive == 0 && g_skill.GetInteger() == 3 && gameLocal.time > nextHealthTake && !AI_DEAD && health > g_healthTakeLimit.GetInteger() ) {
-		assert( !gameLocal.isClient );	// healthPool never be set on client
-		if (!PowerUpActive(INVULNERABILITY)) {
-			health -= g_healthTakeAmt.GetInteger();
-			if ( health < g_healthTakeLimit.GetInteger() ) {
-				health = g_healthTakeLimit.GetInteger();
-			}
-		}
-		nextHealthTake = gameLocal.time + g_healthTakeTime.GetInteger() * 1000;
-		healthTake = true;
-	}
-}
-
-/*
-===============
 idPlayer::ClearPowerUps
 ===============
 */
@@ -5500,6 +5121,14 @@ bool idPlayer::GiveInventoryItem( idDict *item ) {
 		return false;
 	}
 	inventory.items.Append( new idDict( *item ) );
+#if HUMANHEAD	// HUMANHEAD pdm: Make inventory items flow through the same logic as other pickups
+	inventory.AddPickupName(item->GetString( "inv_name" ), item->GetString( "inv_icon" ), false);
+	if ( hud ) {
+		hud->HandleNamedEvent( "invPickup" );
+	}
+	// Evaluate requirements anytime the inventory items may have changed
+	inventory.EvaluateRequirements(this);
+#else	// HUMANHEAD END
 	idItemInfo info;
 	const char* itemName = item->GetString( "inv_name" );
 	if ( idStr::Cmpn( itemName, STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
@@ -5513,21 +5142,7 @@ bool idPlayer::GiveInventoryItem( idDict *item ) {
 		hud->SetStateString( "itemicon", info.icon );
 		hud->HandleNamedEvent( "invPickup" );
 	}
-	
-	if (item->GetInt("inv_powercell") && focusUI) {
-		//Reset the powercell count
-		int powerCellCount = 0;
-
-		for (int j = 0; j < inventory.items.Num(); j++) {
-			idDict *item = inventory.items[ j ];
-
-			if (item->GetInt("inv_powercell")) {
-				powerCellCount++;
-			}
-		}
-
-		focusUI->SetStateInt("powercell_count", powerCellCount);
-	}
+#endif
 	return true;
 }
 
@@ -5545,66 +5160,6 @@ bool idPlayer::GiveInventoryItem(const char *name)
 	gameLocal.SpawnEntityDef(args);
 	return true;
 }
-
-/*
-==============
-idPlayer::UpdateObjectiveInfo
-==============
- */
-void idPlayer::UpdateObjectiveInfo( void ) {
-	if ( objectiveSystem == NULL ) {
-		return;
-	}
-	objectiveSystem->SetStateString( "objective1", "" );
-	objectiveSystem->SetStateString( "objective2", "" );
-	objectiveSystem->SetStateString( "objective3", "" );
-	for ( int i = 0; i < inventory.objectiveNames.Num(); i++ ) {
-		objectiveSystem->SetStateString( va( "objective%i", i+1 ), "1" );
-		objectiveSystem->SetStateString( va( "objectivetitle%i", i+1 ), inventory.objectiveNames[i].title.c_str() );
-		objectiveSystem->SetStateString( va( "objectivetext%i", i+1 ), inventory.objectiveNames[i].text.c_str() );
-		objectiveSystem->SetStateString( va( "objectiveshot%i", i+1 ), inventory.objectiveNames[i].screenshot.c_str() );
-	}
-	objectiveSystem->StateChanged( gameLocal.time );
-}
-
-/*
-===============
-idPlayer::GiveObjective
-===============
-*/
-void idPlayer::GiveObjective( const char *title, const char *text, const char *screenshot ) {
-	idObjectiveInfo info;
-	info.title = title;
-	info.text = text;
-	info.screenshot = screenshot;
-	inventory.objectiveNames.Append( info );
-	ShowObjective( "newObjective" );
-	if ( hud ) {
-		hud->HandleNamedEvent( "newObjective" );
-	}
-}
-
-/*
-===============
-idPlayer::CompleteObjective
-===============
-*/
-void idPlayer::CompleteObjective( const char *title ) {
-	int c = inventory.objectiveNames.Num();
-	for ( int i = 0;  i < c; i++ ) {
-		if ( idStr::Icmp(inventory.objectiveNames[i].title, title) == 0 ) {
-			inventory.objectiveNames.RemoveIndex( i );
-			break;
-		}
-	}
-	ShowObjective( "newObjectiveComplete" );
-
-	if ( hud ) {
-		hud->HandleNamedEvent( "newObjectiveComplete" );
-	}
-}
-
-
 
 /*
 ===============
@@ -5758,39 +5313,6 @@ void idPlayer::GivePDA( const char *pdaName, idDict *item, bool toggle )
 			inventory.videos.AddUnique( video->GetName() );
 		}
 	}
-
-	// This is kind of a hack, but it works nicely
-	// We don't want to display the 'you got a new pda' message during a map load
-	if ( gameLocal.GetFrameNum() > 10 ) {
-		if ( pda && hud ) {
-			idStr pdaName = pda->GetPdaName();
-			pdaName.RemoveColors();
-			hud->SetStateString( "pda", "1" );
-			hud->SetStateString( "pda_text", pdaName );
-			const char *sec = pda->GetSecurity();
-			hud->SetStateString( "pda_security", ( sec && *sec ) ? "1" : "0" );
-			hud->HandleNamedEvent( "pdaPickup" );
-		}
-
-		if ( inventory.pdas.Num() == 1 ) {
-			GetPDA()->RemoveAddedEmailsAndVideos();
-			if ( !objectiveSystemOpen ) {
-				if ( toggle ) // Koz: toggle pda renders a fullscreen PDA in normal play, for VR we need to select the pda 'weapon'.
-                {
-                    common->Printf( "idPlayer::GivePDA calling Select Weapon for PDA\n" );
-                    SetupPDASlot( false ); // show flashlight in PDA holster
-                    SetupHolsterSlot( vr_weaponHand.GetInteger(), false ); // stash weapon hand's gun in weapon holster
-                    hands[ 1 - vr_weaponHand.GetInteger() ].SelectWeapon( weapon_pda, true, false );
-                }
-			}
-			objectiveSystem->HandleNamedEvent( "showPDATip" );
-			//ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_firstPDA" ), true );
-		}
-
-		if ( inventory.pdas.Num() > 1 && pda->GetNumVideos() > 0 && hud ) {
-			hud->HandleNamedEvent( "videoPickup" );
-		}
-	}
 }
 
 /*
@@ -5919,8 +5441,8 @@ void idPlayer::Reload( void ) {
     // Carl: Dual wielding, just reload both weapons
     for( int h = 0; h < 2; h++ )
     {
-        idWeapon* weapon = GetWeaponInHand( h );
-        if( weapon && weapon->IsLinked() && weapon->hideOffset == 0.0f ) // Koz don't reload when in gui
+        hhWeapon* weapon = GetWeaponInHand( h );
+        if( weapon && weapon->IsLinked() )
         {
             weapon->Reload();
         }
@@ -5942,7 +5464,10 @@ idPlayer::NextWeapon
 ===============
 */
 void idPlayer::NextWeapon( void ) {
+	
+/*	HUMANHEAD pdm: overridden
     hands[ vr_weaponHand.GetInteger() ].NextWeapon();
+*/
 }
 
 /*
@@ -5951,7 +5476,10 @@ idPlayer::PrevWeapon
 ===============
 */
 void idPlayer::PrevWeapon( void ) {
+
+/*	HUMANHEAD pdm: overridden
     hands[ vr_weaponHand.GetInteger() ].PrevWeapon();
+*/
 }
 
 /*
@@ -6151,8 +5679,7 @@ void idPlayerHand::NextBestWeapon()
             continue;
         }
         weap = owner->spawnArgs.GetString( va( "def_weapon%d", w ) );
-        if( !weap[ 0 ] || ( ( owner->inventory.weapons & ( 1 << w ) ) == 0 ) || ( !owner->inventory.HasAmmo( weap, true, owner ) ) )
-        {
+	    if ( !weap[ 0 ] || ( ( owner->inventory.weapons & ( 1 << w ) ) == 0 ) || ( !owner->inventory.HasAmmo( weap ) ) ) {
             continue;
         }
         if( !owner->spawnArgs.GetBool( va( "weapon%d_best", w ) ) )
@@ -6285,28 +5812,6 @@ void idPlayerHand::NextWeapon( int dir )
                 if( availableWeaponsOfThisType <= 0 )
                     continue;
             }
-            // Carl: optionally skip weapons in the holster unless we have a duplicate
-            if( w == owner->holsteredWeapon )
-            {
-                availableWeaponsOfThisType--;
-                if( availableWeaponsOfThisType <= 0 )
-                {
-                    vr_weaponcycle_t c = (vr_weaponcycle_t)vr_weaponCycleMode.GetInteger();
-                    if( c == VR_WEAPONCYCLE_INCLUDE_HOLSTERED || c == VR_WEAPONCYCLE_HOLSTERED_AND_FLASHLIGHT || c == VR_WEAPONCYCLE_HOLSTERED_AND_FLASHLIGHT_AND_PDA )
-                    {
-                        // Carl: draw weapon from holster
-                        owner->FreeHolsterSlot();
-                        owner->holsteredWeapon = owner->weapon_fists;
-                        memset( &owner->holsterRenderEntity, 0, sizeof( owner->holsterRenderEntity ) );
-                        availableWeaponsOfThisType++;
-                    }
-                    else
-                    {
-                        // Skip holstered weapon
-                        continue;
-                    }
-                }
-            }
         }
         const char* weap = owner->spawnArgs.GetString( va( "def_weapon%d", w ) );
         if( !weap[0] )
@@ -6346,7 +5851,7 @@ void idPlayerHand::NextWeapon( int dir )
             continue;
         }
 
-        if( owner->inventory.HasAmmo( weap, true, owner)  || w == owner->weapon_bloodstone )
+        if( owner->inventory.HasAmmo( weap )  || w == owner->weapon_bloodstone )
         {
             break;
         }
@@ -6465,19 +5970,20 @@ void idPlayerHand::SelectWeapon( int num, bool force, bool specific )
         return;
     }
 
+   	// HUMANHEAD pdm: TODO:remove pda logic
     if( ( num != owner->weapon_pda ) && gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
     {
         num = owner->weapon_fists;
         owner->hiddenWeapon ^= 1;
         if( owner->hiddenWeapon && (!game->isVR || commonVr->handInGui == true) )
         {
-            if( weapon )
-                weapon->LowerWeapon(); // Koz
+            if( weapon.GetEntity() )
+                weapon.GetEntity()->LowerWeapon(); // Koz
         }
         else
         {
-            if( weapon )
-                weapon->RaiseWeapon();
+            if( weapon.GetEntity() )
+                weapon.GetEntity()->RaiseWeapon();
         }
     }
 
@@ -6670,23 +6176,18 @@ void idPlayerHand::SelectWeapon( int num, bool force, bool specific )
 
     if( force || availableWeaponsOfThisType > 0 )
     {
-        if( !owner->inventory.HasAmmo( weap, true, owner) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", num ) ) )
-        {
-            return;
-        }
+		//HUMANHEAD jsh added alt ammo check
+		if ( !owner->inventory.HasAmmo( weap ) && !owner->inventory.HasAltAmmo( weap ) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", num ) ) ) {
+			return;
+		}
         if( ( previousWeapon >= 0 ) && ( idealWeapon == num ) && ( owner->spawnArgs.GetBool( va( "weapon%d_toggle", num ) ) ) )
         {
             weap = owner->spawnArgs.GetString( va( "def_weapon%d", previousWeapon ) );
-            if( !owner->inventory.HasAmmo( weap, true, owner ) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", previousWeapon ) ) )
+            if( !owner->inventory.HasAmmo( weap ) && !owner->spawnArgs.GetBool( va( "weapon%d_allowempty", previousWeapon ) ) )
             {
                 return;
             }
             num = previousWeapon;
-        }
-        else if( ( owner->weapon_pda >= 0 ) && ( num == owner->weapon_pda ) && ( owner->inventory.pdas.Num() == 0 ) )
-        {
-			owner->ShowTip( owner->spawnArgs.GetString( "text_infoTitle" ), owner->spawnArgs.GetString( "text_noPDA" ), true );
-			return;
         }
 
         // If we can't we dual-wield it?
@@ -6798,14 +6299,6 @@ bool idPlayerHand::contextToggleVirtualGrab()
 {
     return false;
 }
-bool idPlayerHand::holdingFlashlight()
-{
-    // Carl: weapon must be set to fist or empty hand when we're using the flashlight
-    if( whichHand == vr_weaponHand.GetInteger() || commonVr->currentFlashlightPosition != FLASHLIGHT_HAND || !owner || !owner->flashlight || !owner->flashlight->IsLinked()
-        || owner->spectating || !owner->weaponEnabled || owner->hiddenWeapon || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
-        return false;
-    return true;
-}
 
 bool idPlayerHand::holdingWeapon()
 {
@@ -6828,15 +6321,10 @@ bool idPlayerHand::controllingWeapon()
     /*if( currentWeapon < 0 || !owner || !weapon || weapon->IdentifyWeapon() == WEAPON_PDA || holdingFlashlight()
         || owner->spectating || !owner->weaponEnabled || owner->hiddenWeapon || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )*/
     //GB removed flashlight as not a weapon so it can hit people :-)
-    if( currentWeapon < 0 || !owner || !weapon || weapon->IdentifyWeapon() == WEAPON_PDA ||
+    if( currentWeapon < 0 || !owner || !weapon.GetEntity() ||
         owner->spectating || !owner->weaponEnabled || owner->hiddenWeapon || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
         return false;
     return true;
-}
-
-bool idPlayerHand::holdingPDA()
-{
-    return (weapon && weapon->IdentifyWeapon() == WEAPON_PDA); // Carl: Is this the only way? Or do I need to check for forced pda?
 }
 
 bool idPlayerHand::holdingPhysics()
@@ -6853,7 +6341,7 @@ bool idPlayerHand::holdingItem()
 
 bool idPlayerHand::holdingSomethingDroppable()
 {
-    return holdingWeapon() || holdingFlashlight() || holdingPDA() || holdingPhysics() || holdingItem();
+    return holdingWeapon() || holdingFlashlight() || holdingPhysics() || holdingItem();
 }
 
 bool idPlayerHand::isOverMountedFlashlight()
@@ -6870,7 +6358,7 @@ bool idPlayerHand::isOverMountedFlashlight()
 
 bool idPlayerHand::tooFullToInteract()
 {
-    return (vr_mustEmptyHands.GetBool() && ( holdingWeapon() || holdingFlashlight() || holdingPDA() || holdingPhysics() || holdingItem() )) || !handExists();
+    return (vr_mustEmptyHands.GetBool() && ( holdingWeapon() || holdingFlashlight() || holdingPhysics() || holdingItem() )) || !handExists();
 }
 
 bool idPlayerHand::handExists()
@@ -6901,7 +6389,7 @@ void idPlayerHand::DropWeapon( bool died )
 	if( handExists() )
 		return;
 
-	idWeapon* weap = weapon.GetEntity();
+	hhWeapon* weap = weapon.GetEntity();
 
 	if( !weap || ( !died && !weap->IsReady() ) || weap->IsReloading() )
 		return;
@@ -7003,11 +6491,6 @@ bool idPlayerHand::releaseVirtualGrab()
         //vr_flashlightMode.SetModified();
         return true;
     }
-    else if( holdingPDA() )
-    {
-        // for now, dropping any PDA will put it away
-        return true;
-    }
     else if( holdingItem() )
     {
         // either use the item
@@ -7097,22 +6580,8 @@ void idPlayerHand::debugPrint()
         common->Printf( "  idealWeapon = %d, weaponSwitchTime (unused?) = %dms\n", idealWeapon, weaponSwitchTime - gameLocal.time );
     }
     common->Printf( "  previousWeapon = %d\n", previousWeapon );
-    idWeapon* weap = weapon;
-    if( weap )
-    {
-        if( weap->weaponDef )
-        {
-            common->Printf( "  weapon (%s) = %s = %d\n", weap->GetName(), weap->weaponDef->GetName(), weap->IdentifyWeapon() );
-        }
-        else
-        {
-            common->Printf( "  weapon (%s): weaponDef = NULL, IdentifyWeapon = %d\n", weap->GetName(), weap->IdentifyWeapon() );
-        }
-    }
-    else
-    {
-        common->Printf( "  weapon = NULL\n" );
-    }
+    hhWeapon* weap = weapon.GetEntity();
+
     // sight
     common->Printf( "  laser sight: active=%d, handle=%d\n", laserSightActive, laserSightHandle );
     common->Printf( "  crosshair: lastMode=%d, handle=%d\n", lastCrosshairMode, crosshairHandle );
@@ -7120,7 +6589,7 @@ void idPlayerHand::debugPrint()
     common->Printf( "  PDA (was %d): fixed=%d (last=%d), ", PDAfixed, lastPdaFixed, wasPDA );
     // Functions
     common->Printf( "  holdingWeapon=%d, floatingWeapon=%d, controllingWeapon=%d, tooFullToInteract=%d\n", holdingWeapon(), floatingWeapon(), controllingWeapon(), tooFullToInteract() );
-    common->Printf( "  holdingFlashlight=%d, isOverMountedFlashlight=%d, holdingPDA=%d, holdingPhysics=%d, holdingItem=%d, holdingSomethingDroppable=%d\n", holdingFlashlight(), isOverMountedFlashlight(), holdingPDA(), holdingPhysics(), holdingItem(), holdingSomethingDroppable() );
+    common->Printf( "  holdingFlashlight=%d, isOverMountedFlashlight=%d, holdingPhysics=%d, holdingItem=%d, holdingSomethingDroppable=%d\n", holdingFlashlight(), isOverMountedFlashlight(), holdingPhysics(), holdingItem(), holdingSomethingDroppable() );
 }
 
 /*
@@ -7135,7 +6604,7 @@ void idPlayer::StealWeapon( idPlayer *player ) {
 	// make sure there's something to steal
     int h = player->GetBestWeaponHandToSteal( this );
 	//idWeapon *player_weapon = static_cast< idWeapon * >( player->weapon );
-    idWeapon* player_weapon = player->GetWeaponInHand( h );
+    hhWeapon* player_weapon = player->GetWeaponInHand( h );
 	if ( !player_weapon || !player_weapon->CanDrop() || weaponGone ) {
 		return;
 	}
@@ -7200,189 +6669,8 @@ idPlayer::Weapon_Combat
 ===============
 */
 void idPlayer::Weapon_Combat( void ) {
-	if ( influenceActive || !weaponEnabled || gameLocal.inCinematic || privateCameraView ) {
-        commonVr->ForceChaperone(0, false);
-	    return;
-	}
-
-    // Carl: check if we're reloading either weapon
-    bool reloading = false;
-    for( int h = 0; h < 2; h++ )
-    {
-        hands[h].weapon->RaiseWeapon();
-        if( hands[h].weapon->IsReloading() )
-        {
-            if( !AI_RELOAD )
-            {
-                reloading = true;
-                AI_RELOAD = true;
-                SetState( "ReloadWeapon" );
-                UpdateScript();
-            }
-        }
-    }
-    if( !reloading )
-        AI_RELOAD = false;
-
-    for( int h = 0; h < 2; h++ )
-    {
-        // Carl: If we're trying to change to the soul cube, but the soul cube is already flying towards the enemy, stop changing weapon
-        if( hands[h].idealWeapon == weapon_soulcube && soulCubeProjectile != NULL )
-        {
-            hands[h].idealWeapon = hands[h].currentWeapon;
-        }
-        // Carl: Otherwise, change to the chosen weapon before we fire
-        // Carl: TODO dual wielding, currently this only does the vr_weaponHand hand
-        if( hands[ h ].idealWeapon != hands[ h ].currentWeapon &&  hands[ h ].idealWeapon < MAX_WEAPONS )
-        {
-            // multiplayer stuff
-            if( weaponCatchup )
-            {
-                assert( gameLocal.isClient );
-
-                hands[h].currentWeapon = hands[h].idealWeapon;
-                weaponGone = false;
-                hands[h].animPrefix = spawnArgs.GetString( va( "def_weapon%d", hands[h].currentWeapon ) );
-                // Carl: Dual Wielding, we need to choose whether this is the original weapon or the duplicate
-                // Carl: if we're already holding the same weapon in the other hand, use the opposite copy
-                // Carl: otherwise use whichever copy has more ammo in it
-                if( hands[h].currentWeapon == hands[1 - h].currentWeapon )
-                    hands[h].isTheDuplicate = !hands[1 - h].isTheDuplicate;
-                else
-                    hands[h].isTheDuplicate = inventory.GetClipAmmoForWeapon( hands[h].currentWeapon, true ) > inventory.GetClipAmmoForWeapon( hands[h].currentWeapon, false );
-                //hands[h].weapon->GetWeaponDef( hands[h].animPrefix, inventory.GetClipAmmoForWeapon( hands[h].currentWeapon, hands[h].isTheDuplicate ) );
-                hands[h].animPrefix.Strip( "weapon_" );
-
-                hands[h].weapon->NetCatchup();
-                const function_t* newstate = GetScriptFunction( "NetCatchup" );
-                if( newstate )
-                {
-                    SetState( newstate );
-                    UpdateScript();
-                }
-                weaponCatchup = false;
-            }
-            else
-            {
-                if( hands[ h ].weapon->IsReady() )
-                {
-                    hands[ h ].weapon->PutAway();
-                }
-
-                if( hands[ h ].weapon->IsHolstered() )
-                {
-                    assert( hands[h].idealWeapon >= 0 );
-                    assert( hands[h].idealWeapon < MAX_WEAPONS );
-
-                    if( hands[h].currentWeapon != weapon_pda && !spawnArgs.GetBool( va( "weapon%d_toggle", hands[h].currentWeapon ) ) )
-                    {
-                        hands[h].previousWeapon = hands[h].currentWeapon;
-                    }
-                    hands[h].currentWeapon = hands[h].idealWeapon;
-                    weaponGone = false;
-                    hands[h].weaponGone = false;
-                    hands[h].animPrefix = spawnArgs.GetString( va( "def_weapon%d", hands[h].currentWeapon ) );
-                    // Carl: Dual Wielding, we need to choose whether this is the original weapon or the duplicate
-                    // Carl: if we're already holding the same weapon in the other hand, use the opposite copy
-                    // Carl: otherwise use whichever copy has more ammo in it
-                    if( hands[h].currentWeapon == hands[1 - h].currentWeapon )
-                        hands[h].isTheDuplicate = !hands[1 - h].isTheDuplicate;
-                    else
-                        hands[h].isTheDuplicate = inventory.GetClipAmmoForWeapon( hands[h].currentWeapon, true ) > inventory.GetClipAmmoForWeapon( hands[h].currentWeapon, false );
-                    hands[h].weapon->GetWeaponDef( hands[h].animPrefix, inventory.GetClipAmmoForWeapon( hands[h].currentWeapon, hands[h].isTheDuplicate ) );
-                    hands[h].animPrefix.Strip( "weapon_" );
-
-                    hands[h].weapon->Raise();
-                    if( hands[h].holdingFlashlight() )
-                        PlayAnim( h ? ANIMCHANNEL_LEFTHAND : ANIMCHANNEL_RIGHTHAND, "flashlight_idle" );
-                    else
-                        PlayAnim( h ? ANIMCHANNEL_LEFTHAND : ANIMCHANNEL_RIGHTHAND, "idle" );
-                }
-            }
-        }
-        else // Carl: If we're already using the chosen weapon
-        {
-            weaponGone = false;	// if you drop and re-get weap, you may miss the = false above
-            hands[ h ].weaponGone = false;
-            if( hands[ h ].weapon->IsHolstered() )
-            {
-                if( !hands[ h ].weapon->AmmoAvailable() )
-                {
-                    // weapons can switch automatically if they have no more ammo
-                    hands[ h ].NextBestWeapon();
-                }
-                else
-                {
-                    risingWeaponHand = h;
-                    hands[ risingWeaponHand ].weapon->Raise();
-                    state = GetScriptFunction( "RaiseWeapon" );
-                    if( state )
-                    {
-                        SetState( state );
-                    }
-                    if( !hands[h].holdingFlashlight() )
-                        PlayAnim( h ? ANIMCHANNEL_LEFTHAND : ANIMCHANNEL_RIGHTHAND, "idle" );
-                }
-            }
-        }
-    }
-
-	// check for attack
-	AI_WEAPON_FIRED = false;
-	if ( !influenceActive ) {
-        // Carl Dual wielding - check both hands for weapons being fired
-        for( int h = 0; h < 2; h++ )
-        {
-            bool pullingTrigger = hands[ h ].triggerDown;
-            // Check if we're actually turning our helmet/armour-mounted light on or off instead of firing
-            if( pullingTrigger && hands[ h ].isOverMountedFlashlight() && !hands[ h ].tooFullToInteract() && !hands[h].oldFlashlightTriggerDown )
-            {
-                pullingTrigger = false;
-                if( flashlight->lightOn )
-                    FlashlightOff();
-                else
-                    FlashlightOn();
-                hands[ h ].oldFlashlightTriggerDown = true;
-            }
-
-            if( (pullingTrigger && !hands[ h ].oldFlashlightTriggerDown ) || ( usercmd.buttons & BUTTON_ATTACK && h == vr_weaponHand.GetInteger()) || (pVRClientInfo != nullptr && pVRClientInfo->velocitytriggeredoffhandstate && h == 1 - vr_weaponHand.GetInteger()))
-            {
-                //common->Printf( "trigger down\n" );
-                if( hands[ h ].controllingWeapon() && !hands[h].weaponGone && !weaponGone )
-                {
-                    FireWeapon( h, GetWeaponInHand( h ) );
-                    if( !hands[h].oldTriggerDown )
-                        PlayAnim( h ? ANIMCHANNEL_LEFTHAND : ANIMCHANNEL_RIGHTHAND, "fire1" );
-                    velocityPunched = true;
-                }
-            }
-            else if( (hands[ h ].oldTriggerDown && !hands[ h ].oldFlashlightTriggerDown) || (oldButtons & BUTTON_ATTACK && h == vr_weaponHand.GetInteger()) || (velocityPunched && h == 1 - vr_weaponHand.GetInteger()))
-            {
-                //common->Printf( "old trigger down\n" );
-                AI_ATTACK_HELD = false;
-                GetWeaponInHand( h )->EndAttack();
-                PlayAnim( h ? ANIMCHANNEL_LEFTHAND : ANIMCHANNEL_RIGHTHAND, "idle" );
-                velocityPunched = false;
-            }
-            // remember the old state
-            if( hands[ h ].oldFlashlightTriggerDown && !hands[ h ].triggerDown )
-            {
-                hands[ h ].oldFlashlightTriggerDown = false;
-            }
-            hands[ h ].oldTriggerDown = hands[ h ].triggerDown;
-        }
-	}
-
-	// update our ammo clip in our inventory
-    // update our ammo clip in our inventory
-    for( int h = 0; h < 2; h++ ) {
-        if ((hands[h].currentWeapon >= 0) && (hands[h].currentWeapon < MAX_WEAPONS)) {
-            inventory.clip[ hands[h].currentWeapon ] = hands[h].weapon->AmmoInClip();
-            if ( hud && ( hands[h].currentWeapon == hands[h].idealWeapon ) ) {
-                UpdateHudAmmo(hud, h);
-            }
-        }
-    }
+/*	HUMANHEAD pdm: OVERRIDDEN
+*/
 }
 
 /*
@@ -7485,6 +6773,8 @@ idPlayer::Weapon_GUI
 */
 void idPlayer::Weapon_GUI( void ) {
 
+/*	HUMANHEAD pdm: OVERRIDDEN
+
 	if ( !objectiveSystemOpen ) {
         if( hands[ 0 ].idealWeapon != hands[ 0 ].currentWeapon || hands[ 1 ].idealWeapon != hands[ 1 ].currentWeapon )
         {
@@ -7527,6 +6817,7 @@ void idPlayer::Weapon_GUI( void ) {
 			HandleGuiCommands( this, command );
 		}
 	}
+*/
 }
 
 /*
@@ -7535,6 +6826,7 @@ idPlayer::UpdateWeapon
 ===============
 */
 void idPlayer::UpdateWeapon( void ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	if ( health <= 0 ) {
 		return;
 	}
@@ -7616,6 +6908,7 @@ void idPlayer::UpdateWeapon( void ) {
     // update weapon state, particles, dlights, etc
     for( int h = 0; h < 2; h++ )
         hands[ h ].weapon->PresentWeapon( CanShowWeaponViewmodel(), h );
+*/
 }
 
 /*
@@ -7628,12 +6921,20 @@ void idPlayer::SpectateFreeFly( bool force ) {
 	idVec3		newOrig;
 	idVec3		spawn_origin;
 	idAngles	spawn_angles;
+	
+	//HUMANHEAD rww
+	if (gameLocal.isClient) {
+		return;
+	}
+	//HUMANHEAD END
 
 	player = gameLocal.GetClientByNum( spectator );
 	if ( force || gameLocal.time > lastSpectateChange ) {
 		spectator = entityNumber;
 		if ( player && player != this && !player->spectating && !player->IsInTeleport() ) {
 			newOrig = player->GetPhysics()->GetOrigin();
+			//HUMANHEAD rww - reworked for gravity
+			/*
 			if ( player->physicsObj.IsCrouching() ) {
 				newOrig[ 2 ] += pm_crouchviewheight.GetFloat();
 			} else {
@@ -7643,6 +6944,18 @@ void idPlayer::SpectateFreeFly( bool force ) {
 			idBounds b = idBounds( vec3_origin ).Expand( pm_spectatebbox.GetFloat() * 0.5f );
 			idVec3 start = player->GetPhysics()->GetOrigin();
 			start[2] += pm_spectatebbox.GetFloat() * 0.5f;
+			*/
+			idMat3 plAx = player->GetPhysics()->GetAxis();
+			if ( player->physicsObj.IsCrouching() ) {
+				newOrig += plAx[2]*pm_crouchviewheight.GetFloat();
+			} else {
+				newOrig += plAx[2]*pm_normalviewheight.GetFloat();
+			}
+			newOrig += plAx[2]*SPECTATE_RAISE;
+			idBounds b = idBounds( vec3_origin ).Expand( pm_spectatebbox.GetFloat() * 0.5f );
+			idVec3 start = player->GetPhysics()->GetOrigin();
+			start += plAx[2]*pm_spectatebbox.GetFloat() * 0.5f;
+			//HUMANHEAD END
 			trace_t t;
 			// assuming spectate bbox is inside stand or crouch box
 			gameLocal.clip.TraceBounds( t, start, newOrig, b, MASK_PLAYERSOLID, player );
@@ -8140,13 +7453,6 @@ void idPlayer::UpdateTeleportAim()// idVec3 beamOrigin, idMat3 beamAxis )// idVe
             teleportTarget->Show();
             teleportTarget->GetRenderEntity()->customSkin = skinTelepadCrouch;
             isShowing = true;
-
-            if ( !vr_teleportHint.GetBool() )
-            {
-                ShowTip( "Duck! Low Headroom!", "If the teleport target turns red, there is limited headroom at the teleport destination. You must crouch before you can teleport to this location.", false );
-                vr_teleportHint.SetBool( true );
-            }
-            //gameRenderWorld->DrawText( "Low Headroom\nPlease Duck", teleportPoint + idVec3( 0, 0, 18 ), 0.2f, colorOrange, viewAngles.ToMat3() );
         }
         else
         {
@@ -8217,69 +7523,6 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 		return true;
 	}
 
-	if ( token.Icmp( "updatepda" ) == 0 ) {
-		UpdatePDAInfo( true );
-		return true;
-	}
-
-	if ( token.Icmp( "updatepda2" ) == 0 ) {
-		UpdatePDAInfo( false );
-		return true;
-	}
-
-	if ( token.Icmp( "stoppdavideo" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaVideoWave.Length() > 0 ) {
-			StopSound( SND_CHANNEL_PDA, false );
-		}
-		return true;
-	}
-
-	if ( token.Icmp( "close" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen ) {
-			TogglePDA(1 - vr_weaponHand.GetInteger());
-		}
-	}
-
-	if ( token.Icmp( "playpdavideo" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaVideo.Length() > 0 ) {
-			const idMaterial *mat = declManager->FindMaterial( pdaVideo );
-			if ( mat ) {
-				int c = mat->GetNumStages();
-				for ( int i = 0; i < c; i++ ) {
-					const shaderStage_t *stage = mat->GetStage(i);
-					if ( stage && stage->texture.cinematic ) {
-						stage->texture.cinematic->ResetTime( gameLocal.time );
-					}
-				}
-				if ( pdaVideoWave.Length() ) {
-					const idSoundShader *shader = declManager->FindSound( pdaVideoWave );
-					StartSoundShader( shader, SND_CHANNEL_PDA, 0, false, NULL );
-				}
-			}
-		}
-	}
-
-	if ( token.Icmp( "playpdaaudio" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaAudio.Length() > 0 ) {
-			const idSoundShader *shader = declManager->FindSound( pdaAudio );
-			int ms;
-			StartSoundShader( shader, SND_CHANNEL_PDA, 0, false, &ms );
-			StartAudioLog();
-			CancelEvents( &EV_Player_StopAudioLog );
-			PostEventMS( &EV_Player_StopAudioLog, ms + 150 );
-		}
-		return true;
-	}
-
-	if ( token.Icmp( "stoppdaaudio" ) == 0 ) {
-		if ( objectiveSystem && objectiveSystemOpen && pdaAudio.Length() > 0 ) {
-			// idSoundShader *shader = declManager->FindSound( pdaAudio );
-			StopAudioLog();
-			StopSound( SND_CHANNEL_PDA, false );
-		}
-		return true;
-	}
-
 	src->UnreadToken( &token );
 	return false;
 }
@@ -8298,6 +7541,28 @@ bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 	other = gameLocal.entities[ collision.c.entityNum ];
 	if ( other ) {
+		// HUMANHEAD nla - Taken from an earlier version of the code.  Added back in to allow the moving of ragdolls.
+		impactInfo_t info;
+
+		other->GetImpactInfo( this, collision.c.id, collision.c.point, &info );
+		if ( info.invMass ) {
+			//HUMANHEAD rww - if other is a moveable, cap the z velocity, so the player can't launch things unnaturally
+			idVec3 localVel = velocity;
+			// mdl:  Ugly hack to fix movables in harvesterb gravity puzzle
+			float negVel = (other->GetPhysics()->GetMass() > 50000.0f ? -24.0f : -48.0f);
+			if (other->IsType(idMoveable::Type)) {
+ 				if (localVel.z > 128.0f) {
+					localVel.z = 128.0f;
+				} else if (localVel.z < negVel) { // mdl:  For inverse gravity
+					localVel.z = negVel;
+				}
+			}
+			//HUMANHEAD END
+			other->GetImpactInfo( this, collision.c.id, collision.c.point, &info );
+			other->ApplyImpulse( this, collision.c.id, collision.c.point, localVel / info.invMass );
+		}
+		// HUMANHEAD END
+
 		other->Signal( SIG_TOUCH );
 		if ( !spectating ) {
 			if ( other->RespondsTo( EV_Touch ) ) {
@@ -8321,6 +7586,7 @@ Searches nearby locations
 ================
 */
 void idPlayer::UpdateLocation( void ) {
+/*	HUMANHEAD pdm: overridden
 	if ( hud ) {
 		idLocationEntity *locationEntity = gameLocal.LocationForPoint( GetEyePosition() );
 		if ( locationEntity ) {
@@ -8329,6 +7595,7 @@ void idPlayer::UpdateLocation( void ) {
 			hud->SetStateString( "location", common->GetLanguageDict()->GetString( "#str_02911" ) );
 		}
 	}
+*/
 }
 
 /*
@@ -8353,43 +7620,6 @@ void idPlayer::UpdateNeckPose()
 }
 
 /*
-==============
-idPlayer::UpdatePDASlot
-==============
-*/
-void idPlayer::UpdatePDASlot()
-{
-    if( vr_slotDisable.GetBool() )
-    {
-        return;
-    }
-    if( pdaRenderEntity.hModel ) // && inventory.pdas.Num()
-    {
-        //pdaRenderEntity.timeGroup = timeGroup;
-
-        pdaRenderEntity.entityNum = ENTITYNUM_NONE;
-
-        pdaRenderEntity.axis = pdaHolsterAxis * waistAxis;
-        idVec3 slotOrigin = slots[SLOT_PDA_HIP].origin;
-        if (vr_weaponHand.GetInteger())
-            slotOrigin.y *= -1.0f;
-        pdaRenderEntity.origin = waistOrigin + slotOrigin * waistAxis;
-
-        pdaRenderEntity.allowSurfaceInViewID = entityNumber + 1;
-        pdaRenderEntity.weaponDepthHack = g_useWeaponDepthHack.GetBool();
-
-        if( pdaModelDefHandle == -1 )
-        {
-            pdaModelDefHandle = gameRenderWorld->AddEntityDef( &pdaRenderEntity );
-        }
-        else
-        {
-            gameRenderWorld->UpdateEntityDef( pdaModelDefHandle, &pdaRenderEntity );
-        }
-    }
-}
-
-/*
 ================
 idPlayer::ClearFocus
 
@@ -8408,6 +7638,21 @@ void idPlayer::ClearFocus( void ) {
     //weapon->GetRenderEntity()->allowSurfaceInViewID = 0;
 }
 
+//HUMANHEAD PCF rww 09/15/06 - female mp sounds
+bool idPlayer::IsFemale(void) {
+	if (gameLocal.isMultiplayer) {
+		int modelNum = GetUserInfo()->GetInt("ui_modelNum");
+		if (modelNum == 14 ||	//blonde
+			modelNum == 16 ||	//elhuit
+			modelNum == 18 ||	//jen
+			modelNum == 19) {	//mother
+			return true;
+		}
+	}
+	return false;
+}
+//HUMANHEAD END
+
 /*
 ================
 idPlayer::UpdateFocus
@@ -8417,6 +7662,7 @@ the focus and sending it a mouse move event
 ================
 */
 void idPlayer::UpdateFocus( void ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	idClipModel *clipModelList[ MAX_GENTITIES ];
 	idClipModel *clip;
 	int			listedClipModels;
@@ -8500,10 +7746,6 @@ void idPlayer::UpdateFocus( void ) {
 		return;
 	}
 
-	/*
-	start = GetEyePosition();
-	end = start + viewAngles.ToForward() * 80.0f;
-	*/
 	start = GetEyePosition();
 
 	// Koz begin
@@ -8576,15 +7818,6 @@ void idPlayer::UpdateFocus( void ) {
 	{
 		talkScanEnd = end;
 	}
-
-
-	/*
-	//Use unadjusted weapon angles to control GUIs
-	idMat3 weaponViewAxis;
-	idAngles weaponViewAngles;
-    CalculateViewWeaponPos(true, start, weaponViewAxis, weaponViewAngles);
-	end = start + (weaponViewAngles.ToForward() * 80.0f);
-	*/
 
 	// player identification -> names to the hud
 	if ( gameLocal.isMultiplayer && entityNumber == gameLocal.localClientNum ) {
@@ -8665,7 +7898,7 @@ void idPlayer::UpdateFocus( void ) {
 		}
 
 		//if ( !ent->GetRenderEntity() || !ent->GetRenderEntity()->gui[ 0 ] || !ent->GetRenderEntity()->gui[ 0 ]->IsInteractive() ) {
-		if ( (!ent->GetRenderEntity() || !ent->GetRenderEntity()->gui[0] || !ent->GetRenderEntity()->gui[0]->IsInteractive()) && (!game->IsPDAOpen() /* && !commonVr->PDAclipModelSet */) ) { // Koz don't bail if the PDA is open and clipmodel is set.
+		if ( (!ent->GetRenderEntity() || !ent->GetRenderEntity()->gui[0] || !ent->GetRenderEntity()->gui[0]->IsInteractive()) && (!game->IsPDAOpen()) ) { // Koz don't bail if the PDA is open and clipmodel is set.
 			continue;
 		}
 
@@ -8934,16 +8167,6 @@ void idPlayer::UpdateFocus( void ) {
 
 							}
 						}
-						/*else
-						{
-
-							//send mouse button up
-							ev = sys->GenerateMouseButtonEvent( 1, false );
-							command = focusUI->HandleEvent( &ev, gameLocal.time );
-							HandleGuiCommands( focusGUIent, command );
-							touching = false;
-							break;
-						}*/
 					}
 				}
 			}
@@ -8984,228 +8207,7 @@ void idPlayer::UpdateFocus( void ) {
 			hud->HandleNamedEvent( "hideNPC" );
 		}
 	}
-}
-
-/*
-================
-idPlayer::UpdateFocusPDA
-
-Searches nearby entities for interactive guis, possibly making one of them
-the focus and sending it a mouse move event
-================
 */
-bool idPlayer::UpdateFocusPDA()
-{
-	static bool touching = false;
-	jointHandle_t fingerJoint[2] = { animator.GetJointHandle( "RindexTip" ), animator.GetJointHandle( "LindexTip" ) };
-	idVec3 fingerPosLocal = vec3_zero;
-	idMat3 fingerAxisLocal = mat3_identity;
-	idVec3 fingerPosGlobal = vec3_zero;
-	idVec3 scanStart = vec3_zero;
-	idVec3 scanEnd = vec3_zero;
-	int pdaScrX = renderSystem->GetScreenWidth();// vr_pdaScreenX.GetInteger();
-	int pdaScrY = pdaScrX * 0.75; // vr_pdaScreenY.GetInteger();
-	const int fingerForwDist = 1.0f;
-	const int fingerBackwDist = 12.0f;
-	guiPoint_t	pt;
-	sysEvent_t	ev;
-
-	if ( !game->isVR || !( game->IsPDAOpen() || commonVr->VR_GAME_PAUSED || hands[0].currentWeapon == weapon_pda || hands[1].currentWeapon == weapon_pda ) )
-	{
-		touching = false;
-		return false;
-	}
-
-	int pdahand;
-	if( hands[ 0 ].holdingPDA() )
-		pdahand = 0;
-	else if( hands[ 1 ].holdingPDA() )
-		pdahand = 1;
-	else
-		pdahand = 1 - vr_weaponHand.GetInteger();
-	int fingerHand = 1 - pdahand;
-
-	commonVr->scanningPDA = true; // let the swf event handler know its ok to take mouse input, even if the mouse cursor is not in the window.
-
-
-	// game is VR and PDA active
-	if ( vr_guiMode.GetInteger() == 2 && commonVr->VR_USE_MOTION_CONTROLS )
-	{
-		// the game is vr, player is using motion controls, gui mode is set to use touchscreens
-		// and the pda is open
-		// wait for lower weapon to drop the hand to hidedistance and hide the weapon model
-		// then raise the empty hand with pointy finger back to original position
-
-		if ( !touching )
-		{
-			// send a cursor event to get it off the screen since it is hidden.
-			ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
-			SendPDAEvent( &ev );
-		}
-
-		commonVr->handInGui = true;
-		focusTime = gameLocal.time + FOCUS_TIME;
-
-		// get current position of the pointy finger tip joint and
-		// see if we have touched the gui
-		idWeapon* pdaWeapon = GetPDAWeapon();
-
-		animator.GetJointTransform( fingerJoint[ fingerHand ], gameLocal.time, fingerPosLocal, fingerAxisLocal );
-		fingerPosGlobal = fingerPosLocal * GetRenderEntity()->axis + GetRenderEntity()->origin;
-
-
-		scanStart = fingerPosGlobal - PDAaxis[0] * fingerBackwDist;//  PDAaxis.Inverse();// surfaceNormal;
-		scanEnd = fingerPosGlobal + PDAaxis[0] * fingerForwDist;// *surfaceNormal;
-
-
-		pt = gameRenderWorld->GuiTrace( pdaWeapon->GetModelDefHandle(), pdaWeapon->GetAnimator(), scanStart, scanEnd );
-		pt.y = 1.0f - pt.y;
-
-		/*
-		//debug finger
-		if ( pt.fraction >= 1.0f )
-		{
-			gameRenderWorld->DebugLine( colorRed, scanStart, scanEnd, 20 );
-		}
-		else
-		{
-			gameRenderWorld->DebugLine( colorGreen, scanStart, scanEnd, 20 );
-		}
-		*/
-
-		/*if ( common->Dialog().IsDialogActive() || game->Shell_IsActive() ) // commonVr->VR_GAME_PAUSED )
-		{
-			pt.y -= .12f;
-		}
-		else
-		{
-			pt.y += 0.12f; // add offset for screensafe borders
-		}*/
-
-		if ( pt.fraction >= 1.0f ) // no hit if > = 1.0f
-		{
-			//send mouse button up
-			ev = sys->GenerateMouseButtonEvent( 1, false );
-			SendPDAEvent( &ev );
-
-			touching = false;
-		}
-		else
-		{
-			//we have a hit
-			if ( touching )
-			{
-				if ( pt.fraction >= 0.94f ) // no longer touching
-				{
-					//common->Printf( "Sending mouse off 1 fraction = %f\n",trace.fraction );
-					ev = sys->GenerateMouseButtonEvent( 1, false );
-					SendPDAEvent( &ev );
-
-					touching = false;
-				}
-				else
-				{
-					if ( pt.x != -1 )
-					{
-						// clamp the mouse to the corner
-						ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
-						SendPDAEvent( &ev );
-
-						// move to an absolute position
-						ev = sys->GenerateMouseMoveEvent( pt.x * pdaScrX, pt.y * pdaScrY );//( pt.x * SCREEN_WIDTH, pt.y * SCREEN_HEIGHT );
-						SendPDAEvent( &ev );
-
-					}
-				}
-			}
-			else // if ( !touching )
-			{
-				//common->Printf( "Fraction = %f\n", pt.fraction );
-				if ( pt.fraction < 0.94f )
-				{
-					//common->Printf( "Setting touching true\n" );
-					touching = true;
-					if ( pt.x != -1 )
-					{
-						// clamp the mouse to the corner
-						ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
-						SendPDAEvent( &ev );
-
-						// move to an absolute position
-						ev = sys->GenerateMouseMoveEvent( pt.x * pdaScrX, pt.y * pdaScrY );
-						SendPDAEvent( &ev );
-
-						//send mouse button down and back up again
-						ev = sys->GenerateMouseButtonEvent( 1, true );
-						SendPDAEvent( &ev );
-
-						//Rumble the controller to let player know they scored a touch.
-						// Carl: Should the PDA vibrate/haptic feedback too?
-						hands[fingerHand].SetControllerShake( 0.1f, 12, 0.8f, 12 );
-						hands[pdahand].SetControllerShake( 0.1f, 12, 0.8f, 12 );
-
-                        common->HapticEvent("pda_touch", 0, 0, 100, 0, 0);
-					}
-					commonVr->scanningPDA = false;
-					return true;
-				}
-				else
-				{
-					//send mouse button up
-					ev = sys->GenerateMouseButtonEvent( 1, false );
-					SendPDAEvent( &ev );
-
-
-					touching = false;
-				}
-			}
-		}
-		commonVr->scanningPDA = false;
-		return false;
-	}
-
-	//-------------------------------------------------------
-	//not using motion controls, scan from view
-
-	scanStart = commonVr->lastViewOrigin;
-	scanEnd = scanStart + commonVr->lastViewAxis[0] * 60.0f; // not sure why the PDA would be farther than 60 inches away. Thats one LOOONG arm.
-
-	//gameRenderWorld->DebugLine( colorYellow, scanStart, scanEnd, 10 );
-
-	idWeapon* pdaWeapon = GetPDAWeapon();
-	pt = gameRenderWorld->GuiTrace( pdaWeapon->GetModelDefHandle(), pdaWeapon->GetAnimator(), scanStart, scanEnd );
-
-	if ( pt.x != -1 )
-	{
-
-		pt.y = 1 - pt.y; // texture was copied from framebuffer and is upside down so invert y
-		if ( !commonVr->VR_GAME_PAUSED ) pt.y += 0.12f; // add offset for screensafe borders if using PDA
-
-		focusTime = gameLocal.time + FOCUS_TIME;
-
-		// move to an absolute position
-
-		ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
-		SendPDAEvent( &ev );
-
-		ev = sys->GenerateMouseMoveEvent( pdaScrX * pt.x, pdaScrY * pt.y );
-		SendPDAEvent( &ev );
-
-		commonVr->scanningPDA = false;
-
-		return true;
-	}
-
-	commonVr->scanningPDA = false;
-
-	return false; // view didn't hit pda
-}
-
-void idPlayer::SendPDAEvent( const sysEvent_t* sev )
-{
-	const char *command = NULL;
-	command = objectiveSystem->HandleEvent(sev, gameLocal.time );
-	HandleGuiCommands( this, command );
 }
 
 /*
@@ -9235,45 +8237,6 @@ bool idPlayer::HandleGuiEvents( const sysEvent_t* ev )
 }
 
 /*
-==============
-idPlayer::UpdateHolsterSlot
-==============
-*/
-void idPlayer::UpdateHolsterSlot()
-{
-    if( vr_slotDisable.GetBool() )
-    {
-        FreeHolsterSlot();
-        holsteredWeapon = weapon_fists;
-        return;
-    }
-    if( holsterRenderEntity.hModel )
-    {
-        //holsterRenderEntity.timeGroup = timeGroup;
-
-        holsterRenderEntity.entityNum = ENTITYNUM_NONE;
-
-        holsterRenderEntity.axis = holsterAxis * waistAxis;
-        idVec3 slotOrigin = slots[SLOT_WEAPON_HIP].origin + idVec3(-5, 0, 0);
-        if (vr_weaponHand.GetInteger())
-            slotOrigin.y *= -1.0f;
-        holsterRenderEntity.origin = waistOrigin + slotOrigin * waistAxis;
-
-        holsterRenderEntity.allowSurfaceInViewID = entityNumber + 1;
-        holsterRenderEntity.weaponDepthHack = g_useWeaponDepthHack.GetBool();
-
-        if( holsterModelDefHandle == -1 )
-        {
-            holsterModelDefHandle = gameRenderWorld->AddEntityDef( &holsterRenderEntity );
-        }
-        else
-        {
-            gameRenderWorld->UpdateEntityDef( holsterModelDefHandle, &holsterRenderEntity );
-        }
-    }
-}
-
-/*
 =================
 idPlayer::CrashLand
 
@@ -9281,6 +8244,7 @@ Check for hard landings that generate sound events
 =================
 */
 void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	idVec3		origin, velocity;
 	idVec3		gravityVector, gravityNormal;
 	float		delta;
@@ -9398,6 +8362,7 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 	} else if ( delta > 3 ) {
 		// just walk on
 	}
+*/
 }
 
 /*
@@ -9406,6 +8371,7 @@ idPlayer::BobCycle
 ===============
 */
 void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	float		bobmove;
 	int			old, deltaTime;
 	idVec3		vel, gravityDir, velocity;
@@ -9433,7 +8399,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		return;
 	}
 
-/*	if ( !physicsObj.HasGroundContacts() || influenceActive == INFLUENCE_LEVEL2 || ( gameLocal.isMultiplayer && spectating ) ) {
+	if ( !physicsObj.HasGroundContacts() || influenceActive == INFLUENCE_LEVEL2 || ( gameLocal.isMultiplayer && spectating ) ) {
 		// airborne
 		bobCycle = 0;
 		bobFoot = 0;
@@ -9457,7 +8423,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		bobCycle = (int)( old + bobmove * USERCMD_MSEC ) & 255;
 		bobFoot = ( bobCycle & 128 ) >> 7;
 		bobfracsin = idMath::Fabs( sin( ( bobCycle & 127 ) / 127.0 * idMath::PI ) );
-	}*/
+	}
 
 	//Disable bobbing in VR
 	bobCycle = 0;
@@ -9538,6 +8504,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		f = 1.0 - ( delta / LAND_RETURN_TIME );
 		viewBob -= gravity * ( landChange * f );
 	}
+*/
 }
 
 /*
@@ -9552,135 +8519,6 @@ void idPlayer::UpdateDeltaViewAngles( const idAngles &angles ) {
 		delta[ i ] = angles[ i ] - SHORT2ANGLE( usercmd.angles[ i ] );
 	}
 	SetDeltaViewAngles( delta );
-}
-
-/*
-===============
-idPlayer::UpdateFlashLight
-===============
-*/
-void idPlayer::UpdateFlashlight()
-{
-	for( int h = 0; h < 2; h++ )
-	{
-		if( hands[h].idealWeapon == weapon_flashlight )
-		{
-			// force classic flashlight to go away
-			hands[h].NextWeapon();
-		}
-	}
-
-	if( !flashlight.IsValid() )
-	{
-		return;
-	}
-
-	if( !flashlight->GetOwner() )
-	{
-		return;
-	}
-
-	// Don't update the flashlight if dead in MP.
-	// Otherwise you can see a floating flashlight worldmodel near player's skeletons.
-	if( gameLocal.isMultiplayer )
-	{
-		if( health < 0 )
-		{
-			return;
-		}
-	}
-
-	// Flashlight has an infinite battery in multiplayer and in RoE XBox mode when mounted on your pistol
-	if( !gameLocal.isMultiplayer && commonVr->currentFlashlightMode != FLASHLIGHT_PISTOL )
-	{
-		if( flashlight->lightOn )
-		{
-			if( flashlight_batteryDrainTimeMS.GetInteger() > 0 )
-			{
-				flashlightBattery -= ( gameLocal.time - gameLocal.previousTime );
-				if( flashlightBattery < 0 )
-				{
-					FlashlightOff();
-					flashlightBattery = 0;
-				}
-			}
-		}
-		else
-		{
-			if( flashlightBattery < flashlight_batteryDrainTimeMS.GetInteger() )
-			{
-				flashlightBattery += ( gameLocal.time - gameLocal.previousTime ) * Max( 1, ( flashlight_batteryDrainTimeMS.GetInteger() / flashlight_batteryChargeTimeMS.GetInteger() ) );
-				if( flashlightBattery > flashlight_batteryDrainTimeMS.GetInteger() )
-				{
-					flashlightBattery = flashlight_batteryDrainTimeMS.GetInteger();
-				}
-			}
-		}
-	}
-
-	if( hud )
-	{
-		//hud->UpdateFlashlight( this );
-	}
-
-	if( gameLocal.isClient )
-	{
-		// clients need to wait till the weapon and it's world model entity
-		// are present and synchronized ( weapon.worldModel idEntityPtr to idAnimatedEntity )
-		if( !flashlight->IsWorldModelReady() )
-		{
-			return;
-		}
-	}
-
-	// always make sure the weapon is correctly setup before accessing it
-	if( !flashlight->IsLinked() )
-	{
-		flashlight->GetWeaponDef( "weapon_flashlight_new", 0 );
-		flashlight->SetIsPlayerFlashlight( true );
-
-		// adjust position / orientation of flashlight
-		idAnimatedEntity* worldModel = flashlight->GetWorldModel();
-		worldModel->BindToJoint( this, "Chest", true );
-		// Don't interpolate the flashlight world model in mp, let it bind like normal.
-		//worldModel->SetUseClientInterpolation( false );
-
-		assert( flashlight->IsLinked() );
-	}
-
-	// this positions the third person flashlight model! (as seen in the mirror)
-	idAnimatedEntity* worldModel = flashlight->GetWorldModel();
-	static const idVec3 fl_pos = idVec3( 3.0f, 9.0f, 2.0f );
-	worldModel->GetPhysics()->SetOrigin( fl_pos );
-	static float fl_pitch = 0.0f;
-	static float fl_yaw = 0.0f;
-	static float fl_roll = 0.0f;
-	static idAngles ang = ang_zero;
-	ang.Set( fl_pitch, fl_yaw, fl_roll );
-	worldModel->GetPhysics()->SetAxis( ang.ToMat3() );
-
-	if( flashlight->lightOn )
-	{
-		if( ( flashlightBattery < flashlight_batteryChargeTimeMS.GetInteger() / 2 ) && ( gameLocal.random.RandomFloat() < flashlight_batteryFlickerPercent.GetFloat() ) )
-		{
-			flashlight->RemoveMuzzleFlashlight();
-		}
-		else
-		{
-			flashlight->MuzzleFlashLight();
-		}
-	}
-
-	flashlight->PresentWeapon( true, 1 - vr_weaponHand.GetInteger() );
-
-	if( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || gameLocal.inCinematic || spectating || fl.hidden || commonVr->currentFlashlightPosition == FLASHLIGHT_INVENTORY )
-	{
-		worldModel->Hide();
-	}
-	else
-	{
-		worldModel->Show();
-	}
 }
 
 /*
@@ -9699,6 +8537,7 @@ idPlayer::UpdateViewAngles
 ================
 */
 void idPlayer::UpdateViewAngles( void ) {
+/*	HUMANHEAD pdm: Overridden
 	int i;
 	idAngles delta;
 
@@ -9777,6 +8616,7 @@ void idPlayer::UpdateViewAngles( void ) {
 
 	// save in the log for analyzing weapon angle offsets
 	loggedViewAngles[ gameLocal.framenum & (NUM_LOGGED_VIEW_ANGLES-1) ] = viewAngles;
+*/
 }
 
 /*
@@ -9934,23 +8774,6 @@ int idPlayer::GetBestWeaponHand()
 }
 
 /*
-=================
-idPlayer::GetCurrentHarvestWeapon
-Carl: Dual wielding, get the specific weapon used to harvest souls (Soul Cube or Artifact)
-Returns the required one if you're holding it, or the other one, or the main weapon
-=================
-*/
-idStr idPlayer::GetCurrentHarvestWeapon( idStr requiredWeapons )
-{
-    // Carl: TODO dual wielding
-    if( hands[ 0 ].weapon && ( hands[ 0 ].weapon->IdentifyWeapon() == WEAPON_SOULCUBE || hands[ 0 ].weapon->IdentifyWeapon() == WEAPON_ARTIFACT ) )
-        return hands[ 0 ].GetCurrentWeaponString();
-    if( hands[ 1 ].weapon && ( hands[ 1 ].weapon->IdentifyWeapon() == WEAPON_SOULCUBE || hands[ 1 ].weapon->IdentifyWeapon() == WEAPON_ARTIFACT ) )
-        return hands[ 1 ].GetCurrentWeaponString();
-    return GetCurrentWeapon();
-}
-
-/*
 ===============
 idPlayer::GetBestWeaponHandToSteal
 Carl: Dual wielding, when the code needs just one weapon, guess which one is the "main" one
@@ -10077,29 +8900,18 @@ void idPlayer::SetHandIKPos( int hand, idVec3 handOrigin, idMat3 handAxis, idQua
     hands[hand].handOrigin = handOrigin;
     hands[hand].handAxis = handAxis;
 
-    weapon_t currentWeaponEnum = hands[hand].weapon->IdentifyWeapon();
-    idEntityPtr<idWeapon> curEntity;
-    int activeWeapon;
-    if( isFlashlight && commonVr->currentFlashlightPosition == FLASHLIGHT_HAND && flashlight.IsValid() )
-    {
-        curEntity = flashlight;
-        activeWeapon = weapon_flashlight;
-    }
-    else
-    {
-        curEntity = hands[hand].weapon;
-        activeWeapon = hands[hand].currentWeapon;
-    }
+    idEntityPtr<hhWeapon> curEntity= hands[hand].weapon;
+    int activeWeapon = hands[hand].currentWeapon;
 
     handWeaponAttachJoint = ik_handAttacher[hand]; // joint on the hand the weapon attaches to
-    weaponHandAttachJoint = curEntity->weaponHandAttacher[hand]; // joint on the weapon the hand should attach to
-    weaponHandAttachJointDefaultPositionLocal = curEntity->weaponHandDefaultPos[hand];// the default position of the attacher on the weapon. used to calc movement deltas from anims
+    //TODO:weaponHandAttachJoint = curEntity->weaponHandAttacher[hand]; // joint on the weapon the hand should attach to
+    //TODO:weaponHandAttachJointDefaultPositionLocal = curEntity->weaponHandDefaultPos[hand];// the default position of the attacher on the weapon. used to calc movement deltas from anims
 
 
     //get the local and global orientations for the hand and weapon attacher joints
 
     //weapon hand attacher - the joint on the weapon the hand should align to
-    curEntity->GetAnimator()->GetJointTransform( weaponHandAttachJoint, gameLocal.time, weaponHandAttachJointPositionLocal, weaponHandAttachJointAxisLocal );
+    //TODO:implement curEntity->GetAnimator()->GetJointTransform( weaponHandAttachJoint, gameLocal.time, weaponHandAttachJointPositionLocal, weaponHandAttachJointAxisLocal );
 
     /*
     // for debugging
@@ -10264,58 +9076,6 @@ void idPlayer::UpdatePowerupHud()
 
 /*
 ==============
-idPlayer::AddGuiPDAData
-==============
- */
-int idPlayer::AddGuiPDAData( const declType_t dataType, const char *listName, const idDeclPDA *src, idUserInterface *gui ) {
-	int c, i;
-	idStr work;
-	if ( dataType == DECL_EMAIL ) {
-		c = src->GetNumEmails();
-		for ( i = 0; i < c; i++ ) {
-			const idDeclEmail *email = src->GetEmailByIndex( i );
-			if ( email == NULL ) {
-				work = va( "-\tEmail %d not found\t-", i );
-			} else {
-				work = email->GetFrom();
-				work += "\t";
-				work += email->GetSubject();
-				work += "\t";
-				work += email->GetDate();
-			}
-			gui->SetStateString( va( "%s_item_%i", listName, i ), work );
-		}
-		return c;
-	} else if ( dataType == DECL_AUDIO ) {
-		c = src->GetNumAudios();
-		for ( i = 0; i < c; i++ ) {
-			const idDeclAudio *audio = src->GetAudioByIndex( i );
-			if ( audio == NULL ) {
-				work = va( "Audio Log %d not found", i );
-			} else {
-				work = audio->GetAudioName();
-			}
-			gui->SetStateString( va( "%s_item_%i", listName, i ), work );
-		}
-		return c;
-	} else if ( dataType == DECL_VIDEO ) {
-		c = inventory.videos.Num();
-		for ( i = 0; i < c; i++ ) {
-			const idDeclVideo *video = GetVideo( i );
-			if ( video == NULL ) {
-				work = va( "Video CD %s not found", inventory.videos[i].c_str() );
-			} else {
-				work = video->GetVideoName();
-			}
-			gui->SetStateString( va( "%s_item_%i", listName, i ), work );
-		}
-		return c;
-	}
-	return 0;
-}
-
-/*
-==============
 idPlayer::GetPDA
 ==============
  */
@@ -10328,28 +9088,6 @@ const idDeclPDA *idPlayer::GetPDA( void ) const {
 }
 
 /*
-===============
-idPlayer::GetGrabberWeapon
-Carl: Dual wielding
-===============
-*/
-idWeapon* idPlayer::GetGrabberWeapon() const
-{
-	if( hands[ 1 - vr_weaponHand.GetInteger() ].weapon.GetEntity() && hands[ 1 - vr_weaponHand.GetInteger() ].weapon->IdentifyWeapon() == WEAPON_GRABBER )
-		return hands[ 1 - vr_weaponHand.GetInteger() ].weapon.GetEntity();
-	else
-		return hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity();
-}
-
-idWeapon * idPlayer::GetPDAWeapon() const
-{
-    if( hands[ 1 - vr_weaponHand.GetInteger() ].weapon && hands[ 1 - vr_weaponHand.GetInteger() ].weapon->IdentifyWeapon() == WEAPON_PDA )
-        return hands[ 1 - vr_weaponHand.GetInteger() ].weapon;
-    else
-        return hands[ vr_weaponHand.GetInteger() ].weapon;
-}
-
-/*
 ==============
 idPlayer::GetVideo
 ==============
@@ -10359,171 +9097,6 @@ const idDeclVideo *idPlayer::GetVideo( int index ) {
 		return static_cast< const idDeclVideo* >( declManager->FindType( DECL_VIDEO, inventory.videos[index], false ) );
 	}
 	return NULL;
-}
-
-
-/*
-==============
-idPlayer::UpdatePDAInfo
-==============
-*/
-void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
-	int j, sel;
-
-	if ( objectiveSystem == NULL ) {
-		return;
-	}
-
-	assert( hud );
-
-	int currentPDA = objectiveSystem->State().GetInt( "listPDA_sel_0", "0" );
-	if ( currentPDA == -1 ) {
-		currentPDA = 0;
-	}
-
-	if ( updatePDASel ) {
-		objectiveSystem->SetStateInt( "listPDAVideo_sel_0", 0 );
-		objectiveSystem->SetStateInt( "listPDAEmail_sel_0", 0 );
-		objectiveSystem->SetStateInt( "listPDAAudio_sel_0", 0 );
-	}
-
-	if ( currentPDA > 0 ) {
-		currentPDA = inventory.pdas.Num() - currentPDA;
-	}
-
-	// Mark in the bit array that this pda has been read
-	if ( currentPDA < 128 ) {
-		inventory.pdasViewed[currentPDA >> 5] |= 1 << (currentPDA & 31);
-	}
-
-	pdaAudio = "";
-	pdaVideo = "";
-	pdaVideoWave = "";
-	idStr name, data, preview, info, wave;
-	for ( j = 0; j < MAX_PDAS; j++ ) {
-		objectiveSystem->SetStateString( va( "listPDA_item_%i", j ), "" );
-	}
-	for ( j = 0; j < MAX_PDA_ITEMS; j++ ) {
-		objectiveSystem->SetStateString( va( "listPDAVideo_item_%i", j ), "" );
-		objectiveSystem->SetStateString( va( "listPDAAudio_item_%i", j ), "" );
-		objectiveSystem->SetStateString( va( "listPDAEmail_item_%i", j ), "" );
-		objectiveSystem->SetStateString( va( "listPDASecurity_item_%i", j ), "" );
-	}
-	for ( j = 0; j < inventory.pdas.Num(); j++ ) {
-
-		const idDeclPDA *pda = static_cast< const idDeclPDA* >( declManager->FindType( DECL_PDA, inventory.pdas[j], false ) );
-
-		if ( pda == NULL ) {
-			continue;
-		}
-
-		int index = inventory.pdas.Num() - j;
-		if ( j == 0 ) {
-			// Special case for the first PDA
-			index = 0;
-		}
-
-		if ( j != currentPDA && j < 128 && inventory.pdasViewed[j >> 5] & (1 << (j & 31)) ) {
-			// This pda has been read already, mark in gray
-			objectiveSystem->SetStateString( va( "listPDA_item_%i", index), va(S_COLOR_GRAY "%s", pda->GetPdaName()) );
-		} else {
-			// This pda has not been read yet
-		objectiveSystem->SetStateString( va( "listPDA_item_%i", index), pda->GetPdaName() );
-		}
-
-		const char *security = pda->GetSecurity();
-		if ( j == currentPDA || (currentPDA == 0 && security && *security ) ) {
-			if ( *security == 0 ) {
-				security = common->GetLanguageDict()->GetString( "#str_00066" );
-			}
-			objectiveSystem->SetStateString( "PDASecurityClearance", security );
-		}
-
-		if ( j == currentPDA ) {
-
-			objectiveSystem->SetStateString( "pda_icon", pda->GetIcon() );
-			objectiveSystem->SetStateString( "pda_id", pda->GetID() );
-			objectiveSystem->SetStateString( "pda_title", pda->GetTitle() );
-
-			if ( j == 0 ) {
-				// Selected, personal pda
-				// Add videos
-				if ( updatePDASel || !inventory.pdaOpened ) {
-				objectiveSystem->HandleNamedEvent( "playerPDAActive" );
-				objectiveSystem->SetStateString( "pda_personal", "1" );
-					inventory.pdaOpened = true;
-				}
-				objectiveSystem->SetStateString( "pda_location", hud->State().GetString("location") );
-				objectiveSystem->SetStateString( "pda_name", cvarSystem->GetCVarString( "ui_name") );
-				AddGuiPDAData( DECL_VIDEO, "listPDAVideo", pda, objectiveSystem );
-				sel = objectiveSystem->State().GetInt( "listPDAVideo_sel_0", "0" );
-				const idDeclVideo *vid = NULL;
-				if ( sel >= 0 && sel < inventory.videos.Num() ) {
-					vid = static_cast< const idDeclVideo * >( declManager->FindType( DECL_VIDEO, inventory.videos[ sel ], false ) );
-				}
-				if ( vid ) {
-					pdaVideo = vid->GetRoq();
-					pdaVideoWave = vid->GetWave();
-					objectiveSystem->SetStateString( "PDAVideoTitle", vid->GetVideoName() );
-					objectiveSystem->SetStateString( "PDAVideoVid", vid->GetRoq() );
-					objectiveSystem->SetStateString( "PDAVideoIcon", vid->GetPreview() );
-					objectiveSystem->SetStateString( "PDAVideoInfo", vid->GetInfo() );
-				} else {
-					//FIXME: need to precache these in the player def
-					objectiveSystem->SetStateString( "PDAVideoVid", "sound/vo/video/welcome.tga" );
-					objectiveSystem->SetStateString( "PDAVideoIcon", "sound/vo/video/welcome.tga" );
-					objectiveSystem->SetStateString( "PDAVideoTitle", "" );
-					objectiveSystem->SetStateString( "PDAVideoInfo", "" );
-				}
-			} else {
-				// Selected, non-personal pda
-				// Add audio logs
-				if ( updatePDASel ) {
-				objectiveSystem->HandleNamedEvent( "playerPDANotActive" );
-				objectiveSystem->SetStateString( "pda_personal", "0" );
-					inventory.pdaOpened = true;
-				}
-				objectiveSystem->SetStateString( "pda_location", pda->GetPost() );
-				objectiveSystem->SetStateString( "pda_name", pda->GetFullName() );
-				int audioCount = AddGuiPDAData( DECL_AUDIO, "listPDAAudio", pda, objectiveSystem );
-				objectiveSystem->SetStateInt( "audioLogCount", audioCount );
-				sel = objectiveSystem->State().GetInt( "listPDAAudio_sel_0", "0" );
-				const idDeclAudio *aud = NULL;
-				if ( sel >= 0 ) {
-					aud = pda->GetAudioByIndex( sel );
-				}
-				if ( aud ) {
-					pdaAudio = aud->GetWave();
-					objectiveSystem->SetStateString( "PDAAudioTitle", aud->GetAudioName() );
-					objectiveSystem->SetStateString( "PDAAudioIcon", aud->GetPreview() );
-					objectiveSystem->SetStateString( "PDAAudioInfo", aud->GetInfo() );
-				} else {
-					objectiveSystem->SetStateString( "PDAAudioIcon", "sound/vo/video/welcome.tga" );
-					objectiveSystem->SetStateString( "PDAAutioTitle", "" );
-					objectiveSystem->SetStateString( "PDAAudioInfo", "" );
-				}
-			}
-			// add emails
-			name = "";
-			data = "";
-			int numEmails = pda->GetNumEmails();
-			if ( numEmails > 0 ) {
-				AddGuiPDAData( DECL_EMAIL, "listPDAEmail", pda, objectiveSystem );
-				sel = objectiveSystem->State().GetInt( "listPDAEmail_sel_0", "-1" );
-				if ( sel >= 0 && sel < numEmails ) {
-					const idDeclEmail *email = pda->GetEmailByIndex( sel );
-					name = email->GetSubject();
-					data = email->GetBody();
-				}
-			}
-			objectiveSystem->SetStateString( "PDAEmailTitle", name );
-			objectiveSystem->SetStateString( "PDAEmailText", data );
-		}
-	}
-	if ( objectiveSystem->State().GetInt( "listPDA_sel_0", "-1" ) == -1 ) {
-		objectiveSystem->SetStateInt( "listPDA_sel_0", 0 );
-	}
-	objectiveSystem->StateChanged( gameLocal.time );
 }
 
 int idPlayer::MapWeaponHudId(int fpNumber)
@@ -10556,91 +9129,6 @@ int idPlayer::MapWeaponHudId(int fpNumber)
 	else if(fpNumber == 10) //BFG
 		return 8;*/
 
-}
-
-/*
-==============
-idPlayer::TogglePDA
-==============
-*/
-void idPlayer::TogglePDA( int hand  ) {
-
-	// Koz begin : reset PDA controls
-	commonVr->forceLeftStick = true;
-
-	if ( objectiveSystem == NULL ) {
-		return;
-	}
-
-	if ( inventory.pdas.Num() == 0 ) {
-		ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_noPDA" ), true );
-		return;
-	}
-
-	assert( hud );
-
-	SetupPDASlot( objectiveSystemOpen );
-	SetupHolsterSlot( 1 - hand, objectiveSystemOpen );
-
-	if ( !objectiveSystemOpen ) {
-		int j, c = inventory.items.Num();
-		objectiveSystem->SetStateInt( "inv_count", c );
-		for ( j = 0; j < MAX_INVENTORY_ITEMS; j++ ) {
-			objectiveSystem->SetStateString( va( "inv_name_%i", j ), "" );
-			objectiveSystem->SetStateString( va( "inv_icon_%i", j ), "" );
-			objectiveSystem->SetStateString( va( "inv_text_%i", j ), "" );
-		}
-		for ( j = 0; j < c; j++ ) {
-			idDict *item = inventory.items[j];
-			if ( !item->GetBool( "inv_pda" ) ) {
-				const char *iname = item->GetString( "inv_name" );
-				const char *iicon = item->GetString( "inv_icon" );
-				const char *itext = item->GetString( "inv_text" );
-				objectiveSystem->SetStateString( va( "inv_name_%i", j ), iname );
-				objectiveSystem->SetStateString( va( "inv_icon_%i", j ), iicon );
-				objectiveSystem->SetStateString( va( "inv_text_%i", j ), itext );
-				const idKeyValue *kv = item->MatchPrefix( "inv_id", NULL );
-				if ( kv ) {
-					objectiveSystem->SetStateString( va( "inv_id_%i", j ), kv->GetValue() );
-				}
-			}
-		}
-
-		for ( j = 1; j < MAX_WEAPONS; j++ ) {
-			const char *weapnum = va( "def_weapon%d", j );
-			const char *hudWeap = va( "weapon%d", MapWeaponHudId(j));
-			int weapstate = 0;
-			if ( inventory.weapons & ( 1 << j ) ) {
-				const char *weap = spawnArgs.GetString( weapnum );
-				if ( weap && *weap ) {
-					weapstate++;
-				}
-			}
-			objectiveSystem->SetStateInt( hudWeap, weapstate );
-		}
-
-		objectiveSystem->SetStateInt( "listPDA_sel_0", inventory.selPDA );
-		objectiveSystem->SetStateInt( "listPDAVideo_sel_0", inventory.selVideo );
-		objectiveSystem->SetStateInt( "listPDAAudio_sel_0", inventory.selAudio );
-		objectiveSystem->SetStateInt( "listPDAEmail_sel_0", inventory.selEMail );
-		UpdatePDAInfo( false );
-		UpdateObjectiveInfo();
-		objectiveSystem->Activate( true, gameLocal.time );
-		hud->HandleNamedEvent( "pdaPickupHide" );
-		hud->HandleNamedEvent( "videoPickupHide" );
-
-		common->HapticEvent("pda_open", 0, 0, 100, 0, 0);
-	} else {
-		inventory.selPDA = objectiveSystem->State().GetInt( "listPDA_sel_0" );
-		inventory.selVideo = objectiveSystem->State().GetInt( "listPDAVideo_sel_0" );
-		inventory.selAudio = objectiveSystem->State().GetInt( "listPDAAudio_sel_0" );
-		inventory.selEMail = objectiveSystem->State().GetInt( "listPDAEmail_sel_0" );
-		objectiveSystem->Activate( false, gameLocal.time );
-
-		common->HapticEvent("pda_close", 0, 0, 100, 0, 0);
-	}
-	//objectiveSystemOpen ^= 1;
-	objectiveSystemOpen = !objectiveSystemOpen;
 }
 
 // Carl: Context sensitive VR trigger buttons, and dual wielding
@@ -10686,11 +9174,54 @@ void idPlayer::Spectate( bool spectate ) {
 	// track invisible player bug
 	// all hiding and showing should be performed through Spectate calls
 	// except for the private camera view, which is used for teleports
-	assert( ( teleportEntity != NULL ) || ( IsHidden() == spectating ) );
+	//assert( ( teleportEntity.GetEntity() != NULL ) || ( IsHidden() == spectating ) );
+	//HUMANHEAD rww - this assert is no longer valid because we hide the player instantly on death for spawning the ragdoll entity.
 
 	if ( spectating == spectate ) {
 		return;
 	}
+
+	//HUMANHEAD rww
+	if (InVehicle()) { //get out of vehicle if we're in one
+		if (GetVehicleInterface()) {
+			hhVehicle *vehicle = GetVehicleInterface()->GetVehicle();
+			if (vehicle) {
+				vehicle->EjectPilot();
+			}
+		}
+	}
+
+	if (spectate) { //going into spectator
+		if (IsType(hhPlayer::Type)) {
+			hhPlayer *hhSelf = static_cast<hhPlayer *>(this);
+
+			if (hhSelf->IsSpiritWalking()) { //stop spirit walking
+				hhSelf->StopSpiritWalk(true);
+			}
+
+			if (hhSelf->hand.IsValid() && hhSelf->hand.GetEntity()) { //remove hand
+				hhSelf->hand->RemoveHand();
+			}
+
+			if (hhSelf->handNext.IsValid() && hhSelf->handNext.GetEntity()) { //remove hand
+				hhSelf->handNext->RemoveHand();
+			}
+
+			if (hhSelf->IsLighterOn()) { //turn lighter off
+				hhSelf->LighterOff();
+			}
+		}
+
+		if (hands[vr_weaponHand.GetInteger()].weapon.IsValid() && hands[vr_weaponHand.GetInteger()].weapon.GetEntity()) { //remove weapon
+			hands[vr_weaponHand.GetInteger()].weapon.GetEntity()->PostEventMS(&EV_Remove, 0);
+			hands[vr_weaponHand.GetInteger()].weapon = NULL;
+		}
+	} else { //shouldn't have a weapon or anything while spectating
+		if (hands[vr_weaponHand.GetInteger()].weapon.IsValid()) {
+			gameLocal.Error("Valid weapon on player %i when coming out of spectator.", entityNumber);
+		}
+	}
+	//HUMANHEAD END
 
 	spectating = spectate;
 
@@ -10702,7 +9233,6 @@ void idPlayer::Spectate( bool spectate ) {
 
 	if ( spectating ) {
 		// join the spectators
-		ClearPowerUps();
 		spectator = this->entityNumber;
 		Init();
 		StopRagdoll();
@@ -10710,18 +9240,38 @@ void idPlayer::Spectate( bool spectate ) {
 		physicsObj.DisableClip();
 		Hide();
 		Event_DisableWeapon();
+		//HUMANHEAD rww - respawn going into spectator, since we could otherwise clip out of the world in certain gravity/wallwalk orientations
+		if (!gameLocal.isClient) {
+			idEntity *spot = gameLocal.SelectInitialSpawnPoint( this );
+			if (spot) {
+				idVec3 spawn_origin = spot->GetPhysics()->GetOrigin();
+				spawn_origin[2] += 4.0f + CM_BOX_EPSILON;		// move up to make sure the player is at least an epsilon above the floor
+				idAngles spawn_angles = spot->GetPhysics()->GetAxis().ToAngles();
+				spawn_angles.pitch = 0.0f;
+				spawn_angles.roll = 0.0f;
+
+				spawn_origin[2] += pm_normalviewheight.GetFloat();
+				spawn_origin[2] += SPECTATE_RAISE;
+
+				SetAxis(mat3_identity);
+				physicsObj.SetAxis(mat3_identity);
+				physicsObj.SetGravity(gameLocal.GetGravity());
+				SetOrigin( spawn_origin );
+				SetViewAngles( spawn_angles );
+			}
+		}
+		//HUMANHEAD END
+#if !HUMANHEAD
 		if ( hud ) {
 			hud->HandleNamedEvent( "aim_clear" );
 			MPAimFadeTime = 0;
 		}
+#endif
 	} else {
 		// put everything back together again
-        // put everything back together again
-        hands[ 0 ].currentWeapon = -1;	// to make sure the def will be loaded if necessary
-        hands[ 1 ].currentWeapon = -1;
+		hands[vr_weaponHand.GetInteger()].currentWeapon = -1;	// to make sure the def will be loaded if necessary
 		Show();
 		Event_EnableWeapon();
-        SetEyeHeight( pm_normalviewheight.GetFloat() );
 	}
 	SetClipModel();
 }
@@ -10847,7 +9397,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 		ClientSendEvent( EVENT_IMPULSE, &msg );
 	}
 
-	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) {
+	//HUMANHEAD rww - changed from IMPULSE_0 to IMPULSE_1.
+	//IMPULSE_0 for doom3 was fists, but for us it is "no weapon" (not selectable)
+	if ( impulse >= IMPULSE_1 && impulse <= IMPULSE_12 ) {
 		SelectWeapon( impulse, false );
 		return;
 	}
@@ -10858,6 +9410,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			Reload();
 			break;
 		}
+#ifndef HUMANHEAD //HUMANHEAD jsh - handle this in hhPlayer
 		case IMPULSE_14: {
 			NextWeapon();
 			break;
@@ -10866,19 +9419,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			PrevWeapon();
 			break;
 		}
+#endif
         case IMPULSE_16:
         {
-            if( flashlight.IsValid() )
-            {
-                if( flashlight->lightOn )
-                {
-                    FlashlightOff();
-                }
-                else if( !spectating && weaponEnabled && !hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
-                {
-                    FlashlightOn();
-                }
-            }
             break;
         }
 		case IMPULSE_17: {
@@ -10894,16 +9437,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_19: {
 			// when we're not in single player, IMPULSE_19 is used for showScores
 			// otherwise it opens the pda
-			if ( !gameLocal.isMultiplayer ) {
-				if ( objectiveSystemOpen ) {
-                    TogglePDA( 1 - vr_weaponHand.GetInteger() );
-				} else if ( weapon_pda >= 0 && inventory.pdas.Num()) {
-					commonVr->pdaToggleTime = commonVr->Sys_Milliseconds();
-					SetupPDASlot( false );
-                    SetupHolsterSlot( vr_weaponHand.GetInteger(), false );
-                    hands[ 1 - vr_weaponHand.GetInteger() ].SelectWeapon(weapon_pda, true, false);
-				}
-			}
 			break;
 		}
 		case IMPULSE_20: {
@@ -11063,11 +9596,6 @@ bool idPlayer::HandleESC( void ) {
 		return SkipCinematic();
 	}
 
-	if ( objectiveSystemOpen ) {
-        TogglePDA( 1 - vr_weaponHand.GetInteger() );
-		return true;
-	}
-
 	return false;
 }
 
@@ -11083,8 +9611,10 @@ idPlayer::EvaluateControls
 */
 void idPlayer::EvaluateControls( void ) {
 	// check for respawning
-	if ( health <= 0 ) {
-		if ( ( gameLocal.time > minRespawnTime ) && ( usercmd.buttons & BUTTON_ATTACK ) ) {
+	if ( IsDead() ) { // HUMANHEAD cjr:  Replaced health <= 0 with IsDead() call for deathwalk override
+		if ( ( gameLocal.time > minRespawnTime ) &&
+			( oldButtons & BUTTON_ATTACK ) &&	// HUMANHEAD pdm: wait until fire is pressed AND released
+			!( usercmd.buttons & BUTTON_ATTACK ) ) {
 			forceRespawn = true;
 		} else if ( gameLocal.time > maxRespawnTime ) {
 			forceRespawn = true;
@@ -11127,7 +9657,7 @@ void idPlayer::AdjustSpeed( void ) {
 		speed = pm_noclipspeed.GetFloat();
 		bobFrac = 0.0f;
 	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) ) {
-		if ( !gameLocal.isMultiplayer && !physicsObj.IsCrouching() && !PowerUpActive( ADRENALINE ) ) {
+		if ( !gameLocal.isMultiplayer && !physicsObj.IsCrouching() ) {	// HUMANHEAD pdm: powerups not used
 			stamina -= MS2SEC( USERCMD_MSEC );
 		}
 		if ( stamina < 0 ) {
@@ -11194,10 +9724,21 @@ void idPlayer::AdjustBodyAngles( void ) {
 	float	upBlend;
 	float	forwardBlend;
 	float	downBlend;
+	idAngles transAngles; //HUMANHEAD rww
 
 	if ( health < 0 ) {
 		return;
 	}
+
+	//HUMANHEAD rww
+	if (IsType(hhPlayer::Type)) {
+		hhPlayer *pl = static_cast<hhPlayer *>(this);
+		transAngles = pl->GetUntransformedViewAngles();
+	}
+	else {
+		transAngles = viewAngles;
+	}
+	//HUMANHEAD END
 
 	blend = true;
 
@@ -11222,7 +9763,7 @@ void idPlayer::AdjustBodyAngles( void ) {
 	} else {
 		legsForward = true;
 		diff = idMath::Fabs( idealLegsYaw - legsYaw );
-		idealLegsYaw = idealLegsYaw - idMath::AngleNormalize180( viewAngles.yaw - oldViewYaw );
+		idealLegsYaw = idealLegsYaw - idMath::AngleNormalize180( transAngles.yaw - oldViewYaw ); //HUMANHEAD rww
 		if ( diff < 0.1f ) {
 			legsYaw = idealLegsYaw;
 			blend = false;
@@ -11233,15 +9774,15 @@ void idPlayer::AdjustBodyAngles( void ) {
 		legsForward = true;
 	}
 
-	oldViewYaw = viewAngles.yaw;
+	oldViewYaw = transAngles.yaw; //HUMANHEAD rww
 
 	AI_TURN_LEFT = false;
 	AI_TURN_RIGHT = false;
-	if ( idealLegsYaw < -45.0f ) {
+	if ( idealLegsYaw > 45.0f ) {	// HUMANHEAD pdm: reversed
 		idealLegsYaw = 0;
 		AI_TURN_RIGHT = true;
 		blend = true;
-	} else if ( idealLegsYaw > 45.0f ) {
+	} else if ( idealLegsYaw < -45.0f ) {
 		idealLegsYaw = 0;
 		AI_TURN_LEFT = true;
 		blend = true;
@@ -11254,20 +9795,18 @@ void idPlayer::AdjustBodyAngles( void ) {
 	animator.SetJointAxis( hipJoint, JOINTMOD_WORLD, legsAxis );
 
 	// calculate the blending between down, straight, and up
-	frac = viewAngles.pitch / 90.0f;
-    //mmdanggg2: stop the model from bending down and getting in the way!!
-    if ( frac > 0.0f ) {
-        downBlend = 0.0f;	// frac;
-        forwardBlend = 1.0f;// -frac;
-        upBlend = 0.0f;
-    }
-    else {
-        downBlend = 0.0f;
-        forwardBlend = 1.0f;// +frac;
-        upBlend = 0.0f;		// -frac;
-    }
+	frac = transAngles.pitch / 90.0f; //HUMANHEAD rww
+	if ( frac > 0.0f ) {
+		downBlend		= frac;
+		forwardBlend	= 1.0f - frac;
+		upBlend			= 0.0f;
+	} else {
+		downBlend		= 0.0f;
+		forwardBlend	= 1.0f + frac;
+		upBlend			= -frac;
+	}
 
-	animator.CurrentAnim( ANIMCHANNEL_TORSO )->SetSyncedAnimWeight( 0, downBlend );
+    animator.CurrentAnim( ANIMCHANNEL_TORSO )->SetSyncedAnimWeight( 0, downBlend );
 	animator.CurrentAnim( ANIMCHANNEL_TORSO )->SetSyncedAnimWeight( 1, forwardBlend );
 	animator.CurrentAnim( ANIMCHANNEL_TORSO )->SetSyncedAnimWeight( 2, upBlend );
 
@@ -11485,72 +10024,6 @@ bool idPlayer::IsSoundChannelPlaying( const s_channelType channel )
 	return false;
 }
 
-/*
-==============
-idPlayer::InitTeleportTarget
-==============
-*/
-void idPlayer::InitTeleportTarget()
-{
-	idVec3 origin;
-	int targetAnim;
-	idStr jointName;
-
-	skinTelepadCrouch = declManager->FindSkin( "skins/vr/padcrouch" );
-
-	commonVr->teleportButtonCount = 0;
-
-	common->Printf( "Initializing teleport target\n" );
-	origin = GetPhysics()->GetOrigin() + (origin + modelOffset) * GetPhysics()->GetAxis();
-
-    teleportTarget = (idAnimatedEntity*)gameLocal.FindEntity( "vrTeleportTarget" );
-	if ( !teleportTarget )
-	{
-		teleportTarget = (idAnimatedEntity*)gameLocal.SpawnEntityType( idAnimatedEntity::Type, NULL );
-		teleportTarget->SetName( "vrTeleportTarget" );
-	}
-	teleportTarget->SetModel( "telepad1" );
-	teleportTarget->SetOrigin( origin );
-	teleportTarget->SetAxis( GetPhysics()->GetAxis() );
-
-	idAnimatedEntity *duplicate;
-	if (duplicate = (idAnimatedEntity*)gameLocal.FindEntity("vrTeleportTarget2"))
-	{
-		common->Warning("Loading game which had a duplicate vrTeleportTarget.");
-		duplicate->PostEventMS(&EV_Remove, 0);
-	}
-
-	teleportTargetAnimator = teleportTarget->GetAnimator();
-	targetAnim = teleportTargetAnimator->GetAnim( "idle" );
-	//common->Printf( "Teleport target idle anim # = %d\n", targetAnim );
-	teleportTargetAnimator->PlayAnim( ANIMCHANNEL_ALL, targetAnim, gameLocal.time, 0 );
-
-	teleportPadJoint = teleportTargetAnimator->GetJointHandle( "pad" );
-
-	if ( teleportPadJoint == INVALID_JOINT )
-	{
-		common->Printf( "Unable to find joint teleportPadJoint \n" );
-	}
-
-	teleportCenterPadJoint = teleportTargetAnimator->GetJointHandle( "centerpad" );
-
-	if ( teleportCenterPadJoint == INVALID_JOINT )
-	{
-		common->Printf( "Unable to find joint teleportCenterPadJoint \n" );
-	}
-
-	for ( int i = 0; i < 24; i++ )
-	{
-		jointName = va( "padbeam%d", i + 1 );
-		teleportBeamJoint[i] = teleportTargetAnimator->GetJointHandle( jointName.c_str() );
-		if ( teleportBeamJoint[i] == INVALID_JOINT )
-		{
-			common->Printf( "Unable to find teleportBeamJoint %s\n", jointName.c_str() );
-		}
-	}
-
-}
-
 /* Carl
 =====================
 idPlayer::SetAAS
@@ -11656,6 +10129,7 @@ idPlayer::Move
 ==============
 */
 void idPlayer::Move( void ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	float newEyeOffset;
 	idVec3 oldOrigin;
 	idVec3 oldVelocity;
@@ -11804,7 +10278,7 @@ void idPlayer::Move( void ) {
                         clipAxis = physicsObj.GetClipModel()->GetAxis();
 
 
-                        gameLocal.clip.Translation( trace, testOrigin, testOrigin, clip, clipAxis, MASK_SHOT_RENDERMODEL /* CONTENTS_SOLID */, this );
+                        gameLocal.clip.Translation( trace, testOrigin, testOrigin, clip, clipAxis, MASK_SHOT_RENDERMODEL, this );
                         if ( trace.fraction < 1.0f )
                         {
 
@@ -11981,6 +10455,7 @@ void idPlayer::Move( void ) {
         }
         timescale.SetFloat( 0.5f + 0.5f * speedFactor );
     }
+*/
 }
 
 /*
@@ -12153,6 +10628,7 @@ idPlayer::UpdateHud
 ==============
 */
 void idPlayer::UpdateHud( void ) {
+/*	HUMANHEAD pdm: Overridden
 	idPlayer *aimed;
 
 	if ( !hud ) {
@@ -12199,7 +10675,7 @@ void idPlayer::UpdateHud( void ) {
 	}
 
 	if ( gameLocal.realClientTime == lastMPAimTime ) {
-		if (MPAim != -1 && gameLocal.mpGame.IsGametypeTeamBased()  /* CTF */
+		if (MPAim != -1 && gameLocal.mpGame.IsGametypeTeamBased()
 				&& gameLocal.entities[ MPAim ] && gameLocal.entities[ MPAim ]->IsType(idPlayer::Type)
 				&& static_cast< idPlayer * >(gameLocal.entities[ MPAim ])->team == team) {
                 aimed = static_cast< idPlayer * >(gameLocal.entities[ MPAim ]);
@@ -12233,6 +10709,7 @@ void idPlayer::UpdateHud( void ) {
 	} else {
 		hud->SetStateString( "hudLag", "0" );
 	}
+*/
 }
 
 /*
@@ -12375,6 +10852,7 @@ Called every tic for each player
 ==============
 */
 void idPlayer::Think( void ) {
+/*	HUMANHEAD pdm: Overridden
 	renderEntity_t *headRenderEnt;
 
 	UpdatePlayerIcons();
@@ -12462,7 +10940,7 @@ void idPlayer::Think( void ) {
 		centerView.Init( gameLocal.time, 200, viewAngles.pitch, 0 );
 	}
 
-	/* No Zoom in VR
+	//TODO: No Zoom in VR
 	// zooming
 	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM ) {
 		if ( ( usercmd.buttons & BUTTON_ZOOM ) && weapon ) {
@@ -12470,7 +10948,7 @@ void idPlayer::Think( void ) {
 		} else {
 			zoomFov.Init( gameLocal.time, 200.0f, zoomFov.GetCurrentValue( gameLocal.time ), DefaultFov() );
 		}
-	}*/
+	}
 
 	// if we have an active gui, we will unrotate the view angles as
 	// we turn the mouse movements into gui events
@@ -12620,7 +11098,7 @@ void idPlayer::Think( void ) {
 
 	}
 	if ( vr_flashlightMode.IsModified() || lastFlashlightMode != commonVr->GetCurrentFlashlightMode() )
-	{
+	{*
 		if ( vr_flashlightMode.IsModified() )
 		{
 			commonVr->currentFlashlightMode = vr_flashlightMode.GetInteger();
@@ -12772,7 +11250,7 @@ void idPlayer::Think( void ) {
 			idSphere tempSphere( origin, sqrtf(slots[i].radiusSq) );
 			gameRenderWorld->DebugSphere( colorWhite, tempSphere, 18, true );
 		}
-	}
+	}*/
 }
 
 /*
@@ -13018,6 +11496,10 @@ idPlayer::Kill
 ==============
 */
 void idPlayer::Kill( bool delayRespawn, bool nodamage ) {
+	if (noclip) {	// HUMANHEAD pdm: Because of deathwalk, this shouldn't be allowed
+		return;
+	}
+
 	if ( spectating ) {
 		SpectateFreeFly( false );
 	} else if ( health > 0 ) {
@@ -13043,90 +11525,8 @@ idPlayer::Killed
 ==================
 */
 void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-	float delay;
-
-	assert( !gameLocal.isClient );
-
-	// stop taking knockback once dead
-	fl.noknockback = true;
-	if ( health < -999 ) {
-		health = -999;
-	}
-
-	if ( AI_DEAD ) {
-		AI_PAIN = true;
-		return;
-	}
-
-	heartInfo.Init( 0, 0, 0, BASE_HEARTRATE );
-	AdjustHeartRate( DEAD_HEARTRATE, 10.0f, 0.0f, true );
-
-	if ( !g_testDeath.GetBool() ) {
-		playerView.Fade( colorBlack, 12000 );
-	}
-
-	AI_DEAD = true;
-	SetAnimState( ANIMCHANNEL_LEGS, "Legs_Death", 4 );
-	SetAnimState( ANIMCHANNEL_TORSO, "Torso_Death", 4 );
-	SetWaitState( "" );
-
-	animator.ClearAllJoints();
-
-	if ( StartRagdoll() ) {
-		pm_modelView.SetInteger( 0 );
-		minRespawnTime = gameLocal.time + RAGDOLL_DEATH_TIME;
-		maxRespawnTime = minRespawnTime + MAX_RESPAWN_TIME;
-	} else {
-		// don't allow respawn until the death anim is done
-		// g_forcerespawn may force spawning at some later time
-		delay = spawnArgs.GetFloat( "respawn_delay" );
-		minRespawnTime = gameLocal.time + SEC2MS( delay );
-		maxRespawnTime = minRespawnTime + MAX_RESPAWN_TIME;
-	}
-
-	physicsObj.SetMovementType( PM_DEAD );
-	StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
-	StopSound( SND_CHANNEL_BODY2, false );
-
-	fl.takedamage = true;		// can still be gibbed
-
-    // get rid of weapons
-    for( int h = 0; h < 2; h++ )
-        hands[ h ].weapon->OwnerDied();
-
-    // drop the weapons as items
-    DropWeapons( true );
-
-	// drop the flag if player was carrying it
-	if (gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased() && carryingFlag) {
-		DropFlag();
-	}
-
-	if ( !g_testDeath.GetBool() ) {
-		LookAtKiller( inflictor, attacker );
-	}
-
-	if ( gameLocal.isMultiplayer || g_testDeath.GetBool() ) {
-		idPlayer *killer = NULL;
-		// no gibbing in MP. Event_Gib will early out in MP
-		if ( attacker->IsType( idPlayer::Type ) ) {
-			killer = static_cast<idPlayer*>(attacker);
-			if ( health < -20 || killer->PowerUpActive( BERSERK ) ) {
-				gibDeath = true;
-				gibsDir = dir;
-				gibsLaunched = false;
-			}
-		}
-		gameLocal.mpGame.PlayerDeath( this, killer, isTelefragged );
-	} else {
-		physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_MONSTERCLIP );
-	}
-
-	ClearPowerUps();
-
-	UpdateVisuals();
-
-	isChatting = false;
+/*	HUMANHEAD pdm: Overridden
+*/
 }
 
 /*
@@ -13164,11 +11564,11 @@ int idPlayer::GetAnim( int channel, const char* animname )
 
     if( channel == ANIMCHANNEL_HEAD )
     {
-        if( !head )
+        if( !head.GetEntity() )
         {
             return 0;
         }
-        animatorPtr = head->GetAnimator();
+        animatorPtr = head.GetEntity()->GetAnimator();
     }
     else
     {
@@ -13245,13 +11645,19 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	int		armorSave;
 
 	damageDef->GetInt( "damage", "20", damage );
-	damage = GetDamageForLocation( damage, location );
+	if( !damageDef->GetInt( "noscaling" ) ) {	//HUMANHEAD bjk
+		damage = GetDamageForLocation( damage, location );
+	}	//HUMANHEAD END
 
 	idPlayer *player = attacker->IsType( idPlayer::Type ) ? static_cast<idPlayer*>(attacker) : NULL;
+
+/* HUMANHEAD CJR:	Commented out for now, so the skill levels don't influcent our basic damage testing
+					we can base our DDA system upon this code, though
+
 	if ( !gameLocal.isMultiplayer ) {
 		if ( inflictor != gameLocal.world ) {
 			switch ( g_skill.GetInteger() ) {
-				case 0:
+				case 0: 
 					damage *= 0.80f;
 					if ( damage < 1 ) {
 						damage = 1;
@@ -13268,17 +11674,29 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 			}
 		}
 	}
+*/
+
+	int originalDamage = damage; // HUMANHEAD CJR:  Ensuring that damageScale doesn't scale to zero
 
 	damage *= damageScale;
 
+	if ( damage == 0 && originalDamage != 0 ) { // HUMANHEAD CJR: Don't let damage scale to zero (unless the original damage was zero)
+		damage = 1;
+	} // HUMANHEAD END
+
 	// always give half damage if hurting self
 	if ( attacker == this ) {
+		//HUMANHEAD rww - no.
+		/*
 		if ( gameLocal.isMultiplayer ) {
 			// only do this in mp so single player plasma and rocket splash is very dangerous in close quarters
 			damage *= damageDef->GetFloat( "selfDamageScale", "0.5" );
 		} else {
 			damage *= damageDef->GetFloat( "selfDamageScale", "1" );
 		}
+		*/
+		damage *= damageDef->GetFloat( "selfDamageScale", "1" );
+		//HUMANHEAD END
 	}
 
 	// check for completely getting out of the damage
@@ -13287,16 +11705,14 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 		if ( godmode ) {
 			damage = 0;
 		}
-		
-		//Invulnerability is just like god mode
-		if (PowerUpActive(INVULNERABILITY)) {
-			damage = 0;
-		}
 	}
 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
 
+#if HUMANHEAD // HUMANHEAD CJR:  No armor in Prey
+	armorSave = 0;
+#else /*
 	// save some from armor
 	if ( !damageDef->GetBool( "noArmor" ) ) {
 		float armor_protection;
@@ -13319,15 +11735,17 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	} else {
 		armorSave = 0;
 	}
+*/
+#endif // HUMANHEAD END
 
 	// check for team damage
-	if (gameLocal.mpGame.IsGametypeTeamBased()  /* CTF */
-		&& !gameLocal.serverInfo.GetBool("si_teamDamage")
-		&& !damageDef->GetBool("noTeam")
+	if ( gameLocal.gameType == GAME_TDM
+		&& !gameLocal.serverInfo.GetBool( "si_teamDamage" )
+		&& !damageDef->GetBool( "noTeam" )
 		&& player
 		&& player != this		// you get self damage no matter what
-		&& player->team == team) {
-		damage = 0;
+		&& player->team == team ) {
+			damage = 0;
 	}
 
 	*health = damage;
@@ -13418,15 +11836,14 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	int			armorSave;
 	int			knockback;
 	idVec3		damage_from;
-	idVec3		localDamageVector;
+	idVec3		localDamageVector;	
 	float		attackerPushScale;
-	SetTimeState ts(timeGroup);
 
 	// damage is only processed on server
 	if ( gameLocal.isClient ) {
 		return;
 	}
-
+	
 	if ( !fl.takedamage || noclip || spectating || gameLocal.inCinematic ) {
 		return;
 	}
@@ -13436,16 +11853,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	}
 	if ( !attacker ) {
 		attacker = gameLocal.world;
-	}
-
-	if ( attacker->IsType( idAI::Type ) ) {
-		if ( PowerUpActive( BERSERK ) ) {
-			return;
-		}
-		// don't take damage from monsters during influences
-		if ( influenceActive != 0 ) {
-			return;
-		}
 	}
 
 	const idDeclEntityDef *damageDef = gameLocal.FindEntityDef( damageDefName, false );
@@ -13460,53 +11867,44 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 
 	CalcDamagePoints( inflictor, attacker, &damageDef->dict, damageScale, location, &damage, &armorSave );
 
-    // determine knockback
-    if ( vr_knockback.GetBool() )
-    {
-        // determine knockback
-        damageDef->dict.GetInt("knockback", "20", knockback);
+	// determine knockback
+	damageDef->dict.GetInt( "knockback", "20", knockback );
 
-        if (knockback != 0 && !fl.noknockback) {
-            if (attacker == this) {
-                damageDef->dict.GetFloat("attackerPushScale", "0", attackerPushScale);
-            } else {
-                attackerPushScale = 1.0f;
-            }
+	//HUMANHEAD: aob - added surface type check
+	if( physicsObj.GetGroundMatterType() == SURFTYPE_WALLWALK ) {	// no more knockback when dead
+		knockback = 0;
+	}
+	// HUMANHEAD END
 
-            kick = dir;
-            kick.Normalize();
-            kick *= g_knockback.GetFloat() * knockback * attackerPushScale / 200.0f;
-            physicsObj.SetLinearVelocity(physicsObj.GetLinearVelocity() + kick);
+	if ( knockback != 0 && !fl.noknockback ) {
+		if ( attacker == this ) {
+			damageDef->dict.GetFloat( "attackerPushScale", "0", attackerPushScale );
+		} else {
+			attackerPushScale = 1.0f;
+		}
 
-            // set the timer so that the player can't cancel out the movement immediately
-            physicsObj.SetKnockBack(idMath::ClampInt(50, 200, knockback * 2));
-        }
-    }
+		kick = dir;
+		kick.Normalize();
+		kick *= g_knockback.GetFloat() * knockback * attackerPushScale / 200.0f;
+		physicsObj.SetLinearVelocity( physicsObj.GetLinearVelocity() + kick );
 
+		// set the timer so that the player can't cancel out the movement immediately
+		physicsObj.SetKnockBack( idMath::ClampInt( 50, 200, knockback * 2 ) );
+	}
+
+/* HUMANHEAD aob: we have no armour
 	// give feedback on the player view and audibly when armor is helping
 	if ( armorSave ) {
 		inventory.armor -= armorSave;
-
-		if (inventory.armor == 0)
-		{
-			if ( IsType( idPlayer::Type ) ) {
-				common->HapticEvent("shield_break", 0, 0, 100, 0, 0);
-			}
-		}
 
 		if ( gameLocal.time > lastArmorPulse + 200 ) {
 			StartSound( "snd_hitArmor", SND_CHANNEL_ITEM, 0, false, NULL );
 		}
 		lastArmorPulse = gameLocal.time;
 	}
-
+	
 	if ( damageDef->dict.GetBool( "burn" ) ) {
 		StartSound( "snd_burn", SND_CHANNEL_BODY3, 0, false, NULL );
-
-		if ( IsType( idPlayer::Type ) ) {
-			common->HapticEvent("fire", 0, 0, 50, 0, 0);
-		}
-
 	} else if ( damageDef->dict.GetBool( "no_air" ) ) {
 		if ( !armorSave && health > 0 ) {
 			StartSound( "snd_airGasp", SND_CHANNEL_ITEM, 0, false, NULL );
@@ -13514,14 +11912,15 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	}
 
 	if ( g_debugDamage.GetInteger() ) {
-		gameLocal.Printf( "client:%i health:%i damage:%i armor:%i\n",
+		gameLocal.Printf( "client:%i health:%i damage:%i armor:%i\n", 
 			entityNumber, health, damage, armorSave );
 	}
+*/
 
 	// move the world direction vector to local coordinates
 	damage_from = dir;
 	damage_from.Normalize();
-
+	
 	viewAxis.ProjectVector( damage_from, localDamageVector );
 
 	// add to the damage inflicted on a player this frame
@@ -13534,30 +11933,37 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	// do the damage
 	if ( damage > 0 ) {
 
+/* HUMANHEAD CJR:  Commented out their dynamic health scaling for testing purposes. 
+				// We can possibly base our system upon this, though
 		if ( !gameLocal.isMultiplayer ) {
-			float scale = new_g_damageScale;
+			float scale = g_damageScale.GetFloat();
 			if ( g_useDynamicProtection.GetBool() && g_skill.GetInteger() < 2 ) {
 				if ( gameLocal.time > lastDmgTime + 500 && scale > 0.25f ) {
 					scale -= 0.05f;
-					new_g_damageScale = scale;
+					g_damageScale.SetFloat( scale );
 				}
 			}
 
 			if ( scale > 0.0f ) {
 				damage *= scale;
 			}
-
-			if( IsLocallyControlled() )
-			{
-				ControllerShakeFromDamage( damage, dir );
-			}
 		}
+*/
 
 		if ( damage < 1 ) {
 			damage = 1;
 		}
 
+		int oldHealth = health;
 		health -= damage;
+
+		//HUMANHEAD rww - don't die in the shuttle, or while in dialog mode
+		if (bDialogDamageMode || (gameLocal.isMultiplayer && InVehicle())) {
+			if (health <= 0) {
+				health = 1;
+			}
+		}
+		//HUMANHEAD END
 
 		if ( health <= 0 ) {
 
@@ -13591,31 +11997,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		}
 	}
 
-	if ( IsType( idPlayer::Type )) {
-		idVec3 bodyOrigin = vec3_zero;
-		idMat3 bodyAxis;
-		GetViewPos( bodyOrigin, bodyAxis );
-		idAngles bodyAng = bodyAxis.ToAngles();
-
-		float pitch = damage_from.ToPitch();
-		if (pitch > 180)
-			pitch -= 360;
-		float yHeight = idMath::ClampFloat(-0.4f, 0.4f, -pitch / 90.0f);
-        idAngles damageYaw(0, 180 + (damage_from.ToYaw() - bodyAng.yaw), 0);
-        damageYaw.Normalize360();
-
-		//Ensure a decent level of haptic feedback for any damage
-		float hapticLevel = 80 + Min<float>(damage * 4, 120.0);
-
-		//Indicate head damage if appropriate
-		if ( location >= 0 && location < damageGroups.Size() &&
-				strstr( damageGroups[location].c_str(), "head" ) ) {
-			common->HapticEvent(damageDefName, 4, 0, hapticLevel, damageYaw.yaw, yHeight);
-		} else {
-            common->HapticEvent(damageDefName, 0, 0, hapticLevel, damageYaw.yaw, yHeight);
-        }
-	}
-
 	lastDamageDef = damageDef->Index();
 	lastDamageDir = damage_from;
 	lastDamageLocation = location;
@@ -13627,6 +12008,7 @@ idPlayer::Teleport
 ============
 */
 void idPlayer::Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) {
+/*	HUMANHEAD cjr: overridden
 	idVec3 org;
 
     for( int h = 0; h < 2; h++ )
@@ -13672,7 +12054,8 @@ void idPlayer::Teleport( const idVec3 &origin, const idAngles &angles, idEntity 
 
 	if (PowerUpActive(HELLTIME)) {
 		StopHelltime();
-	}
+	}	
+*/
 }
 
 /*
@@ -13680,8 +12063,12 @@ void idPlayer::Teleport( const idVec3 &origin, const idAngles &angles, idEntity 
 idPlayer::SetPrivateCameraView
 ====================
 */
-void idPlayer::SetPrivateCameraView( idCamera *camView ) {
+void idPlayer::SetPrivateCameraView( idCamera *camView, bool noHide ) {
 	privateCameraView = camView;
+
+	//CancelEvents(&EV_SetOverlayMaterial); //HUMANHEAD rww
+	//playerView.SetViewOverlayMaterial( NULL );	bjk: removed and is handled by scripters
+
 	if ( camView ) {
 		StopFiring();
 		Hide();
@@ -13782,6 +12169,17 @@ idAngles idPlayer::GunTurningOffset( void ) {
 	if ( gameLocal.framenum < NUM_LOGGED_VIEW_ANGLES ) {
 		return a;
 	}
+	
+	
+	if (bBufferNextSnapAngles) { //HUMANHEAD rww - teleported
+		return a;
+	}
+
+	//HUMANHEAD rww - for other clients, do not add gun offset, it isn't predicted well
+	if (gameLocal.isMultiplayer && !gameLocal.isServer && gameLocal.localClientNum != -1 && gameLocal.localClientNum != entityNumber) {
+		return a;
+	}
+	//HUMANHEAD END
 
 	idAngles current = loggedViewAngles[ gameLocal.framenum & (NUM_LOGGED_VIEW_ANGLES-1) ];
 
@@ -13789,9 +12187,16 @@ idAngles idPlayer::GunTurningOffset( void ) {
 	int weaponAngleOffsetAverages;
 	float weaponAngleOffsetScale, weaponAngleOffsetMax;
 
-	//weapon->GetWeaponAngleOffsets( &weaponAngleOffsetAverages, &weaponAngleOffsetScale, &weaponAngleOffsetMax );
     // Carl: todo dual wielding
-    hands[vr_weaponHand.GetInteger()].weapon->GetWeaponAngleOffsets( &weaponAngleOffsetAverages, &weaponAngleOffsetScale, &weaponAngleOffsetMax );
+#ifdef HUMANHEAD //jsh Since we constantly respawn our weapons, there's a better chance the entity will be invalid
+	if( hands[vr_weaponHand.GetInteger()].weapon.IsValid() ) {
+		hands[vr_weaponHand.GetInteger()].weapon->GetWeaponAngleOffsets( &weaponAngleOffsetAverages, &weaponAngleOffsetScale, &weaponAngleOffsetMax );
+	} else {
+		return a;
+	}
+#else
+	hands[vr_weaponHand.GetInteger()].weapon->GetWeaponAngleOffsets( &weaponAngleOffsetAverages, &weaponAngleOffsetScale, &weaponAngleOffsetMax );
+#endif
 
 	av = current;
 
@@ -13838,9 +12243,16 @@ idVec3	idPlayer::GunAcceleratingOffset( void ) {
 
 	ofs.Zero();
 
-	//weapon->GetWeaponTimeOffsets( &weaponOffsetTime, &weaponOffsetScale );
     // Carl: todo dual wielding
-    hands[vr_weaponHand.GetInteger()].weapon->GetWeaponTimeOffsets( &weaponOffsetTime, &weaponOffsetScale );
+#ifdef HUMANHEAD //jsh Since we constantly respawn our weapons, there's a better chance the entity will be invalid
+	if( hands[vr_weaponHand.GetInteger()].weapon.IsValid() ) {
+		hands[vr_weaponHand.GetInteger()].weapon->GetWeaponTimeOffsets( &weaponOffsetTime, &weaponOffsetScale );
+	} else {
+		return ofs;
+	}
+#else
+	hands[vr_weaponHand.GetInteger()].weapon->GetWeaponTimeOffsets( &weaponOffsetTime, &weaponOffsetScale );
+#endif
 
 	int stop = currentLoggedAccel - NUM_LOGGED_ACCELS;
 	if ( stop < 0 ) {
@@ -13886,7 +12298,7 @@ void idPlayer::UpdateLaserSight( int hand )
     bool hideSight = false;
 
     bool traceHit = false;
-    idWeapon* weapon = hands[ hand ].weapon;
+    hhWeapon* weapon = hands[ hand ].weapon.GetEntity();
 
     // In Multiplayer, weapon might not have been spawned yet.
     if( weapon ==  NULL )
@@ -13905,12 +12317,12 @@ void idPlayer::UpdateLaserSight( int hand )
          !weapon->ShowCrosshair() ||
          AI_DEAD ||
          weapon->IsHidden() ||
-         weapon->hideOffset != 0 ||						// Koz - turn off lasersight If gun is lowered ( in gui ).
+         //TODO:VR weapon->hideOffset != 0 ||						// Koz - turn off lasersight If gun is lowered ( in gui ).
          commonVr->handInGui ||							// turn off lasersight if hand is in gui.
          gameLocal.inCinematic ||
          game->IsPDAOpen() ||							// Koz - turn off laser sight if using pda.
-         weapon->GetGrabberState() >= 2 ||	// Koz turn off laser sight if grabber is dragging an entity
-         showTeleport || !weapon->GetMuzzlePositionWithHacks(muzzleOrigin, muzzleAxis)) // no lasersight for fists,grenades,soulcube etc
+    //TODO:VR weapon->GetGrabberState() >= 2 ||	// Koz turn off laser sight if grabber is dragging an entity
+         showTeleport) // no lasersight for fists,grenades,soulcube etc
 
     {
         hideSight = !showTeleport;
@@ -13953,7 +12365,7 @@ void idPlayer::UpdateLaserSight( int hand )
     // calculate the beam origin and length.
     start = muzzleOrigin - muzzleAxis[0] * 2.0f;
 
-    if ( vr_laserSightUseOffset.GetBool() ) start += weapon->laserSightOffset * muzzleAxis;
+    //TODO:if ( vr_laserSightUseOffset.GetBool() ) start += weapon->laserSightOffset * muzzleAxis;
 
     end = start + muzzleAxis[0] * beamLength;
 
@@ -14296,7 +12708,6 @@ void idPlayer::CalculateViewWeaponPos( int hand, idVec3& origin, idMat3& axis )
 // Carl: TODO Dual wielding
 void idPlayer::CalculateViewWeaponPosVR( int hand, idVec3 &origin, idMat3 &axis )
 {
-    weapon_t currentWeaponEnum = WEAPON_NONE;
     idVec3	gunOrigin;
     idVec3	originOffset = vec3_zero;
     idAngles hmdAngles;
@@ -14305,11 +12716,10 @@ void idPlayer::CalculateViewWeaponPosVR( int hand, idVec3 &origin, idMat3 &axis 
     idVec3	absolutePosition;
     idQuat	weaponPitch;
 
-    currentWeaponEnum = hands[ hand ].weapon->IdentifyWeapon();
-    idWeapon* weapon = hands[ hand ].weapon;
+    hhWeapon* weapon = hands[ hand ].weapon.GetEntity();
     int currentWeaponIndex = hands[ hand ].currentWeapon;
 
-    if ( hands[hand].holdingFlashlight() || weapon->isPlayerFlashlight ) return;
+    if ( hands[hand].holdingFlashlight() ) return;
 
     gunOrigin = GetEyePosition();
 
@@ -14320,62 +12730,15 @@ void idPlayer::CalculateViewWeaponPosVR( int hand, idVec3 &origin, idMat3 &axis 
     idVec3		gravity = physicsObj.GetGravityNormal();
 
 
-    if ( currentWeaponEnum != WEAPON_PDA )
-    {
-        hands[hand].PDAfixed = false; // release the PDA if weapon has been switched.
-    }
+    hands[hand].PDAfixed = false; // release the PDA if weapon has been switched.
 
-    if ( !commonVr->VR_USE_MOTION_CONTROLS || ( vr_PDAfixLocation.GetBool() && currentWeaponEnum == WEAPON_PDA ) ) // non-motion control & fixed pda positioning.
+    if ( !commonVr->VR_USE_MOTION_CONTROLS ) // non-motion control & fixed pda positioning.
     {
 
         idMat3 pdaPitch = idAngles( vr_pdaPitch.GetFloat(), 0.0f, 0.0f ).ToMat3();
 
         axis = bodyAxis;
         origin = gunOrigin;
-
-        if ( currentWeaponEnum == WEAPON_PDA ) //&& weapon->GetStatus() == WP_READY )
-        {
-
-            if ( hands[ hand ].PDAfixed )
-            { // pda has already been locked in space, use stored values
-
-                origin = PDAorigin;
-                axis = PDAaxis;
-
-
-                //if the player has moved ( or been moved, if on an elevator or lift )
-                //move the PDA to maintain a constant relative position
-                idVec3 curPlayerPos = physicsObj.GetOrigin();
-                origin -= ( hands[hand].playerPdaPos - curPlayerPos ) + commonVr->fixedPDAMoveDelta;
-                //common->Printf( "playerPDA x %f y %f  currentPlay x %f y %f  fixMoveDel x %f y %f\n", playerPdaPos.x, playerPdaPos.y, curPlayerPos.x, curPlayerPos.y, commonVr->fixedPDAMoveDelta.x, commonVr->fixedPDAMoveDelta.y );
-
-                SetHandIKPos( hand, origin, axis, pdaPitch.ToQuat() , false );
-                originOffset = weapon->weaponHandDefaultPos[hand];
-                origin -= originOffset * axis;
-                origin += handWeaponAttacherToDefaultOffset[hand][currentWeaponIndex] * axis; // add the attacher offsets
-            }
-            else
-            { // fix the PDA in space, set flag and store position
-
-                hands[ hand ].playerPdaPos = physicsObj.GetOrigin();
-
-                origin = gunOrigin;
-                origin += vr_pdaPosX.GetFloat() * bodyAxis[0] + vr_pdaPosY.GetFloat() *  bodyAxis[1] + vr_pdaPosZ.GetFloat() * bodyAxis[2];
-                PDAorigin = origin;
-                PDAaxis = pdaPitch * bodyAxis;
-                axis = PDAaxis;
-                hands[ hand ].PDAfixed = true;
-
-                SetHandIKPos( hand, origin, axis, pdaPitch.ToQuat(), false );
-                originOffset = weapon->weaponHandDefaultPos[hand];
-                origin -= originOffset * axis;
-                origin += handWeaponAttacherToDefaultOffset[hand][currentWeaponIndex] * axis; // add the attacher offsets
-
-
-                // the non weapon hand was set to the PDA fixed location, now fall thru and normal motion controls will place the pointer hand location
-
-            }
-        }
     }
 
 
@@ -14391,13 +12754,12 @@ void idPlayer::CalculateViewWeaponPosVR( int hand, idVec3 &origin, idMat3 &axis 
 	idVec3 attacherToDefault = vec3_zero;
 	// idMat3 rot180 = idAngles( 0.0f, 180.0f, 0.0f ).ToMat3();
 
-	if ( !hands[ hand ].PDAfixed && currentWeaponEnum == WEAPON_PDA )
+	if ( !hands[ hand ].PDAfixed )
 	{
 		// do the non-PDA hand first (the hand with the pointy finger)
 		int fingerHand = 1 - hand;
 
 		attacherToDefault = handWeaponAttacherToDefaultOffset[fingerHand][currentWeaponIndex];
-		originOffset = weapon->weaponHandDefaultPos[fingerHand];
 		commonVr->MotionControlGetHand( fingerHand, hands[fingerHand].motionPosition, hands[fingerHand].motionRotation );
 
 		weaponPitch = idAngles( vr_motionWeaponPitchAdj.GetFloat(), 0.f, 0.0f ).ToQuat();
@@ -14436,7 +12798,6 @@ void idPlayer::CalculateViewWeaponPosVR( int hand, idVec3 &origin, idMat3 &axis 
 	// NOT the PDA
 
 	attacherToDefault = handWeaponAttacherToDefaultOffset[hand][currentWeaponIndex];
-	originOffset = weapon->weaponHandDefaultPos[hand];
 
 	commonVr->MotionControlGetHand( hand, hands[ hand ].motionPosition, hands[ hand ].motionRotation );
 
@@ -14464,46 +12825,11 @@ void idPlayer::CalculateViewWeaponPosVR( int hand, idVec3 &origin, idMat3 &axis 
 
 	weapOrigin += hands[ hand ].motionPosition * weapAxis;
 
-	if ( currentWeaponEnum != WEAPON_ARTIFACT && currentWeaponEnum != WEAPON_SOULCUBE )
-	{
-		weapAxis = hands[ hand ].motionRotation.ToMat3() * weapAxis;
-	}
-	else
-	{
-		weapAxis = idAngles( 0.0f ,viewAngles.yaw , 0.0f).ToMat3();
-	}
+	weapAxis = hands[ hand ].motionRotation.ToMat3() * weapAxis;
 
 	//DebugCross( weapOrigin, weapAxis, colorYellow );
 
-	if ( currentWeaponEnum != WEAPON_PDA )
-	{
-		hands[hand].TrackWeaponDirection( weapOrigin );
-		//GB why do both hands here
-		//hands[1 - hand].TrackWeaponDirection( weapOrigin );
-		weapon->CalculateHideRise( weapOrigin, weapAxis );
-		//check for melee hit?
-	}
-	else if( !hands[ hand ].PDAfixed )
-	{
-		// Koz FIXME hack hack hack this is getting so ungodly ugly.
-		// Lovely.  I forgot to correct the origin for the PDA model when I switched
-		// to always showing the body, so now when holding the PDA it doesn't align with your controller.
-		// will fix the assets later but for now hack this correction in.
-
-		/* GB Debugger Change Values
-		 * float _vr_pdaPosX = 0.0;
-		float _vr_pdaPosY = 0.0;
-		float _vr_pdaPosZ = 0.0;
-		if(_vr_pdaPosX != 0.0f && _vr_pdaPosX != vr_pdaPosX.GetFloat())
-			cvarSystem->SetCVarFloat("vr_pdaPosX", _vr_pdaPosX);
-		if(_vr_pdaPosY != 0.0f && _vr_pdaPosY != vr_pdaPosY.GetFloat())
-			cvarSystem->SetCVarFloat("vr_pdaPosY", _vr_pdaPosY);
-		if(_vr_pdaPosZ != 0.0f && _vr_pdaPosZ != vr_pdaPosZ.GetFloat())
-			cvarSystem->SetCVarFloat("vr_pdaPosZ", _vr_pdaPosZ);
-		*/
-		const idVec3 pdaHackOrigin[2] { idVec3( vr_pdaPosX.GetFloat(), vr_pdaPosY.GetFloat(), vr_pdaPosZ.GetFloat() ), idVec3( vr_pdaPosX.GetFloat(), -vr_pdaPosY.GetFloat(), vr_pdaPosZ.GetFloat() ) };
-		weapOrigin += pdaHackOrigin[hand] * weapAxis;
-	}
+	hands[hand].TrackWeaponDirection( weapOrigin );
 
 	idAngles motRot = hands[ hand ].motionRotation.ToAngles();
 	motRot.yaw -= commonVr->bodyYawOffset;
@@ -14514,22 +12840,7 @@ void idPlayer::CalculateViewWeaponPosVR( int hand, idVec3 &origin, idMat3 &axis 
 
 	if ( hands[ hand ].PDAfixed ) return;
 
-	if ( currentWeaponEnum == WEAPON_PDA )
-	{
-
-		PDAaxis = weapAxis;
-		PDAorigin = weapOrigin;
-		if ( hands[ hand ].wasPDA == false )
-		{
-			SetFlashHandPose(); // Call set flashlight hand pose script function
-			SetWeaponHandPose();
-			hands[ hand ].wasPDA = true;
-		}
-	}
-	else
-	{
-		hands[hand].wasPDA = false;
-	}
+	hands[hand].wasPDA = false;
 
 	axis = weapAxis;
 	origin = weapOrigin;
@@ -14567,6 +12878,7 @@ idPlayer::OffsetThirdPersonView
 ===============
 */
 void idPlayer::OffsetThirdPersonView( float angle, float range, float height, bool clip ) {
+/*	HUMANHEAD pdm: Overridden
 	idVec3			view;
 	idVec3			focusAngles;
 	trace_t			trace;
@@ -14630,6 +12942,7 @@ void idPlayer::OffsetThirdPersonView( float angle, float range, float height, bo
 	renderView->vieworg = view;
 	renderView->viewaxis = angles.ToMat3() * physicsObj.GetGravityAxis();
 	renderView->viewID = 0;
+*/
 }
 
 // Carl:
@@ -14648,50 +12961,9 @@ bool idPlayer::GetHandOrHeadPositionWithHacks( int hand, idVec3& origin, idMat3&
     else
         weaponHand = vr_weaponHand.GetInteger();
 
-    idWeapon* weapon = hands[ weaponHand ].weapon;
-    // In Multiplayer, weapon might not have been spawned yet.
-    if (weapon == NULL || hand == TP_HAND_HEAD)
-    {
-        origin = commonVr->lastViewOrigin; // Koz fixme set the origin and axis to the players view
-        axis = commonVr->lastViewAxis;
-        return false;
-    }
-    weapon_t currentWeap = weapon->IdentifyWeapon();
-    // Carl: weapon hand
-    if ( hand == 1 || hand == TP_HAND_RIGHT + vr_weaponHand.GetInteger() )
-    {
-        switch ( currentWeap )
-        {
-            case WEAPON_NONE:
-            case WEAPON_FISTS:
-            case WEAPON_SOULCUBE:
-            case WEAPON_PDA:
-            case WEAPON_HANDGRENADE:
-                origin = weapon->viewWeaponOrigin; // Koz fixme set the origin and axis to the weapon default
-                axis = weapon->viewWeaponAxis;
-                return false;
-                break;
-
-            default:
-                return weapon->GetMuzzlePositionWithHacks( origin, axis );
-                break;
-        }
-    }
-        // Carl: flashlight hand
-    else if ( commonVr->GetCurrentFlashlightMode() == FLASHLIGHT_HAND && weaponEnabled && !spectating && !gameLocal.world->spawnArgs.GetBool("no_Weapons") && !game->IsPDAOpen() && !commonVr->PDAforcetoggle && hands[0].currentWeapon != weapon_pda && hands[1].currentWeapon != weapon_pda )
-    {
-        weapon_t currentWeapon = flashlight->IdentifyWeapon();
-        CalculateViewFlashlightPos( origin, axis, flashlightOffsets[hands[vr_weaponHand.GetInteger()].currentWeapon] );
-
-        return false;
-    }
-        // Carl: todo empty non-weapon hand (currently using head instead)
-    else
-    {
-        origin = commonVr->lastViewOrigin; // Koz fixme set the origin and axis to the players view
-        axis = commonVr->lastViewAxis;
-        return false;
-    }
+    origin = commonVr->lastViewOrigin; // Koz fixme set the origin and axis to the players view
+    axis = commonVr->lastViewAxis;
+    return false;
 }
 
 /*
@@ -14743,23 +13015,9 @@ void idPlayer::CalculateViewFlashlightPos( idVec3 &origin, idMat3 &axis, idVec3 
         }
     }
 
-    idWeapon* weaponWithFlashlightMounted = NULL;
+    hhWeapon* weaponWithFlashlightMounted = NULL;
 
-    if( flashlightMode == FLASHLIGHT_GUN )
-    {
-        weaponWithFlashlightMounted = GetWeaponWithMountedFlashlight();
-		//GB ALTERNATIVE (think I have fixed elsewhere)
-        flashlightOffset = flashlightOffsets[int( weaponWithFlashlightMounted->IdentifyWeapon() )];
-
-        if( !weaponWithFlashlightMounted || !weaponWithFlashlightMounted->GetMuzzlePositionWithHacks( origin, axis ) || commonVr->handInGui )
-        {
-            idAngles flashlightAx = axis.ToAngles();
-            flashlightMode = FLASHLIGHT_HEAD;
-            if( game->isVR ) axis = idAngles( flashlightAx.pitch, flashlightAx.yaw - commonVr->bodyYawOffset, flashlightAx.roll ).ToMat3();
-
-        }
-    }
-    else if( flashlightMode == FLASHLIGHT_PISTOL )
+    if( flashlightMode == FLASHLIGHT_PISTOL )
     {
         if( hands[0].currentWeapon == weapon_pistol && !hands[0].isTheDuplicate )
             weaponWithFlashlightMounted = hands[0].weapon.GetEntity();
@@ -14768,7 +13026,7 @@ void idPlayer::CalculateViewFlashlightPos( idVec3 &origin, idMat3 &axis, idVec3 
         else
             weaponWithFlashlightMounted = NULL;
 
-        if( !weaponWithFlashlightMounted || !weaponWithFlashlightMounted->GetMuzzlePositionWithHacks( origin, axis ) || commonVr->handInGui )
+        if( !weaponWithFlashlightMounted || commonVr->handInGui )
         {
             idAngles flashlightAx = axis.ToAngles();
             flashlightMode = FLASHLIGHT_INVENTORY;
@@ -14780,105 +13038,6 @@ void idPlayer::CalculateViewFlashlightPos( idVec3 &origin, idMat3 &axis, idVec3 
 
     int oldFlashlightPosition = commonVr->currentFlashlightPosition;
     commonVr->currentFlashlightPosition = flashlightMode;
-
-    switch ( flashlightMode )
-    {
-
-        case FLASHLIGHT_GUN:
-            // move the flashlight to the weapon
-
-            /* was for adjusting
-            flashlightOffset.x += ftx.GetFloat();
-            flashlightOffset.y += fty.GetFloat();
-            flashlightOffset.z += ftz.GetFloat();
-            */
-
-            origin += flashlightOffset.x * axis[1] + flashlightOffset.y * axis[0] + flashlightOffset.z * axis[2];
-
-            curWeap = weaponWithFlashlightMounted->IdentifyWeapon();
-			if ( curWeap == WEAPON_SHOTGUN_DOUBLE || curWeap == WEAPON_ROCKETLAUNCHER )
-            {
-                //hack was already present in the code to fix borked alignments for these weapons,
-                //we need to put them back
-                //std::swap( axis[0], axis[2] );
-                axis = -1 * axis;
-                //axis = idAngles( 180.0f, 0.0f, 180.0f ).ToMat3() * axis;
-                axis = swapMat * axis;
-            }
-
-            flashlight->GetRenderEntity()->allowSurfaceInViewID = 0;
-            flashlight->GetRenderEntity()->suppressShadowInViewID = 0;
-            // if we just got the flashlight/weapon out, start with the flashlight turned on
-            if( oldFlashlightPosition == FLASHLIGHT_INVENTORY || oldFlashlightPosition == FLASHLIGHT_NONE )
-                FlashlightOn();
-            setLeftHand = true;
-            break;
-
-        case FLASHLIGHT_HEAD:
-            // Flashlight on helmet
-            origin = commonVr->lastViewOrigin;
-            axis = commonVr->lastViewAxis;
-
-            origin += vr_flashlightHelmetPosY.GetFloat() * axis[1] + vr_flashlightHelmetPosZ.GetFloat() * axis[0] + vr_flashlightHelmetPosX.GetFloat() * axis[2];
-
-            flashlight->GetRenderEntity()->allowSurfaceInViewID = -1;
-            flashlight->GetRenderEntity()->suppressShadowInViewID = entityNumber + 1;
-
-            if ( curWeap == WEAPON_PDA && commonVr->VR_USE_MOTION_CONTROLS ) return;
-
-            setLeftHand = true;
-            break;
-
-        case FLASHLIGHT_INVENTORY:
-        case FLASHLIGHT_NONE:
-            // don't draw the flashlight or its shadow
-            flashlight->GetRenderEntity()->allowSurfaceInViewID = -1;
-            flashlight->GetRenderEntity()->suppressShadowInViewID = entityNumber + 1;
-            // if we just put the flashlight/weapon away, turn it off
-            if( oldFlashlightPosition != FLASHLIGHT_INVENTORY && oldFlashlightPosition != FLASHLIGHT_NONE )
-                FlashlightOff();
-            setLeftHand = true;
-            break;
-
-        case FLASHLIGHT_BODY:
-        default: // this is the original body mount code.
-        {
-            idWeapon* weapon = GetMainWeapon();
-            origin = weapon->playerViewOrigin;
-            axis = weapon->playerViewAxis;
-            float fraccos = cos( (gameLocal.framenum & 255) / 127.0f * idMath::PI );
-            static unsigned int divisor = 32;
-            unsigned int val = (gameLocal.framenum + gameLocal.framenum / divisor) & 255;
-            float fraccos2 = cos( val / 127.0f * idMath::PI );
-            static idVec3 baseAdjustPos = idVec3( -8.0f, -20.0f, -10.0f ); // rt, fwd, up
-            //static idVec3 baseAdjustPos = idVec3( 0, 0, 0 ); // rt, fwd, up
-
-            if ( game->isVR )
-            {
-                baseAdjustPos.x = vr_flashlightBodyPosX.GetFloat();
-                baseAdjustPos.y = vr_flashlightBodyPosY.GetFloat();
-                baseAdjustPos.z = vr_flashlightBodyPosZ.GetFloat();
-            }
-
-            static float pscale = 0.5f;
-            static float yscale = 0.125f;
-            idVec3 adjustPos = baseAdjustPos;// + ( idVec3( fraccos, 0.0f, fraccos2 ) * scale );
-            origin += adjustPos.x * axis[1] + adjustPos.y * axis[0] + adjustPos.z * axis[2];
-            //viewWeaponOrigin += owner->viewBob;
-            //	static idAngles baseAdjustAng = idAngles( 88.0f, 10.0f, 0.0f ); //
-            static idAngles baseAdjustAng = idAngles( 0.0f,10.0f, 0.0f ); //
-            idAngles adjustAng = baseAdjustAng + idAngles( fraccos * pscale, fraccos2 * yscale, 0.0f );
-            // adjustAng += owner->GetViewBobAngles();
-            axis = adjustAng.ToMat3() * axis;
-            flashlight->GetRenderEntity()->allowSurfaceInViewID = -1;
-            // Carl: This fixes the flashlight shadow in Mars City 1.
-            // I could check if ( spectating || !weaponEnabled || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
-            // but I don't think an armor-mounted light should ever cast a flashlight-shaped shadow
-            flashlight->GetRenderEntity()->suppressShadowInViewID = entityNumber + 1;
-            setLeftHand = true;
-        }
-    }
-
 
     // Koz fixme this is where we set the left hand position. Yes it's a stupid place to do it move later
     //GBFIX - For some reason it always thinks the left hand has PDA open
@@ -14898,7 +13057,6 @@ void idPlayer::CalculateViewFlashlightPos( idVec3 &origin, idMat3 &axis, idVec3 
         static bool isFlashlight = false;
 
         currentHand = 1 - vr_weaponHand.GetInteger();
-        originOffset = flashlight->weaponHandDefaultPos[currentHand];
         flashlightPitch = idAngles( vr_motionFlashPitchAdj.GetFloat(), 0.f, 0.0f ).ToQuat();
         isFlashlight = true;
 
@@ -14939,45 +13097,7 @@ void idPlayer::CalculateViewFlashlightPos( idVec3 &origin, idMat3 &axis, idVec3 
 
         //DebugCross( viewOrigin, viewAxis, colorYellow );
         SetHandIKPos( currentHand , viewOrigin, viewAxis, motionRotation, isFlashlight );
-
-        if ( flashlightMode == FLASHLIGHT_HAND   )
-        {
-            origin = viewOrigin;
-            origin -= originOffset * viewAxis;
-
-            int wepn = (hands[0].weapon->IdentifyWeapon() == WEAPON_PDA || hands[ 1 ].weapon->IdentifyWeapon() == WEAPON_PDA ) ? weapon_pda : weapon_flashlight;
-            origin += handWeaponAttacherToDefaultOffset[currentHand][wepn/*weapon_flashlight*/] * viewAxis;
-            axis = viewAxis;
-
-            //DebugCross( origin, axis, colorOrange );
-
-            flashlight->GetRenderEntity()->allowSurfaceInViewID = 0;
-            flashlight->GetRenderEntity()->suppressShadowInViewID = 0;
-        }
     }
-
-    if ( gameLocal.inCinematic )
-    {
-        flashlight->GetRenderEntity()->allowSurfaceInViewID = -1;
-        flashlight->GetRenderEntity()->suppressShadowInViewID = entityNumber + 1;
-    }
-}
-
-/*
-===============
-idPlayer::GetHarvestWeapon
-Carl: Dual wielding, get the specific weapon used to harvest souls (Soul Cube or Artifact)
-Returns the required one if you're holding it, or the other one, or the main weapon
-===============
-*/
-idWeapon* idPlayer::GetHarvestWeapon( idStr requiredWeapons )
-{
-    // Carl: TODO dual wielding
-    if( hands[ 0 ].weapon && ( hands[ 0 ].weapon->IdentifyWeapon() == WEAPON_SOULCUBE || hands[ 0 ].weapon->IdentifyWeapon() == WEAPON_ARTIFACT ) )
-        return hands[ 0 ].weapon;
-    if( hands[ 1 ].weapon && ( hands[ 1 ].weapon->IdentifyWeapon() == WEAPON_SOULCUBE || hands[ 1 ].weapon->IdentifyWeapon() == WEAPON_ARTIFACT ) )
-        return hands[ 1 ].weapon;
-    return GetMainWeapon();
 }
 
 /*
@@ -14989,7 +13109,7 @@ Carl: Dual wielding, when the code needs just one weapon, guess which one is the
 idWeapon* idPlayer::GetMainWeapon()
 {
     // Carl: TODO dual wielding
-    return hands[ GetBestWeaponHand() ].weapon;
+    return reinterpret_cast<idWeapon *>(hands[GetBestWeaponHand()].weapon.GetEntity());
 }
 
 /*
@@ -15052,7 +13172,7 @@ vrClientInfo*	idPlayer::GetVRClientInfo()
 idPlayer::GetViewPos
 ===============
 */
-void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
+void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) {
 	idAngles angles;
 
     if ( game->isVR )
@@ -15093,28 +13213,12 @@ idPlayer::GetWeaponInHand
 Carl: Dual wielding. Returns NULL if no weapon in the hand or if hand < 0 (no hand).
 ===============
 */
-idWeapon* idPlayer::GetWeaponInHand( int hand ) const
+hhWeapon* idPlayer::GetWeaponInHand( int hand ) const
 {
     if( hand < 0 )
         return NULL;
     else
-        return hands[ hand ].weapon;
-}
-
-// Carl: for now, only one of the weapons we are holding can have a flashlight mounted to it
-// because we haven't implemented dual wielding flashlights yet.
-idWeapon * idPlayer::GetWeaponWithMountedFlashlight()
-{
-    // The pistol we start with in RoE for XBox has a flashlight mounted, so prefer that weapon first (for now)
-    if( commonVr->currentFlashlightMode == FLASHLIGHT_PISTOL )
-    {
-        if( hands[0].currentWeapon == weapon_pistol && !hands[0].isTheDuplicate )
-            return hands[0].weapon;
-        if( hands[1].currentWeapon == weapon_pistol && !hands[1].isTheDuplicate )
-            return hands[1].weapon;
-    }
-    // Carl: todo
-    return GetMainWeapon();
+        return hands[ hand ].weapon.GetEntity();
 }
 
 /*
@@ -15127,7 +13231,9 @@ void idPlayer::GetViewPosVR( idVec3 &origin, idMat3 &axis ) const {
     idAngles angles;
 
     // if dead, fix the angle and don't add any kick
-    if ( health <= 0 )
+	// HUMANHEAD cjr:  Replaced health <= 0 with IsDead() call for deathwalk override
+	if ( IsDead() )
+	// HUMANHEAD END
     {
         angles = viewAngles;
         axis = angles.ToMat3();
@@ -15175,14 +13281,14 @@ idPlayer::CalculateFirstPersonView
 ===============
 */
 void idPlayer::CalculateFirstPersonView( void ) {
-	if ( ( pm_modelView.GetInteger() == 1 ) || ( ( pm_modelView.GetInteger() == 2 ) && ( health <= 0 ) ) ) {
+	if ( ( pm_modelView.GetInteger() == 1 ) || ( ( pm_modelView.GetInteger() == 2 ) && IsDead() ) ) { // HUMANHEAD cjr:  Replaced health <= 0 with IsDead() call for deathwalk override
 		//	Displays the view from the point of view of the "camera" joint in the player model
 
 		idMat3 axis;
 		idVec3 origin;
 		idAngles ang;
 
-		ang = viewBobAngles + playerView.AngleOffset();
+		ang = viewBobAngles + playerView.AngleOffset(0, 0);
 		ang.yaw += viewAxis[ 0 ].ToYaw();
 
 		jointHandle_t joint = animator.GetJointHandle( "camera" );
@@ -15367,72 +13473,6 @@ bool idPlayer::GetTeleportBeamOrigin( idVec3 &beamOrigin, idMat3 &beamAxis ) // 
         beamOrigin = commonVr->lastHMDViewOrigin + 12 * beamAxis[ 0 ];
         beamOrigin = beamOrigin + 5 * beamAxis[ 2 ];
     }
-    else // teleport aim origin from the hand
-    {
-        if ( !hands[hand].weapon->ShowCrosshair() ||
-             hands[hand].weapon->IsHidden() ||
-             hands[ hand ].weapon->hideOffset != 0 ||						// Koz - turn off lasersight If gun is lowered ( in gui ).
-             commonVr->handInGui || 						// turn off lasersight if hand is in gui.
-			 hands[ hand ].weapon.GetEntity()->GetGrabberState() >= 2 	// Koz turn off laser sight if grabber is dragging an entity
-             )
-        {
-            return false;
-        }
-
-        if( hands[hand].holdingFlashlight() ) // flashlight is in the hand, so originate the beam slightly in front of the flashlight.
-        {
-            beamAxis = flashlight->GetRenderEntity()->axis;
-            beamOrigin = flashlight->GetRenderEntity()->origin + 10 * beamAxis[ 0 ];
-        }
-        else if ( !hands[hand].controllingWeapon() ) // just send it from the hand.
-        {
-            if( animator.GetJointTransform( ik_hand[ hand ], gameLocal.time, beamOrigin, beamAxis ) )
-            {
-                beamAxis = ik_handCorrectAxis[ hand ][ 1 ].Inverse() * beamAxis;
-
-                beamOrigin = beamOrigin * renderEntity.axis + renderEntity.origin;
-                beamAxis = beamAxis * renderEntity.axis;
-                beamOrigin += beamOff[ hand ] * beamAxis;
-            }
-            else
-            {
-                // we failed to get the joint for some reason, so just default to the weapon origin and axis
-                beamOrigin = hands[ hand ].weapon->viewWeaponOrigin;
-                beamAxis = hands[ hand ].weapon->viewWeaponAxis;
-            }
-        }
-        else if ( !hands[ hand ].weapon->GetMuzzlePositionWithHacks( beamOrigin, beamAxis ) )
-        {
-            // weapon has no muzzle, so get the position and axis of the animated hand joint
-            if ( animator.GetJointTransform( ik_hand[hand], gameLocal.time, beamOrigin, beamAxis ) )
-            {
-                beamAxis = ik_handCorrectAxis[hand][1].Inverse() * beamAxis;
-
-                beamOrigin = beamOrigin * renderEntity.axis + renderEntity.origin;
-                beamAxis = beamAxis * renderEntity.axis;
-                beamOrigin += beamOff[hand] * beamAxis;
-            }
-            else
-            {
-                // we failed to get the joint for some reason, so just default to the weapon origin and axis
-                beamOrigin = hands[ hand ].weapon->viewWeaponOrigin;
-                beamAxis = hands[ hand ].weapon->viewWeaponAxis;
-            }
-        }
-        else // had a valid muzzle;
-        {
-            beamOrigin -= 2 * beamAxis[1]; // if coming from the muzzle, move 2 in down, looks better when it doesn't interfere with the laser sight.
-        }
-
-        if ( hands[hand].weapon->IdentifyWeapon() == WEAPON_CHAINSAW )
-        {
-            beamOrigin += 6 * beamAxis[0]; // move the beam origin 6 inches forward
-        }
-        else
-        {
-            beamOrigin += 4 * beamAxis[0]; // move the beam origin 4 inches forward
-        }
-    }
     return true;
 }
 
@@ -15501,7 +13541,7 @@ void idPlayer::CalculateRenderView( void ) {
 			}
 		} else if ( pm_thirdPerson.GetBool() ) {
 			OffsetThirdPersonView( pm_thirdPersonAngle.GetFloat(), pm_thirdPersonRange.GetFloat(), pm_thirdPersonHeight.GetFloat(), pm_thirdPersonClip.GetBool() );
-		} else if ( pm_thirdPersonDeath.GetBool() ) {
+		} else if ( IsDead() && DoThirdPersonDeath() ) { //HUMANHEAD rww - added IsDead() check, changed check to use util function
 			range = gameLocal.time < minRespawnTime ? ( gameLocal.time + RAGDOLL_DEATH_TIME - minRespawnTime ) * ( 120.0f / RAGDOLL_DEATH_TIME ) : 120.0f;
 			OffsetThirdPersonView( 0.0f, 20.0f + range, 0.0f, false );
 		} else {
@@ -15701,58 +13741,6 @@ void idPlayer::CalculateRenderView( void ) {
 			}
 
 		}
-
-
-
-
-		// Koz fixme pause - handle the PDA model if game is paused
-		// really really need to move this somewhere else,
-
-		if ( !commonVr->PDAforcetoggle && commonVr->PDAforced && hands[ 0 ].weapon->IdentifyWeapon() != WEAPON_PDA && hands[ 1 ].weapon->IdentifyWeapon() != WEAPON_PDA ) // PDAforced cannot be valid if the weapon is not the PDA
-		{
-			commonVr->PDAforced = false;
-			commonVr->VR_GAME_PAUSED = false;
-			idPlayer* player = gameLocal.GetLocalPlayer();
-			player->SetupPDASlot( true );
-			player->SetupHolsterSlot( vr_weaponHand.GetInteger(), true );
-		}
-
-		if ( commonVr->PDAforcetoggle )
-		{
-			int pdahand = 1 - vr_weaponHand.GetInteger();
-			if ( !commonVr->PDAforced )
-			{
-				if ( hands[ 0 ].weapon->IdentifyWeapon() != WEAPON_PDA && hands[ 1 ].weapon->IdentifyWeapon() != WEAPON_PDA )
-				{
-					//common->Printf( "idPlayer::CalculateRenderView calling SelectWeapon for PDA\nPDA Forced = %i, PDAForceToggle = %i\n",commonVr->PDAforced,commonVr->PDAforcetoggle );
-					//common->Printf( "CRV3 Calling SetupHolsterSlot( %i, %i ) \n", 1 - pdahand, commonVr->PDAforced );
-
-					idPlayer* player = gameLocal.GetLocalPlayer();
-					player->SetupPDASlot( commonVr->PDAforced );
-					player->SetupHolsterSlot( 1 - pdahand, commonVr->PDAforced );
-
-					hands[ pdahand ].SelectWeapon( weapon_pda, true, false );
-					SetWeaponHandPose();
-				}
-				else
-				{
-
-					if ( (hands[ 0 ].weapon->IdentifyWeapon() == WEAPON_PDA && hands[ 0 ].weapon->status == WP_READY) || ( hands[ 1 ].weapon->IdentifyWeapon() == WEAPON_PDA && hands[ 1 ].weapon->status == WP_READY ) )
-					{
-						commonVr->PDAforced = true;
-						commonVr->PDAforcetoggle = false;
-					}
-				}
-			}
-			else
-			{ // pda has been already been forced active, put it away.
-
-				TogglePDA( pdahand );
-				commonVr->PDAforcetoggle = false;
-				commonVr->PDAforced = false;
-			}
-
-		}
 	}
 }
 
@@ -15762,24 +13750,7 @@ idPlayer::AddAIKill
 =============
 */
 void idPlayer::AddAIKill( void ) {
-	int max_souls;
-	int ammo_souls;
-
-	if ( ( weapon_soulcube < 0 ) || ( inventory.weapons & ( 1 << weapon_soulcube ) ) == 0 ) {
-		return;
-	}
-
-	assert( hud );
-
-	ammo_souls = idWeapon::GetAmmoNumForName( "ammo_souls" );
-	max_souls = inventory.MaxAmmoForAmmoClass( this, "ammo_souls" );
-	if ( inventory.ammo[ ammo_souls ] < max_souls ) {
-		inventory.ammo[ ammo_souls ]++;
-		if ( inventory.ammo[ ammo_souls ] >= max_souls ) {
-			hud->HandleNamedEvent( "soulCubeReady" );
-			StartSound( "snd_soulcube_ready", SND_CHANNEL_ANY, 0, false, NULL );
-		}
-	}
+// HUMANHEAD pdm: not used
 }
 
 /*
@@ -15832,6 +13803,7 @@ void idPlayer::SetLastHitTime( int time ) {
 	if ( cursor ) {
 		cursor->HandleNamedEvent( "hitTime" );
 	}
+#if !HUMANHEAD	// HUMANHEAD pdm
 	if ( hud ) {
 		if ( MPAim != -1 ) {
 			if ( gameLocal.entities[ MPAim ] && gameLocal.entities[ MPAim ]->IsType( idPlayer::Type ) ) {
@@ -15862,6 +13834,7 @@ void idPlayer::SetLastHitTime( int time ) {
 			MPAimFadeTime = gameLocal.realClientTime;
 		}
 	}
+#endif	// HUMANHEAD END
 }
 
 /*
@@ -15909,8 +13882,8 @@ void idPlayer::SetInfluenceView( const char *mtr, const char *skinname, float ra
 	}
 	if ( skinname && *skinname ) {
 		influenceSkin = declManager->FindSkin( skinname );
-		if ( head ) {
-			head->GetRenderEntity()->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+		if ( head.GetEntity() ) {
+			head.GetEntity()->GetRenderEntity()->shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 		}
 		UpdateVisuals();
 	}
@@ -15965,21 +13938,6 @@ bool idPlayer::OtherHandImpulseSlot()
         {
             PerformImpulse( 40 );
         }
-        else if( objectiveSystemOpen ) // if we're holding our PDA and we try to grab the PDA slot
-        {
-            // our hand is always full in this case, but that's only an issue we care and the holster contains the flashlight
-            if( vr_mustEmptyHands.GetBool() && commonVr->currentFlashlightMode == FLASHLIGHT_HAND )
-                return false;
-            TogglePDA( hand );
-        }
-        else if( weapon_pda >= 0 ) // if the PDA is in the slot and we try to grab it
-        {
-            if( hands[ hand ].tooFullToInteract() )
-                return false;
-            SetupPDASlot( false );
-            SetupHolsterSlot( 1 - hand, false );
-            hands[ hand ].SelectWeapon( weapon_pda, true, false );
-        }
         return true;
     }
 
@@ -16029,22 +13987,6 @@ bool idPlayer::OtherHandImpulseSlot()
             SwapWeaponHand();
             PerformImpulse( 40 );
         }
-        else if( objectiveSystemOpen )
-        {
-            SwapWeaponHand();
-            if (hands[hand].previousWeapon == weapon_fists)
-                hands[hand].previousWeapon = holsteredWeapon;
-            TogglePDA( hand );
-        }
-        else
-        {
-            int h = 1 - vr_weaponHand.GetInteger();
-            if( hands[ h ].tooFullToInteract() && holsteredWeapon != weapon_fists )
-                return false;
-            SwapWeaponHand();
-            // pick up whatever weapon we have holstered, and magically holster our current weapon
-            SetupHolsterSlot( vr_weaponHand.GetInteger() );
-        }
         return true;
     }
     if ( otherHandSlot == SLOT_WEAPON_BACK_BOTTOM )
@@ -16055,10 +13997,6 @@ bool idPlayer::OtherHandImpulseSlot()
         if ( commonVr->PDAforced )
         {
             PerformImpulse( 40 );
-        }
-        else if( objectiveSystemOpen )
-        {
-            TogglePDA( hand );
         }
 
         hands[ hand ].PrevWeapon();
@@ -16072,10 +14010,6 @@ bool idPlayer::OtherHandImpulseSlot()
         if ( commonVr->PDAforced )
         {
             PerformImpulse(40);
-        }
-        else if ( objectiveSystemOpen )
-        {
-            TogglePDA( hand );
         }
         hands[ hand ].NextWeapon();
         return true;
@@ -16183,8 +14117,8 @@ void idPlayer::Event_EnableWeapon( void ) {
 	weaponEnabled = true;
     for( int h = 0; h < 2; h++ )
     {
-        if( hands[ h ].weapon )
-            hands[ h ].weapon->ExitCinematic();
+        if( hands[ h ].weapon.GetEntity() )
+            hands[ h ].weapon.GetEntity()->ExitCinematic();
     }
 }
 
@@ -16198,8 +14132,8 @@ void idPlayer::Event_DisableWeapon( void ) {
 	weaponEnabled = false;
     for( int h = 0; h < 2; h++ )
     {
-        if( hands[ h ].weapon )
-            hands[ h ].weapon->EnterCinematic();
+        if( hands[ h ].weapon.GetEntity() )
+            hands[ h ].weapon.GetEntity()->EnterCinematic();
     }
 }
 
@@ -16244,90 +14178,6 @@ void idPlayer::Event_GetCurrentWeapon( void ) {
 
 /*
 ==================
-idPlayer::Event_GetFlashHand // get flashlight hand
-==================
-*/
-void idPlayer::Event_GetFlashHand() // get flashlight hand
-{
-    static int flashlightHand = 1;
-    //returns 0 for right, 1 for left
-    flashlightHand = vr_weaponHand.GetInteger() == 0 ? 1 : 0;
-
-    idThread::ReturnInt( flashlightHand );
-}
-/*
-==================
-idPlayer::Event_GetFlashState // get flashlight state
-==================
-*/
-void idPlayer::Event_GetFlashState() // get flashlight state
-{
-    static int flashlighton;
-    flashlighton = flashlight->lightOn  ? 1 : 0 ;
-    // Koz debug common->Printf( "Returning flashlight state = %d\n",flashlighton );
-    idThread::ReturnInt( flashlighton );
-}
-/*
-==================
-idPlayer::Event_GetFlashHandState // get flashlight hand state
-==================
-*/
-void idPlayer::Event_GetFlashHandState() // get flashlight hand state
-{
-
-    // this is for the flashlight hand
-    // this is not for weapon hand animations like firing, this is to change hand pose if no weapon is present or if using guis interactively
-    // 0 = hand empty no weapon
-    // 1 = fist (no flashlight)
-    // 2 = flashlight
-    // 3 = normal weapon idle hand anim - used for holding PDA.
-
-
-    int flashlightHand = 1;
-    int hand = 1 - vr_weaponHand.GetInteger();
-
-    if ( hands[hand].weapon && hands[hand].weapon->IdentifyWeapon() == WEAPON_PDA )
-    {
-        flashlightHand = 3;
-    }
-    else if ( spectating || !weaponEnabled || hiddenWeapon || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
-    {
-        flashlightHand = 0;
-    }
-    else if( hands[hand].currentWeapon == weapon_fists && !hands[hand].holdingFlashlight() )
-    {
-        flashlightHand = 1;
-    }
-
-        //else if ( commonVr->currentFlashlightPosition == FLASHLIGHT_HAND && !spectating && weaponEnabled &&!hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
-    else if ( commonVr->currentFlashlightPosition == FLASHLIGHT_HAND ) //&& !spectating && weaponEnabled &&!hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
-    {
-        flashlightHand = 2;
-    }
-    else if( hands[hand].floatingWeapon() )
-    {
-        flashlightHand = 0;
-    }
-    else if( hands[ hand ].holdingWeapon() || hands[ hand ].floatingWeapon() )
-    {
-        flashlightHand = 3;
-    }
-
-    if ( flashlightHand <= 1 && vr_useHandPoses.GetBool() )
-    {
-        int fingerPose;
-        fingerPose = vr_weaponHand.GetInteger() != 0 ? commonVr->fingerPose[HAND_RIGHT] : commonVr->fingerPose[HAND_LEFT];
-        fingerPose = fingerPose << 4;
-        //common->Printf( "Flashlight hand finger pose = %d , %d\n ", flashlightHand, fingerPose );
-        flashlightHand += fingerPose;
-    }
-    idThread::ReturnInt( flashlightHand );
-
-}
-
-
-/*
-==================
 idPlayer::Event_GetPreviousWeapon
 ==================
 */
@@ -16368,28 +14218,6 @@ void idPlayer::Event_SelectWeapon( const char *weaponName ) {
         return;
     }
 
-    // Carl: This function is called by item_pda::Lower() with the value returned from Event_GetPreviousWeapon,
-    // in an attempt to put away the PDA and return both hands to what they were holding before.
-    // That won't work when dual wielding, so check if we are in the PDA (before we change weapon) and put it away properly.
-    for( int h = 0; h < 2; h++ )
-    {
-        if( hands[h].holdingPDA() )
-        {
-            //GB Good as place as any to try and get the flashlight back
-            if(h != vr_weaponHand.GetInteger() && flashlightPreviouslyInHand)
-            {
-				flashlightPreviouslyInHand = false;
-				commonVr->currentFlashlightMode = FLASHLIGHT_HAND;
-            }
-			hands[h].idealWeapon = hands[h].previousWeapon;
-            //if ( hands[1 - h].previousWeapon >= 0 && hands[1 - h].previousWeapon != weapon_fists )
-            //	UpdateHudWeapon( 1 - h );
-            //else
-            UpdateHudWeapon( h );
-            return;
-        }
-    }
-
     // Carl: We're probably being called by weapon_bloodstone_passive::Fire() to switch back to the previous weapon
     /*
     for( int h = 0; h < 2; h++ )
@@ -16406,7 +14234,7 @@ void idPlayer::Event_SelectWeapon( const char *weaponName ) {
     {
         hands[ vr_weaponHand.GetInteger() ].idealWeapon = weapon_fists;
         for( int h = 0; h < 2; h++ )
-            hands[ h ].weapon->HideWeapon();
+            hands[ h ].weapon.GetEntity()->HideWeapon();
         return;
     }
 
@@ -16458,9 +14286,7 @@ void idPlayer::Event_GetWeaponEntity( void ) {
     int h = risingWeaponHand;
     if ( h < 0 )
         h = vr_weaponHand.GetInteger();
-    if( hands[ 1 - h ].weapon->IdentifyWeapon() == WEAPON_ARTIFACT )
-        h = 1 - h;
-    idThread::ReturnEntity( hands[h].weapon );
+    idThread::ReturnEntity( hands[h].weapon.GetEntity() );
 }
 
 // Koz begin
@@ -16531,8 +14357,6 @@ idPlayer::Event_OpenPDA
 */
 void idPlayer::Event_OpenPDA( void ) {
 	if ( !gameLocal.isMultiplayer ) {
-        // Koz debug common->Printf( "idPlayer::Event_OpenPDA() calling TogglePDA\n" );
-        TogglePDA( 1 - vr_weaponHand.GetInteger() );
 	}
 }
 
@@ -16798,7 +14622,7 @@ void idPlayer::Event_ExitTeleporter( void ) {
 	float		pushVel;
 
 	// verify and setup
-	exitEnt = teleportEntity;
+	exitEnt = teleportEntity.GetEntity();
 	if ( !exitEnt ) {
 		common->DPrintf( "Event_ExitTeleporter player %d while not being teleported\n", entityNumber );
 		return;
@@ -16865,10 +14689,15 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	usercmd = gameLocal.usercmds[ entityNumber ];
 
+	//HUMANHEAD rww - "no good for predictions"? i have never seen evidence to support that, and it is necessary for predicted
+	//projectiles, so i am leaving this id code out.
+	/*
 	if ( entityNumber != gameLocal.localClientNum ) {
 		// ignore attack button of other clients. that's no good for predictions
 		usercmd.buttons &= ~BUTTON_ATTACK;
 	}
+	*/
+	//HUMANHEAD END
 
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
@@ -16903,27 +14732,18 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	UpdateViewAngles();
 
-	// update the smoothed view angles
-	if ( gameLocal.framenum >= smoothedFrame && entityNumber != gameLocal.localClientNum ) {
-		idAngles anglesDiff = viewAngles - smoothedAngles;
-		anglesDiff.Normalize180();
-		if ( idMath::Fabs( anglesDiff.yaw ) < 90.0f && idMath::Fabs( anglesDiff.pitch ) < 90.0f ) {
-			// smoothen by pushing back to the previous angles
-			viewAngles -= gameLocal.clientSmoothing * anglesDiff;
-			viewAngles.Normalize180();
-		}
-		smoothedAngles = viewAngles;
-	}
-	smoothedOriginUpdated = false;
+	//HUMANHEAD rww - moved id angle smoothing code into UpdateViewAngles
 
 	if ( !af.IsActive() ) {
 		AdjustBodyAngles();
 	}
 
-	if ( !isLagged ) {
+	//HUMANHEAD rww - not while in a vehicle
+	if ( !isLagged && !InVehicle() ) {
+	//HUMANHEAD END
 		// don't allow client to move when lagged
 		Move();
-	}
+	} 
 
 	// update GUIs, Items, and character interactions
 	UpdateFocus();
@@ -16945,13 +14765,11 @@ void idPlayer::ClientPredictionThink( void ) {
 	// this may use firstPersonView, or a thirdPerson / camera view
 	CalculateRenderView();
 
-	if ( !gameLocal.inCinematic && hands[ vr_weaponHand.GetInteger() ].weapon && ( health > 0 ) && !( gameLocal.isMultiplayer && spectating ) ) {
+	if ( !gameLocal.inCinematic && hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() && ( health > 0 ) && !( gameLocal.isMultiplayer && spectating ) ) {
 		UpdateWeapon();
 	}
 
     UpdateNeckPose();
-
-    UpdateFlashlight();
 
 	UpdateHud();
 
@@ -16961,8 +14779,8 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	UpdateDeathSkin( false );
 
-	if ( head ) {
-		headRenderEnt = head->GetRenderEntity();
+	if ( head.GetEntity() ) {
+		headRenderEnt = head.GetEntity()->GetRenderEntity();
 	} else {
 		headRenderEnt = NULL;
 	}
@@ -17033,6 +14851,10 @@ void idPlayer::ClientPredictionThink( void ) {
 	Present();
 
 	UpdateDamageEffects();
+	
+	if (gameLocal.isNewFrame) {
+		UpdateWounds(); //HUMANHEAD rww
+	}
 
 	LinkCombat();
 
@@ -17144,7 +14966,7 @@ idPlayer::WriteToSnapshot
 ================
 */
 void idPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
-	physicsObj.WriteToSnapshot( msg );
+	physicsObj.WriteToSnapshot( msg, false ); //HUMANHEAD rww - vehicle param
 	WriteBindToSnapshot( msg );
 	msg.WriteDeltaFloat( 0.0f, deltaViewAngles[0] );
 	msg.WriteDeltaFloat( 0.0f, deltaViewAngles[1] );
@@ -17185,7 +15007,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 	oldHealth = health;
 
-	physicsObj.ReadFromSnapshot( msg );
+	physicsObj.ReadFromSnapshot( msg, false ); //HUMANHEAD rww - vehicle param
 	ReadBindFromSnapshot( msg );
 	deltaViewAngles[0] = msg.ReadDeltaFloat( 0.0f );
 	deltaViewAngles[1] = msg.ReadDeltaFloat( 0.0f );
@@ -17212,20 +15034,12 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
     if( hands[vr_weaponHand.GetInteger()].weapon.SetSpawnId( weaponSpawnId ) )
     {
-        if( hands[ vr_weaponHand.GetInteger() ].weapon )
+        if( hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity() )
         {
             // maintain ownership locally
-            hands[ vr_weaponHand.GetInteger() ].weapon->SetOwner( this, vr_weaponHand.GetInteger() );
+            hands[ vr_weaponHand.GetInteger() ].weapon.GetEntity()->SetOwner( this );
         }
         hands[ vr_weaponHand.GetInteger() ].currentWeapon = -1;
-    }
-
-    if( flashlight.SetSpawnId( flashlightSpawnId ) )
-    {
-        if( flashlight )
-        {
-            flashlight->SetFlashlightOwner( this );
-        }
     }
 
 	// if not a local client assume the client has all ammo types
@@ -17247,24 +15061,40 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		SetAnimState( ANIMCHANNEL_TORSO, "Torso_Death", 4 );
 		SetWaitState( "" );
 		animator.ClearAllJoints();
+
+		//HUMANHEAD rww - don't want this
+		/*
 		if ( entityNumber == gameLocal.localClientNum ) {
 			playerView.Fade( colorBlack, 12000 );
 		}
+		*/
+		//HUMANHEAD END
+
 		StartRagdoll();
 		physicsObj.SetMovementType( PM_DEAD );
 		if ( !stateHitch ) {
+			//HUMANHEAD PCF rww 09/15/06 - female mp sounds
+			if (IsFemale()) {
+				StartSound( "snd_death_female", SND_CHANNEL_VOICE, 0, false, NULL );
+			}
+			else
+			//HUMANHEAD END
 			StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
 		}
         for( int h = 0; h < 2; h++ )
         {
-            if( hands[ h ].weapon )
-                hands[ h ].weapon->OwnerDied();
+            if( hands[ h ].weapon.GetEntity() )
+                hands[ h ].weapon.GetEntity()->OwnerDied();
         }
-        if( flashlight )
-        {
-            FlashlightOff();
-            flashlight->OwnerDied();
-        }
+
+		//HUMANHEAD rww
+		GetPhysics()->SetContents(0);
+		Hide();
+
+		//so camera can operate on client.
+		minRespawnTime = gameLocal.time + RAGDOLL_DEATH_TIME;
+		maxRespawnTime = minRespawnTime + 10000;
+		//HUMANHEAD END
 
         if( IsLocallyControlled() )
         {
@@ -17282,6 +15112,11 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		SetPhysics( &physicsObj );
 		physicsObj.EnableClip();
 		SetCombatContents( true );
+		//HUMANHEAD rww
+		if (!spectating) {
+			Show();
+		}
+		//HUMANHEAD END
 	} else if ( health < oldHealth && health > 0 ) {
 		if ( stateHitch ) {
 			lastDmgTime = gameLocal.time;
@@ -17357,9 +15192,13 @@ void idPlayer::WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const {
 	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
 		msg.WriteBits( inventory.ammo[i], ASYNC_PLAYER_INV_AMMO_BITS );
 	}
+	//HUMANHEAD rww - don't need the clip count for all weapons on the client, and weapon handles sending its own clip
+	/*
 	for( i = 0; i < MAX_WEAPONS; i++ ) {
 		msg.WriteBits( inventory.clip[i], ASYNC_PLAYER_INV_CLIP_BITS );
 	}
+	*/
+	//HUMANHEAD END
 }
 
 /*
@@ -17382,10 +15221,23 @@ void idPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
 			inventory.ammo[ i ] = ammo;
 		}
 	}
+	//HUMANHEAD rww - don't need the clip count for all weapons on the client, and weapon handles sending its own clip
+	/*
 	for( i = 0; i < MAX_WEAPONS; i++ ) {
 		inventory.clip[i] = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
 	}
+	*/
+	//HUMANHEAD END
 }
+
+//HUMANHEAD rww
+bool idPlayer::DoThirdPersonDeath(void) {
+	if (gameLocal.isMultiplayer) {
+		return pm_thirdPersonDeathMP.GetBool();
+	}
+	return pm_thirdPersonDeath.GetBool();
+}
+//HUMANHEAD END
 
 /*
 ==============
@@ -17396,7 +15248,7 @@ This will recreate a working copyJoint list.
 */
 void idPlayer::RecreateCopyJoints()
 {
-    idEntity* headEnt = head;
+    idEntity* headEnt = head.GetEntity();
     idAnimator* headAnimator;
     const idKeyValue* kv;
     idStr jointName;
@@ -17523,6 +15375,119 @@ bool idPlayer::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			}
 			break;
 		}
+		
+		//HUMANHEAD rww
+		case EVENT_MENUEVENT: { //a bit crude, handle menu events for pickups that don't get predicted. (allow for multiple in 1 event)
+			assert(entityNumber == gameLocal.localClientNum);
+			int menuGetEvents = msg.ReadBits(MENU_NET_EVENT_NUM);
+			if (hud) {
+				if (menuGetEvents & (1<<MENU_NET_EVENT_INVPICKUP)) {
+					int itemSpawnId = msg.ReadBits(32);
+					idEntityPtr<idEntity> ent;
+					ent.SetSpawnId(itemSpawnId);
+					if (hud && ent.IsValid() && ent->IsType(idItem::Type)) { //if the item still exists on the client, do the menu event.
+						idItemInfo info;
+						const char* itemName = ent->spawnArgs.GetString( "inv_name" );
+						if ( idStr::Cmpn( itemName, STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
+							info.name = common->GetLanguageDict()->GetString( itemName );
+						} else {
+							info.name = itemName;
+						}
+						info.icon = ent->spawnArgs.GetString( "inv_icon" );
+						info.bDoubleWide = ent->spawnArgs.FindKey("inv_weapon") != NULL;
+						inventory.AddPickupName(info.name, info.icon, info.bDoubleWide);
+						hud->SetStateString( "itemicon", info.icon );
+						hud->HandleNamedEvent( "invPickup" );
+					}
+				}
+				if (menuGetEvents & (1<<MENU_NET_EVENT_HEALTHPULSE)) {
+					hud->HandleNamedEvent( "healthPulse" );
+					StartSound( "snd_healthpulse", SND_CHANNEL_ITEM, 0, false, NULL );
+				}
+				if (menuGetEvents & (1<<MENU_NET_EVENT_MAXHEALTHPULSE)) {
+					hud->HandleNamedEvent( "maxHealthPulse" );
+				}
+				if (menuGetEvents & (1<<MENU_NET_EVENT_SPIRITPULSE)) {
+					hud->HandleNamedEvent( "spiritPulse" );
+					StartSound( "snd_spiritpulse", SND_CHANNEL_ITEM, 0, false, NULL );
+				}
+				if (menuGetEvents & (1<<MENU_NET_EVENT_AMMOPULSE)) {
+					hud->HandleNamedEvent( "ammoPulse" );
+				}
+				if (menuGetEvents & (1<<MENU_NET_EVENT_WEAPONPULSE)) {
+					UpdateHudWeapon(false);
+					hud->HandleNamedEvent( "weaponPulse" );
+				}
+			}
+			return true;
+		}
+		//HUMANHEAD END
+		//HUMANHEAD rww
+		case EVENT_HITNOTIFICATION: {
+			int hitSpawnId = msg.ReadBits(32);
+			idEntityPtr<idEntity> hit;
+			hit.SetSpawnId(hitSpawnId);
+			if (hit.IsValid() && hit.GetEntity()->IsType(hhPlayer::Type)) { //set the shaderparms locally if it's still valid
+				hhPlayer *playerHit = static_cast<hhPlayer *>(hit.GetEntity());
+
+				//don't provide visual indicator when shooting a teammate
+				if (gameLocal.gameType == GAME_TDM && gameLocal.GetLocalPlayer() && playerHit->team == gameLocal.GetLocalPlayer()->team) {
+					StartSound( "snd_hitTeamFeedback", SND_CHANNEL_ITEM, 0, false, NULL );
+				}
+				else {
+					//hardcoded health ranges for the various flash colors
+					float h;
+					if (playerHit->health > 100) {
+						h = 0.0f;
+					}
+					else if (playerHit->health > 75) {
+						h = 0.25f;
+					}
+					else if (playerHit->health > 25) {
+						h = 0.50f;
+					}
+					else {
+						h = 0.75f;
+					}
+					playerHit->SetShaderParm(3, h);
+					playerHit->SetShaderParm(5, -MS2SEC(gameLocal.time)*2);
+
+					if (playerHit->IsSpiritOrDeathwalking()) {
+						StartSound( "snd_hitSpiritFeedback", SND_CHANNEL_ITEM, 0, false, NULL );
+					}
+					else {
+						StartSound( "snd_hitFeedback", SND_CHANNEL_ITEM, 0, false, NULL );
+					}
+				}
+			}
+			return true;
+		}
+		//HUMANHEAD END
+		//HUMANHEAD rww
+		case EVENT_PORTALLED: {
+			int portalSpawnId = msg.ReadBits(32);
+			idEntityPtr<idEntity> portal;
+			portal.SetSpawnId(portalSpawnId);
+			if (portal.IsValid() && portal->IsType(hhPortal::Type)) {
+				assert(IsType(hhPlayer::Type)); //we really should consolidate hhPlayer and idPlayer one of these days.
+				hhPlayer *hhSelf = static_cast<hhPlayer *>(this);
+				hhSelf->Portalled(portal.GetEntity());
+			}
+			return true;
+		}
+		//HUMANHEAD END
+		//HUMANHEAD rww
+		case EVENT_REPORTATTACK: {
+			idEntityPtr<idEntity> attacker;
+			attacker.SetSpawnId(msg.ReadBits(32));
+			if (attacker.IsValid()) { //if attacker is valid on client, report the attack
+				assert(IsType(hhPlayer::Type)); //we really should consolidate hhPlayer and idPlayer one of these days.
+				hhPlayer *hhSelf = static_cast<hhPlayer *>(this);
+				hhSelf->ReportAttack(attacker.GetEntity());
+			}
+			return true;
+		}
+		//HUMANHEAD END
 		default:
 			break;
 	}
@@ -17536,19 +15501,14 @@ idPlayer::Hide
 ================
 */
 void idPlayer::Hide( void ) {
-	idWeapon *weap;
+	hhWeapon *weap;
 
 	idActor::Hide();
     for( int h = 0; h < 2; h++ )
     {
-        weap = hands[ h ].weapon;
+        weap = hands[ h ].weapon.GetEntity();
         if( weap )
             weap->HideWorldModel();
-    }
-    idWeapon* flashlight_weapon = flashlight;
-    if( flashlight_weapon )
-    {
-        flashlight_weapon->HideWorldModel();
     }
 }
 
@@ -17558,20 +15518,15 @@ idPlayer::Show
 ================
 */
 void idPlayer::Show( void ) {
-	idWeapon *weap;
-
+#if 0 // HUMANHEAD mdl:  Overridden in hhPlayer
+	hhWeapon *weap;	// Changed from idWeapon to hhWeapon
+	
 	idActor::Show();
-    for( int h = 0; h < 2; h++ )
-    {
-        weap = hands[ h ].weapon;
-        if( weap )
-            weap->ShowWorldModel();
-    }
-    idWeapon* flashlight_weapon = flashlight;
-    if( flashlight_weapon )
-    {
-        flashlight_weapon->ShowWorldModel();
-    }
+	weap = weapon.GetEntity();
+	if ( weap ) {
+		weap->ShowWorldModel();
+	}
+#endif // HUMANHEAD END
 }
 
 /*
@@ -17599,28 +15554,33 @@ void idPlayer::StopAudioLog( void ) {
 /*
 ===============
 idPlayer::ShowTip
+	HUMANHEAD pdm: rewritten
 ===============
 */
-void idPlayer::ShowTip( const char *title, const char *tip, bool autoHide ) {
+void idPlayer::ShowTip( const char *keyMaterial, const char *tip, const char *key, const char *topMaterial, bool keywide, int xOffset, int yOffset ) {
 	if ( tipUp ) {
 		return;
 	}
-	hud->SetStateString( "tip", tip );
-	hud->SetStateString( "tiptitle", title );
-	hud->HandleNamedEvent( "tipWindowUp" );
-	if ( autoHide ) {
-		PostEventSec( &EV_Player_HideTip, 5.0f );
-	}
+
+	hud->SetStateBool( "keywide", keywide );
+	hud->SetStateString( "tip", tip ? tip : "" );
+	hud->SetStateString( "key", key ? key : "" );
+	hud->SetStateString( "keyMaterial", keyMaterial ? keyMaterial : "" );
+	hud->SetStateString( "topMaterial", topMaterial ? topMaterial : "" );
+	hud->SetStateInt( "tipOffsetX", xOffset);
+	hud->SetStateInt( "tipOffsetY", yOffset);
+	hud->HandleNamedEvent( "tipWindowUp" ); 
 	tipUp = true;
 }
 
 /*
 ===============
 idPlayer::HideTip
+	HUMANHEAD pdm: rewritten
 ===============
 */
 void idPlayer::HideTip( void ) {
-	hud->HandleNamedEvent( "tipWindowDown" );
+	hud->HandleNamedEvent( "tipWindowDown" ); 
 	tipUp = false;
 }
 
@@ -17671,8 +15631,9 @@ void idPlayer::SetSpectateOrigin( void ) {
 	idVec3 neworig;
 
 	neworig = GetPhysics()->GetOrigin();
-	neworig[ 2 ] += EyeHeight();
-	neworig[ 2 ] += 25;
+	//HUMANHEAD rww - don't artificially boost the z anymore
+	//neworig[ 2 ] += EyeHeight();
+	//neworig[ 2 ] += 25;
 	SetOrigin( neworig );
 }
 
@@ -17700,206 +15661,6 @@ void idPlayer::SetWeaponHandPose()
         return;
     }
 }
-
-/*
-==============
-idPlayer::SetupHolsterSlot
-
-stashed: -1 = switch weapons, 1 = empty holster of stashed weapon, 0 = stash current weapon in holster but don't switch
-==============
-*/
-void idPlayer::SetupHolsterSlot( int hand, int stashed )
-{
-    // if there's nothing to stash because we were already using fists or PDA
-    if ( stashed == 0 && (hands[hand].currentWeapon == weapon_pda || hands[ hand ].currentWeapon == weapon_fists) )
-        return;
-    // if we were using fists before activating pda, we didn't stash anything in our holster, so don't unstash anything
-    if( stashed == 1 && hands[ hand ].previousWeapon == weapon_fists )
-        return;
-    // if we want to read or switch the current weapon but it's not ready
-    if( !hands[ hand ].weapon->IsReady() && stashed != 1 )
-    {
-        return;
-    }
-
-    const char * modelname;
-    idRenderModel* renderModel;
-
-    if ( stashed == 0 )
-    {
-        extraHolsteredWeapon = holsteredWeapon;
-        if ( holsterRenderEntity.hModel )
-            extraHolsteredWeaponModel = holsterRenderEntity.hModel->Name();
-        else
-            extraHolsteredWeaponModel = NULL;
-    }
-
-    FreeHolsterSlot();
-    if( vr_slotDisable.GetBool() )
-    {
-        return;
-    }
-
-    if ( stashed == 1 )
-    {
-        modelname = extraHolsteredWeaponModel;
-        extraHolsteredWeaponModel = NULL;
-    }
-    else
-        modelname = hands[hand].weapon->weaponDef->dict.GetString("model");
-
-    // can we holster?
-    if( !modelname ||
-        strcmp(modelname, "models/weapons/soulcube/w_soulcube.lwo") == 0 ||
-        strcmp(modelname, "_DEFAULT") == 0 ||
-        strcmp(modelname, "models/items/grenade_ammo/grenade.lwo") == 0 ||
-        strcmp(modelname, "models/items/pda/pda_world.lwo") == 0 ||
-        !(renderModel = renderModelManager->FindModel( modelname )) )
-    {
-        // can't holster, just unholster
-        if( holsteredWeapon != weapon_fists )
-        {
-            if ( stashed != 0 )
-                SelectWeapon(holsteredWeapon, false, true);
-            holsteredWeapon = weapon_fists;
-            memset(&holsterRenderEntity, 0, sizeof(holsterRenderEntity));
-        }
-        return;
-    }
-
-    // we can holster! so unholster or change weapons
-    if (stashed < 0)
-    {
-        int prevWeapon = hands[hand].currentWeapon;
-        hands[hand].SelectWeapon(holsteredWeapon, false, true);
-        holsteredWeapon = prevWeapon;
-    }
-    else
-    {
-        if (stashed == 0) // stash current weapon, holstered weapon moves to invisible "extra" slot
-        {
-            holsteredWeapon = hands[hand].currentWeapon;
-        }
-        else // unstash holstered weapon, extra weapon moves back to holster
-        {
-            hands[ hand ].SelectWeapon(holsteredWeapon, true, true);
-            holsteredWeapon = extraHolsteredWeapon;
-            extraHolsteredWeapon = weapon_fists;
-        }
-    }
-
-    memset( &holsterRenderEntity, 0, sizeof( holsterRenderEntity ) );
-
-    holsterRenderEntity.hModel = renderModel;
-    if( holsterRenderEntity.hModel )
-    {
-        holsterRenderEntity.hModel->Reset();
-        holsterRenderEntity.bounds = holsterRenderEntity.hModel->Bounds( &holsterRenderEntity );
-    }
-    holsterRenderEntity.shaderParms[ SHADERPARM_RED ]	= 1.0f;
-    holsterRenderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-    holsterRenderEntity.shaderParms[ SHADERPARM_BLUE ]	= 1.0f;
-    holsterRenderEntity.shaderParms[3] = 1.0f;
-    holsterRenderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = 0.0f;
-    holsterRenderEntity.shaderParms[5] = 0.0f;
-    holsterRenderEntity.shaderParms[6] = 0.0f;
-    holsterRenderEntity.shaderParms[7] = 0.0f;
-
-    if( strcmp(modelname, "models/weapons/pistol/w_pistol.lwo") == 0 )
-    {
-        holsterAxis = idAngles(90, 0, 0).ToMat3() * 0.75f;
-    }
-    else if( strcmp(modelname, "models/weapons/shotgun/w_shotgun2.lwo") == 0 ||
-             strcmp(modelname, "models/weapons/bfg/bfg_world.lwo") == 0)
-    {
-        holsterAxis = idAngles(0, -90, -90).ToMat3();
-    }
-	else if( strcmp(modelname, "models/weapons/grabber/grabber_world.ase") == 0 )
-	{
-		holsterAxis = idAngles(-90, 180, 0).ToMat3() * 0.5f;
-	}
-    else if (strcmp(modelname, "models/weapons/machinegun/w_machinegun.lwo") == 0)
-    {
-        holsterAxis = idAngles(0, 90, 90).ToMat3() * 0.75f;
-    }
-    else if (strcmp(modelname, "models/weapons/plasmagun/plasmagun_world.lwo") == 0)
-    {
-        holsterAxis = idAngles(0, 90, 90).ToMat3() * 0.75f;
-    }
-    else if (strcmp(modelname, "models/weapons/chainsaw/w_chainsaw.lwo") == 0)
-    {
-        holsterAxis = idAngles(0, 90, 90).ToMat3() * 0.9f;
-    }
-    else if (strcmp(modelname, "models/weapons/chaingun/w_chaingun.lwo") == 0)
-    {
-        holsterAxis = idAngles(0, 90, 90).ToMat3() * 0.9f;
-    }
-    else
-    {
-        holsterAxis = idAngles(0, 90, 90).ToMat3();
-    }
-}
-
-/*
-==============
-idPlayer::SetupPDASlot
-==============
-*/
-void idPlayer::SetupPDASlot( bool holsterPDA )
-{
-    const char * modelname;
-    idRenderModel* renderModel;
-
-    FreePDASlot();
-
-    if( vr_slotDisable.GetBool() )
-    {
-        return;
-    }
-
-    if ( holsterPDA )
-    {
-        // we will holster the PDA
-        modelname = "models/items/pda/pda_world.lwo";
-        pdaHolsterAxis = (pdaAngle1.ToMat3() * pdaAngle2.ToMat3() * pdaAngle3.ToMat3()) * 0.6f;
-    }
-    else
-    {
-        // we will holster the flashlight if carrying it
-        if ( commonVr->currentFlashlightMode == FLASHLIGHT_HAND && flashlight->IsLinked() && !spectating && weaponEnabled && !hiddenWeapon && !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
-        {
-            flashlightPreviouslyInHand = true;
-            modelname = flashlight->weaponDef->dict.GetString("model");
-            pdaHolsterAxis = idAngles(0, 90, 90).ToMat3();
-        }
-        else modelname = "";
-    }
-
-    memset( &pdaRenderEntity, 0, sizeof( pdaRenderEntity ) );
-
-    // can we holster?
-    if ( !(renderModel = renderModelManager->FindModel(modelname)) )
-    {
-        // can't holster, just unholster
-        return;
-    }
-
-    pdaRenderEntity.hModel = renderModel;
-    if (pdaRenderEntity.hModel)
-    {
-        pdaRenderEntity.hModel->Reset();
-        pdaRenderEntity.bounds = pdaRenderEntity.hModel->Bounds( &pdaRenderEntity );
-    }
-    pdaRenderEntity.shaderParms[ SHADERPARM_RED ]	= 1.0f;
-    pdaRenderEntity.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
-    pdaRenderEntity.shaderParms[ SHADERPARM_BLUE ]	= 1.0f;
-    pdaRenderEntity.shaderParms[3] = 1.0f;
-    pdaRenderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = 0.0f;
-    pdaRenderEntity.shaderParms[5] = 0.0f;
-    pdaRenderEntity.shaderParms[6] = 0.0f;
-    pdaRenderEntity.shaderParms[7] = 0.0f;
-}
-
 
 /*
 ===============
@@ -18258,33 +16019,19 @@ idPlayer::UpdatePlayerIcons
 ===============
 */
 void idPlayer::UpdatePlayerIcons( void ) {
-	int time = networkSystem->ServerGetClientTimeSinceLastPacket( entityNumber );
-	if ( time > cvarSystem->GetCVarInteger( "net_clientMaxPrediction" ) ) {
-		isLagged = true;
-	} else {
+	//HUMANHEAD rww
+	if (IsType(hhArtificialPlayer::Type)) {
 		isLagged = false;
 	}
-}
-
-/*
-==============
-idPlayer::UpdatePlayerSkinsPoses()
-Updates the skins of the weapon and flashlight to hide/show arms/watch and updates poses of player model hands.
-======
-*/
-void idPlayer::UpdatePlayerSkinsPoses()
-{
-    for( int h = 0; h < 2; h++ )
-    {
-        if( hands[ h ].weapon )
-            hands[ h ].weapon->UpdateSkin();
-    }
-    if ( flashlight )
-    {
-        flashlight->UpdateSkin();
-    }
-    SetFlashHandPose(); // Call set flashlight hand pose script function
-    SetWeaponHandPose();
+	else {
+	//HUMANHEAD END
+		int time = networkSystem->ServerGetClientTimeSinceLastPacket( entityNumber );
+		if ( time > cvarSystem->GetCVarInteger( "net_clientMaxPrediction" ) ) {
+			isLagged = true;
+		} else {
+			isLagged = false;
+		}
+	}
 }
 
 /*
@@ -18295,13 +16042,11 @@ idPlayer::DrawPlayerIcons
 void idPlayer::DrawPlayerIcons( void ) {
 	if ( !NeedsIcon() ) {
 		playerIcon.FreeIcon();
+		playerTeamIcon.FreeIcon(); //HUMANHEAD rww
 		return;
 	}
-
-	// Never draw icons for hidden players.
-	if (this->IsHidden())
-		return;
 	playerIcon.Draw( this, headJoint );
+	playerTeamIcon.Draw( this, headJoint ); //HUMANHEAD rww
 }
 
 /*
@@ -18311,6 +16056,7 @@ idPlayer::HidePlayerIcons
 */
 void idPlayer::HidePlayerIcons( void ) {
 	playerIcon.FreeIcon();
+	playerTeamIcon.FreeIcon(); //HUMANHEAD rww
 }
 
 /*
@@ -18319,46 +16065,6 @@ idPlayer::NeedsIcon
 ==============
 */
 bool idPlayer::NeedsIcon( void ) {
-	// always draw icons in CTF games
-	return entityNumber != gameLocal.localClientNum && ((g_CTFArrows.GetBool() && gameLocal.mpGame.IsGametypeFlagBased() && !IsHidden() && !AI_DEAD) || (isLagged || isChatting));
-}
-
-/*
-===============
-idPlayer::DropFlag()
-==============
-*/
-void idPlayer::DropFlag(void)
-{
-	if (!carryingFlag || !gameLocal.isMultiplayer || !gameLocal.mpGame.IsGametypeFlagBased())   /* CTF */
-		return;
-
-	idEntity *entity = gameLocal.mpGame.GetTeamFlag(1 - this->latchedTeam);
-
-	if (entity) {
-		idItemTeam *item = static_cast<idItemTeam *>(entity);
-
-		if (item->carried && !item->dropped) {
-			item->Drop(health <= 0);
-			carryingFlag = false;
-		}
-	}
-}
-
-void idPlayer::ReturnFlag()
-{
-
-	if (!carryingFlag || !gameLocal.isMultiplayer || !gameLocal.mpGame.IsGametypeFlagBased())   /* CTF */
-		return;
-
-	idEntity *entity = gameLocal.mpGame.GetTeamFlag(1 - this->latchedTeam);
-
-	if (entity) {
-		idItemTeam *item = static_cast<idItemTeam *>(entity);
-
-		if (item->carried && !item->dropped) {
-			item->Return();
-			carryingFlag = false;
-		}
-	}
+	// local clients don't render their own icons... they're only info for other clients
+	return !spectating && entityNumber != gameLocal.localClientNum && ( isLagged || isChatting || (gameLocal.gameType == GAME_TDM && health > 0) ) && gameLocal.EntInClientSnapshot(entityNumber); //HUMANHEAD rww - added gametype condition (and snapshot condition (and some other conditions))
 }

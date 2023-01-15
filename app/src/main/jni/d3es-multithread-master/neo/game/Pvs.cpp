@@ -34,6 +34,20 @@ If you have questions concerning this license or the applicable additional terms
 
 #define MAX_BOUNDS_AREAS	16
 
+//HUMANHEAD rww
+#if !GOLD
+#define DEBUG_PASSAGE_OVERFLOW
+#endif
+
+#ifdef DEBUG_PASSAGE_OVERFLOW
+int debugFloodPassageOverflow = 0;
+#endif
+
+#define PORTAL_PLANE_CULLING	1
+
+#define GAMEPORTAL_CONNECTIVITY_DISABLE (cvarSystem->GetCVarBool("debug_disableGamePortalConnections"))
+//HUMANHEAD END
+
 typedef struct pvsPassage_s {
 	byte *				canSee;		// bit set for all portals that can be seen through this passage
 } pvsPassage_t;
@@ -48,6 +62,9 @@ typedef struct pvsPortal_s {
 	bool				done;		// true if pvs is calculated for this portal
 	byte *				vis;		// PVS for this portal
 	byte *				mightSee;	// used during construction
+	bool				gamePortal;	//HUMANHEAD rww - if true, this is a game portal
+	bool				mightSeeGamePortal; //HUMANHEAD rww - if true, this portal is connected somewhere to a gamePortal (potentially)
+	pvsPortal_s			*recursionSource; //HUMANHEAD rww - do not flood through a portal multiple times with the same source
 } pvsPortal_t;
 
 
@@ -149,6 +166,11 @@ void idPVS::CreatePVSData( void ) {
 			portal = gameRenderWorld->GetPortal( i, j );
 
 			p = &pvsPortals[cp++];
+
+			//HUMANHEAD rww - check to see if this is a game portal
+			p->gamePortal = false; // gameRenderWorld->IsGamePortal(portal.portalHandle); // jmarshall
+			p->mightSeeGamePortal = p->gamePortal;
+
 			// the winding goes counter clockwise seen from this area
 			p->w = portal.w->Copy();
 			p->areaNum = portal.areas[1];	// area[1] is always the area the portal leads to
@@ -177,7 +199,7 @@ void idPVS::CreatePVSData( void ) {
 idPVS::DestroyPVSData
 ================
 */
-void idPVS::DestroyPVSData( void ) {
+	void idPVS::DestroyPVSData( void ) {
 	int i;
 
 	if ( !pvsAreas ) {
@@ -202,6 +224,83 @@ void idPVS::DestroyPVSData( void ) {
 	delete[] pvsPortals;
 	pvsPortals = NULL;
 }
+
+
+//HUMANHEAD rww
+/*
+================
+idPVS::MightSeeLinkedGamePortal
+================
+*/
+//check if two portals should be seen from each other because of gameportal linking
+bool idPVS::MightSeeLinkedGamePortal(const pvsPortal_t *p1, const pvsPortal_t *p2) const {
+	int pind1 = p1-pvsPortals;
+	int pind2 = p2-pvsPortals;
+	for (int i = 0; i < numPortals; i++) {
+		//if this portal (i) is a gamePortal, and can be seen by either portal in question, let us evaluate
+		if (pvsPortals[i].gamePortal) {
+			const pvsPortal_t *notConnected = NULL;
+
+			if (pind1 == i || (p1->mightSee[i>>3] & (1<<(i&7))) || (pvsPortals[i].mightSee[pind1>>3] & (1<<(pind1&7)))) {
+				notConnected = p2;
+			}
+			if (pind2 == i || (p2->mightSee[i>>3] & (1<<(i&7))) || (pvsPortals[i].mightSee[pind2>>3] & (1<<(pind2&7)))) {
+				if (notConnected) { //if we can both see this particular game portal, then we already know the answer
+					return true;
+				}
+				notConnected = p1;
+			}
+
+			if (notConnected) { //alright then, let's check the area the gamePortal leads to for connections
+				pvsArea_t *area = &pvsAreas[pvsPortals[i].areaNum]; //the area the game portal leads to
+				for (int j = 0; j < area->numPortals; j++) {
+					pvsPortal_t *areaPortal = area->portals[j];
+					if (!areaPortal->gamePortal) { //only evaluate gamePortals in the immediate area
+						continue;
+					}
+
+					int portalLocIdx = areaPortal-pvsPortals;
+					//we must now evaluate the portals in the same area as that which is not connected, to determine the possibility
+					pvsArea_t *disconArea = &pvsAreas[notConnected->areaNum];
+					for (int k = 0; k < disconArea->numPortals; k++) {
+						if (disconArea->portals[k]->mightSee[portalLocIdx>>3] & (1<<(portalLocIdx&7))) {
+							return true; //we have a winner
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+/*
+================
+idPVS::MightSeeGamePortals
+================
+*/
+//go through all of our portals and modify the mightSees based on gameportal linking
+void idPVS::MightSeeGamePortals(void) const {
+	for (int i = 0; i < numPortals; i++) {
+		pvsPortal_t *p1 = &pvsPortals[i];
+		for (int j = 0; j < numPortals; j++) {
+			if (i == j) {
+				continue;
+			}
+			pvsPortal_t *p2 = &pvsPortals[j];
+			if (!(p1->mightSee[j>>3] & (1<<(j&7))) || !(p2->mightSee[i>>3] & (1<<(i&7)))) { //if they're already visible, don't care
+				if (p1->mightSeeGamePortal || p2->mightSeeGamePortal) { //do not bother unless at least one of these portals may be connected to a gamePortal
+					if (MightSeeLinkedGamePortal(p1, p2)) { //if there was a possible link, modify the mightSee on both portals to connect them
+						p1->mightSee[j>>3] |= (1<<(j&7));
+						p2->mightSee[i>>3] |= (1<<(i&7));
+					}
+				}
+			}
+		}
+	}
+}
+//HUMANHEAD END
 
 /*
 ================
@@ -239,7 +338,10 @@ idPVS::FrontPortalPVS
 ================
 */
 void idPVS::FrontPortalPVS( void ) const {
-	int i, j, k, n, p, side1, side2, areaSide;
+	int i, j, n, p;
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
+	int k, side1, side2, areaSide;
+#endif //HUMANHEAD END
 	pvsPortal_t *p1, *p2;
 	pvsArea_t *area;
 
@@ -250,17 +352,18 @@ void idPVS::FrontPortalPVS( void ) const {
 
 			area = &pvsAreas[j];
 
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
 			areaSide = side1 = area->bounds.PlaneSide( p1->plane );
 
 			// if the whole area is at the back side of the portal
 			if ( areaSide == PLANESIDE_BACK ) {
 				continue;
 			}
+#endif //HUMANHEAD END
 
 			for ( p = 0; p < area->numPortals; p++ ) {
-
 				p2 = area->portals[p];
-
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
 				// if we the whole area is not at the front we need to check
 				if ( areaSide != PLANESIDE_FRONT ) {
 					// if the second portal is completely at the back side of the first portal
@@ -303,10 +406,17 @@ void idPVS::FrontPortalPVS( void ) const {
 						continue;	// first portal is at the front of the second portal
 					}
 				}
+#endif //HUMANHEAD END
 
 				// the portal might be visible at the front
 				n = p2 - pvsPortals;
 				p1->mightSee[ n >> 3 ] |= 1 << (n&7);
+
+				//HUMANHEAD rww - if a portal has passed plane checks for a gamePortal, then let that portal be marked that it may see a gamePortal.
+				if (p2->gamePortal && !GAMEPORTAL_CONNECTIVITY_DISABLE) {
+					p1->mightSeeGamePortal = true;
+				}
+				//HUMANHEAD END
 			}
 		}
 	}
@@ -324,6 +434,16 @@ idPVS::FloodPassagePVS_r
 ===============
 */
 pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *portal, pvsStack_t *prevStack ) const {
+#ifdef DEBUG_PASSAGE_OVERFLOW //HUMANHEAD rww
+	__asm {
+	cmp		debugFloodPassageOverflow,esp
+	jle		cont
+	int		0x03
+	}
+	gameLocal.Error("Preempted stack overflow in idPVS::FloodPassagePVS_r.");
+	cont:
+#endif //HUMANHEAD END
+
 	int i, j, n, m;
 	pvsPortal_t *p;
 	pvsArea_t *area;
@@ -400,7 +520,10 @@ pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *po
 		}
 
 		// go through the portal
-		stack->next = FloodPassagePVS_r( source, p, stack );
+		if (p->recursionSource != source) { //HUMANHEAD rww
+			p->recursionSource = source;
+			stack->next = FloodPassagePVS_r( source, p, stack );
+		}
 	}
 
 	return stack;
@@ -429,6 +552,10 @@ void idPVS::PassagePVS( void ) const {
 		source = &pvsPortals[i];
 		memset( source->vis, 0, portalVisBytes );
 		memcpy( stack->mightSee, source->mightSee, portalVisBytes );
+#ifdef DEBUG_PASSAGE_OVERFLOW //HUMANHEAD rww
+		__asm mov debugFloodPassageOverflow,esp
+		debugFloodPassageOverflow -= 3900000; //close to 4mb, because our stack size is 4mb.
+#endif //HUMANHEAD END
 		FloodPassagePVS_r( source, source, stack );
 		source->done = true;
 	}
@@ -569,8 +696,11 @@ idPVS::CreatePassages
 #define MAX_PASSAGE_BOUNDS		128
 
 void idPVS::CreatePassages( void ) const {
-	int i, j, l, n, numBounds, front, passageMemory, byteNum, bitNum;
+	int i, j, n, numBounds, passageMemory, byteNum, bitNum;
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
+	int l, front;
 	int sides[MAX_PASSAGE_BOUNDS];
+#endif //HUMANHEAD END
 	idPlane passageBounds[MAX_PASSAGE_BOUNDS];
 	pvsPortal_t *source, *target, *p;
 	pvsArea_t *area;
@@ -617,55 +747,59 @@ void idPVS::CreatePassages( void ) const {
 				for ( bitNum = 0; bitNum < 8; bitNum++ ) {
 
 					bit = 1 << bitNum;
-
 					if ( !( mightSee & bit ) ) {
 						continue;
 					}
 
-					p = &pvsPortals[(byteNum << 3) + bitNum];
+					int portalIndex = (byteNum << 3) + bitNum;
+					p = &pvsPortals[portalIndex];
 
 					if ( p->areaNum == source->areaNum ) {
 						continue;
 					}
 
-					for ( front = 0, l = 0; l < numBounds; l++ ) {
-						sides[l] = p->bounds.PlaneSide( passageBounds[l] );
-						// if completely at the back of the passage bounding plane
-						if ( sides[l] == PLANESIDE_BACK ) {
-							break;
-						}
-						// if completely at the front
-						if ( sides[l] == PLANESIDE_FRONT ) {
-							front++;
-						}
-					}
-					// if completely outside the passage
-					if ( l < numBounds ) {
-						continue;
-					}
-
-					// if not at the front of all bounding planes and thus not completely inside the passage
-					if ( front != numBounds ) {
-
-						winding = *p->w;
-
-						for ( l = 0; l < numBounds; l++ ) {
-							// only clip if the winding possibly crosses this plane
-							if ( sides[l] != PLANESIDE_CROSS ) {
-								continue;
-							}
-							// clip away the part at the back of the bounding plane
-							winding.ClipInPlace( passageBounds[l] );
-							// if completely clipped away
-							if ( !winding.GetNumPoints() ) {
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
+					if (!source->mightSeeGamePortal && !target->mightSeeGamePortal && !p->mightSeeGamePortal) { //HUMANHEAD rww - do not do this for those portals which may see a gamePortal
+						for ( front = 0, l = 0; l < numBounds; l++ ) {
+							sides[l] = p->bounds.PlaneSide( passageBounds[l] );
+							// if completely at the back of the passage bounding plane
+							if ( sides[l] == PLANESIDE_BACK ) {
 								break;
+							}
+							// if completely at the front
+							if ( sides[l] == PLANESIDE_FRONT ) {
+								front++;
 							}
 						}
 						// if completely outside the passage
 						if ( l < numBounds ) {
 							continue;
 						}
+
+						// if not at the front of all bounding planes and thus not completely inside the passage
+						if ( front != numBounds ) {
+
+							winding = *p->w;
+
+							for ( l = 0; l < numBounds; l++ ) {
+								// only clip if the winding possibly crosses this plane
+								if ( sides[l] != PLANESIDE_CROSS ) {
+									continue;
+								}
+								// clip away the part at the back of the bounding plane
+								winding.ClipInPlace( passageBounds[l] );
+								// if completely clipped away
+								if ( !winding.GetNumPoints() ) {
+									break;
+								}
+							}
+							// if completely outside the passage
+							if ( l < numBounds ) {
+								continue;
+							}
+						}
 					}
+#endif
 
 					canSee |= bit;
 				}
@@ -832,6 +966,12 @@ void idPVS::Init( void ) {
 	FrontPortalPVS();
 
 	CopyPortalPVSToMightSee();
+
+	//HUMANHEAD rww - go through now and add exceptions for mightSee involving gamePortals
+	if (!GAMEPORTAL_CONNECTIVITY_DISABLE) {
+		MightSeeGamePortals();
+	}
+	//HUMANHEAD END
 
 	PassagePVS();
 
@@ -1240,6 +1380,9 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 
 	handle = SetupCurrentPVS( source, type );
 
+#if GAMEPORTAL_PVS
+	gameLocal.Printf("%d areas: (source area = %d)\n", numAreas, sourceArea);
+#endif
 	for ( j = 0; j < numAreas; j++ ) {
 
 		if ( !( currentPVS[handle.i].pvs[j>>3] & (1 << (j&7)) ) ) {
@@ -1255,6 +1398,9 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 
 		n = gameRenderWorld->NumPortalsInArea( j );
 
+#if GAMEPORTAL_PVS
+		gameLocal.Printf("  area %d visible: (%d portals) 0x%04x\n", j, n, currentPVS[handle.i].pvs[j>>3]);
+#endif
 		// draw all the portals of the area
 		for ( i = 0; i < n; i++ ) {
 			portal = gameRenderWorld->GetPortal( j, i );
@@ -1264,8 +1410,18 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 			portal.w->GetPlane( plane );
 			offset = plane.Normal() * 4.0f;
 			for ( k = 0; k < numPoints; k++ ) {
+#if GAMEPORTAL_PVS
+				gameRenderWorld->DebugArrow( *color, (*portal.w)[k].ToVec3() + offset, (*portal.w)[(k+1)%numPoints].ToVec3() + offset, 5 );
+#else
 				gameRenderWorld->DebugLine( *color, (*portal.w)[k].ToVec3() + offset, (*portal.w)[(k+1)%numPoints].ToVec3() + offset );
+#endif
 			}
+
+#if GAMEPORTAL_PVS
+			// HUMANHEAD pdm
+			gameRenderWorld->DebugArrow( *color, (*portal.w)[0].ToVec3() + offset, (*portal.w)[0].ToVec3() + offset*8, 5, 0);
+			// HUMANHEAD END
+#endif
 		}
 	}
 
