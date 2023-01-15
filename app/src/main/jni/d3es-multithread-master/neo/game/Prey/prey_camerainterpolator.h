@@ -112,7 +112,7 @@ class hhCameraInterpolator {
 				interpVal = 1.0f;
 			}
 
-			bool	IsDone() const {
+			void	IsDone() const {
 				return interpVal >= 1.0f;
 			}
 		};

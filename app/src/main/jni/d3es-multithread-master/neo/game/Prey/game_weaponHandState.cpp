@@ -131,11 +131,11 @@ int hhWeaponHandState::Archive( const char *newWeaponDef, int weaponTransition,
 			assert(oldWeaponNum != -1);
 		}
 		//Calling destructor directly otherwise it doesn't get called until next frame
-		if( player->hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) { 
-			player->hands[ vr_weaponHand.GetInteger() ].weapon->DeconstructScriptObject();
-			player->hands[ vr_weaponHand.GetInteger() ].weapon->Hide();
+		if( player->weapon.IsValid() ) { 
+			player->weapon->DeconstructScriptObject();
+			player->weapon->Hide();
 		}
-		SAFE_REMOVE( player->hands[ vr_weaponHand.GetInteger() ].weapon );
+		SAFE_REMOVE( player->weapon );
 	}
 
 	// See if we have a new weapon to put up
@@ -143,15 +143,15 @@ int hhWeaponHandState::Archive( const char *newWeaponDef, int weaponTransition,
 		player->ForceWeapon( player->GetWeaponNum(newWeaponDef) );
 
 		// Weapon_Combat() normally takes care of the lowering/raising logic, so force the raise here
-		player->hands[ vr_weaponHand.GetInteger() ].weapon->Raise();
+		player->weapon->Raise();
 		player->SetState( "RaiseWeapon" );
 
 		// Now that we have the weapon, how do we get it there?
 		if ( weaponTransition ) {
-			player->hands[ vr_weaponHand.GetInteger() ].weapon->Raise();
+			player->weapon->Raise();
 		}
 		else {
-			player->hands[ vr_weaponHand.GetInteger() ].weapon->ProcessEvent( &EV_Weapon_State, "Idle", 0 );
+			player->weapon->ProcessEvent( &EV_Weapon_State, "Idle", 0 );
 		}
 	}
 
@@ -197,11 +197,11 @@ int hhWeaponHandState::RestoreFromArchive() {
 
 	if ( trackWeapon ) {
 		//Calling destructor directly otherwise it doesn't get called until next frame
-		if( player->hands[ vr_weaponHand.GetInteger() ].weapon.IsValid() ) { 
-			player->hands[ vr_weaponHand.GetInteger() ].weapon->DeconstructScriptObject();
-			player->hands[ vr_weaponHand.GetInteger() ].weapon->Hide();
+		if( player->weapon.IsValid() ) { 
+			player->weapon->DeconstructScriptObject();
+			player->weapon->Hide();
 		}
-		SAFE_REMOVE( player->hands[ vr_weaponHand.GetInteger() ].weapon );
+		SAFE_REMOVE( player->weapon );
 		
 		// Put up the old weapon if there
 		if ( oldWeaponNum ) {
@@ -212,13 +212,13 @@ int hhWeaponHandState::RestoreFromArchive() {
 
 			if ( oldWeaponUp && player->health <= 0 ) {		//HUMANHEAD bjk PCF (4-29-06) - fix weapon after shuttle death
 				// Make sure it is lowered
-				player->hands[ vr_weaponHand.GetInteger() ].weapon->ProcessEvent( &EV_Weapon_State, "Raise", 0 );
-				player->hands[ vr_weaponHand.GetInteger() ].weapon->UpdateScript();
+				player->weapon->ProcessEvent( &EV_Weapon_State, "Raise", 0 );
+				player->weapon->UpdateScript();
 
-				player->hands[ vr_weaponHand.GetInteger() ].weapon->Raise();
+				player->weapon->Raise();
 			}
 			else {
-				player->hands[ vr_weaponHand.GetInteger() ].weapon->ProcessEvent( &EV_Weapon_State, "Idle", 0 );
+				player->weapon->ProcessEvent( &EV_Weapon_State, "Idle", 0 );
 			}
 		} else {
 			player->ForceWeapon( -1 );
@@ -274,7 +274,7 @@ int hhWeaponHandState::RestoreFromArchive() {
 		}
 		// If no hands in line, then set the weapon straight if we haven't set it already
 		else if ( !setWeapon ) {
-			player->hands[ vr_weaponHand.GetInteger() ].weapon->ProcessEvent( &EV_Weapon_State, "Idle", 0 );
+			player->weapon->ProcessEvent( &EV_Weapon_State, "Idle", 0 );
 		}		//. Got a real hand?
 	}	//. We care about the hand
 

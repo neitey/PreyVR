@@ -1,48 +1,17 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+#if GAMEPAD_SUPPORT	// VENOM BEGIN
+//#include "../sys/win32/win_local.h"
+#include "../sys/sys_public.h"
+#endif // VENOM END
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/async/NetworkSystem.h"
-#include "framework/DeclEntityDef.h"
-#include "renderer/ModelManager.h"
-
-#include "gamesys/SysCvar.h"
-#include "physics/Physics_Parametric.h"
-#include "physics/Physics_Actor.h"
-#include "script/Script_Thread.h"
-#include "Fx.h"
-#include "AFEntity.h"
-#include "Player.h"
-#include "Mover.h"
-#include "WorldSpawn.h"
-#include "SmokeParticles.h"
-
-#include "Entity.h"
+#include "Game_local.h"
 
 //HUMANHEAD: aob - needed for helper functions
 #include "Prey/ai_speech.h"
@@ -135,13 +104,10 @@ const idEventDef EV_SetClipMask( "setClipmask", "d" );
 
 const idEventDef EV_SetPortalCollision( "setPortalCollision", "d" ); // HUMANHEAD CJR
 
-const idEventDef EV_SetGui("setGui", "ds");
-const idEventDef EV_PrecacheGui("precacheGui", "s");
-const idEventDef EV_GetGuiParm("getGuiParm", "ds", 's');
-const idEventDef EV_GetGuiParmFloat("getGuiParmFloat", "ds", 'f');
-const idEventDef EV_MotionBlurOn("motionBlurOn");
-const idEventDef EV_MotionBlurOff("motionBlurOff");
-const idEventDef EV_GuiNamedEvent("guiNamedEvent", "ds");
+//#if GAMEPAD_SUPPORT	// VENOM BEGIN
+const idEventDef EV_PlayRumbleEffect( "playRumble", "d", NULL );
+const idEventDef EV_StopRumbleEffect( "stopRumble", NULL, NULL );
+//#endif // VENOM END
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	// HUMANHEAD nla, aob
@@ -149,8 +115,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_MoveToJointWeighted,		idEntity::Event_MoveToJointWeighted )
 	EVENT( EV_MoveJointToJoint,			idEntity::Event_MoveJointToJoint )
 	EVENT( EV_MoveJointToJointOffset,	idEntity::Event_MoveJointToJointOffset )
-	EVENT( EV_SetSkinByName,			idEntity::Event_SetSkinByName )
-	EVENT( EV_SpawnDebris,				idEntity::Event_SpawnDebris )
+	EVENT( EV_SetSkinByName,			idEntity::Event_SetSkinByName )	
+	EVENT( EV_SpawnDebris,				idEntity::Event_SpawnDebris )	
 	EVENT( EV_DamageEntity,				idEntity::Event_DamageEntity )
 	EVENT( EV_DelayDamageEntity,		idEntity::Event_DelayDamageEntity )
 	EVENT( EV_Dispose,					idEntity::Event_Dispose )
@@ -211,8 +177,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetMins,				idEntity::Event_GetMins)
 	EVENT( EV_GetMaxs,				idEntity::Event_GetMaxs )
 	EVENT( EV_Touches,				idEntity::Event_Touches )
-	EVENT( EV_SetGuiParm,			idEntity::Event_SetGuiParm )
-	EVENT( EV_SetGuiFloat,			idEntity::Event_SetGuiFloat )
+	EVENT( EV_SetGuiParm, 			idEntity::Event_SetGuiParm )
+	EVENT( EV_SetGuiFloat, 			idEntity::Event_SetGuiFloat )
 	EVENT( EV_GetNextKey,			idEntity::Event_GetNextKey )
 	EVENT( EV_SetKey,				idEntity::Event_SetKey )
 	EVENT( EV_GetKey,				idEntity::Event_GetKey )
@@ -230,11 +196,11 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
-	EVENT(EV_SetGui,				idEntity::Event_SetGui)
-	EVENT(EV_PrecacheGui,			idEntity::Event_PrecacheGui)
-	EVENT(EV_GetGuiParm,			idEntity::Event_GetGuiParm)
-	EVENT(EV_GetGuiParmFloat,		idEntity::Event_GetGuiParmFloat)
-	EVENT(EV_GuiNamedEvent,		idEntity::Event_GuiNamedEvent)
+
+#if GAMEPAD_SUPPORT	// VENOM BEGIN
+	EVENT( EV_PlayRumbleEffect,		idEntity::Event_PlayRumbleEffect )
+	EVENT( EV_StopRumbleEffect,		idEntity::Event_StopRumbleEffect )
+#endif // VENOM END
 END_CLASS
 
 /*
@@ -321,19 +287,19 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 
 	// get the rotation matrix in either full form, or single angle form
 	if ( !args->GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", renderEntity->axis ) ) {
-		//HUMANHEAD: aob - so editor 'up' and 'down' buttons work on entities
+		//HUMANHEAD: aob - so editor 'up' and 'down' buttons work on entities		
 		idAngles angles( ang_zero );
 		angle = args->GetFloat( "angle" );
 		if( angle == -1 ) {
 			angles[ 0 ] = -90.0f;
-		}
+		} 
 		else if( angle == -2 ) {
 			angles[ 0 ] = 90.0f;
-		}
+		} 
 		else {
-			angles[ 0 ] = args->GetFloat( "pitch" );
+   			angles[ 0 ] = args->GetFloat( "pitch" );
 			angles[ 1 ] = angle;
-			angles[ 2 ] = args->GetFloat( "roll" );
+   			angles[ 2 ] = args->GetFloat( "roll" );
 		}
 		//HUMANHEAD END
 		renderEntity->axis = angles.ToMat3();
@@ -541,8 +507,6 @@ idEntity::idEntity() : reactions(1) { // HUMANHEAD JRM
 	mpGUIState = -1;
 
 	woundManager = NULL; // HUMANHEAD mdl:  So it doesn't crash on loadgame from a bad pointer
-
-	timeGroup = TIME_GROUP1;
 }
 
 /*
@@ -587,10 +551,9 @@ void idEntity::Spawn( void ) {
 	gameEdit->ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
 
 	renderEntity.entityNum = entityNumber;
-	renderEntity.xrayIndex = 1;
-
+	
 	// go dormant within 5 frames so that when the map starts most monsters are dormant
-	dormantStart = gameLocal.time - DELAY_DORMANT_TIME + USERCMD_MSEC * 5;
+	dormantStart = gameLocal.time - DELAY_DORMANT_TIME + gameLocal.msec * 5;
 
 	origin = renderEntity.origin;
 	axis = renderEntity.axis;
@@ -673,7 +636,7 @@ void idEntity::Spawn( void ) {
 
 	// HUMANHEAD jrm
 	spawnHealth = health;
-
+	
 	// Load our reaction defs next frame if we are starting up. worldAI ent must be loaded before we can load reactions
 	// Only post event if we have some kind of reaction specified
 	if(spawnArgs.MatchPrefix("def_reaction") != NULL) {
@@ -684,7 +647,7 @@ void idEntity::Spawn( void ) {
 			LoadReactions();
 		}
 	}
-
+	
 	woundManager = NULL;
 	// HUMANHEAD END
 
@@ -721,9 +684,6 @@ void idEntity::Spawn( void ) {
 	pushes = spawnArgs.GetBool( "pushes", "1" );
 	pushCosine = spawnArgs.GetFloat( "push_cosine", ".707" );
 	// HUMANHEAD end
-
-	// determine time group
-	DetermineTimeGroup(spawnArgs.GetBool("slowmo", "1"));
 }
 
 /*
@@ -753,14 +713,13 @@ idEntity::~idEntity( void ) {
 	if ( thinkFlags ) {
 		BecomeInactive( thinkFlags );
 	}
-
 	// nla
 	if ( lastTimeSoundPlayed ) {
 		delete lastTimeSoundPlayed;
 		lastTimeSoundPlayed = NULL;
 	}
 	// JRM delete reactions
-	reactions.DeleteContents(true);
+	reactions.DeleteContents(TRUE);
 	//HUMANHEAD END
 
 	activeNode.Remove();
@@ -768,7 +727,7 @@ idEntity::~idEntity( void ) {
 	Signal( SIG_REMOVED );
 
 #ifdef _DEBUG //HUMANHEAD rww - check for stray clipModels
-	#if !GOLD
+#if !GOLD
 	if (GetPhysics() && gameLocal.clip.CheckClipEntMatch(NULL, GetPhysics()->GetClipModel(), this)) {
 		gameLocal.Warning("Entity '%s' (num %i) left a lingering clipModel!", GetName(), entityNumber);
 	}
@@ -836,8 +795,6 @@ void idEntity::Save( idSaveGame *savefile ) const {
 	entityFlags_s flags = fl;
 	LittleBitField( &flags, sizeof( flags ) );
 	savefile->Write( &flags, sizeof( flags ) );
-
-	savefile->WriteInt(timeGroup);
 
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
@@ -916,6 +873,7 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( health );
 
 	targets.Clear();
+
 	savefile->ReadInt( num );
 	targets.SetNum( num );
 	for( i = 0; i < num; i++ ) {
@@ -924,9 +882,7 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
-
-	savefile->ReadInt(timeGroup);
-
+	
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
 	savefile->ReadRefSound( refSound );
@@ -1041,7 +997,7 @@ const char * idEntity::GetName( void ) const {
 /***********************************************************************
 
 	Thinking
-
+	
 ***********************************************************************/
 
 /*
@@ -1090,7 +1046,64 @@ bool idEntity::DoDormantTests( void ) {
 	if ( !gameLocal.InPlayerConnectedArea( this ) ) {
 		if ( dormantStart == 0 ) {
 			dormantStart = gameLocal.time;
+			// HUMANHEAD JRM
+			if( g_showDormant.GetBool() )	{
+				gameLocal.Printf( "\n %s (%s)  Just went dormant!\n", name.c_str(), (const char*)this->GetClassname());
+				gameRenderWorld->DrawText( name.c_str(), GetOrigin(), 1.0f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 3000 );
+				if( GetPhysics() ) {
+					gameRenderWorld->DebugBox( colorMdGrey, idBox(GetPhysics()->GetBounds(), GetOrigin(), GetAxis()), 3000 );
+				}
+			}
+			// HUMANHEAD END
 
+		}
+		if ( gameLocal.time - dormantStart < DELAY_DORMANT_TIME ) {
+			// just got closed off, don't go dormant yet
+			return false;
+		}
+		return true;
+	} else {
+		// the monster area is topologically connected to a player, but if
+		// the monster hasn't been woken up before, do the more precise PVS check
+		if ( !fl.hasAwakened ) {
+			if ( !gameLocal.InPlayerPVS( this ) ) {
+				return true;		// stay dormant
+			}
+		}
+
+		// wake up
+		dormantStart = 0;
+		fl.hasAwakened = true;		// only go dormant when area closed off now, not just out of PVS
+		return false;
+	}
+
+//CJRMERGE: See if this code still makes sense.  Id changed their dormant
+// code above quite a bit.  Don't know where/if this fits.
+#if 0
+	// HUMANHEAD CJR:  Robust dormant check
+	if ( ( numAreas > 1 && fl.robustDormant ) || g_robustDormantAll.GetBool() ) {
+		for( int i = 0; i < numAreas; i++ ) {
+			for( int j = 0; j < numPlayerAreas; j++ ) {
+				if ( gameRenderWorld->AreasAreConnected( areas[i], playerAreas[j], PS_BLOCK_VIEW ) ) { // Areas are connected
+					// the monster area is topologically connected to the player,
+					// but if the monster hasn't been woken up before, do the more precise
+					// PVS check
+					if ( !fl.hasAwakened ) {
+						if ( !gameLocal.InPlayerPVS( this ) ) {
+							return true;		// stay dormant
+						}
+					}
+
+					// wake up
+					dormantStart = 0;
+					fl.hasAwakened = true;		// only go dormant when area closed off now, not just out of PVS
+					return false;
+				}
+			}
+		}
+		// The areas are not connected, go dormant
+		if ( dormantStart == 0 ) {
+			dormantStart = gameLocal.time;
 			// HUMANHEAD JRM
 			if( g_showDormant.GetBool() )	{
 				gameLocal.Printf( "\n %s (%s)  Just went dormant!\n", name.c_str(), (const char*)this->GetClassname());
@@ -1106,19 +1119,8 @@ bool idEntity::DoDormantTests( void ) {
 			return false;
 		}
 		return true;
-	}
-
-	// the monster area is topologically connected to a player, but if
-	// the monster hasn't been woken up before, do the more precise PVS check
-	if ( !fl.hasAwakened ) {
-		if ( !gameLocal.InPlayerPVS( this ) ) {
-			return true;		// stay dormant
-		}
-	}
-
-	// wake up
-	dormantStart = 0;
-	fl.hasAwakened = true;		// only go dormant when area closed off now, not just out of PVS
+	} // HUMANHEAD END
+#endif
 
 	return false;
 }
@@ -1132,8 +1134,9 @@ off from the player can skip all of their work
 ================
 */
 bool idEntity::CheckDormant( void ) {
+	PROFILE_SCOPE("Dormant Tests", PROFMASK_NORMAL);
 	bool dormant;
-
+	
 	dormant = DoDormantTests();
 	if ( dormant && !fl.isDormant ) {
 		fl.isDormant = true;
@@ -1244,7 +1247,7 @@ void idEntity::BecomeInactive( int flags ) {
 /***********************************************************************
 
 	Visuals
-
+	
 ***********************************************************************/
 
 /*
@@ -1441,6 +1444,7 @@ void idEntity::Show( void ) {
 /*
 ================
 idEntity::UpdateModelTransform
+NOTE: Please notify nla if this changes. Is used in hhModelProxy::SetOriginAndAxis
 ================
 */
 void idEntity::UpdateModelTransform( void ) {
@@ -1462,7 +1466,6 @@ idEntity::UpdateModel
 ================
 */
 void idEntity::UpdateModel( void ) {
-	renderEntity.timeGroup = timeGroup;
 	UpdateModelTransform();
 
 	// check if the entity has an MD5 model
@@ -1661,6 +1664,7 @@ Present is called to allow entities to generate refEntities, lights, etc for the
 ================
 */
 void idEntity::Present( void ) {
+	PROFILE_SCOPE("Present", PROFMASK_NORMAL);
 
 	if ( !gameLocal.isNewFrame ) {
 		return;
@@ -1713,7 +1717,7 @@ int idEntity::GetModelDefHandle( void ) {
 idEntity::UpdateRenderEntity
 ================
 */
-bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const {
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
@@ -1721,7 +1725,6 @@ bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderVie
 	//HUMANHEAD: nla - changed idAnimator to hhAnimator
 	hhAnimator *animator = (hhAnimator *)GetAnimator();
 	if ( animator ) {
-		SetTimeState ts(timeGroup);
 		return animator->CreateFrame( gameLocal.time, false );
 	}
 
@@ -1802,7 +1805,7 @@ renderView_t *idEntity::GetRenderView( void ) {
 /***********************************************************************
 
   Sound
-
+	
 ***********************************************************************/
 
 /*
@@ -1846,13 +1849,12 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 		return true;
 	}
 
-
 	// HUMANHEAD nla - Check if this sound should be played every X seconds
 	float minInterval;
 	int   lastPlayed;
 	//gameLocal.Printf(" Checking for sound %s\n", soundName );
 	if ( spawnArgs.GetFloat( va( "min_%s", soundName ), "0", minInterval ) &&
-	     minInterval > 0 ) {
+		 minInterval > 0 ) {
 		//gameLocal.Printf( "Got min of %.2f\n", minInterval );
 		if ( GetLastTimeSoundPlayed()->GetInt( soundName, "-1", lastPlayed ) ) {
 			// gameLocal.Printf( "Had last time played %d!\n", lastPlayed );
@@ -1864,7 +1866,6 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 		GetLastTimeSoundPlayed()->SetInt( soundName, gameLocal.time );
 	}
 	// HUMANHEAD END
-
 
 	shader = declManager->FindSound( sound );
 	return StartSoundShader( shader, channel, soundShaderFlags, broadcast, length );
@@ -1919,7 +1920,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 	//HUMANHEAD END
 	UpdateSound();
 
-	len = refSound.referenceSound->StartSound(shader, channel, diversity, soundShaderFlags, !timeGroup /*_D3XP*/);
+	len = refSound.referenceSound->StartSound( shader, channel, diversity, soundShaderFlags );
 	if ( length ) {
 		*length = len;
 	}
@@ -1948,7 +1949,7 @@ void idEntity::StopSound( const s_channelType channel, bool broadcast ) {
 		msg.BeginWriting();
 		msg.WriteByte( channel );
 		ServerSendEvent( EVENT_STOPSOUNDSHADER, &msg, false, -1 );	//HUMANHEAD rww - could this be made unreliable?
-		//probably don't want to take the chance of leaving looping sounds on the client.
+																	//probably don't want to take the chance of leaving looping sounds on the client.
 	}
 
 	if ( refSound.referenceSound ) {
@@ -2020,7 +2021,7 @@ void idEntity::FreeSoundEmitter( bool immediate ) {
 /***********************************************************************
 
   entity binding
-
+	
 ***********************************************************************/
 
 /*
@@ -2666,13 +2667,13 @@ void idEntity::JoinTeam( idEntity *teammember ) {
 			ent->teamChain->teamMaster = master;
 		}
 
-		prev->teamChain = this;
+    	prev->teamChain = this;
 		ent->teamChain = next;
 	}
 
 	teamMaster = master;
 
-	// reorder the active entity list
+	// reorder the active entity list 
 	gameLocal.sortTeamMasters = true;
 }
 
@@ -2727,7 +2728,7 @@ void idEntity::QuitTeam( void ) {
 /***********************************************************************
 
   Physics.
-
+	
 ***********************************************************************/
 
 /*
@@ -2844,7 +2845,9 @@ idEntity::RunPhysics
 bool idEntity::RunPhysics( void ) {
 	int			i, reachedTime, startTime, endTime;
 	idEntity *	part, *blockedPart, *blockingEntity;
+	trace_t		results;
 	bool		moved;
+	PROFILE_SCOPE("Physics", PROFMASK_NORMAL|PROFMASK_PHYSICS);
 
 	// don't run physics if not enabled
 	if ( !( thinkFlags & TH_PHYSICS ) ) {
@@ -3178,7 +3181,7 @@ void idEntity::RemoveContactEntity( idEntity *ent ) {
 /***********************************************************************
 
 	Damage
-
+	
 ***********************************************************************/
 
 /*
@@ -3190,9 +3193,9 @@ explosions and melee attacks.
 ============
 */
 bool idEntity::CanDamage( const idVec3 &origin, idVec3 &damagePoint ) const {
-	idVec3	dest;
+	idVec3 	dest;
 	trace_t	tr;
-	idVec3	midpoint;
+	idVec3 	midpoint;
 
 	// use the midpoint of the bounds instead of the origin, because
 	// bmodels may have their origin at 0,0,0
@@ -3289,13 +3292,11 @@ inflictor, attacker, dir, and point can be NULL for environmental effects
 
 ============
 */
-void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
 					  const char *damageDefName, const float damageScale, const int location ) {
 	if ( !fl.takedamage ) {
 		return;
 	}
-
-	SetTimeState ts(timeGroup);
 
 	//HUMANHEAD rww - clientside projectiles and stuff can get in here
 	if (gameLocal.isClient) {
@@ -3448,7 +3449,6 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 }
 #endif	// HUMANHEAD
 
-
 /*
 ============
 idEntity::Pain
@@ -3476,7 +3476,7 @@ void idEntity::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 /***********************************************************************
 
   Script functions
-
+	
 ***********************************************************************/
 
 /*
@@ -3711,7 +3711,7 @@ void idEntity::SignalEvent( idThread *thread, signalNum_t signalnum ) {
 /***********************************************************************
 
   Guis.
-
+	
 ***********************************************************************/
 
 
@@ -3856,11 +3856,6 @@ bool idEntity::HandleGuiCommands( idEntity *entityGui, const char *cmds ) {
 			}
 */
 
-			if (!token.Icmp("martianbuddycomplete")) {
-				gameLocal.GetLocalPlayer()->GiveEmail("MartianBuddyGameComplete");
-				continue;
-			}
-
 			// handy for debugging GUI stuff
 			if ( !token.Icmp( "print" ) ) {
 				idStr msg;
@@ -3923,7 +3918,7 @@ bool idEntity::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 /***********************************************************************
 
   Targets
-
+	
 ***********************************************************************/
 
 /*
@@ -3974,7 +3969,7 @@ idEntity::ActivateTargets
 void idEntity::ActivateTargets( idEntity *activator ) const {
 	idEntity	*ent;
 	int			i, j;
-
+	
 	for( i = 0; i < targets.Num(); i++ ) {
 		ent = targets[ i ].GetEntity();
 		if ( !ent ) {
@@ -3983,7 +3978,7 @@ void idEntity::ActivateTargets( idEntity *activator ) const {
 		if ( ent->RespondsTo( EV_Activate ) || ent->HasSignal( SIG_TRIGGER ) ) {
 			ent->Signal( SIG_TRIGGER );
 			ent->ProcessEvent( &EV_Activate, activator );
-		}
+		} 		
 		for ( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
 			if ( ent->renderEntity.gui[ j ] ) {
 				ent->renderEntity.gui[ j ]->Trigger( gameLocal.time );
@@ -3992,12 +3987,11 @@ void idEntity::ActivateTargets( idEntity *activator ) const {
 	}
 }
 
-
 //HUMANHEAD jsh
 void idEntity::DeactivateTargetsType( const idTypeInfo &classdef ) const {
 	idEntity	*ent;
 	int			i, j;
-
+	
 	for( i = 0; i < targets.Num(); i++ ) {
 		ent = targets[ i ].GetEntity();
 		if ( !ent ) {
@@ -4009,7 +4003,7 @@ void idEntity::DeactivateTargetsType( const idTypeInfo &classdef ) const {
 		if ( ent->RespondsTo( EV_Deactivate ) || ent->HasSignal( SIG_TRIGGER ) ) {
 			ent->Signal( SIG_TRIGGER );
 			ent->ProcessEvent( &EV_Deactivate );
-		}
+		} 		
 		for ( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
 			if ( ent->renderEntity.gui[ j ] ) {
 				ent->renderEntity.gui[ j ]->Trigger( gameLocal.time );
@@ -4022,7 +4016,7 @@ void idEntity::DeactivateTargetsType( const idTypeInfo &classdef ) const {
 /***********************************************************************
 
   Misc.
-
+	
 ***********************************************************************/
 
 /*
@@ -4081,8 +4075,6 @@ bool idEntity::TouchTriggers( void ) const {
 		if ( !GetPhysics()->ClipContents( cm ) ) {
 			continue;
 		}
-
-		SetTimeState ts(ent->timeGroup);
 
 		numEntities++;
 
@@ -4158,8 +4150,25 @@ void idEntity::ShowEditingDialog( void ) {
 /***********************************************************************
 
    Events
-
+	
 ***********************************************************************/
+void idEntity::Event_MoveToJoint( idEntity *master, const char *bonename ) {
+	MoveToJoint(master, bonename);
+}
+void idEntity::Event_MoveToJointWeighted( idEntity *master, const char *bonename, idVec3 &weight ) {
+	MoveToJointWeighted(master, bonename, weight);
+}
+void idEntity::Event_MoveJointToJoint( const char *ourBone, idEntity *master, const char *masterBone ) {
+	MoveJointToJoint(ourBone, master, masterBone);
+}
+void idEntity::Event_MoveJointToJointOffset( const char *ourBone, idEntity *master, const char *masterBone, idVec3 &offset ) {
+	MoveJointToJointOffset(ourBone, master, masterBone, offset);
+}
+void idEntity::Event_SetSkinByName( const char *skinname ) {
+	SetSkinByName(skinname);
+}
+
+
 
 /*
 ================
@@ -4325,7 +4334,7 @@ void idEntity::Event_SpawnBind( void ) {
 	const idAnim	*anim;
 	int				animNum;
 	idAnimator		*parentAnimator;
-
+	
 	if ( spawnArgs.GetString( "bind", "", &bind ) ) {
 		if ( idStr::Icmp( bind, "worldspawn" ) == 0 ) {
 			//FIXME: Completely unneccessary since the worldspawn is called "world"
@@ -4538,12 +4547,12 @@ void idEntity::Event_StopSound( int channel, int netSync ) {
 
 /*
 ================
-idEntity::Event_StartSound
+idEntity::Event_StartSound 
 ================
 */
 void idEntity::Event_StartSound( const char *soundName, int channel, int netSync ) {
 	int time;
-
+	
 	StartSound( soundName, ( s_channelType )channel, 0, ( netSync != 0 ), &time );
 	idThread::ReturnFloat( MS2SEC( time ) );
 }
@@ -4768,7 +4777,6 @@ idEntity::Event_SetKey
 */
 void idEntity::Event_SetKey( const char *key, const char *value ) {
 	spawnArgs.Set( key, value );
-	UpdateChangeableSpawnArgs(NULL);
 }
 
 /*
@@ -4860,9 +4868,9 @@ void idEntity::Event_RestorePosition( void ) {
 	if ( spawnArgs.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) ) {
 		angles = axis.ToAngles();
 	} else {
-		angles[ 0 ] = 0;
-		angles[ 1 ] = spawnArgs.GetFloat( "angle" );
-		angles[ 2 ] = 0;
+   		angles[ 0 ] = 0;
+   		angles[ 1 ] = spawnArgs.GetFloat( "angle" );
+   		angles[ 2 ] = 0;
 	}
 
 	Teleport( org, angles, NULL );
@@ -4904,7 +4912,7 @@ void idEntity::Event_UpdateCameraTarget( void ) {
 				dir.Normalize();
 				cameraTarget->SetAxis( dir.ToMat3() );
 				SetAxis(dir.ToMat3());
-				break;
+				break;						
 			}
 			kv = cameraTarget->spawnArgs.MatchPrefix( "target", kv );
 		}
@@ -4953,7 +4961,7 @@ idEntity::Event_WaitFrame
 */
 void idEntity::Event_WaitFrame( void ) {
 	idThread *thread;
-
+	
 	thread = idThread::CurrentThread();
 	if ( thread ) {
 		thread->WaitFrame();
@@ -5031,77 +5039,24 @@ void idEntity::Event_SetNeverDormant( int enable ) {
 	dormantStart = 0;
 }
 
-/*
-================
-idEntity::Event_SetGui
-================
-* BSM Nerve: Allows guis to be changed at runtime. Guis that are
-* loaded after the level loads should be precahced using PrecacheGui.
-*/
-void idEntity::Event_SetGui(int guiNum, const char *guiName)
-{
-	idUserInterface **gui = NULL;
-
-	if (guiNum >= 1 && guiNum <= MAX_RENDERENTITY_GUI) {
-		gui = &renderEntity.gui[ guiNum-1 ];
-	}
-
-	if (gui) {
-		*gui = uiManager->FindGui(guiName, true, false);
-		UpdateGuiParms(*gui, &spawnArgs);
-		UpdateChangeableSpawnArgs(NULL);
-		gameRenderWorld->UpdateEntityDef(modelDefHandle, &renderEntity);
-
-	} else {
-		gameLocal.Error("Entity '%s' doesn't have a GUI %d", name.c_str(), guiNum);
-	}
-
-}
-
-/*
-================
-idEntity::Event_PrecacheGui
-================
-* BSM Nerve: Forces the engine to initialize a gui even if it is not specified as used in a level.
-* This is useful for preventing load hitches when switching guis during the game using "setGui"
-*/
-void idEntity::Event_PrecacheGui(const char *guiName)
-{
-	uiManager->FindGui(guiName, true, true);
-}
-
-void idEntity::Event_GetGuiParm(int guiNum, const char *key)
-{
-	if (renderEntity.gui[guiNum-1]) {
-		idThread::ReturnString(renderEntity.gui[guiNum-1]->GetStateString(key));
-		return;
-	}
-
-	idThread::ReturnString("");
-}
-
-void idEntity::Event_GetGuiParmFloat(int guiNum, const char *key)
-{
-	if (renderEntity.gui[guiNum-1]) {
-		idThread::ReturnFloat(renderEntity.gui[guiNum-1]->GetStateFloat(key));
-		return;
-	}
-
-	idThread::ReturnFloat(0.0f);
-}
-
-void idEntity::Event_GuiNamedEvent(int guiNum, const char *event)
-{
-	if (renderEntity.gui[guiNum-1]) {
-		renderEntity.gui[guiNum-1]->HandleNamedEvent(event);
+#if GAMEPAD_SUPPORT	// VENOM BEGIN
+void idEntity::Event_PlayRumbleEffect( int effect ) {
+	if( bindMaster->entityNumber == gameLocal.GetLocalPlayer()->entityNumber ) {
+        common->SetGamePadRumble(effect);
 	}
 }
 
+void idEntity::Event_StopRumbleEffect( void ) {
+	if( bindMaster->entityNumber == gameLocal.GetLocalPlayer()->entityNumber ) {
+		common->SetGamePadRumble(0);
+	}
+}
+#endif // VENOM END
 
 /***********************************************************************
 
    Network
-
+	
 ***********************************************************************/
 
 /*
@@ -5150,28 +5105,29 @@ void idEntity::ReadBindFromSnapshot( const idBitMsgDelta &msg ) {
 
 	bindInfo = msg.ReadBits( GENTITYNUM_BITS + 3 + 9 );
 	bindEntityNum = bindInfo & ( ( 1 << GENTITYNUM_BITS ) - 1 );
-
 	if ( bindEntityNum != ENTITYNUM_NONE ) {
 		master = gameLocal.entities[ bindEntityNum ];
-
-		bindOrientated = ( bindInfo >> GENTITYNUM_BITS ) & 1;
-		bindPos = ( bindInfo >> ( GENTITYNUM_BITS + 3 ) );
-		switch( ( bindInfo >> ( GENTITYNUM_BITS + 1 ) ) & 3 ) {
-			case 1: {
-				BindToJoint( master, (jointHandle_t) bindPos, bindOrientated );
-				break;
+		if ( master != bindMaster ) {
+			if ( bindMaster ) {
+				Unbind();
 			}
-			case 2: {
-				BindToBody( master, bindPos, bindOrientated );
-				break;
-			}
-			default: {
-				Bind( master, bindOrientated );
-				break;
+			bindOrientated = ( bindInfo >> GENTITYNUM_BITS ) & 1;
+			bindPos = ( bindInfo >> ( GENTITYNUM_BITS + 3 ) ) & 3;
+			switch( ( bindInfo >> ( GENTITYNUM_BITS + 1 ) ) & 3 ) {
+				case 1: {
+					BindToJoint( master, (jointHandle_t) bindPos, bindOrientated );
+					break;
+				}
+				case 2: {
+					BindToBody( master, bindPos, bindOrientated );
+					break;
+				}
+				default: {
+					Bind( master, bindOrientated );
+					break;
+				}
 			}
 		}
-	} else if ( bindMaster ) {
-		Unbind();
 	}
 }
 
@@ -5252,7 +5208,6 @@ idEntity::ReadFromSnapshot
 void idEntity::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 }
 
-
 //HUMANHEAD rww
 /*
 ================
@@ -5283,7 +5238,7 @@ void idEntity::ServerSendPVSEvent( int eventId, const idBitMsg *msg, const idVec
 
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.BeginWriting();
-	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );
+	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );	
 	outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
 	outMsg.WriteByte( eventId );
 	outMsg.WriteLong( gameLocal.time );
@@ -5367,7 +5322,7 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.BeginWriting();
-	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );
+	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );	
 	outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
 	outMsg.WriteByte( eventId );
 	outMsg.WriteLong( gameLocal.time );
@@ -5424,7 +5379,7 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 
 		gameLocal.pvs.FreeCurrentPVS(pvsHandle);
 	}
-		//HUMANHEAD END
+	//HUMANHEAD END
 	else { //HUMANHEAD rww - we could add unreliable support for map ents, but i doubt it would be highly beneficial.
 		if ( excludeClient != -1 ) {
 			networkSystem->ServerSendReliableMessageExcluding( excludeClient, outMsg );
@@ -5629,13 +5584,12 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			}
 		}
 		//HUMANHEAD END
-		default:
-			break;
+		default: {
+			return false;
+		}
 	}
-
 	return false;
 }
-
 
 //HUMANHEAD rww - mp snapshot enter/exit functions
 void idEntity::NetZombify(void) {
@@ -5650,40 +5604,6 @@ void idEntity::NetResurrect(void) {
 	fl.clientZombie = false;
 }
 //HUMANHEAD END
-
-/*
-================
-idEntity::DetermineTimeGroup
-================
-*/
-void idEntity::DetermineTimeGroup(bool slowmo)
-{
-	if (slowmo || gameLocal.isMultiplayer) {
-		timeGroup = TIME_GROUP1;
-	} else {
-		timeGroup = TIME_GROUP2;
-	}
-}
-
-/*
-================
-idEntity::SetGrabbedState
-================
-*/
-void idEntity::SetGrabbedState( bool grabbed )
-{
-	fl.grabbed = grabbed;
-}
-
-/*
-================
-idEntity::IsGrabbed
-================
-*/
-bool idEntity::IsGrabbed()
-{
-	return fl.grabbed;
-}
 
 /*
 ===============================================================================
@@ -5801,7 +5721,7 @@ idAnimatedEntity::Think
 */
 void idAnimatedEntity::Think( void ) {
 	RunPhysics();
-
+	
 	// HUMANHEAD pdm
 	if (thinkFlags & TH_TICKER) {
 		Ticker();
@@ -5819,6 +5739,7 @@ void idAnimatedEntity::Think( void ) {
 	//HUMANHEAD: aob - needed for combat models
 	LinkCombatModel( this, GetModelDefHandle() );
 	//HUMANHEAD END
+
 }
 
 /*
@@ -5882,6 +5803,7 @@ idAnimatedEntity::SetModel
 */
 void idAnimatedEntity::SetModel( const char *modelname ) {
 	FreeModelDef();
+
 
 	renderEntity.hModel = animator.SetModel( modelname );
 	if ( !renderEntity.hModel ) {
@@ -5958,7 +5880,7 @@ bool idAnimatedEntity::GetJointTransformForAnim( jointHandle_t jointHandle, int 
 
 	offset = frame[ jointHandle ].ToVec3();
 	axis = frame[ jointHandle ].ToMat3();
-
+	
 	return true;
 }
 
@@ -6052,8 +5974,6 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	damageEffect_t	*de;
 	idVec3 origin, dir;
 	idMat3 axis;
-
-	SetTimeState ts(timeGroup);
 
 	axis = renderEntity.joints[jointNum].ToMat3() * renderEntity.axis;
 	origin = renderEntity.origin + renderEntity.joints[jointNum].ToVec3() * renderEntity.axis;
@@ -6185,11 +6105,11 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &
 			AddLocalDamageEffect( jointNum, localOrigin, localNormal, localDir, damageDef, collisionMaterial );
 			return true;
 		}
-		default:
-			break;
+		default: {
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
 	}
-
-	return idEntity::ClientReceiveEvent( event, time, msg );
+	return false;
 }
 
 /*
@@ -6290,3 +6210,12 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idVec3 vec( ang[ 0 ], ang[ 1 ], ang[ 2 ] );
 	idThread::ReturnVector( vec );
 }
+
+void idEntity::Event_SetContents(int contents) {
+	GetPhysics()->SetContents(contents);
+}
+
+void idEntity::Event_SetClipmask(int clipmask) {
+	GetPhysics()->SetClipMask(clipmask);
+}
+

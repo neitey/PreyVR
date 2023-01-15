@@ -254,7 +254,6 @@ src_game = \
 	game/ai/AI.cpp \
 	game/ai/AI_events.cpp \
 	game/ai/AI_pathing.cpp \
-	game/ai/AI_Vagary.cpp \
 	game/anim/Anim.cpp \
 	game/anim/Anim_Blend.cpp \
 	game/anim/Anim_Import.cpp \
@@ -271,7 +270,6 @@ src_game = \
 	game/physics/Force_Constant.cpp \
 	game/physics/Force_Drag.cpp \
 	game/physics/Force_Field.cpp \
-	game/physics/Force_Grab.cpp \
 	game/physics/Force_Spring.cpp \
 	game/physics/Physics.cpp \
 	game/physics/Physics_AF.cpp \

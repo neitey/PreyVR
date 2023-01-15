@@ -35,7 +35,7 @@ void hhProjectileWrench::DamageEntityHit( const trace_t* collision, const idVec3
 
 		if ( entHit && entHit->IsType( idActor::Type ) ) {
 			//pOwner->weapon->SetSkinByName( "skins/weapons/wrench_bloody" );
-			pOwner->hands[ vr_weaponHand.GetInteger() ].weapon->SetShaderParm( 7, -MS2SEC(gameLocal.time) );
+			pOwner->weapon->SetShaderParm( 7, -MS2SEC(gameLocal.time) );
 		}
 	}
 	hhProjectile::DamageEntityHit( collision, velocity, entHit );

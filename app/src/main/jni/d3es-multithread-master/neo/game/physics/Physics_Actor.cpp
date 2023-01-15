@@ -1,35 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "Entity.h"
-
-#include "physics/Physics_Actor.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Actor )
 END_CLASS
@@ -152,8 +127,9 @@ void idPhysics_Actor::SetClipModelAxis( void ) {
 		clipModelAxis.Identity();
 	}
 	else {
+
 		// HUMANHEAD JRM/PDM/NLA - To get the right clipmodel axis in gravity zones
-		idVec3 newx;
+		idVec3 newx;		
 		newx = prevClipModelAxis[0] - (prevClipModelAxis[0] * -gravityNormal)*-gravityNormal;
 		if(newx.LengthSqr() < VECTOR_EPSILON) {
 			gameLocal.Warning("idPhysics_Actor::SetClipModelAxis invalid newx");
@@ -169,7 +145,7 @@ void idPhysics_Actor::SetClipModelAxis( void ) {
 		clipModelAxis[2] = -gravityNormal;
 		clipModelAxis[1] = clipModelAxis[2].Cross(clipModelAxis[0]);
 		// HUMANHEAD END
-	}
+	}		
 
 	if ( clipModel ) {
 		clipModel->Link( gameLocal.clip, self, 0, clipModel->GetOrigin(), clipModelAxis );
@@ -477,7 +453,7 @@ HUMANHEAD nla
 void idPhysics_Actor::AddTouchEntList( idList<int> &list ) {
 	int i;
 
-
+	
 	for ( i = 0; i < list.Num(); i++ ) {
 		AddTouchEnt(list[i]);
 	}
@@ -566,11 +542,11 @@ bool idPhysics_Actor::IterativeRotateMove( const idVec3& upVector, const idVec3&
 	if( upVector.Compare(idealUpVector, VECTOR_EPSILON) ) {
 		return false;
 	}
-
+	
 	rotator.SetVec( DetermineRotationVector(upVector, idealUpVector, rotationCheckOrigin) );
 	rotator.SetAngle( RAD2DEG(idMath::ACos(upVector * idealUpVector)) );
 	rotator.ToMat3();
-
+	
 	do {
 		rotator.SetOrigin( currentOrigin );
 		gameLocal.clip.Rotation( rotationTraceInfo, currentOrigin, rotator, clipModel, currentAxis, clipMask, self );
@@ -590,7 +566,7 @@ bool idPhysics_Actor::IterativeRotateMove( const idVec3& upVector, const idVec3&
 		gameLocal.clip.Translation( translationTraceInfo, currentOrigin, currentOrigin + -averageTranslationVector * p_iterRotMoveTransDist.GetFloat(), clipModel, currentAxis, clipMask, self );
 		currentOrigin = translationTraceInfo.endpos;
 	}
-
+	
 	//HUMANHEAD rww - do a translation test before using this origin/axis
 	if (!gameLocal.clip.Translation( translationTraceInfo, currentOrigin, currentOrigin, clipModel, currentAxis, clipMask, self )) {
 		SetOrigin( currentOrigin );
@@ -692,3 +668,4 @@ void idPhysics_Actor::BuildRotationTraceDirectionTable( const idMat3& Axis ) {
 	rotationTraceDirectionTable[2] = Axis[1];
 	rotationTraceDirectionTable[3] = -Axis[1];
 }
+

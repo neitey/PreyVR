@@ -1,36 +1,11 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-
-#include "gamesys/SysCvar.h"
-
-#include "AF.h"
 
 /*
 ===============================================================================
@@ -607,9 +582,9 @@ bool idAF::LoadBody( const idDeclAF_Body *fb, const idJointMat *joints ) {
 		if ( jointBody[ jointList[ i ] ] != -1 ) {
 			// HUMANHEAD nla - Added the body that is trying to get the joint
 			gameLocal.Warning( "%s: joint '%s' is already contained by body '%s' but adding to body '%s' instead",
-			                   name.c_str(), animator->GetJointName( (jointHandle_t)jointList[i] ),
-			                   physicsObj.GetBody( jointBody[ jointList[ i ] ] )->GetName().c_str(),
-			                   physicsObj.GetBody( id )->GetName().c_str() );
+						name.c_str(), animator->GetJointName( (jointHandle_t)jointList[i] ),
+							physicsObj.GetBody( jointBody[ jointList[ i ] ] )->GetName().c_str(),
+							physicsObj.GetBody( id )->GetName().c_str() );
 			// HUMANHEAD END
 		}
 		jointBody[ jointList[ i ] ] = id;
@@ -626,7 +601,7 @@ idAF::LoadConstraint
 bool idAF::LoadConstraint( const idDeclAF_Constraint *fc ) {
 	idAFBody *body1, *body2;
 	idAngles angles;
-	idMat3 axis;
+	idMat3 axis;	
 
 	body1 = physicsObj.GetBody( fc->body1 );
 	body2 = physicsObj.GetBody( fc->body2 );
@@ -1148,7 +1123,7 @@ void idAF::LoadState( const idDict &args ) {
 			body->SetWorldOrigin( origin );
 			body->SetWorldAxis( angles.ToMat3() );
 		} else {
-			gameLocal.Warning("Unknown body part %s in articulated figure %s", name.c_str(), this->name.c_str());
+			gameLocal.Warning("Unknown body part %s in articulated figure %s", name.c_str(), this->name.c_str()); 
 		}
 
 		kv = args.MatchPrefix( "body ", kv );
@@ -1245,7 +1220,6 @@ void idAF::AddBindConstraints( void ) {
 	hasBindConstraints = true;
 }
 
-
 // HUMANHEAD pdm: for adding constraints at run time
 void idAF::AddBindConstraint( constraintType_t type, int bodyId, jointHandle_t joint, idEntity *master  ) {
 	idStr name;
@@ -1335,7 +1309,7 @@ void idAF::RemoveBindConstraints( void ) {
 		name.Strip( "bindConstraint " );
 
 		if ( physicsObj.GetConstraint( name ) ) {
-			physicsObj.DeleteConstraint( name );
+            physicsObj.DeleteConstraint( name );
 		}
 
 		kv = args.MatchPrefix( "bindConstraint ", kv );
@@ -1378,7 +1352,7 @@ bool idAF::TestSolidForce( bool &hiForce ) const {
 			body->SetWorldOrigin( body->GetWorldOrigin() + trace.c.normal * ( depth + 8.0f ) );
 
 			gameLocal.DWarning( "%s: body '%s' stuck in %d (normal = %.2f %.2f %.2f, depth = %.2f)", self->name.c_str(),
-			                    body->GetName().c_str(), trace.c.contents, trace.c.normal.x, trace.c.normal.y, trace.c.normal.z, depth );
+						body->GetName().c_str(), trace.c.contents, trace.c.normal.x, trace.c.normal.y, trace.c.normal.z, depth );
 			solid = true;
 
 		}
@@ -1386,3 +1360,4 @@ bool idAF::TestSolidForce( bool &hiForce ) const {
 	return solid;
 }
 // HUMANHEAD END
+

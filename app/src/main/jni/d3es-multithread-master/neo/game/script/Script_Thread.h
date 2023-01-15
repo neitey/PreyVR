@@ -1,37 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __SCRIPT_THREAD_H__
 #define __SCRIPT_THREAD_H__
-
-#include "script/Script_Interpreter.h"
-#include "gamesys/Class.h"
-#include "gamesys/Event.h"
 
 extern const idEventDef EV_Thread_Execute;
 extern const idEventDef EV_Thread_SetCallback;
@@ -97,6 +68,7 @@ protected:
 	// HUMANHEAD PDM
 	int							waitingForPVS;	// entity num of PVS wait entity
 	// HUMANHEAD END
+
 	//HUMANHEAD rww - jim d. suggested this as a method for failsafing premature entity removal.
 	//honestly, it feels a little hacky to me. but i guess it's reasonable since the case can
 	//occur under legitimate circumstances.
@@ -105,10 +77,11 @@ public:
 	bool						threadOwnerCheck;
 protected:
 	//HUMANHEAD END
-	idDict						spawnArgs;
 
-	int							threadNum;
-	idStr						threadName;
+	idDict						spawnArgs;
+								
+	int 						threadNum;
+	idStr 						threadName;
 
 	int							lastExecuteTime;
 	int							creationTime;
@@ -143,7 +116,6 @@ protected:
 	void						Event_SetCvar( const char *name, const char *value ) const;
 	void						Event_GetCvar( const char *name ) const;
 	void						Event_Random( float range ) const;
-	void						Event_RandomInt(int range) const;
 	void						Event_GetTime( void );
 	void						Event_KillThread( const char *name );
 	void						Event_GetEntity( const char *name );
@@ -154,25 +126,21 @@ protected:
 	void						Event_SpawnFloat( const char *key, float defaultvalue );
 	void						Event_SpawnVector( const char *key, idVec3 &defaultvalue );
 	void						Event_ClearPersistantArgs( void );
-	void						Event_SetPersistantArg( const char *key, const char *value );
-	void						Event_GetPersistantString( const char *key );
-	void						Event_GetPersistantFloat( const char *key );
-	void						Event_GetPersistantVector( const char *key );
+	void 						Event_SetPersistantArg( const char *key, const char *value );
+	void 						Event_GetPersistantString( const char *key );
+	void 						Event_GetPersistantFloat( const char *key );
+	void 						Event_GetPersistantVector( const char *key );
 	void						Event_AngToForward( idAngles &ang );
 	void						Event_AngToRight( idAngles &ang );
 	void						Event_AngToUp( idAngles &ang );
 	void						Event_GetSine( float angle );
 	void						Event_GetCosine( float angle );
-	void						Event_GetArcSine(float a);
-	void						Event_GetArcCosine(float a);
 	void						Event_GetSquareRoot( float theSquare );
 	void						Event_VecNormalize( idVec3 &vec );
 	void						Event_VecLength( idVec3 &vec );
 	void						Event_VecDotProduct( idVec3 &vec1, idVec3 &vec2 );
 	void						Event_VecCrossProduct( idVec3 &vec1, idVec3 &vec2 );
 	void						Event_VecToAngles( idVec3 &vec );
-	void						Event_VecToOrthoBasisAngles(idVec3 &vec);
-	void						Event_RotateVector(idVec3 &vec, idVec3 &ang);
 	void						Event_OnSignal( int signal, idEntity *ent, const char *func );
 	void						Event_ClearSignalThread( int signal, idEntity *ent );
 	void						Event_SetCamera( idEntity *ent );
@@ -192,17 +160,17 @@ protected:
 	void						Event_StartMusic( const char *name );
 	void						Event_Warning( const char *text );
 	void						Event_Error( const char *text );
-	void						Event_StrLen( const char *string );
-	void						Event_StrLeft( const char *string, int num );
-	void						Event_StrRight( const char *string, int num );
-	void						Event_StrSkip( const char *string, int num );
-	void						Event_StrMid( const char *string, int start, int num );
+	void 						Event_StrLen( const char *string );
+	void 						Event_StrLeft( const char *string, int num );
+	void 						Event_StrRight( const char *string, int num );
+	void 						Event_StrSkip( const char *string, int num );
+	void 						Event_StrMid( const char *string, int start, int num );
 	void						Event_StrToFloat( const char *string );
 	void						Event_RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignore, const char *damageDefName, float dmgPower );
 	void						Event_IsClient( void );
-	void						Event_IsMultiplayer( void );
-	void						Event_GetFrameTime( void );
-	void						Event_GetTicsPerSecond( void );
+	void 						Event_IsMultiplayer( void );
+	void 						Event_GetFrameTime( void );
+	void 						Event_GetTicsPerSecond( void );
 	void						Event_CacheSoundShader( const char *soundName );
 	void						Event_DebugLine( const idVec3 &color, const idVec3 &start, const idVec3 &end, const float lifetime );
 	void						Event_DebugArrow( const idVec3 &color, const idVec3 &start, const idVec3 &end, const int size, const float lifetime );
@@ -229,9 +197,9 @@ protected:
 	void						Event_SpawnProjectile( const char *projectilename, const idVec3 &org, const idVec3 &dir );
 	// HUMANHEAD END
 
-public:
+public:							
 								CLASS_PROTOTYPE( idThread );
-
+								
 								idThread();
 								idThread( idEntity *self, const function_t *func );
 								idThread( const function_t *func );
@@ -253,7 +221,7 @@ public:
 	void						WaitMS( int time );
 	void						WaitSec( float time );
 	void						WaitFrame( void );
-
+								
 								// NOTE: If this is called from within a event called by this thread, the function arguments will be invalid after calling this function.
 	void						CallFunction( const function_t	*func, bool clearStack );
 
@@ -265,12 +233,12 @@ public:
 	static void					ListThreads_f( const idCmdArgs &args );
 	static void					Restart( void );
 	static void					ObjectMoveDone( int threadnum, idEntity *obj );
-
+								
 	static idList<idThread*>&	GetThreads ( void );
-
+	
 	bool						IsDoneProcessing ( void );
-	bool						IsDying			 ( void );
-
+	bool						IsDying			 ( void );	
+								
 	void						End( void );
 	static void					KillThread( const char *name );
 	static void					KillThread( int num );
@@ -289,13 +257,13 @@ public:
 	bool						Start( void );
 	idThread					*WaitingOnThread( void );
 	void						SetThreadNum( int num );
-	int							GetThreadNum( void );
+	int 						GetThreadNum( void );
 	void						SetThreadName( const char *name );
 	const char					*GetThreadName( void );
 
 	void						Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
 	void						Warning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
-
+								
 	static idThread				*CurrentThread( void );
 	static int					CurrentThreadNum( void );
 	static bool					BeginMultiFrameEvent( idEntity *ent, const idEventDef *event );
@@ -355,7 +323,7 @@ idThread::GetThreads
 */
 ID_INLINE idList<idThread*>& idThread::GetThreads ( void ) {
 	return threadList;
-}
+}	
 
 /*
 ================

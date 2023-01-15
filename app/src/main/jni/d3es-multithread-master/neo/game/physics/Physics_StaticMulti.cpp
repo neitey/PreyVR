@@ -1,39 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-
-#include "idlib/precompiled.h"
-
-#include "gamesys/SysCvar.h"
-#include "physics/Force.h"
-#include "Entity.h"
-
-#include "physics/Physics_StaticMulti.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics, idPhysics_StaticMulti )
 END_CLASS
@@ -355,6 +326,7 @@ idPhysics_StaticMulti::Evaluate
 ================
 */
 bool idPhysics_StaticMulti::Evaluate( int timeStepMSec, int endTimeMSec ) {
+	PROFILE_SCOPE("StaticMulti", PROFMASK_PHYSICS);
 	int i;
 	idVec3 masterOrigin;
 	idMat3 masterAxis;
@@ -766,7 +738,7 @@ void idPhysics_StaticMulti::DisableClip( void ) {
 	int i;
 
 	for ( i = 0; i < clipModels.Num(); i++ ) {
-		if ( clipModels[i] ) {
+        if ( clipModels[i] ) {
 			clipModels[i]->Disable();
 		}
 	}
@@ -796,7 +768,7 @@ void idPhysics_StaticMulti::UnlinkClip( void ) {
 	int i;
 
 	for ( i = 0; i < clipModels.Num(); i++ ) {
-		if ( clipModels[i] ) {
+        if ( clipModels[i] ) {
 			clipModels[i]->Unlink();
 		}
 	}
@@ -938,7 +910,7 @@ void idPhysics_StaticMulti::SetMaster( idEntity *master, const bool orientated )
 			// transform from world space to master space
 			self->GetMasterPosition( masterOrigin, masterAxis );
 			for ( i = 0; i < clipModels.Num(); i++ ) {
-				current[i].localOrigin = ( current[i].origin - masterOrigin ) * masterAxis.Transpose();
+                current[i].localOrigin = ( current[i].origin - masterOrigin ) * masterAxis.Transpose();
 				if ( orientated ) {
 					current[i].localAxis = current[i].axis * masterAxis.Transpose();
 				} else {
@@ -1027,7 +999,7 @@ idPhysics_StaticMulti::ReadFromSnapshot
 ================
 */
 void idPhysics_StaticMulti::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	int i, num id_attribute((unused));
+	int i, num;
 	idCQuat quat, localQuat;
 
 	num = msg.ReadByte();

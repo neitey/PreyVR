@@ -1,30 +1,5 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __CLIP_H__
 #define __CLIP_H__
@@ -34,11 +9,6 @@ const int CLIPSECTOR_DEPTH				= 6;
 const int CLIPSECTOR_WIDTH				= 1 << CLIPSECTOR_DEPTH;
 #endif //HUMANHEAD END
 
-#include "idlib/geometry/TraceModel.h"
-#include "cm/CollisionModel.h"
-
-class idSaveGame;
-class idRestoreGame;
 
 /*
 ===============================================================================
@@ -52,6 +22,7 @@ class idRestoreGame;
 #define JOINT_HANDLE_TO_CLIPMODEL_ID( id )	( -1 - id )
 
 class idClip;
+class idClipModel;
 class idEntity;
 
 
@@ -282,7 +253,8 @@ public:
 								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
 	//HUMANEHAD rww - translation with overhead of checking game logic for collision allowance
 	bool					TranslationWithExceptions( trace_t &results, const idVec3 &start, const idVec3 &end, idEntity *ent,
-	                                                   const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
+								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
+
 	bool					Rotation( trace_t &results, const idVec3 &start, const idRotation &rotation,
 								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
 	bool					Motion( trace_t &results, const idVec3 &start, const idVec3 &end, const idRotation &rotation,
@@ -339,11 +311,12 @@ public:
 
 	// HUMANHEAD pdm
 	void DrawClipModelsInTree_r( const struct clipSector_s *node, const idVec3 &eye );
-	// HUMANHEAD ENDDrawModelContactFeature
+	// HUMANHEAD END
 
 #if !GOLD //HUMANHEAD rww
 	bool					CheckClipEntMatch( const struct clipSector_s *node, const idClipModel *currentClip, const idEntity *ent ) const;
 #endif //HUMANHEAD END
+
 private:
 #if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
 	idVec3					nodeScale;

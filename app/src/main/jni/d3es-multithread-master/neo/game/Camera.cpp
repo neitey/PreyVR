@@ -1,37 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-#include "Player.h"
-
-#include "Camera.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
@@ -87,7 +60,7 @@ idCameraView::idCameraView
 ================
 */
 idCameraView::idCameraView() {
-	fov = 90.0f;
+	fov.Init( gameLocal.time, 0.f, 0.f, 0.f, 90.f, 90.f );
 
 	bPlayerBoundCamera = false;		// HUMANHEAD pdm
 	attachedTo = NULL;
@@ -100,10 +73,17 @@ idCameraView::Save
 ================
 */
 void idCameraView::Save( idSaveGame *savefile ) const {
-	savefile->WriteFloat( fov );
+	savefile->WriteFloat( fov.GetStartTime() );
+	savefile->WriteFloat( fov.GetAcceleration() );
+	savefile->WriteFloat( fov.GetDeceleration() );
+	savefile->WriteFloat( fov.GetDuration() );
+	savefile->WriteFloat( fov.GetStartValue() );
+	savefile->WriteFloat( fov.GetEndValue() );
+
 	savefile->WriteObject( attachedTo );
 	savefile->WriteObject( attachedView );
 	savefile->WriteBool( bPlayerBoundCamera );		// HUMANHEAD pdm
+
 }
 
 /*
@@ -112,7 +92,16 @@ idCameraView::Restore
 ================
 */
 void idCameraView::Restore( idRestoreGame *savefile ) {
-	savefile->ReadFloat( fov );
+	float startTime, accelTime, decelTime, duration, startPos, endPos;
+
+	savefile->ReadFloat( startTime );
+	savefile->ReadFloat( accelTime );
+	savefile->ReadFloat( decelTime );
+	savefile->ReadFloat( duration );
+	savefile->ReadFloat( startPos );
+	savefile->ReadFloat( endPos );
+	fov.Init( startTime, accelTime, decelTime, duration, startPos, endPos );
+
 	savefile->ReadObject( reinterpret_cast<idClass *&>( attachedTo ) );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( attachedView ) );
 	savefile->ReadBool( bPlayerBoundCamera );		// HUMANHEAD pdm
@@ -188,7 +177,7 @@ void idCameraView::Spawn( void ) {
 	if ( strlen ( cam ) == 0) {
 		spawnArgs.Set("cameraTarget", spawnArgs.GetString("name"));
 	}
-	fov = spawnArgs.GetFloat("fov", "90");
+	fov.Init( gameLocal.time, 0.f, 0.f, 0.f, 90.f, spawnArgs.GetFloat("fov", "90") );
 
 	PostEventMS( &EV_Camera_SetAttachments, 0 );
 
@@ -204,7 +193,7 @@ idCameraView::GetViewParms
 */
 void idCameraView::GetViewParms( renderView_t *view ) {
 	assert( view );
-
+	
 	if (view == NULL) {
 		return;
 	}
@@ -240,18 +229,23 @@ void idCameraView::GetViewParms( renderView_t *view ) {
 	} else {
 		view->viewaxis = ent->GetPhysics()->GetAxis();
 	}
-
-	gameLocal.CalcFov( fov, view->fov_x, view->fov_y );
+	
+	if ( fov.GetDuration() > 0.f ) {
+		gameLocal.CalcFov( fov.GetCurrentValue( gameLocal.time ), view->fov_x, view->fov_y );
+	} else {
+		gameLocal.CalcFov( fov.GetEndValue(), view->fov_x, view->fov_y );
+	}
 }
 
 // HUMANHEAD pdm: added way for scripters to change camera FOV dynamically
 void idCameraView::Event_SetFOV( float fieldOfView, float accelTime, float decelTime, float duration ) {
 	if ( duration > 0.f ) {
-		//fov.Init( gameLocal.time, SEC2MS( accelTime ), SEC2MS( decelTime ), SEC2MS( duration ), fov.GetCurrentValue( gameLocal.GetTime() ), fieldOfView );//VR:nope
+		fov.Init( gameLocal.time, SEC2MS( accelTime ), SEC2MS( decelTime ), SEC2MS( duration ), fov.GetCurrentValue( gameLocal.GetTime() ), fieldOfView );
 	} else {
-		//fov.Init( gameLocal.time, 0.f, 0.f, 0.f, fov.GetEndValue(), fieldOfView );//VR:nope
+		fov.Init( gameLocal.time, 0.f, 0.f, 0.f, fov.GetEndValue(), fieldOfView );
 	}
 }
+
 
 /*
 ===============================================================================
@@ -416,49 +410,12 @@ void idCameraAnim::LoadAnim( void ) {
 	parser.ExpectTokenString( "cuts" );
 	parser.ExpectTokenString( "{" );
 	cameraCuts.SetNum( numCuts );
-
-	idToken cutToken; // Koz
-
 	for( i = 0; i < numCuts; i++ ) {
-		cameraCuts[i].posOverride = false;
-		cameraCuts[i].rotOverride = false;
-		cameraCuts[i].posNew = vec3_zero;
-		cameraCuts[i].rotNew.Set( 0.0f, 0.0f, 0.0f );
-
-		cameraCuts[ i ].cutFrame = parser.ParseInt();
-		if( ( cameraCuts[ i ].cutFrame < 0 ) || ( cameraCuts[ i ].cutFrame >= numFrames ) ) // Koz - changed to allow camera cut on first frame.
-		{
+		cameraCuts[ i ] = parser.ParseInt();
+		if ( ( cameraCuts[ i ] < 1 ) || ( cameraCuts[ i ] >= numFrames ) ) {
 			parser.Error( "Invalid camera cut" );
 		}
-
-		// Koz read pos and rot override values if present.
-		if ( parser.PeekTokenString( "pos" ) )
-		{
-			parser.ReadToken( &cutToken );
-			parser.Parse1DMatrix( 3, cameraCuts[i].posNew.ToFloatPtr() );
-			cameraCuts[i].posOverride = true;
-		}
-
-		if ( parser.PeekTokenString( "rotA" ) ) // read rotation in angles - easier for manual editing.
-		{
-			parser.ReadToken( &cutToken );
-
-			idAngles ta;
-			parser.Parse1DMatrix( 3, &ta[0] );
-			cameraCuts[i].rotNew = ta.ToQuat().ToCQuat();
-			cameraCuts[i].rotOverride = true;
-		}
-
-		if ( parser.PeekTokenString( "rot" ) ) // read rotation quat - easier to copy from exitsing frame.
-		{
-			parser.ReadToken( &cutToken );
-			parser.Parse1DMatrix( 3, cameraCuts[i].rotNew.ToFloatPtr() );
-			cameraCuts[i].rotOverride = true;
-		}
 	}
-
-	// Koz End
-
 	parser.ExpectTokenString( "}" );
 
 	// parse the camera frames
@@ -583,14 +540,14 @@ void idCameraAnim::Think( void ) {
 			return;
 		}
 
-		if ( frameRate == renderSystem->GetRefresh() ) {
+		if ( frameRate == USERCMD_HZ ) {
 			frameTime	= gameLocal.time - starttime;
-			frame		= frameTime / USERCMD_MSEC;
+			frame		= frameTime / gameLocal.msec;
 		} else {
 			frameTime	= ( gameLocal.time - starttime ) * frameRate;
 			frame		= frameTime / 1000;
 		}
-
+		
 		if ( frame > camera.Num() + cameraCuts.Num() - 2 ) {
 			if ( cycle > 0 ) {
 				cycle--;
@@ -618,11 +575,6 @@ void idCameraAnim::GetViewParms( renderView_t *view ) {
 	float			lerp;
 	float			invlerp;
 	cameraFrame_t	*camFrame;
-	cameraFrame_t*	camFrame2; // Koz for clamping camera positions during cinematics to eliminate uncomfortable panning in VR.
-
-	cameraFrame_t	cutFrame;
-	bool			cutRotOverride;
-
 	int				i;
 	int				cut;
 	idQuat			q1, q2, q3;
@@ -638,11 +590,9 @@ void idCameraAnim::GetViewParms( renderView_t *view ) {
 		return;
 	}
 
-	SetTimeState ts(timeGroup);
-
-	if ( frameRate == renderSystem->GetRefresh() ) {
+	if ( frameRate == USERCMD_HZ ) {
 		frameTime	= gameLocal.time - starttime;
-		frame		= frameTime / USERCMD_MSEC;
+		frame		= frameTime / gameLocal.msec;
 		lerp		= 0.0f;
 	} else {
 		frameTime	= ( gameLocal.time - starttime ) * frameRate;
@@ -650,258 +600,104 @@ void idCameraAnim::GetViewParms( renderView_t *view ) {
 		lerp		= ( frameTime % 1000 ) * 0.001f;
 	}
 
-	if(vr_cinematics.GetInteger() == 2)
-	{
-		// skip any frames where camera cuts occur
-		realFrame = frame;
-		cut = 0;
+	// skip any frames where camera cuts occur
+	realFrame = frame;
+	cut = 0;
+	for( i = 0; i < cameraCuts.Num(); i++ ) {
+		if ( frame < cameraCuts[ i ] ) {
+			break;
+		}
+		frame++;
+		cut++;
+	}
+
+	if ( g_debugCinematic.GetBool() ) {
+		int prevFrameTime	= ( gameLocal.time - starttime - gameLocal.msec ) * frameRate;
+		int prevFrame		= prevFrameTime / 1000;
+		int prevCut;
+
+		prevCut = 0;
 		for( i = 0; i < cameraCuts.Num(); i++ ) {
-			if ( frame < cameraCuts[ i ].cutFrame ) {
+			if ( prevFrame < cameraCuts[ i ] ) {
 				break;
 			}
-			frame++;
-			cut++;
+			prevFrame++;
+			prevCut++;
 		}
 
-		if ( g_debugCinematic.GetBool() ) {
-			int prevFrameTime	= ( gameLocal.time - starttime - USERCMD_MSEC ) * frameRate;
-			int prevFrame		= prevFrameTime / 1000;
-			int prevCut;
-
-			prevCut = 0;
-			for( i = 0; i < cameraCuts.Num(); i++ ) {
-				if ( prevFrame < cameraCuts[ i ].cutFrame ) {
-					break;
-				}
-				prevFrame++;
-				prevCut++;
-			}
-
-			if ( prevCut != cut ) {
-				gameLocal.Printf( "%d: '%s' cut %d\n", gameLocal.framenum, GetName(), cut );
-			}
-		}
-
-		// clamp to the first frame.  also check if this is a one frame anim.  one frame anims would end immediately,
-		// but since they're mainly used for static cams anyway, just stay on it infinitely.
-		if ( ( frame < 0 ) || ( camera.Num() < 2 ) ) {
-			view->viewaxis = camera[ 0 ].q.ToQuat().ToMat3();
-			view->vieworg = camera[ 0 ].t + offset;
-			view->fov_x = camera[ 0 ].fov;
-		} else if ( frame > camera.Num() - 2 ) {
-			if ( cycle > 0 ) {
-				cycle--;
-			}
-
-			if ( cycle != 0 ) {
-				// advance start time so that we loop
-				starttime += ( ( camera.Num() - cameraCuts.Num() ) * 1000 ) / frameRate;
-				GetViewParms( view );
-				return;
-			}
-
-			Stop();
-			if ( gameLocal.GetCamera() != NULL ) {
-				// we activated another camera when we stopped, so get it's viewparms instead
-				gameLocal.GetCamera()->GetViewParms( view );
-				return;
-			} else {
-				// just use our last frame
-				camFrame = &camera[ camera.Num() - 1 ];
-				view->viewaxis = camFrame->q.ToQuat().ToMat3();
-				view->vieworg = camFrame->t + offset;
-				view->fov_x = camFrame->fov;
-			}
-		} else if ( lerp == 0.0f ) {
-			camFrame = &camera[ frame ];
-			view->viewaxis = camFrame[ 0 ].q.ToMat3();
-			view->vieworg = camFrame[ 0 ].t + offset;
-			view->fov_x = camFrame[ 0 ].fov;
-		} else {
-			camFrame = &camera[ frame ];
-			invlerp = 1.0f - lerp;
-			q1 = camFrame[ 0 ].q.ToQuat();
-			q2 = camFrame[ 1 ].q.ToQuat();
-			q3.Slerp( q1, q2, lerp );
-			view->viewaxis = q3.ToMat3();
-			view->vieworg = camFrame[ 0 ].t * invlerp + camFrame[ 1 ].t * lerp + offset;
-			view->fov_x = camFrame[ 0 ].fov * invlerp + camFrame[ 1 ].fov * lerp;
-		}
-
-		gameLocal.CalcFov( view->fov_x, view->fov_x, view->fov_y );
-
-		// setup the pvs for this frame
-		UpdatePVSAreas( view->vieworg );
-	} else {
-		// skip any frames where camera cuts occur
-		realFrame = frame;
-		cut = 0;
-		camFrame2 = &camera[0]; // Koz
-
-		cutFrame.fov = camFrame2[ 0 ].fov;
-		cutFrame.q = camFrame2[ 0 ].q;
-		cutFrame.t = camFrame2[ 0 ].t;
-
-		cutRotOverride = false;
-		for( i = 0; i < cameraCuts.Num(); i++ ) {
-			if ( frame < cameraCuts[i].cutFrame )
-			{
-				break;
-			}
-			frame++;
-			cut++;
-			int cf = idMath::ClampInt( 0, camera.Num() - 2, cameraCuts[i].cutFrame + 1 );
-			camFrame2 = &camera[ cf /*cameraCuts[i].cutFrame*/ ];
-
-			cutFrame.fov = camFrame2[0].fov;
-			cutFrame.q = camFrame2[0].q;
-			cutFrame.t = camFrame2[0].t;
-
-			if ( vr_cinematics.GetInteger() == 0 ) // only use replacement positions/rotations if using immersive cinematics.
-			{
-				cutRotOverride = false;
-				if ( cameraCuts[i].posOverride )
-				{
-					cutFrame.t = cameraCuts[i].posNew;
-				}
-				if ( cameraCuts[i].rotOverride )
-				{
-					cutFrame.q = cameraCuts[i].rotNew;
-					cutRotOverride = true;
-				}
-			}
-		}
-
-		if ( g_debugCinematic.GetBool() ) {
-			if ( gameLocal.GetCamera() )
-			{
-				common->Printf( "Time %d - Camera %s cut %d rot Quat %s : rot Angles %s : pos %s\n", commonVr->Sys_Milliseconds(), gameLocal.GetCamera()->GetName(), cut, cutFrame.q.ToString(), cutFrame.q.ToAngles().ToString(), cutFrame.t.ToString() );
-			}
-
-			int prevFrameTime	= ( gameLocal.time - starttime - USERCMD_MSEC ) * frameRate;
-			int prevFrame		= prevFrameTime / 1000;
-			int prevCut;
-
-			prevCut = 0;
-			for( i = 0; i < cameraCuts.Num(); i++ ) {
-				if( prevFrame < cameraCuts[ i ].cutFrame ) {
-					break;
-				}
-				prevFrame++;
-				prevCut++;
-			}
-
-			if ( prevCut != cut ) {
-				gameLocal.Printf( "%d: '%s' cut %d\n", gameLocal.framenum, GetName(), cut );
-			}
-		}
-
-		// clamp to the first frame.  also check if this is a one frame anim.  one frame anims would end immediately,
-		// but since they're mainly used for static cams anyway, just stay on it infinitely.
-		if ( ( frame < 0 ) || ( camera.Num() < 2 ) ) {
-			view->viewaxis = camera[ 0 ].q.ToQuat().ToMat3();
-			view->vieworg = camera[ 0 ].t + offset;
-			view->fov_x = camera[ 0 ].fov;
-		} else if ( frame > camera.Num() - 2 ) {
-			if ( cycle > 0 ) {
-				cycle--;
-			}
-
-			if ( cycle != 0 ) {
-				// advance start time so that we loop
-				starttime += ( ( camera.Num() - cameraCuts.Num() ) * 1000 ) / frameRate;
-				GetViewParms( view );
-				return;
-			}
-
-			Stop();
-			if ( gameLocal.GetCamera() != NULL ) {
-				// we activated another camera when we stopped, so get it's viewparms instead
-				gameLocal.GetCamera()->GetViewParms( view );
-				return;
-			} else {
-				// just use our last frame
-				camFrame = &camera[ camera.Num() - 1 ];
-				view->viewaxis = camFrame->q.ToQuat().ToMat3();
-				view->vieworg = camFrame->t + offset;
-				view->fov_x = camFrame->fov;
-			}
-		} else if ( lerp == 0.0f ) {
-			camFrame = &camera[ frame ];
-			view->viewaxis = camFrame[ 0 ].q.ToMat3();
-			view->vieworg = camFrame[ 0 ].t + offset;
-			view->fov_x = camFrame[ 0 ].fov;
-		} else {
-			camFrame = &camera[ frame ];
-			invlerp = 1.0f - lerp;
-			q1 = camFrame[ 0 ].q.ToQuat();
-			q2 = camFrame[ 1 ].q.ToQuat();
-			q3.Slerp( q1, q2, lerp );
-			view->viewaxis = q3.ToMat3();
-			view->vieworg = camFrame[ 0 ].t * invlerp + camFrame[ 1 ].t * lerp + offset;
-			view->fov_x = camFrame[ 0 ].fov * invlerp + camFrame[ 1 ].fov * lerp;
-		}
-
-		// Koz begin
-		if ( game->isVR && (vr_cinematics.GetInteger() == 0) )
-		{
-			// Clamp the camera origin to camera cut locations.
-			// This eliminates camera panning and smooth movements in cutscenes,
-			// while allowing the player to look around from
-			// the camera origin. Not perfect but less vomitous.
-
-			// Update: camera files have been updated with additional cuts, and pos/rot overrides at cut locations
-			// for better 'immersive' cutscenes. Player also has option to use cropped or projected cutscenes
-			// where the pos/rot overrides are ignored and cameras are not clamped to cuts.
-
-			// Flicksync camera
-			idEntity* ent = NULL;
-			static idEntity* hiddenEnt = NULL;
-
-			static idEntity *last_ent = NULL;
-			// only use character if it's not hidden, and it's within range of current camera
-
-			if ( g_debugCinematic.GetBool() && ent != last_ent )
-			{
-				gameLocal.Printf( "%d: Flicksync using camera %s\n", gameLocal.framenum, this->name.c_str() );
-
-			}
-
-			last_ent = ent;
-
-			view->viewaxis = cutFrame.q.ToMat3();
-			view->vieworg = cutFrame.t + offset;
-
-			// if the rotation wasn't overridden, remove camera pitch & roll, this is uncomfortable in VR.
-
-			if ( !cutRotOverride )
-			{
-				idAngles angles = view->viewaxis.ToAngles();
-				angles.pitch = 0;
-				angles.roll = 0;
-				view->viewaxis = angles.ToMat3();
-			}
-		}
-
-		if ( game->isVR && gameLocal.inCinematic )
-		{
-			// override any camera fov changes. Unless you *like* the taste of hurl.
-
-			const idPlayer	*player = gameLocal.GetLocalPlayer();
-			view->fov_x = player->DefaultFov();
-		}
-		// Koz end
-
-		gameLocal.CalcFov( view->fov_x, view->fov_x, view->fov_y );
-
-		// setup the pvs for this frame
-		UpdatePVSAreas( view->vieworg );
-
-		if ( g_showcamerainfo.GetBool() ) {
-			gameLocal.Printf( "^5Frame: ^7%d/%d\n\n\n", realFrame + 1, camera.Num() - cameraCuts.Num() );
+		if ( prevCut != cut ) {
+			gameLocal.Printf( "%d: '%s' cut %d\n", gameLocal.framenum, GetName(), cut );
 		}
 	}
 
+	// clamp to the first frame.  also check if this is a one frame anim.  one frame anims would end immediately,
+	// but since they're mainly used for static cams anyway, just stay on it infinitely.
+	if ( ( frame < 0 ) || ( camera.Num() < 2 ) ) {
+		view->viewaxis = camera[ 0 ].q.ToQuat().ToMat3();
+		view->vieworg = camera[ 0 ].t + offset;
+		view->fov_x = camera[ 0 ].fov;
+	} else if ( frame > camera.Num() - 2 ) {
+		if ( cycle > 0 ) {
+			cycle--;
+		}
+
+		if ( cycle != 0 ) {
+			// advance start time so that we loop
+			starttime += ( ( camera.Num() - cameraCuts.Num() ) * 1000 ) / frameRate;
+			GetViewParms( view );
+			return;
+		}
+
+		Stop();
+		if ( gameLocal.GetCamera() != NULL ) {
+			// we activated another camera when we stopped, so get it's viewparms instead
+			gameLocal.GetCamera()->GetViewParms( view );
+			return;
+		} else {
+			// just use our last frame
+			camFrame = &camera[ camera.Num() - 1 ];
+			view->viewaxis = camFrame->q.ToQuat().ToMat3();
+			view->vieworg = camFrame->t + offset;
+			view->fov_x = camFrame->fov;
+		}
+	} else if ( lerp == 0.0f ) {
+		camFrame = &camera[ frame ];
+		view->viewaxis = camFrame[ 0 ].q.ToMat3();
+		view->vieworg = camFrame[ 0 ].t + offset;
+		view->fov_x = camFrame[ 0 ].fov;
+	} else {
+		camFrame = &camera[ frame ];
+		invlerp = 1.0f - lerp;
+		q1 = camFrame[ 0 ].q.ToQuat();
+		q2 = camFrame[ 1 ].q.ToQuat();
+		q3.Slerp( q1, q2, lerp );
+		view->viewaxis = q3.ToMat3();
+		view->vieworg = camFrame[ 0 ].t * invlerp + camFrame[ 1 ].t * lerp + offset;
+		view->fov_x = camFrame[ 0 ].fov * invlerp + camFrame[ 1 ].fov * lerp;
+	}
+
+	gameLocal.CalcFov( view->fov_x, view->fov_x, view->fov_y );
+
+	// setup the pvs for this frame
+	UpdatePVSAreas( view->vieworg );
+	
+#if 0
+	static int lastFrame = 0;
+	static idVec3 lastFrameVec( 0.0f, 0.0f, 0.0f );
+	if ( gameLocal.time != lastFrame ) {
+		gameRenderWorld->DebugBounds( colorCyan, idBounds( view->vieworg ).Expand( 16.0f ), vec3_origin, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorRed, view->vieworg, view->vieworg + idVec3( 0.0f, 0.0f, 2.0f ), 10000, false );
+		gameRenderWorld->DebugLine( colorCyan, lastFrameVec, view->vieworg, 10000, false );
+		gameRenderWorld->DebugLine( colorYellow, view->vieworg + view->viewaxis[ 0 ] * 64.0f, view->vieworg + view->viewaxis[ 0 ] * 66.0f, 10000, false );
+		gameRenderWorld->DebugLine( colorOrange, view->vieworg + view->viewaxis[ 0 ] * 64.0f, view->vieworg + view->viewaxis[ 0 ] * 64.0f + idVec3( 0.0f, 0.0f, 2.0f ), 10000, false );
+		lastFrameVec = view->vieworg;
+		lastFrame = gameLocal.time;
+	}
+#endif
+
+	if ( g_showcamerainfo.GetBool() ) {
+		gameLocal.Printf( "^5Frame: ^7%d/%d\n\n\n", realFrame + 1, camera.Num() - cameraCuts.Num() );
+	}
 }
 
 /*

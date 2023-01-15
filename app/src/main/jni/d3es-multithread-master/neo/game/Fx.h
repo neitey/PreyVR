@@ -1,37 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_FX_H__
 #define __GAME_FX_H__
-
-#include "renderer/RenderWorld.h"
-
-#include "Entity.h"
 
 /*
 ===============================================================================
@@ -108,28 +79,28 @@ public:
 	idEntityPtr<idEntity>	snapshotOwner;
 	//HUMANHEAD END
 protected:
-	void					Event_Trigger( idEntity *activator );
-	void					Event_ClearFx( void );
+	void					Event_Trigger(idEntity* activator);
+	void					Event_ClearFx(void);
 
-	void					CleanUp( void );
+	void					CleanUp(void);
 	virtual //HUMANHEAD: aob - made virtual
-	void					CleanUpSingleAction( const idFXSingleAction& fxaction, idFXLocalAction& laction );
-	void					ApplyFade( const idFXSingleAction& fxaction, idFXLocalAction& laction, const int time, const int actualStart );
+		void					CleanUpSingleAction(const idFXSingleAction& fxaction, idFXLocalAction& laction);
+	void					ApplyFade(const idFXSingleAction& fxaction, idFXLocalAction& laction, const int time, const int actualStart);
 
 	int						started;
 	int						nextTriggerTime;
-	const idDeclFX *		fxEffect;				// GetFX() should be called before using fxEffect as a pointer
+	const idDeclFX* fxEffect;				// GetFX() should be called before using fxEffect as a pointer
 	idList<idFXLocalAction>	actions;
 	idStr					systemName;
 };
 
 class idTeleporter : public idEntityFx {
 public:
-	CLASS_PROTOTYPE( idTeleporter );
+	CLASS_PROTOTYPE(idTeleporter);
 
 private:
 	// teleporters to this location
-	void					Event_DoAction( idEntity *activator );
+	void					Event_DoAction(idEntity* activator);
 };
 
 #endif /* !__GAME_FX_H__ */

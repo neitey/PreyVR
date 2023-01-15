@@ -1,42 +1,12 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-#include "Item.h"
-#include "Light.h"
-#include "Projectile.h"
-#include "WorldSpawn.h"
+#include "Game_local.h"
 #include "Prey/prey_local.h"	// HUMANHEAD tmj: for typeinfo parsing
 
-#include "Actor.h"
-#include "Vr.h"
 
 
 /***********************************************************************
@@ -257,7 +227,7 @@ idAnimState::AnimDone
 */
 bool idAnimState::AnimDone( int blendFrames ) const {
 	int animDoneTime;
-
+	
 	animDoneTime = animator->CurrentAnim( channel )->GetEndTime();
 	if ( animDoneTime < 0 ) {
 		// playing a cycle
@@ -399,13 +369,6 @@ const idEventDef AI_PlayAnimSkip( "playAnimSkip", "dsf", 'd' );
 const idEventDef EV_AFTestSolid( "<afTestSolid>" ); // mdl
 // HUMANHEAD END
 
-const idEventDef EV_SetDamageGroupScale("setDamageGroupScale", "sf");
-const idEventDef EV_SetDamageGroupScaleAll("setDamageGroupScaleAll", "f");
-const idEventDef EV_GetDamageGroupScale("getDamageGroupScale", "s", 'f');
-const idEventDef EV_SetDamageCap("setDamageCap", "f");
-const idEventDef EV_SetWaitState("setWaitState" , "s");
-const idEventDef EV_GetWaitState("getWaitState", NULL, 's');
-
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
 	EVENT( AI_DisableEyeFocus,			idActor::Event_DisableEyeFocus )
@@ -454,17 +417,10 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( EV_FootprintLeft,			idActor::Event_Footprint_Left )
 	EVENT( EV_FootprintRight,			idActor::Event_Footprint_Right )
 #ifdef HUMANHEAD
-				EVENT( AI_PlayAnimSkip,				idActor::Event_PlayAnimSkip )
+	EVENT( AI_PlayAnimSkip,				idActor::Event_PlayAnimSkip )
 #endif
 	EVENT( EV_AFTestSolid,				idActor::Event_AFTestSolid ) // mdl
 // HUMANHEAD END
-
-	EVENT(EV_SetDamageGroupScale,		idActor::Event_SetDamageGroupScale)
-	EVENT(EV_SetDamageGroupScaleAll,	idActor::Event_SetDamageGroupScaleAll)
-	EVENT(EV_GetDamageGroupScale,		idActor::Event_GetDamageGroupScale)
-	EVENT(EV_SetDamageCap,				idActor::Event_SetDamageCap)
-	EVENT(EV_SetWaitState,				idActor::Event_SetWaitState)
-	EVENT(EV_GetWaitState,				idActor::Event_GetWaitState)
 END_CLASS
 
 /*
@@ -503,19 +459,19 @@ idActor::idActor( void ) {
 	allowEyeFocus		= false;
 
 	waitState			= "";
-
+	
 	//HUMANHEAD: aob
 	vehicleInterface = NULL;
 	//HUMANHEAD END
 
-	blink_anim			= 0;
+	blink_anim			= NULL;
 	blink_time			= 0;
 	blink_min			= 0;
 	blink_max			= 0;
 
-	solidTest			= 0; // HUMANHEAD mdl
-
 	finalBoss			= false;
+
+	solidTest			= 0; // HUMANHEAD mdl
 
 	attachments.SetGranularity( 1 );
 
@@ -523,8 +479,6 @@ idActor::idActor( void ) {
 	enemyList.SetOwner( this );
 
 	basePushTime = 0;	//HUMANHEAD bjk
-
-	damageCap = -1;
 }
 
 /*
@@ -579,7 +533,7 @@ void idActor::Spawn( void ) {
 	spawnArgs.GetInt( "team", "0", team );
 	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
 
-	spawnArgs.GetBool( "use_combat_bbox", "0", use_combat_bbox );
+	spawnArgs.GetBool( "use_combat_bbox", "0", use_combat_bbox );	
 
 	viewAxis = GetPhysics()->GetAxis();
 
@@ -594,13 +548,6 @@ void idActor::Spawn( void ) {
 	LoadAF();
 
 	walkIK.Init( this, IK_ANIM, modelOffset );
-
-	// Koz begin
-	armIK.Init( this, IK_ANIM, modelOffset );
-	if ( armIK.IsInitialized() ) {
-		common->Printf( "ArmIK initialized for %s.\n",name.c_str() );
-	}
-	// Koz end
 
 	// the animation used to be set to the IK_ANIM at this point, but that was fixed, resulting in
 	// attachments not binding correctly, so we're stuck setting the IK_ANIM before attaching things.
@@ -619,7 +566,7 @@ void idActor::Spawn( void ) {
 
 		// don't let them drop to the floor
 		args.Set( "dropToFloor", "0" );
-
+		
 		gameLocal.SpawnEntityDef( args, &ent );
 		if ( !ent ) {
 			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
@@ -687,7 +634,7 @@ void idActor::Spawn( void ) {
 	int headAnim = headAnimator->GetAnim( "model_head" );
 	if ( headAnim ) {
 		if ( headEnt ) {
-			headAnimator->CycleAnim( ANIMCHANNEL_ALL, headAnim, gameLocal.time, 0 );
+            headAnimator->CycleAnim( ANIMCHANNEL_ALL, headAnim, gameLocal.time, 0 );
 		} else {
 			headAnimator->CycleAnim( ANIMCHANNEL_HEAD, headAnim, gameLocal.time, 0 );
 		}
@@ -696,7 +643,7 @@ void idActor::Spawn( void ) {
 	if ( spawnArgs.GetString( "sound_bone", "", jointName ) ) {
 		soundJoint = animator.GetJointHandle( jointName );
 		if ( soundJoint == INVALID_JOINT ) {
-			gameLocal.Warning( "idAnimated '%s' at (%s): cannot find joint '%s' for sound playback", name.c_str(), GetPhysics()->GetOrigin().ToString(0), jointName.c_str() );
+			gameLocal.Warning( "idActor '%s' at (%s): cannot find joint '%s' for sound playback", name.c_str(), GetPhysics()->GetOrigin().ToString(0), jointName.c_str() );
 		}
 	}
 
@@ -705,6 +652,7 @@ void idActor::Spawn( void ) {
 	// HUMANHEAD nla - All actors touch triggers by default
 	fl.touchTriggers = spawnArgs.GetBool( "touch_triggers", "1" );
 	// HUMANHEAD END
+
 
 	FinishSetup();
 }
@@ -732,7 +680,7 @@ void idActor::FinishSetup( void ) {
 	UpdateVisuals();
 
 	// HUMANHEAD nla - This really should be someplace else and the PointTo should check for NULL scriptObject, not here
-#define LinkScriptVariable( name )	name.LinkTo( scriptObject, #name )
+	#define LinkScriptVariable( name )	name.LinkTo( scriptObject, #name )	
 	LinkScriptVariable( AI_BOUND );		// HUMANHEAD pdm
 	LinkScriptVariable( AI_VEHICLE );	// HUMANHEAD pdm
 }
@@ -787,9 +735,6 @@ void idActor::SetupHead( void ) {
 			sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
 		}
 
-		// copy slowmo param to the head
-		args.SetBool("slowmo", spawnArgs.GetBool("slowmo", "1"));
-
 		headEnt = static_cast<idAFAttachment *>( gameLocal.SpawnEntityType( idAFAttachment::Type, &args ) );
 		headEnt->SetName( va( "%s_head", name.c_str() ) );
 		headEnt->SetBody( this, headModel, damageJoint );
@@ -806,8 +751,8 @@ void idActor::SetupHead( void ) {
 		idVec3		origin;
 		idMat3		axis;
 		idAttachInfo &attach = attachments.Alloc();
-		attach.channel = animator.GetChannelForJoint( joint );
-		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
+		attach.channel = GetAnimator()->GetChannelForJoint( joint );
+		GetAnimator()->GetJointTransform( joint, gameLocal.time, origin, axis );
 #ifdef HUMANHEAD //added offset
 		idVec3 offset = spawnArgs.GetVector( "head_offset" );
 		origin = renderEntity.origin + ( origin + modelOffset + offset ) * renderEntity.axis * scale;
@@ -955,10 +900,6 @@ void idActor::Save( idSaveGame *savefile ) const {
 	headAnim.Save( savefile );
 	torsoAnim.Save( savefile );
 	legsAnim.Save( savefile );
-	// Koz begin
-	leftHandAnim.Save( savefile );
-	rightHandAnim.Save( savefile );
-	// Koz end
 
 	savefile->WriteBool( allowPain );
 	savefile->WriteBool( allowEyeFocus );
@@ -1008,7 +949,6 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( "" );
 	}
 
-	savefile->WriteInt(damageCap);
 }
 
 /*
@@ -1075,13 +1015,6 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadJoint( soundJoint );
 
 	walkIK.Restore( savefile );
-	// Koz begin
-	armIK.Init( this, IK_ANIM, modelOffset );
-	if ( armIK.IsInitialized() ) {
-		common->Printf( "ArmIK initialized for %s.\n",name.c_str() );
-	}
-	// Koz end
-
 
 	savefile->ReadString( animPrefix );
 	savefile->ReadString( painAnim );
@@ -1098,10 +1031,6 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	headAnim.Restore( savefile );
 	torsoAnim.Restore( savefile );
 	legsAnim.Restore( savefile );
-	// Koz begin
-	leftHandAnim.Restore( savefile );
-    rightHandAnim.Restore( savefile );
-	// Koz end
 
 	savefile->ReadBool( allowPain );
 	savefile->ReadBool( allowEyeFocus );
@@ -1137,12 +1066,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		idealState = GetScriptFunction( statename );
 	}
 
-	savefile->ReadInt(damageCap);
-
 	LinkScriptVariable( AI_BOUND );		// HUMANHEAD mdl
 	LinkScriptVariable( AI_VEHICLE );	// HUMANHEAD mdl
 }
-
 
 //HUMANHEAD rww
 //========================================================================================
@@ -1165,7 +1091,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 void idActor::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	//todo - call parent class writetosnap if applicable
 
-	WriteBindToSnapshot(msg);
+    WriteBindToSnapshot(msg);
 	GetPhysics()->WriteToSnapshot(msg);
 }
 
@@ -1178,7 +1104,7 @@ void idActor::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 void idActor::ClientPredictionThink( void ) {
 	RunPhysics();
-	UpdateVisuals();
+    UpdateVisuals();
 	Present();
 }
 //HUMANHEAD END
@@ -1227,9 +1153,7 @@ void idActor::Show( void ) {
 		if ( ent->GetBindMaster() == this ) {
 			ent->Show();
 			if ( ent->IsType( idLight::Type ) ) {
-				if (!spawnArgs.GetBool("lights_off", "0")) {
-					static_cast<idLight *>(ent)->On();
-				}
+				static_cast<idLight *>( ent )->On();
 			}
 		}
 	}
@@ -1350,10 +1274,6 @@ void idActor::SetupBody( void ) {
 
 	torsoAnim.Init( this, &animator, ANIMCHANNEL_TORSO );
 	legsAnim.Init( this, &animator, ANIMCHANNEL_LEGS );
-	// Koz
-	leftHandAnim.Init( this, &animator, ANIMCHANNEL_LEFTHAND );
-	rightHandAnim.Init( this, &animator, ANIMCHANNEL_RIGHTHAND );
-	// Koz end
 }
 
 /*
@@ -1425,10 +1345,6 @@ void idActor::ShutdownThreads( void ) {
 	headAnim.Shutdown();
 	torsoAnim.Shutdown();
 	legsAnim.Shutdown();
-	// Koz
-	leftHandAnim.Shutdown();
-	rightHandAnim.Shutdown();
-	// Koz end
 
 	if ( scriptThread ) {
 		scriptThread->EndThread();
@@ -1475,7 +1391,7 @@ idThread *idActor::ConstructScriptObject( void ) {
 	} else {
 		scriptThread->EndThread();
 	}
-
+	
 	// call script object's constructor
 	constructor = scriptObject.GetConstructor();
 	if ( !constructor ) {
@@ -1563,7 +1479,7 @@ void idActor::UpdateScript( void ) {
 		if ( scriptThread->IsWaiting() ) {
 			break;
 		}
-
+        
 		scriptThread->Execute();
 		if ( idealState == state ) {
 			break;
@@ -1654,7 +1570,7 @@ bool idActor::CheckFOV( const idVec3 &pos ) const {
 
 	float	dot;
 	idVec3	delta;
-
+	
 	delta = pos - GetEyePosition();
 
 	// get our gravity normal
@@ -1882,7 +1798,7 @@ bool idActor::StartRagdoll( void ) {
 
 	// drop any articulated figures the actor is holding
 	idAFEntity_Base::DropAFs( this, "death", NULL );
-
+	
 	// HUMANHEAD nla - fl.takedamage may to turned off to prevent multiple killed calls in one frame.  Once the ragdoll starts, make sure it'll take damage
 	if (!GERMAN_VERSION && !g_nogore.GetBool()) {
 		fl.takedamage = true;
@@ -2107,7 +2023,7 @@ void idActor::GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const {
 		areaNum = 0;
 		return;
 	}
-
+	
 	size = aas->GetSettings()->boundingBoxes[0][1];
 	bounds[0] = -size;
 	size.z = 32.0f;
@@ -2144,7 +2060,7 @@ void idActor::SetAnimState( int channel, const char *statename, int blendFrames 
 		headAnim.SetState( statename, blendFrames );
 		allowEyeFocus = true;
 		break;
-
+		
 	case ANIMCHANNEL_TORSO :
 		torsoAnim.SetState( statename, blendFrames );
 		legsAnim.Enable( blendFrames );
@@ -2158,16 +2074,6 @@ void idActor::SetAnimState( int channel, const char *statename, int blendFrames 
 		allowPain = true;
 		allowEyeFocus = true;
 		break;
-
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		leftHandAnim.SetState( statename, blendFrames );
-		break;
-
-	case ANIMCHANNEL_RIGHTHAND :
-		rightHandAnim.SetState( statename, blendFrames );
-		break;
-		// Koz end
 
 	default:
 		gameLocal.Error( "idActor::SetAnimState: Unknown anim group" );
@@ -2193,16 +2099,6 @@ const char *idActor::GetAnimState( int channel ) const {
 	case ANIMCHANNEL_LEGS :
 		return legsAnim.state;
 		break;
-
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		return leftHandAnim.state;
-		break;
-
-	case ANIMCHANNEL_RIGHTHAND :
-		return rightHandAnim.state;
-		break;
-		// Koz end
 
 	default:
 		gameLocal.Error( "idActor::GetAnimState: Unknown anim group" );
@@ -2235,22 +2131,6 @@ bool idActor::InAnimState( int channel, const char *statename ) const {
 			return true;
 		}
 		break;
-
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		if ( leftHandAnim.state == statename )
-		{
-			return true;
-		}
-		break;
-
-	case ANIMCHANNEL_RIGHTHAND :
-		if ( rightHandAnim.state == statename )
-		{
-			return true;
-		}
-		break;
-		// Koz end
 
 	default:
 		gameLocal.Error( "idActor::InAnimState: Unknown anim group" );
@@ -2291,10 +2171,6 @@ void idActor::UpdateAnimState( void ) {
 	headAnim.UpdateState();
 	torsoAnim.UpdateState();
 	legsAnim.UpdateState();
-	// Koz begin
-	leftHandAnim.UpdateState();
-	rightHandAnim.UpdateState();
-	// Koz end
 }
 
 /*
@@ -2436,7 +2312,7 @@ Bleeding wounds and surface overlays are applied in the collision code that
 calls Damage()
 ============
 */
-void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
 					  const char *damageDefName, const float damageScale, const int location ) {
 	if ( !fl.takedamage ) {
 		return;
@@ -2485,8 +2361,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		attacker = gameLocal.world;
 	}
 
-	SetTimeState ts(timeGroup);
-
 /*	HUMANHEAD pdm: not used
 	if ( finalBoss && !inflictor->IsType( idSoulCubeMissile::Type ) ) {
 		return;
@@ -2505,37 +2379,16 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	}
 	//END HUMANHEAD
 
-	int	damage = damageDef->GetInt( "damage" ) * damageScale;
+	int	damage = damageDef->GetInt( "damage" ) * damageScale * weaponScale;
 
 	if( !damageDef->GetInt( "noscaling" ) ) {	//HUMANHEAD bjk
 		damage = GetDamageForLocation( damage, location );
 	}	//HUMANHEAD END
 
-	// Koz hack : add an adjustable headshot multiplier for VR for projectile weapons with no splash damage
-	bool headMultiplier = false;
-	if (	!idStr::Icmp( damageDefName, "damage_bullet_chaingun" ) ||
-			!idStr::Icmp( damageDefName, "damage_bullet_machinegun" ) ||
-			!idStr::Icmp( damageDefName, "damage_bullet_pistol" ) ||
-			!idStr::Icmp( damageDefName, "damage_plasmablast" ) ||
-			!idStr::Icmp( damageDefName, "damage_shotgun" ) ||
-			!idStr::Icmp( damageDefName, "damage_fists" )
-			) headMultiplier = true;
-
-	damage = GetDamageForLocation( damage, location, headMultiplier );
-	// Koz end
-	//damage = GetDamageForLocation( damage, location );
-
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
 	if ( damage > 0 ) {
 		health -= damage;
-
-		//Check the health against any damage cap that is currently set
-		if (damageCap >= 0 && health < damageCap) {
-			health = damageCap;
-		}
-
-
 		if ( health <= 0 ) {
 			if ( health < -999 ) {
 				health = -999;
@@ -2554,7 +2407,8 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 			if ( ( health < spawnArgs.GetInt( "gibhealth" ) ) && spawnArgs.GetInt( "gibhealth" ) != 0 && damageDef->GetBool( "gib" ) ) { // HUMANHEAD mdl:  Changed to check gibhealth spawnarg
 				Gib( dir, damageDefName );
-			} else {
+			}
+			else {
 				AddBasePush( dir, location, damageDef );
 			}
 		} else {
@@ -2570,6 +2424,38 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			BecomeActive( TH_PHYSICS );
 		}
 	}
+}
+
+/*
+=====================
+idActor::AddBasePush
+=====================
+*/
+void idActor::AddBasePush( const idVec3& dir, int location, const idDict* damageDict ) {
+	if( !af.IsActive() || basePushTime ) {
+		return;
+	}
+
+	basePushTime = damageDict->GetInt("basePushTime", "0") + gameLocal.time;
+	basePush = dir;
+	basePush.Normalize();
+	basePush = damageDict->GetFloat("basePush", "0") * basePush;
+	basePushJoint = location;
+}
+
+/*
+=====================
+idActor::ApplyBasePush
+=====================
+*/
+void idActor::ApplyBasePush() {
+	if ( basePushTime <= gameLocal.time ) {
+		return;
+	}
+	
+	idVec3 center;
+	center = GetPhysics()->GetAbsBounds().GetCenter();
+	GetPhysics()->ApplyImpulse ( 0, center, basePush );
 }
 
 /*
@@ -2602,7 +2488,6 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	// don't play pain sounds more than necessary
 	pain_debounce_time = gameLocal.time + pain_delay;
 
-
 #ifdef HUMANHEAD
 	//HUMANHEAD: aob - moved logic to helper function so it can be overridden
 	PlayPainSound();
@@ -2619,11 +2504,11 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 #endif
 
 	if ( !allowPain || ( gameLocal.time < painTime ) ) {
-		// don't play a pain anim
+		// don't play a pain anim		
 		return false;
 	}
 
-	if ( pain_threshold && ( damage < pain_threshold ) ) {
+	if ( pain_threshold && ( damage < pain_threshold ) ) {		
 		return false;
 	}
 
@@ -2663,10 +2548,11 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	}
 
 	if ( g_debugDamage.GetBool() ) {
-		gameLocal.Printf( "Damage: joint: '%s', zone '%s', anim '%s'\n", animator.GetJointName( ( jointHandle_t )location ),
+		gameLocal.Printf( "Damage: joint: '%s', zone '%s', anim '%s'\n", animator.GetJointName( ( jointHandle_t )location ), 
 			damageGroup.c_str(), painAnim.c_str() );
 	}
 
+	
 	return true;
 }
 
@@ -2688,6 +2574,7 @@ void idActor::PlayPainSound() {
 		StartSound( "snd_pain_huge", SND_CHANNEL_VOICE );
 	}
 }
+
 
 /*
 =====================
@@ -2755,7 +2642,7 @@ void idActor::SetupDamageGroups( void ) {
 idActor::GetDamageForLocation
 =====================
 */
-int idActor::GetDamageForLocation( int damage, int location, bool headMultiplier  ) {
+int idActor::GetDamageForLocation( int damage, int location ) {
 	if ( ( location < 0 ) || ( location >= damageScale.Num() ) ) {
 		return damage;
 	}
@@ -2785,10 +2672,10 @@ const char *idActor::GetDamageGroup( int location ) {
 
 /*
 =====================
-idActor::PlayFootStepSound
+idActor::PlayFootstepSound
 =====================
 */
-void idActor::PlayFootStepSound( void ) {
+void idActor::PlayFootstepSound() {
 // HUMANHEAD
 	trace_t trace;
 	int num = GetPhysics()->GetNumContacts();
@@ -2821,7 +2708,7 @@ idActor::Event_DisableEyeFocus
 */
 void idActor::Event_DisableEyeFocus( void ) {
 	allowEyeFocus = false;
-
+	
 	idEntity *headEnt = head.GetEntity();
 	if ( headEnt ) {
 		headEnt->GetAnimator()->Clear( ANIMCHANNEL_EYELIDS, gameLocal.time, FRAME2MS( 2 ) );
@@ -2836,7 +2723,7 @@ idActor::Event_Footstep
 ===============
 */
 void idActor::Event_Footstep( void ) {
-	PlayFootStepSound();
+	PlayFootstepSound();
 }
 
 /*
@@ -2915,6 +2802,7 @@ void idActor::Event_GetPainAnim( void ) {
 	}
 }
 
+
 /*
 =====================
 idActor::GetAnimPrefix
@@ -2962,16 +2850,6 @@ void idActor::Event_StopAnim( int channel, int frames ) {
 		legsAnim.StopAnim( frames );
 		break;
 
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		leftHandAnim.StopAnim( frames );
-		break;
-
-	case ANIMCHANNEL_RIGHTHAND :
-		rightHandAnim.StopAnim( frames );
-		break;
-		// Koz end
-
 	default:
 		gameLocal.Error( "Unknown anim group" );
 		break;
@@ -2984,7 +2862,79 @@ idActor::Event_PlayAnim
 ===============
 */
 void idActor::Event_PlayAnim( int channel, const char *animname ) {
-    idThread::ReturnInt( PlayAnim( channel, animname ) );
+	animFlags_t	flags;
+	idEntity *headEnt;
+	int	anim;
+	
+	anim = GetAnim( channel, animname );
+	if ( !anim ) {
+		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
+			// HUMANHEAD pdm: changed from def_head to model_head for precaching
+			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "model_head", "" ) );
+		} else {
+			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
+		}
+		idThread::ReturnInt( 0 );
+		return;
+	}
+
+	switch( channel ) {
+	case ANIMCHANNEL_HEAD :
+		headEnt = head.GetEntity();
+		if ( headEnt ) {
+			headAnim.idleAnim = false;
+			headAnim.PlayAnim( anim );
+			flags = headAnim.GetAnimFlags();
+			if ( !flags.prevent_idle_override ) {
+				if ( torsoAnim.IsIdle() ) {
+					torsoAnim.animBlendFrames = headAnim.lastAnimBlendFrames;
+					SyncAnimChannels( ANIMCHANNEL_TORSO, ANIMCHANNEL_HEAD, headAnim.lastAnimBlendFrames );
+					if ( legsAnim.IsIdle() ) {
+						legsAnim.animBlendFrames = headAnim.lastAnimBlendFrames;
+						SyncAnimChannels( ANIMCHANNEL_LEGS, ANIMCHANNEL_HEAD, headAnim.lastAnimBlendFrames );
+					}
+				}
+			}
+		}
+		break;
+
+	case ANIMCHANNEL_TORSO :
+		torsoAnim.idleAnim = false;
+		torsoAnim.PlayAnim( anim );
+		flags = torsoAnim.GetAnimFlags();
+		if ( !flags.prevent_idle_override ) {
+			if ( headAnim.IsIdle() ) {
+				headAnim.animBlendFrames = torsoAnim.lastAnimBlendFrames;
+				SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
+			}
+			if ( legsAnim.IsIdle() ) {
+				legsAnim.animBlendFrames = torsoAnim.lastAnimBlendFrames;
+				SyncAnimChannels( ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
+			}
+		}
+		break;
+
+	case ANIMCHANNEL_LEGS :
+		legsAnim.idleAnim = false;
+		legsAnim.PlayAnim( anim );
+		flags = legsAnim.GetAnimFlags();
+		if ( !flags.prevent_idle_override ) {
+			if ( torsoAnim.IsIdle() ) {
+				torsoAnim.animBlendFrames = legsAnim.lastAnimBlendFrames;
+				SyncAnimChannels( ANIMCHANNEL_TORSO, ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames );
+				if ( headAnim.IsIdle() ) {
+					headAnim.animBlendFrames = legsAnim.lastAnimBlendFrames;
+					SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames );
+				}
+			}
+		}
+		break;
+
+	default :
+		gameLocal.Error( "Unknown anim group" );
+		break;
+	}
+	idThread::ReturnInt( 1 );
 }
 
 #ifdef HUMANHEAD //JSH
@@ -2993,7 +2943,7 @@ void idActor::Event_PlayAnimSkip( int channel, const char *animname, float skip 
 	idEntity *headEnt;
 	int	anim;
 	int ms_skip = SEC2MS( skip );
-
+	
 	if ( ms_skip < 0 ) {
 		ms_skip = 0;
 		gameLocal.DPrintf( "negative delays not allowed '%s' (%s)\n", animname, name.c_str() );
@@ -3079,7 +3029,7 @@ idActor::Event_PlayCycle
 void idActor::Event_PlayCycle( int channel, const char *animname ) {
 	animFlags_t	flags;
 	int			anim;
-
+	
 	anim = GetAnim( channel, animname );
 	if ( !anim ) {
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
@@ -3139,49 +3089,8 @@ void idActor::Event_PlayCycle( int channel, const char *animname ) {
 		}
 		break;
 
-			// Koz fix anim ad handanims to head/leg/torso cases?
-			// Koz begin
-		case ANIMCHANNEL_LEFTHAND :
-			leftHandAnim.idleAnim = false;
-			leftHandAnim.CycleAnim( anim );
-			/*	flags = leftHandAnim.GetAnimFlags();
-                if ( !flags.prevent_idle_override )
-                {
-                    if ( torsoAnim.IsIdle() )
-                    {
-                        torsoAnim.animBlendFrames = leftHandAnim.lastAnimBlendFrames;
-                        SyncAnimChannels( ANIMCHANNEL_TORSO, ANIMCHANNEL_LEFTHAND, leftHandAnim.lastAnimBlendFrames );
-                        if ( headAnim.IsIdle() )
-                        {
-                            headAnim.animBlendFrames = leftHandAnim.lastAnimBlendFrames;
-                            SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_LEFTHAND, leftHandAnim.lastAnimBlendFrames );
-                        }
-                    }
-                }*/
-			break;
-
-		case ANIMCHANNEL_RIGHTHAND:
-			rightHandAnim.idleAnim = false;
-			rightHandAnim.CycleAnim( anim );
-			/*flags = rightHandAnim.GetAnimFlags();
-            if ( !flags.prevent_idle_override )
-            {
-                if ( torsoAnim.IsIdle() )
-                {
-                    torsoAnim.animBlendFrames = rightHandAnim.lastAnimBlendFrames;
-                    SyncAnimChannels( ANIMCHANNEL_TORSO, ANIMCHANNEL_RIGHTHAND, rightHandAnim.lastAnimBlendFrames );
-                    if ( headAnim.IsIdle() )
-                    {
-                        headAnim.animBlendFrames = rightHandAnim.lastAnimBlendFrames;
-                        SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_RIGHTHAND, rightHandAnim.lastAnimBlendFrames );
-                    }
-                }
-            }*/
-			break;
-			// Koz end
-
-		default:
-			gameLocal.Error( "Unknown anim group" );
+	default:
+		gameLocal.Error( "Unknown anim group" );
 	}
 
 	idThread::ReturnInt( true );
@@ -3194,8 +3103,8 @@ idActor::Event_IdleAnim
 */
 void idActor::Event_IdleAnim( int channel, const char *animname ) {
 	int anim;
-
-	anim = GetAnim( channel, animname );
+	
+	anim = GetAnim( channel, animname );	
 	if ( !anim ) {
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
 			// HUMANHEAD pdm: changed from def_head to model_head for precaching
@@ -3217,18 +3126,7 @@ void idActor::Event_IdleAnim( int channel, const char *animname ) {
 			legsAnim.BecomeIdle();
 			break;
 
-			// Koz begin
-		case ANIMCHANNEL_LEFTHAND :
-			leftHandAnim.BecomeIdle();
-			break;
-
-		case ANIMCHANNEL_RIGHTHAND :
-			rightHandAnim.BecomeIdle();
-			break;
-			// Koz end
-
-
-			default:
+		default:
 			gameLocal.Error( "Unknown anim group" );
 		}
 
@@ -3299,17 +3197,6 @@ void idActor::Event_IdleAnim( int channel, const char *animname ) {
 		}
 		break;
 
-		// Koz fix anims
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		leftHandAnim.BecomeIdle();
-		break;
-
-	case ANIMCHANNEL_RIGHTHAND :
-		rightHandAnim.BecomeIdle();
-		break;
-		// Koz end
-
 	default:
 		gameLocal.Error( "Unknown anim group" );
 	}
@@ -3361,19 +3248,7 @@ void idActor::Event_SetSyncedAnimWeight( int channel, int anim, float weight ) {
 		}
 		break;
 
-		// Koz fix anims
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		animator.CurrentAnim( ANIMCHANNEL_LEFTHAND )->SetSyncedAnimWeight( anim, weight );
-		break;
-
-	case ANIMCHANNEL_RIGHTHAND :
-		animator.CurrentAnim( ANIMCHANNEL_RIGHTHAND )->SetSyncedAnimWeight( anim, weight );
-		break;
-		// Koz end
-
-
-		default:
+	default:
 		gameLocal.Error( "Unknown anim group" );
 	}
 }
@@ -3407,17 +3282,6 @@ void idActor::Event_OverrideAnim( int channel ) {
 		SyncAnimChannels( ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
 		break;
 
-		// Koz fix anim
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		leftHandAnim.Disable();
-		break;
-
-	case ANIMCHANNEL_RIGHTHAND :
-		rightHandAnim.Disable();
-		break;
-		// Koz end
-
 	default:
 		gameLocal.Error( "Unknown anim group" );
 		break;
@@ -3442,16 +3306,7 @@ void idActor::Event_EnableAnim( int channel, int blendFrames ) {
 	case ANIMCHANNEL_LEGS :
 		legsAnim.Enable( blendFrames );
 		break;
-		// Koz fix anim
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		leftHandAnim.Enable( blendFrames );
-		break;
 
-	case ANIMCHANNEL_RIGHTHAND :
-		rightHandAnim.Enable( blendFrames );
-		break;
-		// Koz end
 	default:
 		gameLocal.Error( "Unknown anim group" );
 		break;
@@ -3479,18 +3334,7 @@ void idActor::Event_SetBlendFrames( int channel, int blendFrames ) {
 		legsAnim.animBlendFrames = blendFrames;
 		legsAnim.lastAnimBlendFrames = blendFrames;
 		break;
-		// Koz fix anims
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		leftHandAnim.animBlendFrames = blendFrames;
-		leftHandAnim.lastAnimBlendFrames = blendFrames;
-		break;
 
-	case ANIMCHANNEL_RIGHTHAND :
-		rightHandAnim.animBlendFrames = blendFrames;
-		rightHandAnim.lastAnimBlendFrames = blendFrames;
-		break;
-		// Koz end
 	default:
 		gameLocal.Error( "Unknown anim group" );
 		break;
@@ -3515,16 +3359,7 @@ void idActor::Event_GetBlendFrames( int channel ) {
 	case ANIMCHANNEL_LEGS :
 		idThread::ReturnInt( legsAnim.animBlendFrames );
 		break;
-			// Koz fix anims
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		idThread::ReturnInt( leftHandAnim.animBlendFrames );
-		break;
 
-	case ANIMCHANNEL_RIGHTHAND :
-		idThread::ReturnInt( rightHandAnim.animBlendFrames );
-		break;
-			// Koz end
 	default:
 		gameLocal.Error( "Unknown anim group" );
 		break;
@@ -3598,19 +3433,7 @@ void idActor::Event_AnimDone( int channel, int blendFrames ) {
 		result = legsAnim.AnimDone( blendFrames );
 		idThread::ReturnInt( result );
 		break;
-		// Koz fix anims
-		// Koz begin
-	case ANIMCHANNEL_LEFTHAND :
-		result = leftHandAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
 
-
-	case ANIMCHANNEL_RIGHTHAND :
-		result = rightHandAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
-		// Koz end
 	default:
 		gameLocal.Error( "Unknown anim group" );
 	}
@@ -3622,7 +3445,7 @@ idActor::Event_HasAnim
 ================
 */
 void idActor::Event_HasAnim( int channel, const char *animname ) {
-	if ( GetAnim( channel, animname ) != 0 ) {
+	if ( GetAnim( channel, animname ) != NULL ) {
 		idThread::ReturnFloat( 1.0f );
 	} else {
 		idThread::ReturnFloat( 0.0f );
@@ -3635,6 +3458,7 @@ idActor::Event_CheckAnim
 ================
 */
 void idActor::Event_CheckAnim( int channel, const char *animname ) {
+
 	if ( !GetAnim( channel, animname ) ) {
 		if ( animPrefix.Length() ) {
 			gameLocal.Error( "Can't find anim '%s_%s' for '%s'", animPrefix.c_str(), animname, name.c_str() );
@@ -3686,9 +3510,9 @@ void idActor::Event_AnimLength( int channel, const char *animname ) {
 		} else {
 			idThread::ReturnFloat( MS2SEC( animator.AnimLength( anim ) ) );
 			return;
-		}
+		}		
 	}
-
+	
 	idThread::ReturnFloat( 0.0f );
 }
 
@@ -3712,7 +3536,7 @@ void idActor::Event_AnimDistance( int channel, const char *animname ) {
 			return;
 		}
 	}
-
+	
 	idThread::ReturnFloat( 0.0f );
 }
 
@@ -3756,7 +3580,7 @@ void idActor::Event_NextEnemy( idEntity *ent ) {
 		}
 	}
 
-	idThread::ReturnEntity( NULL );
+    idThread::ReturnEntity( NULL );
 }
 
 /*
@@ -3845,7 +3669,7 @@ void idActor::Event_Footprint_Left(void) {
 		idVec3 pos;
 		if(bone.IsEmpty()) {
 			pos = GetOrigin();
-		}
+		}			
 		else {
 			idMat3 axis;
 			GetJointWorldTransform(bone.c_str(), pos, axis);
@@ -3867,7 +3691,7 @@ void idActor::Event_Footprint_Right(void) {
 		idVec3 pos;
 		if(bone.IsEmpty()) {
 			pos = GetOrigin();
-		}
+		}			
 		else {
 			idMat3 axis;
 			GetJointWorldTransform(bone.c_str(), pos, axis);
@@ -3887,7 +3711,7 @@ idMat3 idActor::GetGravViewAxis(void) const {
 	//VIEWAXIS_TO_GETGRAVVIEWAXIS = Changed a viewAxis reference to a GetGravViewAxis() wrapper call
 	//REMOVED_GRAV_AXIS_MULT = This rotation was being multiplied by physObj.GetGravityAxis() but since our wrapper incorporates gravity,its removed
 
-	return viewAxis * GetPhysics()->GetAxis();
+	return viewAxis * GetPhysics()->GetAxis();	
 }
 
 //
@@ -4071,7 +3895,7 @@ void idActor::Possess( idEntity *possessor ) {
 		args.SetMatrix( "rotation", viewAxis );
 		args.Set( "classname", spawnClassName );
 		gameLocal.SpawnEntityDef( args, &ent );
-	}
+	}	
 
 	// Remove this version
 	PostEventMS( &EV_Remove, 0 );
@@ -4104,7 +3928,7 @@ bool idActor::CanBePossessed( void ) {
 /*
 ===============
 idActor::DetermineOwnerPosition
-
+ 
 //HUMANHEAD: aob
 ===============
 */
@@ -4116,7 +3940,7 @@ void idActor::DetermineOwnerPosition( idVec3 &ownerOrigin, idMat3 &ownerAxis ) {
 /*
 ===============
 idActor::DetermineOwnerPosition
-
+ 
 //HUMANHEAD: aob - used when crashlanding
 ===============
 */
@@ -4185,7 +4009,7 @@ bool idActor::PlayCrashLandSound( const trace_t& trace, const float volumeScale 
 	idEntity *ent = gameLocal.GetTraceEntity( trace );
 	surfTypes_t type = gameLocal.GetMatterType( ent, trace.c.material, "idActor::PlayCrashLandSound" );
 
-	if( ent && type == SURFTYPE_FORCEFIELD ) {
+	if( ent && type == SURFTYPE_FORCEFIELD ) { 
 		// This simulates a collision with the forcefield
 		ent->ApplyImpulse(this, 0, trace.c.point, -trace.c.normal);
 	}
@@ -4218,7 +4042,7 @@ void idActor::PlayFootstepSoundMatter( const trace_t& trace ) {
 	}
 
 	surfTypes_t type = gameLocal.GetMatterType( trace, "idActor::PlayFootstepSoundMatter" );
-	if( type == SURFTYPE_FORCEFIELD ) {
+	if( type == SURFTYPE_FORCEFIELD ) { 
 		// This simulates a collision with the forcefield
 		idEntity *ent = gameLocal.GetTraceEntity( trace );
 		ent->ApplyImpulse(this, 0, trace.c.point, -trace.c.normal);
@@ -4227,7 +4051,6 @@ void idActor::PlayFootstepSoundMatter( const trace_t& trace ) {
 	const char* soundKey = gameLocal.MatterTypeToMatterKey( "snd_footstep", type );
 	StartSound( soundKey, SND_CHANNEL_BODY3, 0, false, NULL );
 }
-
 
 void idActor::SetShaderParm( int parmnum, float value ) {
 	// Transfer any shaderparms to heads
@@ -4311,63 +4134,3 @@ idEntity *idActor::GetHead() {
 	return head.GetEntity();
 }
 // HUMANHEAD END
-
-/*
-================
-idActor::Event_SetDamageGroupScale
-================
-*/
-void idActor::Event_SetDamageGroupScale(const char *groupName, float scale)
-{
-
-	for (int i = 0; i < damageScale.Num(); i++) {
-		if (damageGroups[ i ] == groupName) {
-			damageScale[ i ] = scale;
-		}
-	}
-}
-
-/*
-================
-idActor::Event_SetDamageGroupScaleAll
-================
-*/
-void idActor::Event_SetDamageGroupScaleAll(float scale)
-{
-
-	for (int i = 0; i < damageScale.Num(); i++) {
-		damageScale[ i ] = scale;
-	}
-}
-
-void idActor::Event_GetDamageGroupScale(const char *groupName)
-{
-
-	for (int i = 0; i < damageScale.Num(); i++) {
-		if (damageGroups[ i ] == groupName) {
-			idThread::ReturnFloat(damageScale[i]);
-			return;
-		}
-	}
-
-	idThread::ReturnFloat(0);
-}
-
-void idActor::Event_SetDamageCap(float _damageCap)
-{
-	damageCap = _damageCap;
-}
-
-void idActor::Event_SetWaitState(const char *waitState)
-{
-	SetWaitState(waitState);
-}
-
-void idActor::Event_GetWaitState()
-{
-	if (WaitState()) {
-		idThread::ReturnString(WaitState());
-	} else {
-		idThread::ReturnString("");
-	}
-}

@@ -1,40 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
-
-#include "gamesys/SysCvar.h"
-#include "Player.h"
-#include "Projectile.h"
-#include "WorldSpawn.h"
-
-#include "Fx.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
@@ -48,7 +18,7 @@ const idEventDef EV_Fx_KillFx( "_killfx" );
 const idEventDef EV_Fx_Action( "_fxAction", "e" );		// implemented by subclasses
 
 CLASS_DECLARATION( idEntity, idEntityFx )
-EVENT( EV_Activate,		idEntityFx::Event_Trigger )
+EVENT( EV_Activate,	   	idEntityFx::Event_Trigger )
 EVENT( EV_Fx_KillFx,	idEntityFx::Event_ClearFx )
 END_CLASS
 
@@ -241,7 +211,7 @@ void idEntityFx::CleanUp( void ) {
 	for( int i = 0; i < fxEffect->events.Num(); i++ ) {
 		const idFXSingleAction& fxaction = fxEffect->events[i];
 		idFXLocalAction& laction = actions[i];
-		CleanUpSingleAction( fxaction, laction );
+		CleanUpSingleAction( fxaction, laction );		
 	}
 }
 
@@ -346,7 +316,7 @@ void idEntityFx::ApplyFade( const idFXSingleAction& fxaction, idFXLocalAction& l
 			laction.renderEntity.shaderParms[SHADERPARM_RED] = (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct;
 			laction.renderEntity.shaderParms[SHADERPARM_GREEN] = (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct;
 			laction.renderEntity.shaderParms[SHADERPARM_BLUE] = (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct;
-
+	
 			gameRenderWorld->UpdateEntityDef( laction.modelDefHandle, &laction.renderEntity );
 		}
 		if ( laction.lightDefHandle != -1 ) {
@@ -411,7 +381,7 @@ void idEntityFx::Run( int time ) {
 				}
 				laction.delay = totalDelay;
 				laction.start = time;
-			}
+			} 
 			continue;
 		}
 
@@ -485,7 +455,7 @@ void idEntityFx::Run( int time ) {
 			case FX_DECAL: {
 				if ( !useAction->decalDropped ) {
 					useAction->decalDropped = true;
-					gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetGravity(), 8.0f, true, fxaction.size, fxaction.data );
+					gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetGravity(), 8.0f, true, fxaction.size, fxaction.data ); 
 				}
 				break;
 			}
@@ -610,7 +580,7 @@ void idEntityFx::Spawn( void ) {
 	}
 
 	//HUMANHEAD: aob
-	RemoveWhenDone( spawnArgs.GetBool("removeWhenDone") );
+	RemoveWhenDone( spawnArgs.GetBool("removeWhenDone") );	
 	//HUMANHEAD END
 
 	const char *fx;
@@ -623,7 +593,7 @@ void idEntityFx::Spawn( void ) {
 		Setup( fx );
 // HUMANHEAD bg: "deferredRestart" allows a restarting effect to be triggered.
 		if ( spawnArgs.GetBool( "test" ) || spawnArgs.GetBool( "start" )
-		     || (spawnArgs.GetFloat( "restart" ) && !spawnArgs.GetBool( "deferredRestart" )) ) {
+			|| (spawnArgs.GetFloat( "restart" ) && !spawnArgs.GetBool( "deferredRestart" )) ) {
 // HUMANHEAD END
 			//HUMANHEAD: aob - changed to processevent because projectiles close to walls toggle fx before it gets started
 			ProcessEvent( &EV_Activate, this );
@@ -812,8 +782,19 @@ idEntityFx::ClientPredictionThink
 =================
 */
 void idEntityFx::ClientPredictionThink( void ) {
-	if ( gameLocal.isNewFrame ) {
-		Run( gameLocal.time );
+	if (fl.clientEntity && snapshotOwner.IsValid()) {
+		if (!gameLocal.EntInClientSnapshot(snapshotOwner->entityNumber)) { //if the snapshot entity i'm associated with is not in the snapshot, i hide
+			Hide();
+			Nozzle(false);
+		}
+		else {
+			Show();
+			Nozzle(true);
+		}
+	}
+
+	if ( gameLocal.isNewFrame ) { 
+		Run( gameLocal.time ); 
 	}
 	RunPhysics();
 	Present();
@@ -823,7 +804,7 @@ void idEntityFx::ClientPredictionThink( void ) {
 ===============================================================================
 
   idTeleporter
-
+	
 ===============================================================================
 */
 
@@ -837,6 +818,9 @@ idTeleporter::Event_DoAction
 ================
 */
 void idTeleporter::Event_DoAction( idEntity *activator ) {
+	float angle;
+
+	angle = spawnArgs.GetFloat( "angle" );
 	idAngles a( 0, spawnArgs.GetFloat( "angle" ), 0 );
 	activator->Teleport( GetPhysics()->GetOrigin(), a, NULL );
 }

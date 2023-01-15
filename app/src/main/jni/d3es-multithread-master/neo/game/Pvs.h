@@ -1,37 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_PVS_H__
 #define __GAME_PVS_H__
-
-#include "idlib/geometry/Winding.h"
-#include "idlib/math/Vector.h"
-#include "idlib/bv/Bounds.h"
 
 /*
 ===================================================================================
@@ -96,7 +67,6 @@ public:
 	void				WritePVS( const pvsHandle_t handle, idBitMsg &msg );
 	void				ReadPVS( const pvsHandle_t handle, const idBitMsg &msg );
 #endif
-	bool				CheckAreasForPortalSky(const pvsHandle_t handle, const idVec3 &origin);
 
 private:
 	int					numAreas;
@@ -108,9 +78,9 @@ private:
 	mutable pvsCurrent_t currentPVS[MAX_CURRENT_PVS];
 						// used to create PVS
 	int					portalVisBytes;
-	int					portalVisInts;
+	int					portalVisLongs;
 	int					areaVisBytes;
-	int					areaVisInts;
+	int					areaVisLongs;
 	struct pvsPortal_s *pvsPortals;
 	struct pvsArea_s *	pvsAreas;
 
@@ -120,10 +90,10 @@ private:
 	void				DestroyPVSData( void );
 	void				CopyPortalPVSToMightSee( void ) const;
 	//HUMANHEAD rww
-	//check if two portals should be seen from each other because of gameportal linking
+						//check if two portals should be seen from each other because of gameportal linking
 	bool				MightSeeLinkedGamePortal(const struct pvsPortal_s *p1, const struct pvsPortal_s *p2) const;
-	//go through all of our portals and modify the mightSees based on gameportal linking
-	void				MightSeeGamePortals(void) const;
+						//go through all of our portals and modify the mightSees based on gameportal linking
+	void				MightSeeGamePortals(void) const; 
 	//HUMANHEAD END
 	void				FloodFrontPortalPVS_r( struct pvsPortal_s *portal, int areaNum ) const;
 	void				FrontPortalPVS( void ) const;

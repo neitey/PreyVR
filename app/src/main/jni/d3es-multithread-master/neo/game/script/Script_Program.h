@@ -1,55 +1,27 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __SCRIPT_PROGRAM_H__
 #define __SCRIPT_PROGRAM_H__
 
-#include "idlib/containers/StrList.h"
-#include "idlib/containers/StaticList.h"
-#include "idlib/containers/HashIndex.h"
-#include "idlib/math/Vector.h"
-
-#include "../GameBase.h"
-
+class idScriptObject;
 class idEventDef;
 class idVarDef;
 class idTypeDef;
 class idEntity;
+class idThread;
 class idSaveGame;
 class idRestoreGame;
 
+#define MAX_STRING_LEN		128
+
 // HUMANHEAD PCF BG 5/30/06: Added 20% to script max values.
 
-#define MAX_STRING_LEN		128
 // HUMANHEAD pdm: Ran out of space on some maps.  TODO figure out why this is happening.
 #define MAX_GLOBALS			530840			// in bytes
-//#define MAX_GLOBALS		296608			// in bytes
+//#define MAX_GLOBALS		196608			// in bytes
 // HUMANHEAD END
+
 #define MAX_STRINGS			1024
 #define MAX_FUNCS			3686
 #define MAX_STATEMENTS		113050			// statement_t - 18 bytes last I checked
@@ -70,16 +42,16 @@ public:
 	void				Clear( void );
 
 private:
-	idStr				name;
+	idStr 				name;
 public:
 	const idEventDef	*eventdef;
 	idVarDef			*def;
 	const idTypeDef		*type;
-	int					firstStatement;
-	int					numStatements;
-	int					parmTotal;
-	int					locals;			// total ints of parms + locals
-	int					filenum;			// source file defined in
+	int 				firstStatement;
+	int 				numStatements;
+	int 				parmTotal;
+	int 				locals; 			// total ints of parms + locals
+	int					filenum; 			// source file defined in
 	idList<int>			parmSize;
 };
 
@@ -88,133 +60,9 @@ typedef union eval_s {
 	float				_float;
 	float				vector[ 3 ];
 	function_t			*function;
-	int					_int;
-	int					entity;
+	int 				_int;
+	int 				entity;
 } eval_t;
-
-
-typedef struct statement_s {
-	unsigned short	op;
-	idVarDef		*a;
-	idVarDef		*b;
-	idVarDef		*c;
-	unsigned short	linenumber;
-	unsigned short	file;
-} statement_t;
-
-/***********************************************************************
-
-idProgram
-
-Handles compiling and storage of script data.  Multiple idProgram objects
-would represent seperate programs with no knowledge of each other.  Scripts
-meant to access shared data and functions should all be compiled by a
-single idProgram.
-
-***********************************************************************/
-
-class idVarDefName;
-
-class idProgram {
-private:
-	idStrList									fileList;
-	idStr										filename;
-	int											filenum;
-
-	int											numVariables;
-	byte										variables[ MAX_GLOBALS ];
-	idStaticList<byte,MAX_GLOBALS>				variableDefaults;
-	idStaticList<function_t,MAX_FUNCS>			functions;
-	idStaticList<statement_t,MAX_STATEMENTS>	statements;
-	idList<idTypeDef *>							types;
-	idList<idVarDefName *>						varDefNames;
-	idHashIndex									varDefNameHash;
-	idList<idVarDef *>							varDefs;
-
-	idVarDef									*sysDef;
-
-	int											top_functions;
-	int											top_statements;
-	int											top_types;
-	int											top_defs;
-	int											top_files;
-
-	void										CompileStats( void );
-	byte										*ReserveMem(int size);
-	idVarDef									*AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope);
-
-public:
-	idVarDef									*returnDef;
-	idVarDef									*returnStringDef;
-
-	idProgram();
-	~idProgram();
-
-	// save games
-	void										Save( idSaveGame *savefile ) const;
-	bool										Restore( idRestoreGame *savefile );
-	int											CalculateChecksum( void ) const;		// Used to insure program code has not
-	//    changed between savegames
-
-	void										Startup( const char *defaultScript );
-	void										Restart( void );
-	bool										CompileText( const char *source, const char *text, bool console );
-	const function_t							*CompileFunction( const char *functionName, const char *text );
-	void										CompileFile( const char *filename );
-	void										BeginCompilation( void );
-	void										FinishCompilation( void );
-	void										DisassembleStatement( idFile *file, int instructionPointer ) const;
-	void										Disassemble( void ) const;
-	void										FreeData( void );
-
-	const char									*GetFilename( int num );
-	int											GetFilenum( const char *name );
-	int											GetLineNumberForStatement( int index );
-	const char									*GetFilenameForStatement( int index );
-
-	idTypeDef									*AllocType( idTypeDef &type );
-	idTypeDef									*AllocType( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
-	idTypeDef									*GetType( idTypeDef &type, bool allocate );
-	idTypeDef									*FindType( const char *name );
-
-	idVarDef									*AllocDef( idTypeDef *type, const char *name, idVarDef *scope, bool constant );
-	idVarDef									*GetDef( const idTypeDef *type, const char *name, const idVarDef *scope ) const;
-	void										FreeDef( idVarDef *d, const idVarDef *scope );
-	idVarDef									*FindFreeResultDef( idTypeDef *type, const char *name, idVarDef *scope, const idVarDef *a, const idVarDef *b );
-	idVarDef									*GetDefList( const char *name ) const;
-	void										AddDefToNameList( idVarDef *def, const char *name );
-
-	function_t									*FindFunction( const char *name ) const;						// returns NULL if function not found
-	function_t									*FindFunction( const char *name, const idTypeDef *type ) const;	// returns NULL if function not found
-	function_t									&AllocFunction( idVarDef *def );
-	function_t									*GetFunction( int index );
-	int											GetFunctionIndex( const function_t *func );
-
-	void										SetEntity( const char *name, idEntity *ent );
-
-	statement_t									*AllocStatement( void );
-	statement_t									&GetStatement( int index );
-	int											NumStatements( void ) { return statements.Num(); }
-
-	int											GetReturnedInteger( void );
-
-	//HUMANHEAD: aob - need to return other types
-	float 										GetReturnedFloat( void );
-	bool										GetReturnedBool( void );
-	idVec3 										GetReturnedVector( void );
-	idStr										GetReturnedString( void );
-	int											GetReturnedEntity( void );
-	//HUMANHEAD END
-
-	void										ReturnFloat( float value );
-	void										ReturnInteger( int value );
-	void										ReturnVector( idVec3 const &vec );
-	void										ReturnString( const char *string );
-	void										ReturnEntity( idEntity *ent );
-
-	int											NumFilenames( void ) { return fileList.Num( ); }
-};
-
 
 /***********************************************************************
 
@@ -227,7 +75,7 @@ Contains type information for variables and functions.
 class idTypeDef {
 private:
 	etype_t						type;
-	idStr						name;
+	idStr 						name;
 	int							size;
 
 	// function types are more complex
@@ -257,7 +105,7 @@ public:
 	int					Size( void ) const;
 
 	idTypeDef			*SuperClass( void ) const;
-
+	
 	idTypeDef			*ReturnType( void ) const;
 	void				SetReturnType( idTypeDef *type );
 
@@ -283,59 +131,57 @@ public:
 	//HUMANHEAD END
 };
 
-
 //HUMANHEAD: aob
 class idTypeDefString : public idTypeDef {
 public:
-	idTypeDefString( const idTypeDef &other );
-	idTypeDefString( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+				idTypeDefString( const idTypeDef &other );
+				idTypeDefString( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
 
 	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
 	const char* GetReturnValueAsString( idProgram& program ) const;
-	bool		VerifyData( const char* data ) const;
+	bool		VerifyData( const char* data ) const; 
 };
 
 class idTypeDefVector : public idTypeDef {
 public:
-	idTypeDefVector( const idTypeDef &other );
-	idTypeDefVector( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+				idTypeDefVector( const idTypeDef &other );
+				idTypeDefVector( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
 
 	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
 	const char* GetReturnValueAsString( idProgram& program ) const;
-	bool		VerifyData( const char* data ) const;
+	bool		VerifyData( const char* data ) const; 
 };
 
 class idTypeDefFloat : public idTypeDef {
 public:
-	idTypeDefFloat( const idTypeDef &other );
-	idTypeDefFloat( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+				idTypeDefFloat( const idTypeDef &other );
+				idTypeDefFloat( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
 
 	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
 	const char* GetReturnValueAsString( idProgram& program ) const;
-	bool		VerifyData( const char* data ) const;
+	bool		VerifyData( const char* data ) const; 
 };
 
 class idTypeDefEntity : public idTypeDef {
 public:
-	idTypeDefEntity( const idTypeDef &other );
-	idTypeDefEntity( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+				idTypeDefEntity( const idTypeDef &other );
+				idTypeDefEntity( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
 
 	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
 	const char* GetReturnValueAsString( idProgram& program ) const;
-	bool		VerifyData( const char* data ) const;
+	bool		VerifyData( const char* data ) const; 
 };
 
 class idTypeDefBool : public idTypeDef {
 public:
-	idTypeDefBool( const idTypeDef &other );
-	idTypeDefBool( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+				idTypeDefBool( const idTypeDef &other );
+				idTypeDefBool( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
 
 	void		PushOntoStack( const char* parm, class hhThread* thread ) const;
 	const char* GetReturnValueAsString( idProgram& program ) const;
-	bool		VerifyData( const char* data ) const;
+	bool		VerifyData( const char* data ) const; 
 };
 //HUMANHEAD END
-
 
 /***********************************************************************
 
@@ -349,7 +195,7 @@ In-game representation of objects in scripts.  Use the idScriptVariable template
 class idScriptObject {
 private:
 	idTypeDef					*type;
-
+	
 public:
 	byte						*data;
 
@@ -414,9 +260,11 @@ ID_INLINE void idScriptVariable<type, etype, returnType>::Unlink( void ) {
 template<class type, etype_t etype, class returnType>
 ID_INLINE void idScriptVariable<type, etype, returnType>::LinkTo( idScriptObject &obj, const char *name ) {
 	data = ( type * )obj.GetVariable( name, etype );
+#if 0 //k: forward decl
 	if ( !data ) {
-		gameError( "Missing '%s' field in script object '%s'", name, obj.GetTypeName() );
+		gameLocal.Error( "Missing '%s' field in script object '%s'", name, obj.GetTypeName() );
 	}
+#endif
 }
 
 template<class type, etype_t etype, class returnType>
@@ -491,16 +339,19 @@ typedef union varEval_s {
 	float					*floatPtr;
 	idVec3					*vectorPtr;
 	function_t				*functionPtr;
-	int						*intPtr;
+	int 					*intPtr;
 	byte					*bytePtr;
-	int						*entityNumberPtr;
+	int 					*entityNumberPtr;
 	int						virtualFunction;
 	int						jumpOffset;
 	int						stackOffset;		// offset in stack for local variables
 	int						argSize;
 	varEval_s				*evalPtr;
 	int						ptrOffset;
+	INT_PTR					highPtr;
 } varEval_t;
+
+class idVarDefName;
 
 class idVarDef {
 	friend class idVarDefName;
@@ -508,7 +359,7 @@ class idVarDef {
 public:
 	int						num;
 	varEval_t				value;
-	idVarDef *				scope;			// function, namespace, or object the var was defined in
+	idVarDef *				scope; 			// function, namespace, or object the var was defined in
 	int						numUsers;		// number of users if this is a constant
 
 	typedef enum {
@@ -573,22 +424,22 @@ private:
 
 ***********************************************************************/
 
-extern	idTypeDef	type_void;
-extern	idTypeDef	type_scriptevent;
-extern	idTypeDef	type_namespace;
+extern	idTypeDef		type_void;
+extern	idTypeDef		type_scriptevent;
+extern	idTypeDef		type_namespace;
 //HUMANHEAD: aob - changed types to inherited types
 extern	idTypeDefString	type_string;
 extern	idTypeDefFloat	type_float;
 extern	idTypeDefVector	type_vector;
 extern	idTypeDefEntity	type_entity;
 //HUMANHEAD END
-extern  idTypeDef	type_field;
-extern	idTypeDef	type_function;
-extern	idTypeDef	type_virtualfunction;
-extern  idTypeDef	type_pointer;
-extern	idTypeDef	type_object;
-extern	idTypeDef	type_jumpoffset;	// only used for jump opcodes
-extern	idTypeDef	type_argsize;		// only used for function call and thread opcodes
+extern  idTypeDef		type_field;
+extern	idTypeDef		type_function;
+extern	idTypeDef		type_virtualfunction;
+extern  idTypeDef		type_pointer;
+extern	idTypeDef		type_object;
+extern	idTypeDef		type_jumpoffset;	// only used for jump opcodes
+extern	idTypeDef		type_argsize;		// only used for function call and thread opcodes
 //HUMANHEAD: aob - changed types to inherited types
 extern	idTypeDefBool	type_boolean;
 //HUMANHEAD END
@@ -608,6 +459,124 @@ extern	idVarDef	def_object;
 extern	idVarDef	def_jumpoffset;		// only used for jump opcodes
 extern	idVarDef	def_argsize;		// only used for function call and thread opcodes
 extern	idVarDef	def_boolean;
+
+typedef struct statement_s {
+	unsigned short	op;
+	idVarDef		*a;
+	idVarDef		*b;
+	idVarDef		*c;
+	unsigned short	linenumber;
+	unsigned short	file;
+} statement_t;
+
+/***********************************************************************
+
+idProgram
+
+Handles compiling and storage of script data.  Multiple idProgram objects
+would represent seperate programs with no knowledge of each other.  Scripts
+meant to access shared data and functions should all be compiled by a
+single idProgram.
+
+***********************************************************************/
+
+class idProgram {
+private:
+	idStrList									fileList;
+	idStr 										filename;
+	int											filenum;
+
+	int											numVariables;
+	byte										variables[ MAX_GLOBALS ];
+	idStaticList<byte,MAX_GLOBALS>				variableDefaults;
+	idStaticList<function_t,MAX_FUNCS>			functions;
+	idStaticList<statement_t,MAX_STATEMENTS>	statements;
+	idList<idTypeDef *>							types;
+	idList<idVarDefName *>						varDefNames;
+	idHashIndex									varDefNameHash;
+	idList<idVarDef *>							varDefs;
+
+	idVarDef									*sysDef;
+
+	int											top_functions;
+	int											top_statements;
+	int											top_types;
+	int											top_defs;
+	int											top_files;
+
+	void										CompileStats( void );
+
+public:
+	idVarDef									*returnDef;
+	idVarDef									*returnStringDef;
+
+												idProgram();
+												~idProgram();
+
+	// save games
+	void										Save( idSaveGame *savefile ) const;
+	bool										Restore( idRestoreGame *savefile );
+	int											CalculateChecksum( void ) const;		// Used to insure program code has not
+																						//    changed between savegames
+
+	void										Startup( const char *defaultScript );
+	void										Restart( void );
+	bool										CompileText( const char *source, const char *text, bool console );
+	const function_t							*CompileFunction( const char *functionName, const char *text );
+	void										CompileFile( const char *filename );
+	void										BeginCompilation( void );
+	void										FinishCompilation( void );
+	void										DisassembleStatement( idFile *file, int instructionPointer ) const;
+	void										Disassemble( void ) const;
+	void										FreeData( void );
+
+	const char									*GetFilename( int num );
+	int											GetFilenum( const char *name );
+	int											GetLineNumberForStatement( int index );
+	const char									*GetFilenameForStatement( int index );
+
+	idTypeDef									*AllocType( idTypeDef &type );
+	idTypeDef									*AllocType( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux );
+	idTypeDef									*GetType( idTypeDef &type, bool allocate );
+	idTypeDef									*FindType( const char *name );
+
+	idVarDef									*AllocDef( idTypeDef *type, const char *name, idVarDef *scope, bool constant );
+	idVarDef									*GetDef( const idTypeDef *type, const char *name, const idVarDef *scope ) const;
+	void										FreeDef( idVarDef *d, const idVarDef *scope );
+	idVarDef									*FindFreeResultDef( idTypeDef *type, const char *name, idVarDef *scope, const idVarDef *a, const idVarDef *b );
+	idVarDef									*GetDefList( const char *name ) const;
+	void										AddDefToNameList( idVarDef *def, const char *name );
+
+	function_t									*FindFunction( const char *name ) const;						// returns NULL if function not found
+	function_t									*FindFunction( const char *name, const idTypeDef *type ) const;	// returns NULL if function not found
+	function_t									&AllocFunction( idVarDef *def );
+	function_t									*GetFunction( int index );
+	int											GetFunctionIndex( const function_t *func );
+
+	void										SetEntity( const char *name, idEntity *ent );
+
+	statement_t									*AllocStatement( void );
+	statement_t									&GetStatement( int index );
+	int											NumStatements( void ) { return statements.Num(); }
+
+	int 										GetReturnedInteger( void );
+
+	//HUMANHEAD: aob - need to return other types
+	float 										GetReturnedFloat( void );
+	bool										GetReturnedBool( void );
+	idVec3 										GetReturnedVector( void );
+	idStr										GetReturnedString( void );
+	int											GetReturnedEntity( void );
+	//HUMANHEAD END
+
+	void										ReturnFloat( float value );
+	void										ReturnInteger( int value );
+	void										ReturnVector( idVec3 const &vec );
+	void										ReturnString( const char *string );
+	void										ReturnEntity( idEntity *ent );
+	
+	int											NumFilenames( void ) { return fileList.Num( ); }
+};
 
 /*
 ================

@@ -236,7 +236,7 @@ hhWeaponFireController::WeaponFeedback
 */
 void hhWeaponFireController::WeaponFeedback() {
 	if( owner.IsValid() ) {
-		owner->WeaponFireFeedback( vr_weaponHand.GetInteger(), dict );
+		owner->WeaponFireFeedback( dict );
 	}
 }
 

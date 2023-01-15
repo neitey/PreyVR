@@ -1,41 +1,14 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "Player.h"
-#include "Camera.h"
-
-#include "script/Script_Thread.h"
+#include "../Game_local.h"
 
 const idEventDef EV_Thread_Execute( "<execute>", NULL );
 const idEventDef EV_Thread_SetCallback( "<script_setcallback>", NULL );
-
+																	
 // script callable events
 const idEventDef EV_Thread_TerminateThread( "terminate", "d" );
 const idEventDef EV_Thread_Pause( "pause", NULL );
@@ -51,7 +24,6 @@ const idEventDef EV_Thread_Trigger( "trigger", "e" );
 const idEventDef EV_Thread_SetCvar( "setcvar", "ss" );
 const idEventDef EV_Thread_GetCvar( "getcvar", "s", 's' );
 const idEventDef EV_Thread_Random( "random", "f", 'f' );
-const idEventDef EV_Thread_RandomInt("randomInt", "d", 'd');
 const idEventDef EV_Thread_GetTime( "getTime", NULL, 'f' );
 const idEventDef EV_Thread_KillThread( "killthread", "s" );
 const idEventDef EV_Thread_SetThreadName( "threadname", "s" );
@@ -72,16 +44,12 @@ const idEventDef EV_Thread_AngToRight( "angToRight", "v", 'v' );
 const idEventDef EV_Thread_AngToUp( "angToUp", "v", 'v' );
 const idEventDef EV_Thread_Sine( "sin", "f", 'f' );
 const idEventDef EV_Thread_Cosine( "cos", "f", 'f' );
-const idEventDef EV_Thread_ArcSine("asin", "f", 'f');
-const idEventDef EV_Thread_ArcCosine("acos", "f", 'f');
 const idEventDef EV_Thread_SquareRoot( "sqrt", "f", 'f' );
 const idEventDef EV_Thread_Normalize( "vecNormalize", "v", 'v' );
 const idEventDef EV_Thread_VecLength( "vecLength", "v", 'f' );
 const idEventDef EV_Thread_VecDotProduct( "DotProduct", "vv", 'f' );
 const idEventDef EV_Thread_VecCrossProduct( "CrossProduct", "vv", 'v' );
 const idEventDef EV_Thread_VecToAngles( "VecToAngles", "v", 'v' );
-const idEventDef EV_Thread_VecToOrthoBasisAngles("VecToOrthoBasisAngles", "v", 'v');
-const idEventDef EV_Thread_RotateVector("rotateVector", "vv", 'v');
 const idEventDef EV_Thread_OnSignal( "onSignal", "des" );
 const idEventDef EV_Thread_ClearSignal( "clearSignalThread", "de" );
 const idEventDef EV_Thread_SetCamera( "setCamera", "e" );
@@ -153,7 +121,6 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_SetCvar,				idThread::Event_SetCvar )
 	EVENT( EV_Thread_GetCvar,				idThread::Event_GetCvar )
 	EVENT( EV_Thread_Random,				idThread::Event_Random )
-	EVENT(EV_Thread_RandomInt,				idThread::Event_RandomInt)
 	EVENT( EV_Thread_GetTime,				idThread::Event_GetTime )
 	EVENT( EV_Thread_KillThread,			idThread::Event_KillThread )
 	EVENT( EV_Thread_SetThreadName,			idThread::Event_SetThreadName )
@@ -174,16 +141,12 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_AngToUp,				idThread::Event_AngToUp )
 	EVENT( EV_Thread_Sine,					idThread::Event_GetSine )
 	EVENT( EV_Thread_Cosine,				idThread::Event_GetCosine )
-	EVENT(EV_Thread_ArcSine,				idThread::Event_GetArcSine)
-	EVENT(EV_Thread_ArcCosine,				idThread::Event_GetArcCosine)
 	EVENT( EV_Thread_SquareRoot,			idThread::Event_GetSquareRoot )
 	EVENT( EV_Thread_Normalize,				idThread::Event_VecNormalize )
 	EVENT( EV_Thread_VecLength,				idThread::Event_VecLength )
 	EVENT( EV_Thread_VecDotProduct,			idThread::Event_VecDotProduct )
 	EVENT( EV_Thread_VecCrossProduct,		idThread::Event_VecCrossProduct )
 	EVENT( EV_Thread_VecToAngles,			idThread::Event_VecToAngles )
-	EVENT(EV_Thread_VecToOrthoBasisAngles, idThread::Event_VecToOrthoBasisAngles)
-	EVENT(EV_Thread_RotateVector,			idThread::Event_RotateVector)
 	EVENT( EV_Thread_OnSignal,				idThread::Event_OnSignal )
 	EVENT( EV_Thread_ClearSignal,			idThread::Event_ClearSignalThread )
 	EVENT( EV_Thread_SetCamera,				idThread::Event_SetCamera )
@@ -302,9 +265,10 @@ bool idThread::RunningEvent( idEntity *ent, const idEventDef *event ) {
 		return false;
 		// gameLocal.Error( "idThread::RunningEvent called without a current thread" );
 	}
-	return currentThread->interpreter.RunningEvent( ent, event );
+	return currentThread->interpreter.RunningEvent( ent, event );	
 }
 // HUMANHEAD END
+
 
 /*
 ================
@@ -331,7 +295,7 @@ idThread::idThread
 */
 idThread::idThread( idEntity *self, const function_t *func ) {
 	assert( self );
-
+	
 	//HUMANHEAD rww
 	threadOwner = self;
 	threadOwnerCheck = true;
@@ -510,7 +474,7 @@ void idThread::Init( void ) {
 
 	threadNum = threadIndex;
 	threadList.Append( this );
-
+	
 	creationTime = gameLocal.time;
 	lastExecuteTime = 0;
 	manualControl = false;
@@ -547,19 +511,19 @@ idThread::DisplayInfo
 ================
 */
 void idThread::DisplayInfo( void ) {
-	gameLocal.Printf(
+	gameLocal.Printf( 
 		"%12i: '%s'\n"
 		"        File: %s(%d)\n"
 		"     Created: %d (%d ms ago)\n"
-		"      Status: ",
-		threadNum, threadName.c_str(),
-		interpreter.CurrentFile(), interpreter.CurrentLine(),
+		"      Status: ", 
+		threadNum, threadName.c_str(), 
+		interpreter.CurrentFile(), interpreter.CurrentLine(), 
 		creationTime, gameLocal.time - creationTime );
 
 	if ( interpreter.threadDying ) {
 		gameLocal.Printf( "Dying\n" );
 	} else if ( interpreter.doneProcessing ) {
-		gameLocal.Printf(
+		gameLocal.Printf( 
 			"Paused since %d (%d ms)\n"
 			"      Reason: ",  lastExecuteTime, gameLocal.time - lastExecuteTime );
 		if ( waitingForThread ) {
@@ -748,7 +712,7 @@ bool idThread::Execute( void ) {
 	}
 
 	// HUMANHEAD PDM
-#define WAITFORPVS_TIME 1.0f
+	#define WAITFORPVS_TIME 1.0f
 	if ( waitingForPVS != ENTITYNUM_NONE && gameLocal.entities[waitingForPVS]) {
 		if (!gameLocal.InPlayerPVS(gameLocal.entities[waitingForPVS])) {
 			PostEventSec( &EV_Thread_Execute, WAITFORPVS_TIME );
@@ -773,7 +737,7 @@ bool idThread::Execute( void ) {
 		if ( waitingUntil > lastExecuteTime ) {
 			PostEventMS( &EV_Thread_Execute, waitingUntil - lastExecuteTime );
 		} else if ( interpreter.MultiFrameEventInProgress() ) {
-			PostEventMS( &EV_Thread_Execute, USERCMD_MSEC );
+			PostEventMS( &EV_Thread_Execute, gameLocal.msec );
 		}
 	}
 
@@ -1026,14 +990,14 @@ void idThread::WaitFrame( void ) {
 	// manual control threads don't set waitingUntil so that they can be run again
 	// that frame if necessary.
 	if ( !manualControl ) {
-		waitingUntil = gameLocal.time + USERCMD_MSEC;
+		waitingUntil = gameLocal.time + gameLocal.msec;
 	}
 }
 
 /***********************************************************************
 
-  Script callable events
-
+  Script callable events  
+	
 ***********************************************************************/
 
 /*
@@ -1042,6 +1006,9 @@ idThread::Event_TerminateThread
 ================
 */
 void idThread::Event_TerminateThread( int num ) {
+	idThread *thread;
+
+	thread = GetThread( num );
 	KillThread( num );
 }
 
@@ -1107,7 +1074,6 @@ void idThread::Event_WaitForThread( int num ) {
 	}
 }
 
-
 /*
 ================
 idThread::Event_WaitForSilence
@@ -1170,6 +1136,7 @@ void idThread::Event_ThreadIsValid( int threadNum ) {
 	ReturnInt( thread && !thread->IsDying() );
 }
 
+
 /*
 ================
 idThread::Event_Print
@@ -1200,7 +1167,6 @@ void idThread::Event_PrintLn( const char *text ) {
 #endif
 }
 
-
 /*
 ================
 idThread::Event_GetCVarFloat
@@ -1219,7 +1185,7 @@ idThread::Event_GetCVarVector
 */
 void idThread::Event_GetCVarVector( const char* name ) {
 	idVec3 v;
-
+	
 	sscanf( cvarSystem->GetCVarString(name), "'%.2f %.2f %.2f'", &v.x, &v.y, &v.z );
 	ReturnVector( v );
 }
@@ -1374,13 +1340,6 @@ void idThread::Event_Random( float range ) const {
 
 	result = gameLocal.random.RandomFloat();
 	ReturnFloat( range * result );
-}
-
-void idThread::Event_RandomInt(int range) const
-{
-	int result;
-	result = gameLocal.random.RandomInt(range);
-	ReturnFloat(result);
 }
 
 /*
@@ -1600,26 +1559,6 @@ void idThread::Event_GetCosine( float angle ) {
 
 /*
 ================
-idThread::Event_GetArcSine
-================
-*/
-void idThread::Event_GetArcSine(float a)
-{
-	ReturnFloat(RAD2DEG(idMath::ASin(a)));
-}
-
-/*
-================
-idThread::Event_GetArcCosine
-================
-*/
-void idThread::Event_GetArcCosine(float a)
-{
-	ReturnFloat(RAD2DEG(idMath::ACos(a)));
-}
-
-/*
-================
 idThread::Event_GetSquareRoot
 ================
 */
@@ -1679,34 +1618,6 @@ void idThread::Event_VecToAngles( idVec3 &vec ) {
 
 /*
 ================
-idThread::Event_VecToOrthoBasisAngles
-================
-*/
-void idThread::Event_VecToOrthoBasisAngles(idVec3 &vec)
-{
-	idVec3 left, up;
-	idAngles ang;
-
-	vec.OrthogonalBasis(left, up);
-	idMat3 axis(left, up, vec);
-
-	ang = axis.ToAngles();
-
-	ReturnVector(idVec3(ang[0], ang[1], ang[2]));
-}
-
-void idThread::Event_RotateVector(idVec3 &vec, idVec3 &ang)
-{
-
-	idAngles tempAng(ang);
-	idMat3 axis = tempAng.ToMat3();
-	idVec3 ret = vec * axis;
-	ReturnVector(ret);
-
-}
-
-/*
-================
 idThread::Event_OnSignal
 ================
 */
@@ -1718,7 +1629,7 @@ void idThread::Event_OnSignal( int signal, idEntity *ent, const char *func ) {
 	if ( !ent ) {
 		Error( "Entity not found" );
 	}
-
+	
 	if ( ( signal < 0 ) || ( signal >= NUM_SIGNALS ) ) {
 		Error( "Signal out of range" );
 	}
@@ -1740,7 +1651,7 @@ void idThread::Event_ClearSignalThread( int signal, idEntity *ent ) {
 	if ( !ent ) {
 		Error( "Entity not found" );
 	}
-
+	
 	if ( ( signal < 0 ) || ( signal >= NUM_SIGNALS ) ) {
 		Error( "Signal out of range" );
 	}
@@ -2005,7 +1916,7 @@ void idThread::Event_StrLeft( const char *string, int num ) {
 
 /*
 ================
-idThread::Event_StrRight
+idThread::Event_StrRight 
 ================
 */
 void idThread::Event_StrRight( const char *string, int num ) {
@@ -2102,7 +2013,7 @@ void idThread::Event_RadiusDamage( const idVec3 &origin, idEntity *inflictor, id
 idThread::Event_IsClient
 ================
 */
-void idThread::Event_IsClient( void ) {
+void idThread::Event_IsClient( void ) { 
 	idThread::ReturnFloat( gameLocal.isClient );
 }
 
@@ -2111,7 +2022,7 @@ void idThread::Event_IsClient( void ) {
 idThread::Event_IsMultiplayer
 ================
 */
-void idThread::Event_IsMultiplayer( void ) {
+void idThread::Event_IsMultiplayer( void ) { 
 	idThread::ReturnFloat( gameLocal.isMultiplayer );
 }
 
@@ -2120,8 +2031,8 @@ void idThread::Event_IsMultiplayer( void ) {
 idThread::Event_GetFrameTime
 ================
 */
-void idThread::Event_GetFrameTime( void ) {
-	idThread::ReturnFloat( MS2SEC( USERCMD_MSEC ) );
+void idThread::Event_GetFrameTime( void ) { 
+	idThread::ReturnFloat( MS2SEC( gameLocal.msec ) );
 }
 
 /*
@@ -2129,8 +2040,8 @@ void idThread::Event_GetFrameTime( void ) {
 idThread::Event_GetTicsPerSecond
 ================
 */
-void idThread::Event_GetTicsPerSecond( void ) {
-	idThread::ReturnFloat( (float)renderSystem->GetRefresh() );
+void idThread::Event_GetTicsPerSecond( void ) { 
+	idThread::ReturnFloat( USERCMD_HZ );
 }
 
 /*
@@ -2202,7 +2113,6 @@ void idThread::Event_InfluenceActive( void ) {
 		idThread::ReturnInt( false );
 	}
 }
-
 
 // HUMANHEAD mdl
 void idThread::Event_SpawnProjectile( const char *projectilename, const idVec3 &org, const idVec3 &dir ) {

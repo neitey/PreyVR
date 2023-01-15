@@ -23,7 +23,7 @@ class hhProjectileSoulCannon : public hhProjectile {
 		float			maxEnemyDist;
 		idVec3			thrustDir;
 
-		void			Event_FindEnemy( void );
+		void			hhProjectileSoulCannon::Event_FindEnemy( void );
 };
 
 #endif

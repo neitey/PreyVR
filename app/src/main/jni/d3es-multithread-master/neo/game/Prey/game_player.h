@@ -66,11 +66,6 @@ class hhPlayer : public idPlayer {
 	CLASS_PROTOTYPE(hhPlayer);
 
 public:
-	idEntityPtr<hhWeapon>   GetWeapon( void )
-	{
-		return hands[ vr_weaponHand.GetInteger() ].weapon;
-	}
-
 	weaponInfo_t				weaponInfo[15];
 	weaponInfo_t				altWeaponInfo[15];
 	float						lighterTemperature;			// Temp of the lighter.  0 = cold, 1 = too hot to use
@@ -212,7 +207,7 @@ public:
 	//rww - our own prediction function
 	virtual void		ClientPredictionThink( void );
 
-	bool				SetWeaponSpawnId( int id ) { return hands[ vr_weaponHand.GetInteger() ].weapon.SetSpawnId( id ); }
+	bool				SetWeaponSpawnId( int id ) { return weapon.SetSpawnId( id ); }
 
 	virtual void		NextBestWeapon( void );
 	virtual	void		SelectWeapon( int num, bool force );
@@ -309,7 +304,7 @@ public:
 	bool				IsCrouching() const { return physicsObj.IsCrouching(); }
 	virtual void		ForceCrouching() { physicsObj.ForceCrouching(); }//aob
 	virtual void		FillDebugVars( idDict *args, int page );
-	virtual bool		ChangingWeapons() const { return hands[ vr_weaponHand.GetInteger() ].idealWeapon != hands[ vr_weaponHand.GetInteger() ].currentWeapon; }
+	virtual bool		ChangingWeapons() const { return idealWeapon != currentWeapon; }
 	void				BufferLoggedViewAngles( const idAngles& newUntransformedViewAngles );
 	virtual void		GetPilotInput( usercmd_t& pilotCmds, idAngles& pilotViewAngles );
 
@@ -329,7 +324,7 @@ public:
 	int					GetCurrentWeapon( void ) const;
 	void				SetCurrentWeapon( const int _currentWeapon );
 	int					GetIdealWeapon( void ) const;
-	void				InvalidateCurrentWeapon() { hands[ vr_weaponHand.GetInteger() ].currentWeapon = -1; }
+	void				InvalidateCurrentWeapon() { currentWeapon = -1; }
 	virtual bool		ShouldRemainAlignedToAxial() const { return physicsObj.ShouldRemainAlignedToAxial(); }
 	virtual idVec3		ApplyLandDeflect( const idVec3& pos, float scale );
 	virtual idVec3		ApplyBobCycle( const idVec3& pos, const idVec3& velocity );
@@ -379,7 +374,7 @@ public:
 	int					GetSpiritPower();
 	void				SetSpiritPower(int amount);
 
-	void				ResetZoomFov() { /*zoomFov.Init( gameLocal.GetTime(), 0, g_fov.GetFloat(), g_fov.GetFloat() );*/ }
+	void				ResetZoomFov() { zoomFov.Init( gameLocal.GetTime(), 0, g_fov.GetFloat(), g_fov.GetFloat() ); }
 	virtual float		CalcFov( bool honorZoom );	
 	virtual void		MangleControls(usercmd_t *cmd);
 	virtual	void		UpdateCrosshairs( void );
@@ -681,7 +676,7 @@ hhPlayer::GetCurrentWeapon
 =====================
 */
 ID_INLINE int hhPlayer::GetCurrentWeapon( void ) const {
-	return hands[ vr_weaponHand.GetInteger() ].currentWeapon;
+	return currentWeapon;
 }
 
 /*
@@ -692,7 +687,7 @@ hhPlayer::SetCurrentWeapon
 */
 ID_INLINE void hhPlayer::SetCurrentWeapon( const int _currentWeapon ) {
 	if( _currentWeapon >= 0 && _currentWeapon < MAX_WEAPONS ) {
-		hands[ vr_weaponHand.GetInteger() ].currentWeapon = _currentWeapon;
+		currentWeapon = _currentWeapon;
 	}
 }
 
@@ -703,7 +698,7 @@ hhPlayer::GetIdealWeapon
 =====================
 */
 ID_INLINE int hhPlayer::GetIdealWeapon( void ) const {
-	return hands[ vr_weaponHand.GetInteger() ].idealWeapon;
+	return idealWeapon;
 }
 
 /*

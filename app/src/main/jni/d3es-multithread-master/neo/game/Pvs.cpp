@@ -1,42 +1,16 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "Game_local.h"
-
-#include "Pvs.h"
 
 #define MAX_BOUNDS_AREAS	16
 
 //HUMANHEAD rww
 #if !GOLD
-#define DEBUG_PASSAGE_OVERFLOW
+	#define DEBUG_PASSAGE_OVERFLOW
 #endif
 
 #ifdef DEBUG_PASSAGE_OVERFLOW
@@ -166,7 +140,7 @@ void idPVS::CreatePVSData( void ) {
 			portal = gameRenderWorld->GetPortal( i, j );
 
 			p = &pvsPortals[cp++];
-
+			
 			//HUMANHEAD rww - check to see if this is a game portal
 			p->gamePortal = false; // gameRenderWorld->IsGamePortal(portal.portalHandle); // jmarshall
 			p->mightSeeGamePortal = p->gamePortal;
@@ -199,7 +173,7 @@ void idPVS::CreatePVSData( void ) {
 idPVS::DestroyPVSData
 ================
 */
-	void idPVS::DestroyPVSData( void ) {
+void idPVS::DestroyPVSData( void ) {
 	int i;
 
 	if ( !pvsAreas ) {
@@ -224,7 +198,6 @@ idPVS::DestroyPVSData
 	delete[] pvsPortals;
 	pvsPortals = NULL;
 }
-
 
 //HUMANHEAD rww
 /*
@@ -436,12 +409,12 @@ idPVS::FloodPassagePVS_r
 pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *portal, pvsStack_t *prevStack ) const {
 #ifdef DEBUG_PASSAGE_OVERFLOW //HUMANHEAD rww
 	__asm {
-	cmp		debugFloodPassageOverflow,esp
-	jle		cont
-	int		0x03
+		cmp		debugFloodPassageOverflow,esp
+		jle		cont
+		int		0x03
 	}
 	gameLocal.Error("Preempted stack overflow in idPVS::FloodPassagePVS_r.");
-	cont:
+cont:
 #endif //HUMANHEAD END
 
 	int i, j, n, m;
@@ -449,7 +422,7 @@ pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *po
 	pvsArea_t *area;
 	pvsStack_t *stack;
 	pvsPassage_t *passage;
-	int *sourceVis, *passageVis, *portalVis, *mightSee, *prevMightSee, more;
+	/*long*/int *sourceVis, *passageVis, *portalVis, *mightSee, *prevMightSee, more;
 
 	area = &pvsAreas[portal->areaNum];
 
@@ -484,16 +457,16 @@ pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *po
 		source->vis[n >> 3] |= (1 << (n & 7));
 
 		// get pointers to vis data
-		prevMightSee = reinterpret_cast<int *>(prevStack->mightSee);
-		passageVis = reinterpret_cast<int *>(passage->canSee);
-		sourceVis = reinterpret_cast<int *>(source->vis);
-		mightSee = reinterpret_cast<int *>(stack->mightSee);
+		prevMightSee = reinterpret_cast</*long*/int *>(prevStack->mightSee);
+		passageVis = reinterpret_cast</*long*/int *>(passage->canSee);
+		sourceVis = reinterpret_cast</*long*/int *>(source->vis);
+		mightSee = reinterpret_cast</*long*/int *>(stack->mightSee);
 
 		more = 0;
 		// use the portal PVS if it has been calculated
 		if ( p->done ) {
-			portalVis = reinterpret_cast<int *>(p->vis);
-			for ( j = 0; j < portalVisInts; j++ ) {
+			portalVis = reinterpret_cast</*long*/int *>(p->vis);
+			for ( j = 0; j < portalVisLongs; j++ ) {
 				// get new PVS which is decreased by going through this passage
 				m = *prevMightSee++ & *passageVis++ & *portalVis++;
 				// check if anything might be visible through this passage that wasn't yet visible
@@ -504,7 +477,7 @@ pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *po
 		}
 		else {
 			// the p->mightSee is implicitely stored in the passageVis
-			for ( j = 0; j < portalVisInts; j++ ) {
+			for ( j = 0; j < portalVisLongs; j++ ) {
 				// get new PVS which is decreased by going through this passage
 				m = *prevMightSee++ & *passageVis++;
 				// check if anything might be visible through this passage that wasn't yet visible
@@ -583,7 +556,7 @@ void idPVS::AddPassageBoundaries( const idWinding &source, const idWinding &pass
 	idPlane		plane;
 
 
-	// check all combinations
+	// check all combinations	
 	for ( i = 0; i < source.GetNumPoints(); i++ ) {
 
 		l = (i + 1) % source.GetNumPoints();
@@ -753,7 +726,7 @@ void idPVS::CreatePassages( void ) const {
 
 					int portalIndex = (byteNum << 3) + bitNum;
 					p = &pvsPortals[portalIndex];
-
+	
 					if ( p->areaNum == source->areaNum ) {
 						continue;
 					}
@@ -864,7 +837,7 @@ idPVS::AreaPVSFromPortalPVS
 */
 int idPVS::AreaPVSFromPortalPVS( void ) const {
 	int i, j, k, areaNum, totalVisibleAreas;
-	int *p1, *p2;
+	/*long*/int *p1, *p2;
 	byte *pvs, *portalPVS;
 	pvsArea_t *area;
 
@@ -889,9 +862,9 @@ int idPVS::AreaPVSFromPortalPVS( void ) const {
 
 		// store the PVS of all portals in this area at the first portal
 		for ( j = 1; j < area->numPortals; j++ ) {
-			p1 = reinterpret_cast<int *>(area->portals[0]->vis);
-			p2 = reinterpret_cast<int *>(area->portals[j]->vis);
-			for ( k = 0; k < portalVisInts; k++ ) {
+			p1 = reinterpret_cast</*long*/int *>(area->portals[0]->vis);
+			p2 = reinterpret_cast</*long*/int *>(area->portals[j]->vis);
+			for ( k = 0; k < portalVisLongs; k++ ) {
 				*p1++ |= *p2++;
 			}
 		}
@@ -941,7 +914,7 @@ void idPVS::Init( void ) {
 	areaQueue = new int[numAreas];
 
 	areaVisBytes = ( ((numAreas+31)&~31) >> 3);
-	areaVisInts = areaVisBytes/sizeof(int);
+	areaVisLongs = areaVisBytes/sizeof(/*long*/int);
 
 	areaPVS = new byte[numAreas * areaVisBytes];
 	memset( areaPVS, 0xFF, numAreas * areaVisBytes );
@@ -949,7 +922,7 @@ void idPVS::Init( void ) {
 	numPortals = GetPortalCount();
 
 	portalVisBytes = ( ((numPortals+31)&~31) >> 3);
-	portalVisInts = portalVisBytes/sizeof(int);
+	portalVisLongs = portalVisBytes/sizeof(/*long*/int);
 
 	for ( int i = 0; i < MAX_CURRENT_PVS; i++ ) {
 		currentPVS[i].handle.i = -1;
@@ -981,7 +954,7 @@ void idPVS::Init( void ) {
 
 	timer.Stop();
 
-	gameLocal.Printf( "%5u msec to calculate PVS\n", timer.Milliseconds() );
+	gameLocal.Printf( "%5.0f msec to calculate PVS\n", timer.Milliseconds() );
 	gameLocal.Printf( "%5d areas\n", numAreas );
 	gameLocal.Printf( "%5d portals\n", numPortals );
 	gameLocal.Printf( "%5d areas visible on average\n", totalVisibleAreas / numAreas );
@@ -1000,20 +973,20 @@ idPVS::Shutdown
 */
 void idPVS::Shutdown( void ) {
 	if ( connectedAreas ) {
-		delete[] connectedAreas;
+		delete connectedAreas;
 		connectedAreas = NULL;
 	}
 	if ( areaQueue ) {
-		delete[] areaQueue;
+		delete areaQueue;
 		areaQueue = NULL;
 	}
 	if ( areaPVS ) {
-		delete[] areaPVS;
+		delete areaPVS;
 		areaPVS = NULL;
 	}
 	if ( currentPVS ) {
 		for ( int i = 0; i < MAX_CURRENT_PVS; i++ ) {
-			delete[] currentPVS[i].pvs;
+			delete currentPVS[i].pvs;
 			currentPVS[i].pvs = NULL;
 		}
 	}
@@ -1153,7 +1126,7 @@ idPVS::SetupCurrentPVS
 pvsHandle_t idPVS::SetupCurrentPVS( const int *sourceAreas, const int numSourceAreas, const pvsType_t type ) const {
 	int i, j;
 	unsigned int h;
-	int *vis, *pvs;
+	/*long*/int *vis, *pvs;
 	pvsHandle_t handle;
 
 	h = 0;
@@ -1174,9 +1147,9 @@ pvsHandle_t idPVS::SetupCurrentPVS( const int *sourceAreas, const int numSourceA
 
 			assert( sourceAreas[i] >= 0 && sourceAreas[i] < numAreas );
 
-			vis = reinterpret_cast<int *>(areaPVS + sourceAreas[i] * areaVisBytes);
-			pvs = reinterpret_cast<int *>(currentPVS[handle.i].pvs);
-			for ( j = 0; j < areaVisInts; j++ ) {
+			vis = reinterpret_cast</*long*/int*>(areaPVS + sourceAreas[i] * areaVisBytes);
+			pvs = reinterpret_cast</*long*/int*>(currentPVS[handle.i].pvs);
+			for ( j = 0; j < areaVisLongs; j++ ) {
 				*pvs++ |= *vis++;
 			}
 		}
@@ -1214,7 +1187,7 @@ idPVS::MergeCurrentPVS
 */
 pvsHandle_t idPVS::MergeCurrentPVS( pvsHandle_t pvs1, pvsHandle_t pvs2 ) const {
 	int i;
-	int *pvs1Ptr, *pvs2Ptr, *ptr;
+	/*long*/int *pvs1Ptr, *pvs2Ptr, *ptr;
 	pvsHandle_t handle;
 
 	if ( pvs1.i < 0 || pvs1.i >= MAX_CURRENT_PVS || pvs1.h != currentPVS[pvs1.i].handle.h ||
@@ -1224,11 +1197,11 @@ pvsHandle_t idPVS::MergeCurrentPVS( pvsHandle_t pvs1, pvsHandle_t pvs2 ) const {
 
 	handle = AllocCurrentPVS( pvs1.h ^ pvs2.h );
 
-	ptr = reinterpret_cast<int *>(currentPVS[handle.i].pvs);
-	pvs1Ptr = reinterpret_cast<int *>(currentPVS[pvs1.i].pvs);
-	pvs2Ptr = reinterpret_cast<int *>(currentPVS[pvs2.i].pvs);
+	ptr = reinterpret_cast</*long*/int*>(currentPVS[handle.i].pvs);
+	pvs1Ptr = reinterpret_cast</*long*/int*>(currentPVS[pvs1.i].pvs);
+	pvs2Ptr = reinterpret_cast</*long*/int*>(currentPVS[pvs2.i].pvs);
 
-	for ( i = 0; i < areaVisInts; i++ ) {
+	for ( i = 0; i < areaVisLongs; i++ ) {
 		*ptr++ = *pvs1Ptr++ | *pvs2Ptr++;
 	}
 
@@ -1381,7 +1354,7 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 	handle = SetupCurrentPVS( source, type );
 
 #if GAMEPORTAL_PVS
-	gameLocal.Printf("%d areas: (source area = %d)\n", numAreas, sourceArea);
+gameLocal.Printf("%d areas: (source area = %d)\n", numAreas, sourceArea);
 #endif
 	for ( j = 0; j < numAreas; j++ ) {
 
@@ -1399,7 +1372,7 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 		n = gameRenderWorld->NumPortalsInArea( j );
 
 #if GAMEPORTAL_PVS
-		gameLocal.Printf("  area %d visible: (%d portals) 0x%04x\n", j, n, currentPVS[handle.i].pvs[j>>3]);
+gameLocal.Printf("  area %d visible: (%d portals) 0x%04x\n", j, n, currentPVS[handle.i].pvs[j>>3]);
 #endif
 		// draw all the portals of the area
 		for ( i = 0; i < n; i++ ) {
@@ -1576,35 +1549,3 @@ void idPVS::ReadPVS( const pvsHandle_t handle, const idBitMsg &msg ) {
 
 #endif
 
-/*
-================
-idPVS::CheckAreasForPortalSky
-================
-*/
-bool idPVS::CheckAreasForPortalSky(const pvsHandle_t handle, const idVec3 &origin)
-{
-	int j, sourceArea;
-
-	if (handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h) {
-		return false;
-	}
-
-	sourceArea = gameRenderWorld->PointInArea(origin);
-
-	if (sourceArea == -1) {
-		return false;
-	}
-
-	for (j = 0; j < numAreas; j++) {
-
-		if (!(currentPVS[handle.i].pvs[j>>3] & (1 << (j&7)))) {
-			continue;
-		}
-
-		if (gameRenderWorld->CheckAreaForPortalSky(j)) {
-			return true;
-		}
-	}
-
-	return false;
-}

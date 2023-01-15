@@ -1,44 +1,16 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
-#include "ai/AI.h"
-
-#include "Fx.h"
-
-#include "Moveable.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
 
   idMoveable
-
+	
 ===============================================================================
 */
 
@@ -76,7 +48,6 @@ idMoveable::idMoveable( void ) {
 	unbindOnDeath		= false;
 	allowStep			= false;
 	canDamage			= false;
-	attacker			= NULL;
 #ifdef HUMANHEAD //jsh
 	fl.networkSync		= true;
 #endif
@@ -110,8 +81,17 @@ void idMoveable::Spawn( void ) {
 	}
 
 	if ( !collisionModelManager->TrmFromModel( clipModelName, trm ) ) {
-		gameLocal.Error( "idMoveable '%s': cannot load collision model %s", name.c_str(), clipModelName.c_str() );
+// jmarshall
+#if 0
+		gameLocal.Error("idMoveable '%s': cannot load collision model %s", name.c_str(), clipModelName.c_str());
 		return;
+#else
+		gameLocal.Warning("idMoveable '%s': cannot load collision model %s", name.c_str(), clipModelName.c_str());
+		idRenderModel* model = renderModelManager->FindModel(clipModelName);
+		trm.SetupBox(model->Bounds());
+#endif
+// jmarshall end
+		
 	}
 
 	// if the model should be shrinked
@@ -135,12 +115,9 @@ void idMoveable::Spawn( void ) {
 
 	fl.takedamage = true;
 	damage = spawnArgs.GetString( "def_damage", "" );
-	monsterDamage = spawnArgs.GetString("monster_damage", "");
-	fl.networkSync = true;
-	attacker = NULL;
 	canDamage = spawnArgs.GetBool( "damageWhenActive" ) ? false : true;
-	minDamageVelocity = spawnArgs.GetFloat("minDamageVelocity", "300");	// _D3XP
-	maxDamageVelocity = spawnArgs.GetFloat("maxDamageVelocity", "700");	// _D3XP
+	minDamageVelocity = spawnArgs.GetFloat( "minDamageVelocity", "100" );
+	maxDamageVelocity = spawnArgs.GetFloat( "maxDamageVelocity", "200" );
 	nextDamageTime = 0;
 	nextSoundTime = 0;
 
@@ -200,8 +177,6 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 
 //	savefile->WriteString( brokenModel );		// HUMANHEAD pdm: unused
 	savefile->WriteString( damage );
-	savefile->WriteString(monsterDamage);
-	savefile->WriteObject(attacker);
 	savefile->WriteString( fxCollide );
 	savefile->WriteInt( nextCollideFxTime );
 	savefile->WriteFloat( minDamageVelocity );
@@ -228,8 +203,6 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 //	savefile->ReadString( brokenModel );		// HUMANHEAD pdm: unused
 	savefile->ReadString( damage );
-	savefile->ReadString(monsterDamage);
-	savefile->ReadObject(reinterpret_cast<idClass * &>(attacker));
 	savefile->ReadString( fxCollide );
 	savefile->ReadInt( nextCollideFxTime );
 	savefile->ReadFloat( minDamageVelocity );
@@ -296,41 +269,14 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		nextSoundTime = gameLocal.time + 500;
 	}
 
-	// _D3XP :: changes relating to the addition of monsterDamage
-	if (!gameLocal.isClient && canDamage && gameLocal.time > nextDamageTime) {
-		bool hasDamage = damage.Length() > 0;
-		bool hasMonsterDamage = monsterDamage.Length() > 0;
-
-		if (hasDamage || hasMonsterDamage) {
-			ent = gameLocal.entities[ collision.c.entityNum ];
-
-			if (ent && v > minDamageVelocity) {
-				f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt(v - minDamageVelocity) * (1.0f / idMath::Sqrt(maxDamageVelocity - minDamageVelocity));
-				dir = velocity;
-				dir.NormalizeFast();
-
-				if (ent->IsType(idAI::Type) && hasMonsterDamage) {
-					if (attacker) {
-						ent->Damage(this, attacker, dir, monsterDamage, f, INVALID_JOINT);
-					} else {
-						ent->Damage(this, GetPhysics()->GetClipModel()->GetOwner(), dir, monsterDamage, f, INVALID_JOINT);
-					}
-				} else if (hasDamage) {
-
-					// in multiplayer, scale damage wrt mass of object
-					if (gameLocal.isMultiplayer) {
-						f *= GetPhysics()->GetMass() * g_moveableDamageScale.GetFloat();
-					}
-
-					if (attacker) {
-						ent->Damage(this, attacker, dir, damage, f, INVALID_JOINT);
-					} else {
-						ent->Damage(this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, INVALID_JOINT);
-					}
-				}
-
-				nextDamageTime = gameLocal.time + 1000;
-			}
+	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
+		ent = gameLocal.entities[ collision.c.entityNum ];
+		if ( ent && v > minDamageVelocity ) {
+			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+			dir = velocity;
+			dir.NormalizeFast();
+			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, INVALID_JOINT );
+			nextDamageTime = gameLocal.time + 1000;
 		}
 	}
 
@@ -399,12 +345,9 @@ idMoveable::EnableDamage
 ================
 */
 void idMoveable::EnableDamage( bool enable, float duration ) {
-	if (canDamage == enable) {
-		return;
-	}
 	canDamage = enable;
 	if ( duration ) {
-		PostEventSec(&EV_EnableDamage, duration, (/*_D3XP*/enable) ? 0.0f : 1.0f);
+		PostEventSec( &EV_EnableDamage, duration, ( !enable ) ? 0.0f : 1.0f );
 	}
 }
 
@@ -438,14 +381,14 @@ bool idMoveable::FollowInitialSplinePath( void ) {
 	if ( initialSpline != NULL ) {
 		if ( gameLocal.time < initialSpline->GetTime( initialSpline->GetNumValues() - 1 ) ) {
 			idVec3 splinePos = initialSpline->GetCurrentValue( gameLocal.time );
-			idVec3 linearVelocity = ( splinePos - physicsObj.GetOrigin() ) * renderSystem->GetRefresh();
+			idVec3 linearVelocity = ( splinePos - physicsObj.GetOrigin() ) * USERCMD_HZ;
 			physicsObj.SetLinearVelocity( linearVelocity );
 
 			idVec3 splineDir = initialSpline->GetCurrentFirstDerivative( gameLocal.time );
 			idVec3 dir = initialSplineDir * physicsObj.GetAxis();
 			idVec3 angularVelocity = dir.Cross( splineDir );
 			angularVelocity.Normalize();
-			angularVelocity *= idMath::ACos16( dir * splineDir / splineDir.Length() ) * renderSystem->GetRefresh();
+			angularVelocity *= idMath::ACos16( dir * splineDir / splineDir.Length() ) * USERCMD_HZ;
 			physicsObj.SetAngularVelocity( angularVelocity );
 			return true;
 		} else {
@@ -517,16 +460,6 @@ void idMoveable::Event_BecomeNonSolid( void ) {
 
 /*
 ================
-idMoveable::SetAttacker
-================
-*/
-void idMoveable::SetAttacker( idEntity* ent )
-{
-	attacker = ent;
-}
-
-/*
-================
 idMoveable::Event_Activate
 ================
 */
@@ -537,7 +470,7 @@ void idMoveable::Event_Activate( idEntity *activator ) {
 	Show();
 
 	if ( !spawnArgs.GetInt( "notPushable" ) ) {
-		physicsObj.EnableImpact();
+        physicsObj.EnableImpact();
 	}
 
 	physicsObj.Activate();
@@ -590,8 +523,6 @@ idMoveable::Event_EnableDamage
 ================
 */
 void idMoveable::Event_EnableDamage( float enable ) {
-	// clear out attacker
-	attacker = NULL;
 	canDamage = ( enable != 0.0f );
 }
 
@@ -602,7 +533,7 @@ void idMoveable::Event_EnableDamage( float enable ) {
   idBarrel
 
   HUMANHEAD pdm: removed, re-inherited from hhMoveable
-
+	
 ===============================================================================
 */
 
@@ -614,3 +545,4 @@ idExplodingBarrel
 
 ===============================================================================
 */
+

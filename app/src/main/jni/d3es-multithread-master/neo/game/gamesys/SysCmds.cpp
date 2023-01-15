@@ -1,47 +1,12 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "../Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/async/NetworkSystem.h"
-#include "framework/FileSystem.h"
-
-#include "gamesys/TypeInfo.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-#include "ai/AI.h"
-#include "anim/Anim_Testmodel.h"
-#include "Entity.h"
-#include "Moveable.h"
-#include "WorldSpawn.h"
-#include "Fx.h"
-#include "Misc.h"
-
-#include "SysCmds.h"
+#include "TypeInfo.h"
 
 /*
 ==================
@@ -79,7 +44,7 @@ void Cmd_EntityList(const idStr &match) {
 		}
 
 		gameLocal.Printf( "%4i: %-20s %-20s %s\n", e,
-		                  check->GetEntityDefName(), check->GetClassname(), check->name.c_str() );
+			check->GetEntityDefName(), check->GetClassname(), check->name.c_str() );
 
 		count++;
 		size += check->spawnArgs.Allocated();
@@ -95,10 +60,6 @@ Cmd_EntityList_f
 ===================
 */
 void Cmd_EntityList_f( const idCmdArgs &args ) {
-	int			e;
-	idEntity	*check;
-	int			count;
-	size_t		size;
 	idStr		match;
 
 	if ( args.Argc() > 1 ) {
@@ -108,30 +69,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 		match = "";
 	}
 
-	count = 0;
-	size = 0;
-
-	gameLocal.Printf( "%-4s  %-20s %-20s %s\n", " Num", "EntityDef", "Class", "Name" );
-	gameLocal.Printf( "--------------------------------------------------------------------\n" );
-	for( e = 0; e < MAX_GENTITIES; e++ ) {
-		check = gameLocal.entities[ e ];
-
-		if ( !check ) {
-			continue;
-		}
-
-		if ( !check->name.Filter( match, true ) ) {
-			continue;
-		}
-
-		gameLocal.Printf( "%4i: %-20s %-20s %s\n", e,
-			check->GetEntityDefName(), check->GetClassname(), check->name.c_str() );
-
-		count++;
-		size += check->spawnArgs.Allocated();
-	}
-
-	gameLocal.Printf( "...%d entities\n...%zd bytes of spawnargs\n", count, size );
+	Cmd_EntityList(match);
 }
 
 /*
@@ -188,27 +126,6 @@ void Cmd_ReloadScript_f( const idCmdArgs &args ) {
 
 	// recompile the scripts
 	gameLocal.program.Startup( SCRIPT_DEFAULT );
-
-	// loads a game specific main script file
-	idStr gamedir;
-	int i;
-
-	for (i = 0; i < 2; i++) {
-		if (i == 0) {
-			gamedir = cvarSystem->GetCVarString("fs_game_base");
-		} else if (i == 1) {
-			gamedir = cvarSystem->GetCVarString("fs_game");
-		}
-
-		if (gamedir.Length() > 0) {
-			idStr scriptFile = va("script/%s_main.script", gamedir.c_str());
-
-			if (fileSystem->ReadFile(scriptFile.c_str(), NULL) > 0) {
-				gameLocal.program.CompileFile(scriptFile.c_str());
-				gameLocal.program.FinishCompilation();
-			}
-		}
-	}
 
 	// error out so that the user can rerun the scripts
 	gameLocal.Error( "Exiting map to reload scripts" );
@@ -424,7 +341,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	if ( give_all || idStr::Icmp( name, "health" ) == 0 )	{
+	if ( give_all || idStr::Icmp( name, "health" ) == 0 ) {
 		player->health = player->inventory.maxHealth;
 		player->healthPulse = true;	// HUMANHEAD pdm
 		if ( !give_all ) {
@@ -436,9 +353,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 	}
 
 	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {
-        player->inventory.duplicateWeapons |= player->inventory.weapons;
-        player->inventory.weapons = ( int )( BIT( MAX_WEAPONS ) - 1 );
-        player->inventory.foundWeapons |= player->inventory.weapons;
+		player->inventory.weapons = BIT( MAX_WEAPONS ) - 1;
 		player->CacheWeapons();
 
 		if ( !give_all ) {
@@ -468,6 +383,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 #endif
 
 	if ( give_all || idStr::Icmp( name, "ammo" ) == 0 ) {
+		player->spiritPulse = true;
 		for ( i = 0 ; i < AMMO_NUMTYPES; i++ ) {
 			player->inventory.ammo[ i ] = player->inventory.MaxAmmoForAmmoClass( player, idWeapon::GetAmmoNameForNum( ( ammo_t )i ) );
 		}
@@ -478,7 +394,6 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 			return;
 		}
 	}
-
 
 #ifndef HUMANHEAD	// HUMANHEAD pdm: not used
 /*
@@ -511,7 +426,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 */
 #endif
 
-	if ( !give_all && !player->Give( args.Argv(1), args.Argv(2), -1 ) ) {
+	if ( !give_all && !player->Give( args.Argv(1), args.Argv(2) ) ) {
 		gameLocal.Printf( "unknown item\n" );
 	}
 
@@ -551,7 +466,7 @@ argv(0) god
 ==================
 */
 void Cmd_God_f( const idCmdArgs &args ) {
-	const char	*msg;
+	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -580,7 +495,7 @@ argv(0) notarget
 ==================
 */
 void Cmd_Notarget_f( const idCmdArgs &args ) {
-	const char	*msg;
+	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -607,7 +522,7 @@ argv(0) noclip
 ==================
 */
 void Cmd_Noclip_f( const idCmdArgs &args ) {
-	const char	*msg;
+	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -736,19 +651,6 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 #endif
 		}
 
-		// Append the player's location to team chat messages in CTF
-		if (gameLocal.mpGame.IsGametypeFlagBased() && team && player) {
-			idLocationEntity *locationEntity = gameLocal.LocationForPoint(player->GetEyePosition());
-
-			if (locationEntity) {
-				idStr temp = "[";
-				temp += locationEntity->GetLocation();
-				temp += "] ";
-				temp += text;
-				text = temp;
-			}
-
-		}
 	} else {
 		name = "server";
 	}
@@ -787,7 +689,7 @@ static void Cmd_SayTeam_f( const idCmdArgs &args ) {
 		teamSay = false;
 	}
 	//HUMANHEAD END
-	Cmd_Say( true, args );
+	Cmd_Say( teamSay, args );
 }
 
 /*
@@ -979,7 +881,7 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 	dict.Set( "classname", value );
 	dict.Set( "angle", va( "%f", yaw + 180 ) );
 
-	org = player->GetPhysics()->GetOrigin() + idAngles( 0, yaw, 0 ).ToForward() * 80 + idVec3( 0, 0, 1 );
+	org = player->GetPhysics()->GetOrigin() + idAngles( 0, yaw, 0 ).ToForward() * 180 + idVec3( 0, 0, 1 );
 	dict.Set( "origin", org.ToString() );
 
 	for( i = 2; i < args.Argc() - 1; i += 2 ) {
@@ -1001,7 +903,6 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 	declManager->SetInsideLevelLoad(wasInside);
 	//HUMANHEAD END
 }
-
 
 //HUMANHEAD rww
 /*
@@ -1290,7 +1191,6 @@ void Cmd_ClearLights_f( const idCmdArgs &args ) {
 		if ( removeFromMap && mapEnt ) {
 			mapFile->RemoveEntity( mapEnt );
 		}
-
 		// HUMANHEAD pdm: don't allow popping of our generated lights (like headlights)
 		else if (ent->IsBound()) {
 			continue;
@@ -1393,7 +1293,6 @@ static void Cmd_AddDebugLine_f( const idCmdArgs &args ) {
 	debugLines[i].end.z = Cmd_GetFloatArg( args, argNum );
 	debugLines[i].color = Cmd_GetFloatArg( args, argNum );
 }
-
 
 /*
 HUMANHEAD rww
@@ -1552,8 +1451,7 @@ PrintFloat
 ==================
 */
 static void PrintFloat( float f ) {
-	char buf[128];
-	int i;
+	char buf[128], i;
 
 	for ( i = sprintf( buf, "%3.2f", f ); i < 7; i++ ) {
 		buf[i] = ' ';
@@ -1784,7 +1682,7 @@ static void Cmd_ListAnims_f( const idCmdArgs &args ) {
 			}
 		}
 
-		gameLocal.Printf( "%zd memory used in %d entity animators\n", size, num );
+		gameLocal.Printf( "%d memory used in %d entity animators\n", size, num );
 	}
 }
 
@@ -1911,13 +1809,7 @@ static void Cmd_WeaponSplat_f( const idCmdArgs &args ) {
 	}
 
 	//HUMANHEAD: aob - we don't have BloodSplat anymore
-	// Carl dual wielding, splat blood on both weapons
-	/*for( int hand = 0; hand < 2; hand++ )
-	{
-		idWeapon* weapon = player->GetWeaponInHand( hand );
-		if( weapon )
-			weapon->BloodSplat( 2.0f );
-	}*/
+	//player->weapon.GetEntity()->BloodSplat( 2.0f );
 }
 
 /*
@@ -2392,23 +2284,25 @@ static void Cmd_RecordViewNotes_f( const idCmdArgs &args ) {
 	// Argv(3) = comments
 
 	// HUMANHEAD pdm: prepended p:/base/
-	/*idStr str = args.Argv(1);
-	str.SetFileExtension( ".txt" );
-	idFile *file = fileSystem->OpenFileAppend(str, false, "fs_cdpath");
-	if ( file ) {
-		file->WriteFloatString( "\"view\"\t( %s )\t( %s )\r\n", origin.ToString(), axis.ToString() );
-		file->WriteFloatString( "\"comments\"\t\"%s: %s\"\r\n\r\n", args.Argv(2), args.Argv(3) );
-		fileSystem->CloseFile( file );
-	}
-
-	idStr viewComments = args.Argv(1);
-	viewComments.StripLeading("viewnotes/");
-	viewComments += " -- Loc: ";
-	viewComments += origin.ToString();
-	viewComments += "\n";
-	viewComments += args.Argv(3);
-	player->hud->SetStateString( "viewcomments", viewComments );
-	player->hud->HandleNamedEvent( "showViewComments" );*/
+	//idStr str = "p:/base/";
+	//str += args.Argv(1);
+	//str.SetFileExtension( ".txt" );
+	//// HUMANHEAD pdm: made explicit so we can write to P drive
+	//idFile *file = fileSystem->OpenExplicitFileAppend( str );
+	//if ( file ) {
+	//	file->WriteFloatString( "\"view\"\t( %s )\t( %s )\r\n", origin.ToString(), axis.ToString() );
+	//	file->WriteFloatString( "\"comments\"\t\"%s: %s\"\r\n\r\n", args.Argv(2), args.Argv(3) );
+	//	fileSystem->CloseFile( file );
+	//}
+	//
+	//idStr viewComments = args.Argv(1);
+	//viewComments.StripLeading("viewnotes/");
+	//viewComments += " -- Loc: ";
+	//viewComments += origin.ToString();
+	//viewComments += "\n";
+	//viewComments += args.Argv(3);
+	//player->hud->SetStateString( "viewcomments", viewComments );
+	//player->hud->HandleNamedEvent( "showViewComments" );
 }
 
 /*
@@ -2422,7 +2316,7 @@ static void Cmd_CloseViewNotes_f( const idCmdArgs &args ) {
 	if ( !player ) {
 		return;
 	}
-
+	
 	player->hud->SetStateString( "viewcomments", "" );
 	player->hud->HandleNamedEvent( "hideViewComments" );
 }
@@ -2462,7 +2356,7 @@ static void Cmd_ShowViewNotes_f( const idCmdArgs &args ) {
 		}
 	}
 
-	if ( parser.ExpectTokenString( "view" ) && parser.Parse1DMatrix( 3, origin.ToFloatPtr() ) &&
+	if ( parser.ExpectTokenString( "view" ) && parser.Parse1DMatrix( 3, origin.ToFloatPtr() ) && 
 		parser.Parse1DMatrix( 9, axis.ToFloatPtr() ) && parser.ExpectTokenString( "comments" ) && parser.ReadToken( &token ) ) {
 		player->hud->SetStateString( "viewcomments", token );
 		player->hud->HandleNamedEvent( "showViewComments" );
@@ -2474,7 +2368,6 @@ static void Cmd_ShowViewNotes_f( const idCmdArgs &args ) {
 		return;
 	}
 }
-
 
 // HUMANHEAD mdl:  Added EraseViewNote
 /*
@@ -2523,8 +2416,8 @@ static void Cmd_EraseViewNote_f( const idCmdArgs &args ) {
 	}
 
 	bool found = false;
-	while ( parser.ExpectTokenString( "view" ) && parser.Parse1DMatrix( 3, origin.ToFloatPtr() ) &&
-	        parser.Parse1DMatrix( 9, axis.ToFloatPtr() ) && parser.ExpectTokenString( "comments" ) && parser.ReadToken( &token ) ) {
+	while ( parser.ExpectTokenString( "view" ) && parser.Parse1DMatrix( 3, origin.ToFloatPtr() ) && 
+		parser.Parse1DMatrix( 9, axis.ToFloatPtr() ) && parser.ExpectTokenString( "comments" ) && parser.ReadToken( &token ) ) {
 
 		if ( idStr::Cmp( comment, token ) == 0 ) {
 			if ( found ) {
@@ -2663,15 +2556,15 @@ void Cmd_NextGUI_f( const idCmdArgs &args ) {
 			if ( !ent->IsType(hhAnimatedEntity::Type) && ent->spawnArgs.GetString( "gui", NULL ) != NULL ) {
 				break;
 			}
-
-			if ( ent->spawnArgs.GetString( "gui2", NULL ) != NULL ) {
+			
+			if ( !ent->IsType(hhAnimatedEntity::Type) && ent->spawnArgs.GetString( "gui2", NULL ) != NULL ) {
 				break;
 			}
 
-			if ( ent->spawnArgs.GetString( "gui3", NULL ) != NULL ) {
+			if ( !ent->IsType(hhAnimatedEntity::Type) && ent->spawnArgs.GetString( "gui3", NULL ) != NULL ) {
 				break;
 			}
-
+			
 			// try the next entity
 			gameLocal.lastGUIEnt = ent;
 		}
@@ -2706,7 +2599,7 @@ void Cmd_NextGUI_f( const idCmdArgs &args ) {
 
 	assert( geom->facePlanes != NULL );
 
-	modelMatrix = idMat4( renderEnt->axis, renderEnt->origin );
+	modelMatrix = idMat4( renderEnt->axis, renderEnt->origin );	
 	normal = geom->facePlanes[ 0 ].Normal() * renderEnt->axis;
 	center = geom->bounds.GetCenter() * modelMatrix;
 
@@ -2718,32 +2611,6 @@ void Cmd_NextGUI_f( const idCmdArgs &args ) {
 	//	make sure the player is in noclip
 	player->noclip = true;
 	player->Teleport( origin, angles, NULL );
-}
-
-void Cmd_SetActorState_f(const idCmdArgs &args)
-{
-
-	if (args.Argc() != 3) {
-		common->Printf("usage: setActorState <entity name> <state>\n");
-		return;
-	}
-
-	idEntity *ent;
-	ent = gameLocal.FindEntity(args.Argv(1));
-
-	if (!ent) {
-		gameLocal.Printf("entity not found\n");
-		return;
-	}
-
-
-	if (!ent->IsType(idActor::Type)) {
-		gameLocal.Printf("entity not an actor\n");
-		return;
-	}
-
-	idActor *actor = (idActor *)ent;
-	actor->PostEventMS(&AI_SetState, 0, args.Argv(2));
 }
 
 static void ArgCompletion_DefFile( const idCmdArgs &args, void(*callback)( const char *s ) ) {
@@ -2770,9 +2637,8 @@ void Cmd_TestId_f( const idCmdArgs &args ) {
 	if ( idStr::Cmpn( id, STRTABLE_ID, STRTABLE_ID_LENGTH ) != 0 ) {
 		id = STRTABLE_ID + id;
 	}
-	gameLocal.mpGame.AddChatLine( common->GetLanguageDict()->GetString( id ), "<nothing>", "<nothing>", "<nothing>" );
+	gameLocal.mpGame.AddChatLine( common->GetLanguageDict()->GetString( id ), "<nothing>", "<nothing>", "<nothing>" );	
 }
-
 
 //HUMANHEAD rww
 #if !GOLD
@@ -2927,12 +2793,14 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "clearLights",			Cmd_ClearLights_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"clears all lights" );
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"causes a game error" );
 
+#ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
 	cmdSystem->AddCommand( "recordViewNotes",		Cmd_RecordViewNotes_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"record the current view position with notes" );
 	cmdSystem->AddCommand( "showViewNotes",			Cmd_ShowViewNotes_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"show any view notes for the current map, successive calls will cycle to the next note" );
 	cmdSystem->AddCommand( "closeViewNotes",		Cmd_CloseViewNotes_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"close the view showing any notes for this map" );
 	cmdSystem->AddCommand( "exportmodels",			Cmd_ExportModels_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"exports models", ArgCompletion_DefFile );
 	cmdSystem->AddCommand( "eraseViewNote",			Cmd_EraseViewNote_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"erase the currently displayed note" ); // HUMANHEAD mdl
+#endif
 
 	//HUMANHEAD jsh PCF 5/1/06 allow multiplayer stuff for demo
 	// multiplayer client commands ( replaces old impulses stuff )
@@ -2952,7 +2820,6 @@ void idGameLocal::InitConsoleCommands( void ) {
 	// localization help commands
 	cmdSystem->AddCommand( "nextGUI",				Cmd_NextGUI_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleport the player to the next func_static with a gui" );
 	cmdSystem->AddCommand( "testid",				Cmd_TestId_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"output the string for the specified id." );
-	cmdSystem->AddCommand("setActorState",			Cmd_SetActorState_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"Manually sets an actors script state", idGameLocal::ArgCompletion_EntityName);
 
 #if !GOLD //HUMANHEAD rww
 	cmdSystem->AddCommand( "charset",				Cmd_CharSet_f,				CMD_FL_SYSTEM,				"print console character set");
@@ -2961,6 +2828,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 #endif //HUMANHEAD END
 
 	cmdSystem->AddCommand( "playTime",			Cmd_PlayTime_f,		CMD_FL_GAME,	"prints current playtime" ); //HUMANHEAD mdl
+
 }
 
 /*

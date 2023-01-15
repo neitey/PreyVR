@@ -1,39 +1,5 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
-
-#include "gamesys/SysCvar.h"
-#include "Player.h"
-
-#include "anim/Anim_Testmodel.h"
-
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 =============================================================================
 
@@ -41,7 +7,7 @@ If you have questions concerning this license or the applicable additional terms
 
 Model viewing can begin with either "testmodel <modelname>"
 
-The names must be the full pathname after the basedir, like
+The names must be the full pathname after the basedir, like 
 "models/weapons/v_launch/tris.md3" or "players/male/tris.md3"
 
 Extension will default to ".ase" if not specified.
@@ -57,9 +23,14 @@ move around it to view it from different angles.
 =============================================================================
 */
 
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
+
+#include "../Game_local.h"
+
 CLASS_DECLARATION( idAnimatedEntity, idTestModel )
 	EVENT( EV_FootstepLeft,			idTestModel::Event_Footstep )
-	EVENT( EV_FootstepRight,		idTestModel::Event_Footstep )
+	EVENT( EV_FootstepRight,		idTestModel::Event_Footstep )	
 END_CLASS
 
 /*
@@ -133,7 +104,7 @@ void idTestModel::Spawn( void ) {
 		physicsObj.SetAxis( GetPhysics()->GetAxis() );
 	}
 #else
-	physicsObj.SetAxis( GetPhysics()->GetAxis() );
+		physicsObj.SetAxis( GetPhysics()->GetAxis() );
 #endif
 
 	if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) ) {
@@ -178,7 +149,7 @@ void idTestModel::Spawn( void ) {
 			head.GetEntity()->SetOrigin( origin );
 			head.GetEntity()->SetAxis( GetPhysics()->GetAxis() );
 			head.GetEntity()->BindToJoint( this, animator.GetJointName( joint ), true );
-
+		
 			headAnimator = head.GetEntity()->GetAnimator();
 
 			// set up the list of joints to copy to the head
@@ -345,7 +316,7 @@ void idTestModel::Think( void ) {
 				}
 				break;
 			}
-
+			
 			mode = g_testModelAnimate.GetInteger();
 		}
 
@@ -393,11 +364,13 @@ void idTestModel::Think( void ) {
 
 			joint = animator.GetJointHandle( "origin" );
 			animator.GetJointTransform( joint, gameLocal.time, neworigin, axis );
+
 			if ( animator.ModelDef() ) { // HUMANHEAD CJR:  Added check for validity of the modelDef
 				neworigin = ( ( neworigin - animator.ModelDef()->GetVisualOffset() ) * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin();
 			} else {
 				neworigin = ( neworigin * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin(); // HUMANHEAD CJR:  old version
 			} // END HUMANHEAD
+
 			clip->Link( gameLocal.clip, this, 0, neworigin, clip->GetAxis() );
 		}
 	}
@@ -445,7 +418,7 @@ void idTestModel::NextAnim( const idCmdArgs &args ) {
 	headAnim = 0;
 	if ( headAnimator ) {
 		headAnimator->ClearAllAnims( gameLocal.time, 0 );
-		headAnim = headAnimator->GetAnim( animname );
+        headAnim = headAnimator->GetAnim( animname );
 		if ( !headAnim ) {
 			headAnim = headAnimator->GetAnim( "idle" );
 		}
@@ -487,7 +460,7 @@ void idTestModel::PrevAnim( const idCmdArgs &args ) {
 	headAnim = 0;
 	if ( headAnimator ) {
 		headAnimator->ClearAllAnims( gameLocal.time, 0 );
-		headAnim = headAnimator->GetAnim( animname );
+        headAnim = headAnimator->GetAnim( animname );
 		if ( !headAnim ) {
 			headAnim = headAnimator->GetAnim( "idle" );
 		}
@@ -557,16 +530,17 @@ idTestModel::TestAnim
 void idTestModel::TestAnim( const idCmdArgs &args ) {
 	idStr			name;
 	int				animNum;
+	const idAnim	*newanim;
 
 	if ( args.Argc() < 2 ) {
 		gameLocal.Printf( "usage: testanim <animname>\n" );
 		return;
 	}
 
+	newanim = NULL;
+
 	name = args.Argv( 1 );
 #if 0
-	const idAnim	*newanim = NULL;
-
 	if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
 		const idMD5Anim	*md5anims[ ANIM_MaxSyncedAnims ];
 		idModelExport exporter;
@@ -595,7 +569,7 @@ void idTestModel::TestAnim( const idCmdArgs &args ) {
 	headAnim = 0;
 	if ( headAnimator ) {
 		headAnimator->ClearAllAnims( gameLocal.time, 0 );
-		headAnim = headAnimator->GetAnim( animname );
+        headAnim = headAnimator->GetAnim( animname );
 		if ( !headAnim ) {
 			headAnim = headAnimator->GetAnim( "idle" );
 			if ( !headAnim ) {
@@ -796,8 +770,8 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 			// without appending an ase
 			if ( name[ 0 ] != '_' ) {
 				name.DefaultFileExtension( ".ase" );
-			}
-
+			} 
+			
 			if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
 				idModelExport exporter;
 				exporter.ExportModel( name );
@@ -812,6 +786,7 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 		}
 	}
 
+	
 	offset = player->GetPhysics()->GetOrigin() + player->viewAngles.ToForward() * 100.0f;
 
 	dict.Set( "origin", offset.ToString() );

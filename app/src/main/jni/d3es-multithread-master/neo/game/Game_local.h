@@ -1,69 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
-
-#include "GameBase.h"
-
-#include "idlib/containers/StrList.h"
-#include "idlib/containers/LinkList.h"
-#include "idlib/BitMsg.h"
-#include "Game.h"
-
-#include "gamesys/SaveGame.h"
-#include "physics/Clip.h"
-#include "physics/Push.h"
-#include "script/Script_Program.h"
-#include "ai/AAS.h"
-#include "anim/Anim.h"
-// HUMANHEAD nla
-#include "Prey/game_anim.h"
-#include "Prey/game_animBlend.h"
-#include "Prey/prey_animator.h"
-// HUMANHEAD END
-#include "Pvs.h"
-#include "MultiplayerGame.h"
-
-// HUMANHEAD
-#include "Prey/prey_camerainterpolator.h"	// HUMANHEAD
-#include "Prey/anim_baseanim.h"				// HUMANHEAD nla - For playing partial animations
-#define NUM_AAS 3
-// HUMANHEAD END
-
-#include "../../../Doom3Quest/VrClientInfo.h"
-#include "framework/async/MsgChannel.h"
-
-#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-// This is real evil but allows the code to inspect arbitrary class variables.
-#define private		public
-#define protected	public
-#endif
 
 /*
 ===============================================================================
@@ -72,29 +11,24 @@ If you have questions concerning this license or the applicable additional terms
 
 ===============================================================================
 */
-class idDeclEntityDef;
-class idRenderWorld;
-class idSoundWorld;
-class idUserInterface;
 
-// classes used by idGameLocal
-class idEntity;
-class idActor;
-class idPlayer;
-class idCamera;
-class idWorldspawn;
-class idTestModel;
-class idSmokeParticles;
-class idEntityFx;
-class idTypeInfo;
-class idThread;
-class idEditEntities;
-class idLocationEntity;
+#define LAGO_IMG_WIDTH 64
+#define LAGO_IMG_HEIGHT 64
+#define LAGO_WIDTH	64
+#define LAGO_HEIGHT	44
+#define LAGO_MATERIAL	"textures/sfx/lagometer"
+#define LAGO_IMAGE		"textures/sfx/lagometer.tga"
 
-//============================================================================
-extern const int NUM_RENDER_PORTAL_BITS;
+// if set to 1 the server sends the client PVS with snapshots and the client compares against what it sees
+#ifndef ASYNC_WRITE_PVS
+	#define ASYNC_WRITE_PVS 0
+#endif
 
-void gameError( const char *fmt, ... );
+#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
+// This is real evil but allows the code to inspect arbitrary class variables.
+#define private		public
+#define protected	public
+#endif
 
 extern idRenderWorld *				gameRenderWorld;
 extern idSoundWorld *				gameSoundWorld;
@@ -105,14 +39,91 @@ extern hhProfiler *					profiler;
 #endif
 // HUMANHEAD END
 
-extern const int NUM_RENDER_PORTAL_BITS;
-/*
-===============================================================================
+// the "gameversion" client command will print this plus compile date
+#define	GAME_VERSION		"basePrey-1"
 
-	Local implementation of the public game interface.
+// classes used by idGameLocal
+class idEntity;
+class idActor;
+class idPlayer;
+class idCamera;
+class idWorldspawn;
+class idTestModel;
+class idAAS;
+class idAI;
+class idSmokeParticles;
+class idEntityFx;
+class idTypeInfo;
+class idProgram;
+class idThread;
+class idEditEntities;
+class idLocationEntity;
 
-===============================================================================
-*/
+#define	MAX_CLIENTS				32
+#define	GENTITYNUM_BITS			12
+#define	MAX_GENTITIES			(1<<GENTITYNUM_BITS)
+//HUMANHEAD rww - client entities!
+#define GENTITYNUM_BITS_PLUSCENT	13 //8192 allowable
+#define	MAX_CENTITIES				MAX_GENTITIES //it doesn't have to be this, but whatever.
+//END HUMANHEAD
+#define	ENTITYNUM_NONE			(MAX_GENTITIES-1)
+#define	ENTITYNUM_WORLD			(MAX_GENTITIES-2)
+#define	ENTITYNUM_MAX_NORMAL	(MAX_GENTITIES-2)
+
+//HUMANHEAD: aob - put here it can be used anywhere.  hhSafeEntity wouldn't compile otherwise.
+#if GOLD
+// mdl:  Disable if we're gold
+#define HH_ASSERT( boolArg )
+#else
+
+#ifdef _DEBUG
+#define HH_ASSERT( boolArg ) assert( (boolArg) )
+#else
+#define HH_ASSERT( boolArg ) if( !(boolArg) ) { gameLocal.Error("Assertion Failed: %s, File: %s, Line: %d\n", #boolArg, __FILE__, __LINE__); }
+#endif
+
+#endif // GOLD
+//HUMANHEAD END
+
+//============================================================================
+
+#include "gamesys/Event.h"
+#include "gamesys/Class.h"
+#include "gamesys/SysCvar.h"
+#include "gamesys/SysCmds.h"
+#include "gamesys/SaveGame.h"
+#include "gamesys/DebugGraph.h"
+
+#include "script/Script_Program.h"
+
+#include "anim/Anim.h"
+// HUMANHEAD nla
+#include "Prey/game_anim.h"
+#include "Prey/game_animBlend.h"
+#include "Prey/prey_animator.h"
+// HUMANHEAD END
+
+#include "ai/AAS.h"
+
+#include "physics/Clip.h"
+#include "physics/Push.h"
+
+#include "Pvs.h"
+#include "MultiplayerGame.h"
+
+// HUMANHEAD
+#include "Prey/prey_camerainterpolator.h"	// HUMANHEAD
+#include "Prey/anim_baseanim.h"				// HUMANHEAD nla - For playing partial animations
+#define NUM_AAS 3
+// HUMANHEAD END
+
+//============================================================================
+
+const int MAX_GAME_MESSAGE_SIZE		= 8192;
+const int MAX_ENTITY_STATE_SIZE		= 512;
+const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
+const int NUM_RENDER_PORTAL_BITS	= idMath::BitsForInteger( PS_BLOCK_ALL );
+
 typedef struct entityState_s {
 	int						entityNumber;
 	idBitMsg				state;
@@ -126,56 +137,6 @@ typedef struct snapshot_s {
 	int						pvs[ENTITY_PVS_SIZE];
 	struct snapshot_s *		next;
 } snapshot_t;
-
-struct timeState_t {
-	int					time;
-	int					previousTime;
-	int					msec;
-	int					framenum;
-	int					realClientTime;
-
-	void				Set(int t, int pt, int ms, int f, int rct)		{
-		time = t;
-		previousTime = pt;
-		msec = ms;
-		framenum = f;
-		realClientTime = rct;
-	};
-	void				Get(int &t, int &pt, int &ms, int &f, int &rct)	{
-		t = time;
-		pt = previousTime;
-		ms = msec;
-		f = framenum;
-		rct = realClientTime;
-	};
-	void				Save(idSaveGame *savefile) const	{
-		savefile->WriteInt(time);
-		savefile->WriteInt(previousTime);
-		savefile->WriteInt(msec);
-		savefile->WriteInt(framenum);
-		savefile->WriteInt(realClientTime);
-	}
-	void				Restore(idRestoreGame *savefile)	{
-		savefile->ReadInt(time);
-		savefile->ReadInt(previousTime);
-		savefile->ReadInt(msec);
-		savefile->ReadInt(framenum);
-		savefile->ReadInt(realClientTime);
-	}
-	void				Increment()							{
-		framenum++;
-		previousTime = time;
-		time += msec;
-		realClientTime = time;
-	};
-};
-
-enum slowmoState_t {
-	SLOWMO_STATE_OFF,
-	SLOWMO_STATE_RAMPUP,
-	SLOWMO_STATE_ON,
-	SLOWMO_STATE_RAMPDOWN
-};
 
 const int MAX_EVENT_PARAM_SIZE		= 128;
 
@@ -239,7 +200,6 @@ typedef enum {
 typedef struct {
 	idEntity	*ent;
 	int			dist;
-	int			team;
 } spawnSpot_t;
 
 //============================================================================
@@ -277,6 +237,7 @@ template< class type >
 class idEntityPtr {
 public:
 							idEntityPtr();
+
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
@@ -295,7 +256,7 @@ public:
 	int						GetEntityNum( void ) const;
 
 #ifdef HUMANHEAD //HUMANHEAD: aob
-	idEntityPtr( const type* ent ) { Assign( ent ); }
+							idEntityPtr( const type* ent ) { Assign( ent ); }
 
 	void					Clear();
 	idEntityPtr<type> &		Assign( const idEntity *ent );
@@ -314,6 +275,27 @@ public:
 private:
 	int						spawnId;
 };
+
+template< class type >
+ID_INLINE idEntityPtr<type>::idEntityPtr() {
+	spawnId = 0;
+}
+
+template< class type >
+ID_INLINE void idEntityPtr<type>::Save( idSaveGame *savefile ) const {
+	savefile->WriteInt( spawnId );
+}
+
+template< class type >
+ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame *savefile ) {
+	savefile->ReadInt( spawnId );
+}
+
+template< class type >
+ID_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
+	//HUMANHEAD rww - take cent bits into account
+	return ( spawnId & ( ( 1 << GENTITYNUM_BITS_PLUSCENT ) - 1 ) );
+}
 
 //============================================================================
 
@@ -348,7 +330,7 @@ public:
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
 
 	// can be used to automatically effect every material in the world that references globalParms
-	float					globalShaderParms[ MAX_GLOBAL_SHADER_PARMS ];
+	float					globalShaderParms[ MAX_GLOBAL_SHADER_PARMS ];	
 
 	idRandom				random;					// random number generator used throughout the game
 
@@ -362,7 +344,7 @@ public:
 	idTestModel *			testmodel;				// for development testing of models
 	idEntityFx *			testFx;					// for development testing of fx
 
-	idStr					sessionCommand;			// a target_sessionCommand can set this to return something to the session
+	idStr					sessionCommand;			// a target_sessionCommand can set this to return something to the session 
 
 	idMultiplayerGame		mpGame;					// handles rules for standard dm
 
@@ -379,7 +361,7 @@ public:
 	int						framenum;
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
-	int						msec;					// time since last update in milliseconds
+	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
@@ -403,67 +385,6 @@ public:
 
 	int						timeRandom;				//HUMANHEAD rww - for time seeding
 
-	idEntityPtr<idEntity>	portalSkyEnt;
-	bool					portalSkyActive;
-
-	void					SetPortalSkyEnt(idEntity *ent);
-	bool					IsPortalSkyAcive();
-
-	timeState_t				fast;
-	timeState_t				slow;
-
-	slowmoState_t			slowmoState;
-	float					slowmoMsec;
-
-	bool					quickSlowmoReset;
-
-	virtual void			SelectTimeGroup(int timeGroup);
-	virtual int				GetTimeGroupTime(int timeGroup);
-
-	virtual void			GetBestGameType(const char *map, const char *gametype, char buf[ MAX_STRING_CHARS ]);
-
-	void					ComputeSlowMsec();
-	void					RunTimeGroup2();
-
-	void					ResetSlowTimeVars();
-	void					QuickSlowmoReset();
-
-	bool					NeedRestart();
-
-	// HUMANHEAD
-	void					SetSteamTime( int _time ) { nextSteamTime = _time; };
-	int						GetSteamTime() { return nextSteamTime; };
-	void					SpiritWalkSoundMode(bool active);
-	void					DialogSoundMode(bool active);
-	// HUMANHEAD END
-
-	//HUMANHEAD rww
-	bool					EntInClientSnapshot(int entNum) { return (!isClient || (clientPVS[localClientNum][entNum >> 5] & ( 1 << ( entNum & 31 ) ))); }
-	int						GetMapSpawnCount(void) { return mapSpawnCount; }
-
-	void					GetAPUserInfo(idDict &dict, int clientNum);
-	void					SpawnArtificialPlayer(void);
-	//HUMANHEAD END
-
-	//HUMANHEAD rww - keep track of layered spawning
-	//if an object spawns another object in its spawn on mapload, this will completely destroy everything because
-	//we need map-load-time entities to be in sync on client and server, and obviously the client cannot spawn them.
-	//if this is really required and a postevent spawn cannot be done, then the spawnCount must be incremented to fake
-	//the spawn on the client and the server should force the artificial entity to spawn above the map entity count.
-	//(this does work as i have tested it, but it's an ugly hack that i would like to avoid)
-#if !GOLD
-	int						layeredSpawn;
-	bool					spawnPopulating;
-#endif
-	//HUMANHEAD END
-
-	//HUMANHEAD rww
-	bool					logitechLCDEnabled;
-	bool					logitechLCDDisplayAlt;
-	DWORD					logitechLCDButtonsLast;
-	int						logitechLCDUpdateTime;
-	//HUMANHEAD END
-
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
@@ -471,21 +392,10 @@ public:
 	virtual void			Init( void );
 	virtual void			Shutdown( void );
 	virtual void			SetLocalClient( int clientNum );
-	virtual void 			SetVRClientInfo(vrClientInfo *pVRClientInfo);
-	virtual void			EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn);
-
-	virtual void			CheckRenderCvars();
-
-	//GB Trying to move animator function
-	virtual bool			AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis );
-    virtual bool            CMDButtonsAttackCall(int &teleportCanceled);
-    virtual bool            CMDButtonsPhysicalCrouch();
-	virtual float			CalcTorsoYawDelta(usercmd_t &cmd);
 	virtual void			ThrottleUserInfo( void );
 	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify );
 	virtual const idDict *	GetUserInfo( int clientNum );
 	virtual void			SetServerInfo( const idDict &serverInfo );
-	virtual bool 			InCinematic();
 
 	virtual const idDict &	GetPersistentPlayerInfo( int clientNum );
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo );
@@ -496,14 +406,12 @@ public:
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
-	virtual void 			EndFrame();
 	virtual bool			Draw( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual idUserInterface	*StartMenu( void );
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
-	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
 	virtual allowReply_t	ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] );
-	virtual void			ServerClientConnect( int clientNum, const char *guid );
+	virtual void			ServerClientConnect( int clientNum );
 	virtual void			ServerClientBegin( int clientNum );
 	virtual void			ServerClientDisconnect( int clientNum );
 	virtual void			ServerWriteInitialReliableMessages( int clientNum );
@@ -513,7 +421,7 @@ public:
 	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
 	virtual bool			ClientApplySnapshot( int clientNum, int sequence );
 	virtual void			ClientProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame );
+	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds );
 
 	//HUMANHEAD rww
 	virtual void			LogitechLCDUpdate(void) {}
@@ -523,17 +431,10 @@ public:
 	//HUMANHEAD END
 
 	virtual void			GetClientStats( int clientNum, char *data, const int len );
-
-	virtual bool			IsInGame() const
-	{
-		return GameState() == GAMESTATE_ACTIVE;
-	}
-
 	virtual void			SwitchTeam( int clientNum, int team );
 
 	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] );
-	virtual bool			InGameGuiActive();
-	virtual bool			ObjectiveSystemActive();
+
 	// ---------------------- Public idGameLocal Interface -------------------
 
 	void					Printf( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
@@ -573,10 +474,11 @@ public:
 	//HUMANHEAD rww - added clientEntity, bIsClientReadSnapshot
 	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true, bool clientEntity = false, bool bIsClientReadSnapshot = false );
 	//HUMANHEAD END
+
 	int						GetSpawnId( const idEntity *ent ) const;
 
-	const idDeclEntityDef *	FindEntityDef( const char *name, bool makeDefault = true ) const;
-	const idDict *			FindEntityDefDict( const char *name, bool makeDefault = true ) const;
+	const idDeclEntityDef *	FindEntityDef( const char *name, bool makeDefault = false ) const;
+	const idDict *			FindEntityDefDict( const char *name, bool makeDefault = false ) const;
 
 	void					RegisterEntity( idEntity *ent );
 	void					UnregisterEntity( idEntity *ent );
@@ -589,9 +491,6 @@ public:
 
 	bool					InPlayerPVS( idEntity *ent ) const;
 	bool					InPlayerConnectedArea( idEntity *ent ) const;
-	pvsHandle_t				GetPlayerPVS()			{
-		return playerPVS;
-	};
 
 	void					SetCamera( idCamera *cam );
 	idCamera *				GetCamera( void ) const;
@@ -610,6 +509,7 @@ public:
 	idEntity *				FindEntity( const char *name ) const;
 	idEntity *				FindEntityUsingDef( idEntity *from, const char *match ) const;
 	int						EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const;
+
 	// HUMANHEAD pdm
 	static void				ArgCompletion_ClassName( const idCmdArgs &args, void(*callback)( const char *s ) );
 	static void				ArgCompletion_EntityOrClassName( const idCmdArgs &args, void(*callback)( const char *s ) );
@@ -621,14 +521,13 @@ public:
 	//HUMANHEAD PCF rww 05/15/06 - use a custom clipmask killbox (seperated due to pcf paranoia)
 	void					KillBoxMasked( idEntity *ent, int clipMask, bool catch_teleport = false );
 	//HUMANHEAD END
-
 	virtual					// HUMANHEAD JRM - made virtual
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
 	virtual					// HUMANHEAD JRM - made virtual
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
 	void					RadiusPushClipModel( const idVec3 &origin, const float push, const idClipModel *clipModel );
 
-	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material, float angle = 0 );
+	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material, float angle = 0.0f );
 	void					BloodSplat( const idVec3 &origin, const idVec3 &dir, float size, const char *material );
 
 	void					CallFrameCommand( idEntity *ent, const function_t *frameCommand );
@@ -639,7 +538,7 @@ public:
 	// added the following to assist licensees with merge issues
 	int						GetFrameNum() const { return framenum; };
 	int						GetTime() const { return time; };
-	int						GetMSec() const { return USERCMD_MSEC; };
+	int						GetMSec() const { return msec; };
 
 	int						GetNextClientNum( int current ) const;
 	idPlayer *				GetClientByNum( int current ) const;
@@ -663,8 +562,7 @@ public:
 	virtual void			PrintMemInfo( MemInfo_t *mi );
 
 // HUMANHEAD pdm: Support for level appending
-	// jmarshall - changed to false.
-	bool					DeathwalkMapLoaded() const	{	return false;	} // return bShouldAppend; jmarshall
+	bool					DeathwalkMapLoaded() const	{ return bShouldAppend; }
 #if DEATHWALK_AUTOLOAD
 	bool					bShouldAppend;			// Taken from serverinfo
 protected:
@@ -685,7 +583,6 @@ protected:
 
 public:
 // HUMANHEAD END
-
 
 	void					SpreadLocations();
 	idLocationEntity *		LocationForPoint( const idVec3 &point );	// May return NULL
@@ -712,19 +609,47 @@ public:
 	void					SetGlobalMaterial( const idMaterial *mat );
 	const idMaterial *		GetGlobalMaterial();
 
-	virtual bool				IsPDAOpen() const;
-
 	void					SetGibTime( int _time ) { nextGibTime = _time; };
 	int						GetGibTime() { return nextGibTime; };
 
-	// Koz made public
-	void					SetScriptFPS( const float com_engineHz );
-	// Koz end
+	bool					NeedRestart();
+
+// HUMANHEAD
+	void					SetSteamTime( int _time ) { nextSteamTime = _time; };
+	int						GetSteamTime() { return nextSteamTime; };
+	void					SpiritWalkSoundMode(bool active);
+	void					DialogSoundMode(bool active);
+// HUMANHEAD END
+
+	//HUMANHEAD rww
+	bool					EntInClientSnapshot(int entNum) { return (!isClient || (clientPVS[localClientNum][entNum >> 5] & ( 1 << ( entNum & 31 ) ))); }
+	int						GetMapSpawnCount(void) { return mapSpawnCount; }
+
+	void					GetAPUserInfo(idDict &dict, int clientNum);
+	void					SpawnArtificialPlayer(void);
+	//HUMANHEAD END
+
+	//HUMANHEAD rww - keep track of layered spawning
+	//if an object spawns another object in its spawn on mapload, this will completely destroy everything because
+	//we need map-load-time entities to be in sync on client and server, and obviously the client cannot spawn them.
+	//if this is really required and a postevent spawn cannot be done, then the spawnCount must be incremented to fake
+	//the spawn on the client and the server should force the artificial entity to spawn above the map entity count.
+	//(this does work as i have tested it, but it's an ugly hack that i would like to avoid)
+#if !GOLD
+	int						layeredSpawn;
+	bool					spawnPopulating;
+#endif
+	//HUMANHEAD END
+
+	//HUMANHEAD rww
+	bool					logitechLCDEnabled;
+	bool					logitechLCDDisplayAlt;
+	DWORD					logitechLCDButtonsLast;
+	int						logitechLCDUpdateTime;
+	//HUMANHEAD END
 
 protected:	// HUMANHEAD
 	const static int		INITIAL_SPAWN_COUNT = 1;
-
-	vrClientInfo 		*pVRClientInfo;
 
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile *				mapFile;				// will be NULL during the game unless in-game editing is used
@@ -779,10 +704,6 @@ protected:	// HUMANHEAD
 	idStaticList<spawnSpot_t, MAX_GENTITIES> spawnSpots;
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
 	int						currentInitialSpot;
-
-	idStaticList<spawnSpot_t, MAX_GENTITIES> teamSpawnSpots[2];
-	idStaticList<idEntity *, MAX_GENTITIES> teamInitialSpots[2];
-	int						teamCurrentInitialSpot[2];
 
 	idDict					newInfo;
 
@@ -844,11 +765,13 @@ protected:	// HUMANHEAD
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
 
+	void					SelectTimeGroup( int timeGroup );
+	int						GetTimeGroupTime( int timeGroup );
+	idStr					GetBestGameType( const char* map, const char* gametype );
+
 	void					Tokenize( idStrList &out, const char *in );
 
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
-
-	virtual void			GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
 };
 
 //============================================================================
@@ -856,8 +779,8 @@ protected:	// HUMANHEAD
 // HUMANHEAD pdm
 // HUMANHEAD mdl:  Commented out the old gameLocal because it was messing up tagging
 //#ifdef HUMANHEAD
-#include "Prey/prey_game.h"
-extern hhGameLocal			gameLocal;
+	#include "Prey/prey_game.h"
+	extern hhGameLocal			gameLocal;
 //#else	// HUMANHEAD
 //extern idGameLocal			gameLocal;
 //#endif	// HUMANHEAD
@@ -873,59 +796,6 @@ public:
 
 //============================================================================
 
-template< class type >
-ID_INLINE idEntityPtr<type>::idEntityPtr()
-{
-    spawnId = 0;
-}
-
-template< class type >
-ID_INLINE void idEntityPtr<type>::Save( idSaveGame* savefile ) const
-{
-    savefile->WriteInt( spawnId );
-}
-
-template< class type >
-ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame* savefile )
-{
-    savefile->ReadInt( spawnId );
-}
-
-template< class type >
-ID_INLINE bool idEntityPtr<type>::SetSpawnId( int id ) {
-	// the reason for this first check is unclear:
-	// the function returning false may mean the spawnId is already set right, or the entity is missing
-	if ( id == spawnId ) {
-		return false;
-	}
-	if ( ( id >> GENTITYNUM_BITS ) == gameLocal.spawnIds[ id & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] ) {
-		spawnId = id;
-		return true;
-	}
-	return false;
-}
-
-template< class type >
-ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
-	return ( gameLocal.spawnIds[ spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] == ( spawnId >> GENTITYNUM_BITS ) );
-}
-
-template< class type >
-ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
-	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
-	if ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) ) {
-		return static_cast<type *>( gameLocal.entities[ entityNum ] );
-	}
-	return NULL;
-}
-
-template< class type >
-ID_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
-	//HUMANHEAD rww - take cent bits into account
-	return ( spawnId & ( ( 1 << GENTITYNUM_BITS_PLUSCENT ) - 1 ) );
-}
-
-//============================================================================
 
 //
 // these defines work for all startsounds from all entity types
@@ -943,7 +813,6 @@ typedef enum {
 	SND_CHANNEL_HEART,
 	SND_CHANNEL_PDA,
 	SND_CHANNEL_LANDING,	// HUMANHEAD pdm: needed seperate channel for landing
-	SND_CHANNEL_DEMONIC,
 	SND_CHANNEL_RADIO,
 
 //HUMANHEAD: aob
@@ -968,10 +837,40 @@ typedef enum {
 	SND_CHANNEL_DAMAGE
 } gameSoundChannel_t;
 
-extern const float	DEFAULT_GRAVITY;
-extern const idVec3	DEFAULT_GRAVITY_VEC3;
-extern const int	CINEMATIC_SKIP_DELAY;
+// content masks
+#ifdef HUMANHEAD
+#define	MASK_ALL					(-1)
+#define	MASK_SOLID					(CONTENTS_SOLID|CONTENTS_FORCEFIELD)
+#define	MASK_MONSTERSOLID			(CONTENTS_SOLID|CONTENTS_MONSTERCLIP|CONTENTS_BODY|CONTENTS_FORCEFIELD|CONTENTS_HUNTERCLIP)
+#define	MASK_PLAYERSOLID			(CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BODY|CONTENTS_FORCEFIELD)
+#define	MASK_DEADSOLID				(CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_FORCEFIELD|CONTENTS_CORPSE)
+#define MASK_SPECTATOR				(CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_CORPSE)
+#define	MASK_WATER					(CONTENTS_WATER)
+#define	MASK_OPAQUE					(CONTENTS_OPAQUE) // HUMANHEAD:  Used to be MASK_SOLID for us
+#define	MASK_SPIRITPLAYER			(CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BODY|CONTENTS_SPIRITBRIDGE)						// HUMANHEAD:  Identical to playersolid, except for forcefield and spiritbridge
+#define MASK_VISIBILITY				(CONTENTS_OPAQUE|CONTENTS_RENDERMODEL|CONTENTS_BODY)
+#define MASK_TRACTORBEAM			(CONTENTS_SOLID|CONTENTS_RENDERMODEL|CONTENTS_BODY|CONTENTS_FORCEFIELD|CONTENTS_SHOOTABLE|CONTENTS_CORPSE)
+#define	MASK_SHOT_RENDERMODEL		(CONTENTS_SOLID|CONTENTS_RENDERMODEL|CONTENTS_SHOOTABLE|CONTENTS_CORPSE|CONTENTS_WATER)
+#define	MASK_SHOT_BOUNDINGBOX		(CONTENTS_SOLID|CONTENTS_BODY|CONTENTS_SHOOTABLE|CONTENTS_CORPSE|CONTENTS_WATER)
+#define	MASK_SHOTANDPROJECTILES		(MASK_SHOT_RENDERMODEL|CONTENTS_PROJECTILE)														// for shooting projectiles with projectiles
+#define MASK_SPIRITARROW			(CONTENTS_SOLID|CONTENTS_RENDERMODEL|CONTENTS_CORPSE|CONTENTS_WATER|CONTENTS_SHOOTABLEBYARROW)	// No forcefield (forcefields/spiritsecrets)
+#else	// HUMANHEAD END
+#define	MASK_ALL					(-1)
+#define	MASK_SOLID					(CONTENTS_SOLID)
+#define	MASK_MONSTERSOLID			(CONTENTS_SOLID|CONTENTS_MONSTERCLIP|CONTENTS_BODY)
+#define	MASK_PLAYERSOLID			(CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_BODY)
+#define	MASK_DEADSOLID				(CONTENTS_SOLID|CONTENTS_PLAYERCLIP)
+#define	MASK_WATER					(CONTENTS_WATER)
+#define	MASK_OPAQUE					(CONTENTS_OPAQUE)
+#define	MASK_SHOT_RENDERMODEL		(CONTENTS_SOLID|CONTENTS_RENDERMODEL)
+#define	MASK_SHOT_BOUNDINGBOX		(CONTENTS_SOLID|CONTENTS_BODY)
+#endif	// HUMANHEAD
 
+const float DEFAULT_GRAVITY			= 1066.0f;
+#define DEFAULT_GRAVITY_STRING		"1066"
+const idVec3 DEFAULT_GRAVITY_VEC3( 0, 0, -DEFAULT_GRAVITY );
+
+const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 
 //============================================================================
 
@@ -1079,7 +978,7 @@ extern const int	CINEMATIC_SKIP_DELAY;
 #include "Prey/game_vehicle.h"				// HUMANHEAD pdm - must be before game_player.h
 #include "Prey/game_dock.h"					// HUMANHEAD
 #include "Prey/game_shuttle.h"				// HUMANHEAD pdm - must be after game_vehicle.h
-#include "Prey/game_player.h"				// HUMANHEAD nla
+#include "Prey/game_player.h"				// HUMANHEAD nla 
 #include "Mover.h"
 #include "Camera.h"
 #include "Moveable.h"
@@ -1178,5 +1077,34 @@ ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
 }
 #endif
 // HUMANHEAD END
+
+template< class type >
+ID_INLINE bool idEntityPtr<type>::SetSpawnId( int id ) {
+	if ( id == spawnId ) {
+		return false;
+	}
+	//HUMANHEAD rww - take cent bits into account
+	if ( ( id >> GENTITYNUM_BITS_PLUSCENT ) == gameLocal.spawnIds[ id & ( ( 1 << GENTITYNUM_BITS_PLUSCENT ) - 1 ) ] ) {
+		spawnId = id;
+		return true;
+	}
+	return false;
+}
+
+template< class type >
+ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
+	//HUMANHEAD rww - take cent bits into account
+	return ( gameLocal.spawnIds[ spawnId & ( ( 1 << GENTITYNUM_BITS_PLUSCENT ) - 1 ) ] == ( spawnId >> GENTITYNUM_BITS_PLUSCENT ) );
+}
+
+template< class type >
+ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
+	//HUMANHEAD rww - take cent bits into account
+	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS_PLUSCENT ) - 1 );
+	if ( ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS_PLUSCENT ) ) ) {
+		return static_cast<type *>( gameLocal.entities[ entityNum ] );
+	}
+	return NULL;
+}
 
 #endif	/* !__GAME_LOCAL_H__ */

@@ -1,35 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_PLAYER_H__
 #define __PHYSICS_PLAYER_H__
-
-#include "physics/Physics_Actor.h"
 
 /*
 ===================================================================================
@@ -91,14 +64,14 @@ typedef enum {
 	WATERLEVEL_HEAD
 } waterLevel_t;
 
-#define	MAXTOUCH					32
-
 typedef struct playerPState_s {
 	idVec3					origin;
+
 	//HUMANHEAD: aob - needed for saving state and vehicles
 	idMat3					axis;
 	idMat3					localAxis;
 	//HUMANHEAD END
+
 	idVec3					velocity;
 	idVec3					localOrigin;
 	idVec3					pushVelocity;
@@ -124,7 +97,7 @@ public:
 	float					GetMaxStepHeight( void ) const;
 	void					SetMaxJumpHeight( const float newMaxJumpHeight );
 	void					SetMovementType( const pmtype_t type );
-	void					SetPlayerInput( const usercmd_t& cmd, const idVec3& forwardVector );
+	void					SetPlayerInput( const usercmd_t &cmd, const idAngles &newViewAngles );
 	virtual	//HUMANHEAD: Made virtual
 	void					SetKnockBack( const int knockBackTime );
 	void					SetDebugLevel( bool set );
@@ -171,16 +144,11 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
-	// Koz
-	idVec3					MotionMove( idVec3 &moveVelocity ); // bool gravity, bool stepUp, bool stepDown, bool push );
-
 protected:	//HUMANHEAD
 	// player physics state
 	playerPState_t			current;
 	playerPState_t			saved;
-public:
-	bool					blink;
-	bool					headBumped;
+
 	// properties
 	float					walkSpeed;
 	float					crouchSpeed;
@@ -190,7 +158,7 @@ public:
 
 	// player input
 	usercmd_t				command;
-	idVec3					commandForward;		// can't use cmd.angles cause of the delta_angles and head tracking
+	idAngles				viewAngles;
 
 	// run-time variables
 	int						framemsec;
@@ -218,7 +186,7 @@ public:
 	idVec3		wishdir;	//HUMANHEAD
 
 protected://HUMANHEAD
-	// HUMANHEAD
+	// HUMANHEAD 
 	virtual	idVec3			DetermineJumpVelocity();
 	// HUMANHEAD END
 

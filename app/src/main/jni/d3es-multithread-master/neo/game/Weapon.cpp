@@ -1,61 +1,15 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/DeclEntityDef.h"
-#include "framework/DeclSkin.h"
-#include "framework/Session.h"
-
-#include "gamesys/SysCvar.h"
-#include "ai/AI.h"
-#include "Player.h"
-#include "Trigger.h"
-#include "SmokeParticles.h"
-#include "WorldSpawn.h"
-
-#include "Weapon.h"
-#include "Vr.h"
-
-extern bool IsDoom3DemoVersion(); // DG: hack to support the Demo version of Doom3
-
-// Koz begin
-idClipModel* PDAclipModel; // Koz fixme pda more crappy globals.
-
-idCVar vr_guiH( "vr_guiH", "100", CVAR_INTEGER, "" );
-idCVar vr_guiA( "vr_guiA", "100", CVAR_INTEGER, "" );
-
-idCVar vr_throwPower( "vr_throwPower", "3.4", CVAR_FLOAT | CVAR_GAME | CVAR_ARCHIVE, "Throw power" );
-// Koz end
+#include "Game_local.h"
 
 /***********************************************************************
 
-  idWeapon
-
+  idWeapon  
+	
 ***********************************************************************/
 
 //
@@ -88,20 +42,6 @@ const idEventDef EV_Weapon_AutoReload( "autoReload", NULL, 'f' );
 const idEventDef EV_Weapon_NetReload( "netReload" );
 const idEventDef EV_Weapon_IsInvisible( "isInvisible", NULL, 'f' );
 const idEventDef EV_Weapon_NetEndReload( "netEndReload" );
-const idEventDef EV_Weapon_GrabberHasTarget("grabberHasTarget", NULL, 'd');
-const idEventDef EV_Weapon_Grabber("grabber", "d");
-const idEventDef EV_Weapon_Grabber_SetGrabDistance("grabberGrabDistance", "f");
-const idEventDef EV_Weapon_LaunchProjectilesEllipse("launchProjectilesEllipse", "dffff");
-const idEventDef EV_Weapon_LaunchPowerup("launchPowerup", "sfd");
-const idEventDef EV_Weapon_StartWeaponSmoke("startWeaponSmoke");
-const idEventDef EV_Weapon_StopWeaponSmoke("stopWeaponSmoke");
-const idEventDef EV_Weapon_StartWeaponParticle("startWeaponParticle", "s");
-const idEventDef EV_Weapon_StopWeaponParticle("stopWeaponParticle", "s");
-const idEventDef EV_Weapon_StartWeaponLight("startWeaponLight", "s");
-const idEventDef EV_Weapon_StopWeaponLight("stopWeaponLight", "s");
-// Koz
-const idEventDef EV_Weapon_GetWeaponSkin( "getWeaponSkin", NULL, 's' );
-const idEventDef EV_Weapon_IsMotionControlled( "isMotionControlled", NULL, 'd' );
 
 //
 // class def
@@ -143,16 +83,6 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( EV_Weapon_NetReload,					idWeapon::Event_NetReload )
 	EVENT( EV_Weapon_IsInvisible,				idWeapon::Event_IsInvisible )
 	EVENT( EV_Weapon_NetEndReload,				idWeapon::Event_NetEndReload )
-	EVENT(EV_Weapon_LaunchProjectilesEllipse,	idWeapon::Event_LaunchProjectilesEllipse)
-	EVENT(EV_Weapon_LaunchPowerup,				idWeapon::Event_LaunchPowerup)
-	EVENT(EV_Weapon_StartWeaponSmoke,			idWeapon::Event_StartWeaponSmoke)
-	EVENT(EV_Weapon_StopWeaponSmoke,			idWeapon::Event_StopWeaponSmoke)
-	EVENT(EV_Weapon_StartWeaponParticle,		idWeapon::Event_StartWeaponParticle)
-	EVENT(EV_Weapon_StopWeaponParticle,		    idWeapon::Event_StopWeaponParticle)
-	EVENT(EV_Weapon_StartWeaponLight,			idWeapon::Event_StartWeaponLight)
-	EVENT(EV_Weapon_StopWeaponLight,			idWeapon::Event_StopWeaponLight)
-	EVENT( EV_Weapon_GetWeaponSkin,				idWeapon::Event_GetWeaponSkin )
-	EVENT( EV_Weapon_IsMotionControlled,		idWeapon::Event_IsMotionControlled )
 END_CLASS
 
 /***********************************************************************
@@ -189,17 +119,8 @@ idWeapon::idWeapon() {
 	brassDelay				= 0;
 
 	allowDrop				= true;
-    isPlayerFlashlight = false;
-    isPlayerLeftHand = false; // Koz
 
-    lastIdentifiedFrame = 0;
-    currentIdentifiedWeapon = WEAPON_NONE;
-    lastIdentifiedWeapon = WEAPON_NONE; // lastweapon holds the last actual weapon value, so the weapon enum will never return a value of 'weapon_flaslight'. nothing to do with the players previous weapon
-
-    fraccos = 0.0f;
-    fraccos2 = 0.0f;
-
-    Clear();
+	Clear();
 
 	fl.networkSync = true;
 }
@@ -239,24 +160,14 @@ idWeapon::SetOwner
 Only called at player spawn time, not each weapon switch
 ================
 */
-void idWeapon::SetOwner( idPlayer* _owner, int ownerHand ) {
-    assert( !owner );
-    owner = _owner;
-    hand = ownerHand;
-    const char* handNames[ 2 ] = { "right", "left" };
-    if( hand < 0 || hand >= 2 || hand == vr_weaponHand.GetInteger() )
-    {
-        SetName( va( "%s_weapon", owner->name.c_str() ) );
-    }
-    else
-    {
-        SetName( va( "%s_weapon_%s", owner->name.c_str(), handNames[ hand ] ) );
-    }
+void idWeapon::SetOwner( idPlayer *_owner ) {
+	assert( !owner );
+	owner = _owner;
+	SetName( va( "%s_weapon", owner->name.c_str() ) );
 
-    if( worldModel.GetEntity() )
-    {
-        worldModel.GetEntity()->SetName( va( "%s_worldmodel", name.c_str() ) );
-    }
+	if ( worldModel.GetEntity() ) {
+		worldModel.GetEntity()->SetName( va( "%s_weapon_worldmodel", owner->name.c_str() ) );
+	}
 }
 
 /*
@@ -435,69 +346,11 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( allowDrop );
 	savefile->WriteObject( projectileEnt );
 
-	savefile->WriteJoint(smokeJointView);
-
-	savefile->WriteInt(weaponParticles.Num());
-
-	for (int i = 0; i < weaponParticles.Num(); i++) {
-		WeaponParticle_t *part = weaponParticles.GetIndex(i);
-		savefile->WriteString(part->name);
-		savefile->WriteString(part->particlename);
-		savefile->WriteBool(part->active);
-		savefile->WriteInt(part->startTime);
-		savefile->WriteJoint(part->joint);
-		savefile->WriteBool(part->smoke);
-
-		if (!part->smoke) {
-			savefile->WriteObject(part->emitter);
-		}
-	}
-
-	savefile->WriteInt(weaponLights.Num());
-
-	for (int i = 0; i < weaponLights.Num(); i++) {
-		WeaponLight_t *light = weaponLights.GetIndex(i);
-		savefile->WriteString(light->name);
-		savefile->WriteBool(light->active);
-		savefile->WriteInt(light->startTime);
-		savefile->WriteJoint(light->joint);
-		savefile->WriteInt(light->lightHandle);
-		savefile->WriteRenderLight(light->light);
-	}
-
-    // Koz begin
-    for ( int i = 0; i < 2; i++ )
-    {
-        savefile->WriteJoint( weaponHandAttacher[i] );
-        savefile->WriteVec3( weaponHandDefaultPos[i] );
-        savefile->WriteMat3( weaponHandDefaultAxis[i] );
-    }
-    // Koz end
-
 	// HUMANHEAD mdl
 	savefile->WriteInt( idleBob );
 	savefile->WriteBool( bHasRemoteView );
 	// HUMANHEAD end
 }
-/*
-================
-idWeapon::SetFlashlightOwner
-
-Only called at player spawn time, not each weapon switch
-================
-*/
-void idWeapon::SetFlashlightOwner( idPlayer* _owner )
-{
-    assert( !owner );
-    owner = _owner;
-    SetName( va( "%s_weapon_flashlight", owner->name.c_str() ) );
-
-    if( worldModel.GetEntity() )
-    {
-        worldModel.GetEntity()->SetName( va( "%s_weapon_flashlight_worldmodel", owner->name.c_str() ) );
-    }
-}
-
 
 /*
 ================
@@ -519,8 +372,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
-	if (!IsDoom3DemoVersion()) // the demo assets don't support WEAPON_NETFIRING
-		WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
+	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 	WEAPON_NEXTATTACK.LinkTo(	scriptObject, "nextAttack" ); //HUMANHEAD rww
@@ -584,7 +436,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	savefile->ReadRenderLight( guiLight );
 
 	//HUMANHEAD PCF mdl 05/04/06 - Don't save light handles
-	//savefile->ReadInt( muzzleFlashHandle );
+    //savefile->ReadInt( muzzleFlashHandle );
 	savefile->ReadRenderLight( muzzleFlash );
 
 	//HUMANHEAD PCF mdl 05/04/06 - Don't save light handles
@@ -648,10 +500,6 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( nozzleGlowHandle );
 	savefile->ReadRenderLight( nozzleGlow );
 
-	if (nozzleGlowHandle >= 0) {
-		nozzleGlowHandle = gameRenderWorld->AddLightDef(&nozzleGlow);
-	}
-
 	savefile->ReadVec3( nozzleGlowColor );
 	savefile->ReadMaterial( nozzleGlowShader );
 	savefile->ReadFloat( nozzleGlowRadius );
@@ -664,71 +512,6 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( allowDrop );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( projectileEnt ) );
-
-	savefile->ReadJoint(smokeJointView);
-
-	int particleCount;
-	savefile->ReadInt(particleCount);
-
-	for (int i = 0; i < particleCount; i++) {
-		WeaponParticle_t newParticle;
-		memset(&newParticle, 0, sizeof(newParticle));
-
-		idStr name, particlename;
-		savefile->ReadString(name);
-		savefile->ReadString(particlename);
-
-		strcpy(newParticle.name, name.c_str());
-		strcpy(newParticle.particlename, particlename.c_str());
-
-		savefile->ReadBool(newParticle.active);
-		savefile->ReadInt(newParticle.startTime);
-		savefile->ReadJoint(newParticle.joint);
-		savefile->ReadBool(newParticle.smoke);
-
-		if (newParticle.smoke) {
-			newParticle.particle = static_cast<const idDeclParticle *>(declManager->FindType(DECL_PARTICLE, particlename, false));
-		} else {
-			savefile->ReadObject(reinterpret_cast<idClass * &>(newParticle.emitter));
-		}
-
-		weaponParticles.Set(newParticle.name, newParticle);
-	}
-
-	int lightCount;
-	savefile->ReadInt(lightCount);
-
-	for (int i = 0; i < lightCount; i++) {
-		WeaponLight_t newLight;
-		memset(&newLight, 0, sizeof(newLight));
-
-		idStr name;
-		savefile->ReadString(name);
-		strcpy(newLight.name, name.c_str());
-
-		savefile->ReadBool(newLight.active);
-		savefile->ReadInt(newLight.startTime);
-		savefile->ReadJoint(newLight.joint);
-		savefile->ReadInt(newLight.lightHandle);
-		savefile->ReadRenderLight(newLight.light);
-
-		if (newLight.lightHandle >= 0) {
-			newLight.lightHandle = gameRenderWorld->AddLightDef(&newLight.light);
-		}
-
-		weaponLights.Set(newLight.name, newLight);
-	}
-
-    for ( int i = 0; i < 2; i++ ) {
-        savefile->ReadJoint(weaponHandAttacher[i]);
-        savefile->ReadVec3(weaponHandDefaultPos[i]);
-        savefile->ReadMat3(weaponHandDefaultAxis[i]);
-    }
-    // gui for stats device on player wrist in VR.
-    //rvrStatGui = uiManager->FindGui( "guis/weapons/rvrstatgui.gui", true, false, true );
-    lvrStatGui = uiManager->FindGui( "guis/weapons/lvrstatgui.gui", true, false, true );
-
-    //scale = 1.0f; // koz code to scale weapon models in the world borks the viewmodel when loading quick or autosaves, so make sure scale is correct here.
 }
 
 /***********************************************************************
@@ -752,8 +535,7 @@ void idWeapon::Clear( void ) {
 	WEAPON_RELOAD.Unlink();
 	WEAPON_NETRELOAD.Unlink();
 	WEAPON_NETENDRELOAD.Unlink();
-	if (WEAPON_NETFIRING.IsLinked())
-		WEAPON_NETFIRING.Unlink();
+	WEAPON_NETFIRING.Unlink();
 	WEAPON_RAISEWEAPON.Unlink();
 	WEAPON_LOWERWEAPON.Unlink();
 	WEAPON_NEXTATTACK.Unlink(); //HUMANHEAD rww
@@ -800,7 +582,7 @@ void idWeapon::Clear( void ) {
 		refSound.referenceSound->Free( true );
 	}
 	memset( &refSound, 0, sizeof( refSound_t ) );
-
+	
 	// setting diversity to 0 results in no random sound.  -1 indicates random.
 	refSound.diversity = -1.0f;
 
@@ -885,31 +667,6 @@ void idWeapon::Clear( void ) {
 	flashJointWorld		= INVALID_JOINT;
 	ejectJointWorld		= INVALID_JOINT;
 
-	smokeJointView		= INVALID_JOINT;
-
-	//Clean up the weapon particles
-	for (int i = 0; i < weaponParticles.Num(); i++) {
-		WeaponParticle_t *part = weaponParticles.GetIndex(i);
-
-		if (!part->smoke) {
-			//Destroy the emitters
-			part->emitter->PostEventMS(&EV_Remove, 0);
-		}
-	}
-
-	weaponParticles.Clear();
-
-	//Clean up the weapon lights
-	for (int i = 0; i < weaponLights.Num(); i++) {
-		WeaponLight_t *light = weaponLights.GetIndex(i);
-
-		if (light->lightHandle != -1) {
-			gameRenderWorld->FreeLightDef(light->lightHandle);
-		}
-	}
-
-	weaponLights.Clear();
-
 	hasBloodSplat		= false;
 	nozzleFx			= false;
 	nozzleFxFade		= 1500;
@@ -970,20 +727,8 @@ void idWeapon::InitWorldModel( const idDeclEntityDef *def ) {
 		// supress model in player views, but allow it in mirrors and remote views
 		renderEntity_t *worldModelRenderEntity = ent->GetRenderEntity();
 		if ( worldModelRenderEntity ) {
-            // Koz begin
-            if ( game->isVR && !strstr(def->dict.GetString("model_world"),"flashlight"))
-            {
-                // Koz dont show the worldmodel if the player body is shown in vr.
-                worldModelRenderEntity->suppressSurfaceInViewID = 0;
-                worldModelRenderEntity->suppressShadowInViewID = 0;
-            }
-            else
-            {
-                //Carl: Don't suppress drawing the weapon's world model or it's shadow in 1st person, if they want to see it (in VR)
-                worldModelRenderEntity->suppressSurfaceInViewID = owner->entityNumber + 1;
-                worldModelRenderEntity->suppressShadowInViewID = owner->entityNumber + 1;
-            }
-            // Koz end
+			worldModelRenderEntity->suppressSurfaceInViewID = owner->entityNumber+1;
+			worldModelRenderEntity->suppressShadowInViewID = owner->entityNumber+1;
 			worldModelRenderEntity->suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + owner->entityNumber;
 		}
 	} else {
@@ -1068,22 +813,8 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	memset( &guiLight, 0, sizeof( guiLight ) );
 	const char *guiLightShader = weaponDef->dict.GetString( "mtr_guiLightShader" );
 	if ( *guiLightShader != '\0' ) {
-        // Koz begin
-        // the PDA model was scaled by a factor of 2.5 to make it easier to read in VR.
-        // The weapon guilight size isn't stored in the weapon def, it's hardcoded here,
-        // so check if PDA and resize the guilight accordingly
-
-        int lightRad = 3;
-        if ( game->isVR )
-        {
-            const char* weapName = weaponDef->dict.GetString( "inv_name" );
-            if ( strstr( weapName, "PDA" ) )
-            {
-                lightRad *= 3; // the PDA guilight needs to be bigger in VR
-            }
-        }
-	    guiLight.shader = declManager->FindMaterial( guiLightShader, false );
-        guiLight.lightRadius[0] = guiLight.lightRadius[1] = guiLight.lightRadius[2] = lightRad;
+		guiLight.shader = declManager->FindMaterial( guiLightShader, false );
+		guiLight.lightRadius[0] = guiLight.lightRadius[1] = guiLight.lightRadius[2] = 3;
 		guiLight.pointLight = true;
 	}
 
@@ -1091,12 +822,9 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	vmodel = weaponDef->dict.GetString( "model_view" );
 	SetModel( vmodel );
 
-    // Koz weapon shadows
-    renderEntity.noShadow = false;
-
 	// setup the world model
 	InitWorldModel( weaponDef );
-	worldModel.GetEntity()->GetRenderEntity()->noShadow = true; // Koz fixme only if using viewweapon for body model
+
 	// copy the sounds from the weapon view model def into out spawnargs
 	const idKeyValue *kv = weaponDef->dict.MatchPrefix( "snd_" );
 	while( kv ) {
@@ -1104,45 +832,12 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 		kv = weaponDef->dict.MatchPrefix( "snd_", kv );
 	}
 
-    if ( game->isVR )
-    {
-        weaponHandAttacher[0] = animator.GetJointHandle( "RhandAttacher" );
-        if ( weaponHandAttacher[0] != INVALID_JOINT )
-        {
-            // Koz debug common->Printf( "Weapon %s RhandAttacherJoint Found\n", objectname );
-            animator.GetJointTransform( weaponHandAttacher[0], gameLocal.time, weaponHandDefaultPos[0], weaponHandDefaultAxis[0] );
-            // Koz debug common->Printf( "Default pos %s default axis %s\n", weaponHandDefaultPos[0].ToString(), weaponHandDefaultAxis[0].ToAngles().ToString() );
-
-        }
-
-        weaponHandAttacher[1] = animator.GetJointHandle( "LhandAttacher" );
-        if ( weaponHandAttacher[1] != INVALID_JOINT )
-        {
-            // Koz debug common->Printf( "Weapon %s LhandAttacherJoint Found\n", objectname );
-            animator.GetJointTransform( weaponHandAttacher[1], gameLocal.time, weaponHandDefaultPos[1], weaponHandDefaultAxis[1] );
-            // Koz debug common->Printf( "Default pos %s default axis %s\n", weaponHandDefaultPos[1].ToString(), weaponHandDefaultAxis[1].ToAngles().ToString() );
-        }
-
-        laserSightOffset = weaponDef->dict.GetVector( "laserSightOffset" );
-
-    }
-
 	// find some joints in the model for locating effects
 	barrelJointView = animator.GetJointHandle( "barrel" );
 	flashJointView = animator.GetJointHandle( "flash" );
 	ejectJointView = animator.GetJointHandle( "eject" );
 	guiLightJointView = animator.GetJointHandle( "guiLight" );
 	ventLightJointView = animator.GetJointHandle( "ventLight" );
-
-	idStr smokeJoint = weaponDef->dict.GetString( "smoke_joint" );
-	if( smokeJoint.Length() > 0 )
-	{
-		smokeJointView = animator.GetJointHandle( smokeJoint );
-	}
-	else
-	{
-		smokeJointView = INVALID_JOINT;
-	}
 
 	// get the projectile
 	projectileDict.Clear();
@@ -1258,8 +953,6 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 		if ( ammoClip > ammoAvail ) {
 			ammoClip = ammoAvail;
 		}
-		//In D3XP we use ammo as soon as it is moved into the clip. This allows for weapons that share ammo
-		owner->inventory.UseAmmo(ammoType, ammoClip);
 	}
 
 	renderEntity.gui[ 0 ] = NULL;
@@ -1267,11 +960,6 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	if ( guiName[0] ) {
 		renderEntity.gui[ 0 ] = uiManager->FindGui( guiName, true, false, true );
 	}
-
-    // Koz begin - gui for stats device on player wrist in VR.
-    //rvrStatGui = uiManager->FindGui("guis/weapons/rvrstatgui.gui", true, false, true);
-    lvrStatGui = uiManager->FindGui("guis/weapons/lvrstatgui.gui", true, false, true);
-    // Koz end
 
 	zoomFov = weaponDef->dict.GetInt( "zoomFov", "70" );
 	berserk = weaponDef->dict.GetInt( "berserk", "2" );
@@ -1286,7 +974,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	if ( !weaponDef->dict.GetString( "weapon_scriptobject", NULL, &objectType ) ) {
 		gameLocal.Error( "No 'weapon_scriptobject' set on '%s'.", objectname );
 	}
-
+	
 	// setup script object
 	if ( !scriptObject.SetType( objectType ) ) {
 		gameLocal.Error( "Script object '%s' not found on weapon '%s'.", objectType, objectname );
@@ -1296,8 +984,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
-	if (!IsDoom3DemoVersion()) // the demo assets don't support WEAPON_NETFIRING
-		WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
+	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 	WEAPON_NEXTATTACK.LinkTo(	scriptObject, "nextAttack" ); //HUMANHEAD rww
@@ -1317,84 +1004,6 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// make sure we have the correct skin
 	UpdateSkin();
-
-	idEntity *ent = worldModel.GetEntity();
-
-	//Initialize the particles
-	if (!gameLocal.isMultiplayer) {
-
-		const idKeyValue *pkv = weaponDef->dict.MatchPrefix("weapon_particle", NULL);
-
-		while (pkv) {
-			WeaponParticle_t newParticle;
-			memset(&newParticle, 0, sizeof(newParticle));
-
-			idStr name = pkv->GetValue();
-
-			strcpy(newParticle.name, name.c_str());
-
-			idStr jointName = weaponDef->dict.GetString(va("%s_joint", name.c_str()));
-			newParticle.joint = animator.GetJointHandle(jointName.c_str());
-			newParticle.smoke = weaponDef->dict.GetBool(va("%s_smoke", name.c_str()));
-			newParticle.active = false;
-			newParticle.startTime = 0;
-
-			idStr particle = weaponDef->dict.GetString(va("%s_particle", name.c_str()));
-			strcpy(newParticle.particlename, particle.c_str());
-
-			if (newParticle.smoke) {
-				newParticle.particle = static_cast<const idDeclParticle *>(declManager->FindType(DECL_PARTICLE, particle, false));
-			} else {
-				idDict args;
-
-				const idDeclEntityDef *emitterDef = gameLocal.FindEntityDef("func_emitter", false);
-				args = emitterDef->dict;
-				args.Set("model", particle.c_str());
-				args.SetBool("start_off", true);
-
-				idEntity *ent;
-				gameLocal.SpawnEntityDef(args, &ent, false);
-				newParticle.emitter = (idFuncEmitter *)ent;
-
-				newParticle.emitter->BecomeActive(TH_THINK);
-			}
-
-			weaponParticles.Set(name.c_str(), newParticle);
-
-			pkv = weaponDef->dict.MatchPrefix("weapon_particle", pkv);
-		}
-
-		const idKeyValue *lkv = weaponDef->dict.MatchPrefix("weapon_light", NULL);
-
-		while (lkv) {
-			WeaponLight_t newLight;
-			memset(&newLight, 0, sizeof(newLight));
-
-			newLight.lightHandle = -1;
-			newLight.active = false;
-			newLight.startTime = 0;
-
-			idStr name = lkv->GetValue();
-			strcpy(newLight.name, name.c_str());
-
-			idStr jointName = weaponDef->dict.GetString(va("%s_joint", name.c_str()));
-			newLight.joint = animator.GetJointHandle(jointName.c_str());
-
-			idStr shader = weaponDef->dict.GetString(va("%s_shader", name.c_str()));
-			newLight.light.shader = declManager->FindMaterial(shader, false);
-
-			float radius = weaponDef->dict.GetFloat(va("%s_radius", name.c_str()));
-			newLight.light.lightRadius[0] = newLight.light.lightRadius[1] = newLight.light.lightRadius[2] = radius;
-			newLight.light.pointLight = true;
-			newLight.light.noShadows = true;
-
-			newLight.light.allowLightInViewID = owner->entityNumber+1;
-
-			weaponLights.Set(name.c_str(), newLight);
-
-			lkv = weaponDef->dict.MatchPrefix("weapon_light", lkv);
-		}
-	}
 }
 
 /***********************************************************************
@@ -1413,74 +1022,15 @@ const char *idWeapon::Icon( void ) const {
 }
 
 /*
-===============
-idWeapon::IdentifyWeapon
-Koz return weapon enumeration
-===============
-*/
-
-weapon_t idWeapon::IdentifyWeapon()
-{
-	int currentFrameNumber = common->GetFrameNumber();
-    if ( lastIdentifiedFrame == currentFrameNumber ) // only check once per game frame.
-    {
-    	return currentIdentifiedWeapon;
-    }
-
-    lastIdentifiedFrame = currentFrameNumber;
-
-    currentIdentifiedWeapon = WEAPON_NONE;
-
-    if ( this )
-    {
-        if ( weaponDef != NULL )
-        {
-            idStr weaponName = weaponDef->GetName();
-
-			if ( idStr::Icmp( "weapon_fists", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_FISTS;
-			else if ( idStr::Icmp( "weapon_chainsaw", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_CHAINSAW;
-			else if ( idStr::Icmp( "weapon_pistol", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_PISTOL;
-			else if ( idStr::Icmp( "weapon_shotgun", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_SHOTGUN;
-			else if ( idStr::Icmp( "weapon_machinegun", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_MACHINEGUN;
-			else if ( idStr::Icmp( "weapon_chaingun", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_CHAINGUN;
-			else if ( idStr::Icmp( "weapon_handgrenade", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_HANDGRENADE;
-			else if ( idStr::Icmp( "weapon_plasmagun", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_PLASMAGUN;
-			else if ( idStr::Icmp( "weapon_rocketlauncher", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_ROCKETLAUNCHER;
-			else if ( idStr::Icmp( "weapon_bfg", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_BFG;
-			else if ( idStr::Icmp( "weapon_soulcube", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_SOULCUBE;
-			else if ( idStr::Icmp( "weapon_shotgun_double_mp", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_SHOTGUN_DOUBLE_MP;
-			else if ( idStr::Icmp( "weapon_grabber", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_GRABBER;
-			else if ( idStr::Icmp( "weapon_shotgun_double", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_SHOTGUN_DOUBLE;
-			else if ( idStr::Icmp( "weapon_artifact", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_ARTIFACT;
-			else if ( idStr::Icmp( "weapon_bloodstone_passive", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_ARTIFACT;
-			else if ( idStr::Icmp( "weapon_bloodstone_active1", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_ARTIFACT;
-			else if ( idStr::Icmp( "weapon_bloodstone_active2", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_ARTIFACT;
-			else if ( idStr::Icmp( "weapon_bloodstone_active3", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_ARTIFACT;
-			else if ( idStr::Icmp( "weapon_pda", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = WEAPON_PDA;
-			else if ( idStr::Icmp( "weapon_flashlight_new", weaponDef->GetName() ) == 0 ) currentIdentifiedWeapon = lastIdentifiedWeapon;
-			//else if ( idStr::Icmp( "weapon_flashlight_new", weaponDef->GetName() ) == 0 ) currentWeapon = WEAPON_FLASHLIGHT;
-			//else if ( idStr::Icmp( "weapon_flashlight", weaponDef->GetName() ) == 0 ) currentWeapon = WEAPON_FLASHLIGHT;
-			else currentIdentifiedWeapon = WEAPON_NONE;
-			lastIdentifiedWeapon = currentIdentifiedWeapon;
-        }
-    }
-    if ( currentIdentifiedWeapon == WEAPON_FLASHLIGHT ) common->Printf( "Identify weapon returned %s\n", weaponDef->GetName() );
-
-    return currentIdentifiedWeapon;
-}
-
-/*
 ================
 idWeapon::UpdateGUI
 ================
 */
 void idWeapon::UpdateGUI( void ) {
-    if ( game->isVR ) UpdateVRGUI();
-
 	if ( !renderEntity.gui[ 0 ] ) {
 		return;
 	}
-
+	
 	if ( status == WP_HOLSTERED ) {
 		return;
 	}
@@ -1510,17 +1060,14 @@ void idWeapon::UpdateGUI( void ) {
 		renderEntity.gui[ 0 ]->SetStateString( "player_ammo", "" );
 	} else {
 		// show remaining ammo
-		renderEntity.gui[ 0 ]->SetStateString("player_totalammo", va("%i", ammoamount));
+		renderEntity.gui[ 0 ]->SetStateString( "player_totalammo", va( "%i", ammoamount - inclip) );
 		renderEntity.gui[ 0 ]->SetStateString( "player_ammo", ClipSize() ? va( "%i", inclip ) : "--" );
 		renderEntity.gui[ 0 ]->SetStateString( "player_clips", ClipSize() ? va("%i", ammoamount / ClipSize()) : "--" );
-		renderEntity.gui[ 0 ]->SetStateString("player_allammo", va("%i/%i", inclip, ammoamount));
+		renderEntity.gui[ 0 ]->SetStateString( "player_allammo", va( "%i/%i", inclip, ammoamount - inclip ) );
 	}
 	renderEntity.gui[ 0 ]->SetStateBool( "player_ammo_empty", ( ammoamount == 0 ) );
 	renderEntity.gui[ 0 ]->SetStateBool( "player_clip_empty", ( inclip == 0 ) );
 	renderEntity.gui[ 0 ]->SetStateBool( "player_clip_low", ( inclip <= lowAmmo ) );
-
-	//Let the HUD know the total amount of ammo regardless of the ammo required value
-	renderEntity.gui[ 0 ]->SetStateString("player_ammo_count", va("%i", AmmoCount()));
 }
 
 /***********************************************************************
@@ -1538,39 +1085,16 @@ void idWeapon::UpdateFlashPosition( void ) {
 	// the flash has an explicit joint for locating it
 	GetGlobalJointTransform( true, flashJointView, muzzleFlash.origin, muzzleFlash.axis );
 
-    if( isPlayerFlashlight )
-    {
-        static float pscale = 2.0f;
-        static float yscale = 0.25f;
+	// if the desired point is inside or very close to a wall, back it up until it is clear
+	idVec3	start = muzzleFlash.origin - playerViewAxis[0] * 16;
+	idVec3	end = muzzleFlash.origin + playerViewAxis[0] * 8;
+	trace_t	tr;
+	gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
+	// be at least 8 units away from a solid
+	muzzleFlash.origin = tr.endpos - playerViewAxis[0] * 8;
 
-// 		static idVec3 baseAdjustPos = vec3_zero;	//idVec3( 0.0f, 10.0f, 0.0f );
-// 		idVec3 adjustPos = baseAdjustPos;
-//		muzzleFlash.origin += adjustPos.x * muzzleFlash.axis[1] + adjustPos.y * muzzleFlash.axis[0] + adjustPos.z * muzzleFlash.axis[2];
-        muzzleFlash.origin += owner->GetViewBob();
-
-//		static idAngles baseAdjustAng = ang_zero;	//idAngles( 0.0f, 10.0f, 0.0f );
-        idAngles adjustAng = /*baseAdjustAng +*/ idAngles( fraccos * yscale, 0.0f, fraccos2 * pscale );
-        idAngles bobAngles = owner->GetViewBobAngles();
-		float pitch = bobAngles.pitch;
-		float roll = bobAngles.roll;
-	    bobAngles.pitch = roll;
-	    bobAngles.roll = pitch;
-        adjustAng += bobAngles * 3.0f;
-        muzzleFlash.axis = adjustAng.ToMat3() * muzzleFlash.axis /** adjustAng.ToMat3()*/;
-    }
-
-    // if the desired point is inside or very close to a wall, back it up until it is clear
-    idVec3	start = muzzleFlash.origin - playerViewAxis[0] * 16;
-    idVec3	end = muzzleFlash.origin + playerViewAxis[0] * 8;
-    trace_t	tr;
-    gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
-    // be at least 8 units away from a solid
-    muzzleFlash.origin = tr.endpos - playerViewAxis[0] * 8;
-
-    muzzleFlash.noShadows = !g_weaponShadows.GetBool();
-
-    // put the world muzzle flash on the end of the joint, no matter what
-    GetGlobalJointTransform( false, flashJointWorld, worldMuzzleFlash.origin, worldMuzzleFlash.axis );
+	// put the world muzzle flash on the end of the joint, no matter what
+	GetGlobalJointTransform( false, flashJointWorld, worldMuzzleFlash.origin, worldMuzzleFlash.axis );
 }
 
 /*
@@ -1579,7 +1103,7 @@ idWeapon::MuzzleFlashLight
 ================
 */
 void idWeapon::MuzzleFlashLight( void ) {
-
+	
 	if ( !lightOn && ( !g_muzzleFlash.GetBool() || !muzzleFlash.lightRadius[0] ) ) {
 		return;
 	}
@@ -1611,178 +1135,6 @@ void idWeapon::MuzzleFlashLight( void ) {
 
 /*
 ================
-idWeapon::UpdateVRGUI
-================
-*/
-void idWeapon::UpdateVRGUI()
-{
-
-    float healthv = 0.0f;
-    float armorv = 0.0f;
-    float armorb = 0.0f;
-    float healthb = 0.0f;
-
-    idPlayer* player;
-    player = gameLocal.GetLocalPlayer();
-
-    if ( !player ) return;
-
-	if (lvrStatGui == NULL)
-	{
-		common->Printf("Left Hand stat gui not found.\n");
-		return;
-	}
-
-    if ( status == WP_HOLSTERED )
-    {
-        return;
-    }
-
-    if ( isPlayerFlashlight || isPlayerLeftHand ) return;
-
-    if ( owner->weaponGone )
-    {
-        // dropping weapons was implemented weird, so we have to not update the gui when it happens or we'll get a negative ammo count
-        return;
-    }
-
-    int inclip[2];
-    int ammoamount[2];
-    int clipsize[2];
-    bool harvester[2];
-    bool ammoEmpty[2];
-    bool clipEmpty[2];
-    bool clipLow[2];
-
-    for ( int h = 0; h < 2; h++ )
-    {
-        inclip[h] = player->hands[h].weapon.GetEntity()->AmmoInClip();
-        ammoamount[h] = player->hands[h].weapon.GetEntity()->AmmoAvailable();
-        clipsize[h] = player->hands[h].weapon.GetEntity()->ClipSize();
-
-
-        ammoEmpty[h] = ( ammoamount[h] == 0 ) ;
-        clipEmpty[h] = ( player->hands[h].weapon.GetEntity()->ClipSize() && inclip[h] == 0);
-        clipLow[h] = ( player->hands[h].weapon.GetEntity()->ClipSize() && player->hands[h].weapon.GetEntity()->LowAmmo());
-    }
-
-    //int inclip = AmmoInClip();
-    //int ammoamount = AmmoAvailable();
-
-    // update the right hand statwatch
-
-
-    /*if ( ammoamount[HAND_RIGHT] < 0 )
-    {
-        // show infinite ammo
-        rvrStatGui->SetStateString( "player_ammo", "" );
-    }
-    else
-    {
-        // show remaining ammo
-        rvrStatGui->SetStateString("player_totalammo", va("%i", ammoamount[HAND_RIGHT]));
-        rvrStatGui->SetStateString("player_ammo", clipsize[HAND_RIGHT] ? va("%i", inclip[HAND_RIGHT]) : "--");
-        rvrStatGui->SetStateString("player_clips", clipsize[HAND_RIGHT] ? va("%i", ammoamount[HAND_RIGHT] / clipsize[HAND_RIGHT]) : "--");
-        rvrStatGui->SetStateString("player_allammo", va("%i/%i", inclip[HAND_RIGHT], ammoamount[HAND_RIGHT]));
-    }
-    rvrStatGui->SetStateBool("player_ammo_empty", ( ammoEmpty[HAND_RIGHT] ));
-    rvrStatGui->SetStateBool("player_clip_empty", ( clipEmpty[HAND_RIGHT] ));
-    rvrStatGui->SetStateBool("player_clip_low", ( clipLow[HAND_RIGHT] ));
-
-    // koz todo
-    // need to get the ammocount from the hand structures, not sure right now, in the interim just use the ammo amount.
-
-    //Let the GUI know the total amount of ammo regardless of the ammo required value
-    //rvrStatGui->SetStateString( "player_ammo_count", va( "%i", AmmoCount() ) );
-
-    rvrStatGui->SetStateString("player_ammo_count", va("%i", ammoamount[HAND_RIGHT]));
-    // koz end
-
-	// koz todo also need to figure this out for dual guis
-	//Grabber Gui Info
-	rvrStatGui->SetStateString( "grabber_state", va( "%i", grabberState ) );
-
-    //health and armor
-	*/
-    if ( player )
-    {
-        healthv = (float)player->health;
-        if ( player->inventory.armor )
-        {
-            armorv = (float)player->inventory.armor;
-        }
-
-        //healthv = vr_guiH.GetInteger();
-        //armorv = vr_guiA.GetInteger();
-
-        healthv = idMath::ClampFloat( 0.0, 100.0, healthv );
-        armorv = idMath::ClampFloat( 0.0, 100.0, armorv );
-
-        if ( healthv >= 75.0 ) healthb = ( healthv / 100.0f ) ;
-        if ( armorv >= 75.0 ) armorb = ( armorv / 100.0f ) ;
-
-        healthb = idMath::ClampFloat( 0.0, 100.0, healthb );
-        armorb = idMath::ClampFloat( 0.0, 100.0, armorb );
-
-    }
-	/*
-    rvrStatGui->SetStateString( "player_health", va( "%f", healthv ) );
-    //vrStatGui->SetStateString( "player_armor", va( "%i%%", armorv ) );
-    rvrStatGui->SetStateString( "player_armor", va( "%f", armorv ) );
-    rvrStatGui->SetStateString( "player_healthb", va( "%f", healthb ) );
-    rvrStatGui->SetStateString( "player_armorb", va( "%f", armorb ) );
-	*/
-
-    lvrStatGui->SetStateString("player_health", va("%f", healthv));
-    //vrStatGui->SetStateString( "player_armor", va( "%i%%", armorv ) );
-    lvrStatGui->SetStateString("player_armor", va("%f", armorv));
-    lvrStatGui->SetStateString("player_healthb", va("%f", healthb));
-    lvrStatGui->SetStateString("player_armorb", va("%f", armorb));
-
-    if (ammoamount[vr_weaponHand.GetInteger()] < 0)
-    {
-        // show infinite ammo
-        lvrStatGui->SetStateString("player_ammo", "");
-    }
-    else
-    {
-        // show remaining ammo
-        lvrStatGui->SetStateString("player_totalammo", va("%i", ammoamount[vr_weaponHand.GetInteger()]));
-        lvrStatGui->SetStateString("player_ammo", clipsize[vr_weaponHand.GetInteger()] ? va("%i", inclip[vr_weaponHand.GetInteger()]) : "--");
-        lvrStatGui->SetStateString("player_clips", clipsize[vr_weaponHand.GetInteger()] ? va("%i", ammoamount[vr_weaponHand.GetInteger()] / clipsize[vr_weaponHand.GetInteger()]) : "--");
-        lvrStatGui->SetStateString("player_allammo", va("%i/%i", inclip[vr_weaponHand.GetInteger()], ammoamount[vr_weaponHand.GetInteger()]));
-    }
-    lvrStatGui->SetStateBool("player_ammo_empty", (ammoEmpty[vr_weaponHand.GetInteger()]));
-    lvrStatGui->SetStateBool("player_clip_empty", (clipEmpty[vr_weaponHand.GetInteger()]));
-    lvrStatGui->SetStateBool("player_clip_low", (clipLow[vr_weaponHand.GetInteger()]));
-
-    // koz todo
-
-    // need to get the ammocount from the hand structures, not sure right now, in the interim just use the ammo amount.
-    //Let the GUI know the total amount of ammo regardless of the ammo required value
-    //rvrStatGui->SetStateString( "player_ammo_count", va( "%i", AmmoCount() ) );
-
-    lvrStatGui->SetStateString("player_ammo_count", va("%i", ammoamount[vr_weaponHand.GetInteger()]));
-    // koz end
-}
-
-/*
-================
-Koz
-idWeapon::UpdateWeaponClipPosition
-================
-*/
-void idWeapon::UpdateWeaponClipPosition( idVec3 &origin, idMat3 &axis )
-{
-
-    /*PDAclipModel->SetPosition( origin, axis );
-    PDAclipModel->Link( gameLocal.clip );
-    */
-
-}
-
-/*
-================
 idWeapon::UpdateSkin
 ================
 */
@@ -1798,7 +1150,7 @@ bool idWeapon::UpdateSkin( void ) {
 		common->Warning( "Can't find function 'UpdateSkin' in object '%s'", scriptObject.GetTypeName() );
 		return false;
 	}
-
+	
 	// use the frameCommandThread since it's safe to use outside of framecommands
 	gameLocal.frameCommandThread->CallFunction( this, func, true );
 	gameLocal.frameCommandThread->Execute();
@@ -1872,233 +1224,6 @@ bool idWeapon::GetGlobalJointTransform( bool viewModel, const jointHandle_t join
 	return false;
 }
 
-// Carl: dual wielding, check which hand, if any, the weapon is in
-int idWeapon::GetHand()
-{
-    if ( !owner )
-        return -1;
-    for( int h = 0; h < 2; h++ )
-    {
-        if( (idWeapon*)(owner->hands[ h ].weapon.GetEntity()) == this )
-            return h;
-    }
-    return -1;
-}
-
-/*
-================
-idWeapon::GetMuzzlePositionWithHacks
-
-Some weapons that have a barrel joint either have it pointing in the wrong
-direction (rocket launcher), or don't animate it properly (pistol).
-
-For good 3D TV / head mounted display work, we need to display a laser sight
-in the world.
-
-Fixing the animated meshes would be ideal, but hacking it in code is
-the pragmatic move right now.
-
-Returns false for hands, grenades, and chainsaw.
-================
-*/
-bool idWeapon::GetMuzzlePositionWithHacks( idVec3& origin, idMat3& axis )
-{
-
-    static weapon_t currentWeap = WEAPON_NONE;
-    idVec3	discardedOrigin;
-
-    origin = playerViewOrigin;
-    axis = playerViewAxis;
-
-    currentWeap = IdentifyWeapon();
-
-    switch ( currentWeap )
-    {
-        case WEAPON_NONE:
-        case WEAPON_FISTS:
-        case WEAPON_SOULCUBE:
-        case WEAPON_PDA:
-            origin = commonVr->lastViewOrigin; // Koz fixme set the origin and axis to the players view
-            axis = commonVr->lastViewAxis;
-            return false;
-            break;
-
-        case WEAPON_HANDGRENADE:
-            origin = viewWeaponOrigin; // Koz fixme set the origin and axis to the weapon default
-            axis = viewWeaponAxis;
-            return false;
-            break;
-
-        case WEAPON_CHAINSAW:
-        {
-            if ( barrelJointView == INVALID_JOINT )
-            {
-                origin = viewWeaponOrigin; // Koz fixme set the origin and axis to the weapon default
-                axis = viewWeaponAxis;
-                return false;
-                break;
-            }
-            else
-            {
-                GetGlobalJointTransform( true, barrelJointView, origin, axis );
-                std::swap( axis[0], axis[2] ); // barrel joint points right, rotate &
-                axis[0] = -axis[0]; // make it point forward.
-
-                // the barrel joint is not actually aligned with the blade of the chainsaw.
-                // Move the origin to align with the tip of the blade.
-                // fixme -34 forward is a hack to compensate for an overly long
-                // melee range value in VR. Otherwise you can saw something 3 feet away
-                // from the tip of the blade.
-                // should probably change the weapon def instead of using this mess.
-                idVec3 move( -34.0f, 2.0f, -6.0f ); // fwd,up,right
-                origin += move * axis;
-
-            }
-            return false;
-            break;
-        }
-
-    }
-
-    if ( barrelJointView != INVALID_JOINT )
-    {
-        GetGlobalJointTransform( true, barrelJointView, origin, axis );
-    }
-    else if ( guiLightJointView != INVALID_JOINT )
-    {
-        GetGlobalJointTransform( true, guiLightJointView, origin, axis );
-    }
-    else
-    {
-        return false;
-    }
-
-    switch ( currentWeap )
-    {
-        case WEAPON_PISTOL:
-        {
-            // muzzle doesn't animate during firing, Bod does
-            const jointHandle_t bodJoint = animator.GetJointHandle( "Bod" );
-            GetGlobalJointTransform( true, bodJoint, discardedOrigin, axis );
-            break;
-        }
-
-        case WEAPON_ROCKETLAUNCHER:
-            // joint doesn't point straight, so rotate it
-            std::swap( axis[0], axis[2] );
-            break;
-
-        case WEAPON_SHOTGUN:
-        {
-            // joint doesn't point straight, so rotate it
-            //const jointHandle_t bodJoint = animator.GetJointHandle( "trigger" );
-            const jointHandle_t bodJoint = animator.GetJointHandle( "body" );
-            GetGlobalJointTransform( true, bodJoint, discardedOrigin, axis );
-            std::swap( axis[0], axis[2] );
-            axis[0] = -axis[0];
-            break;
-        }
-
-		case WEAPON_SHOTGUN_DOUBLE:
-		{
-			// joint doesn't point straight, so rotate it
-			//const jointHandle_t bodJoint = animator.GetJointHandle("trigger");
-			//GetGlobalJointTransform(true, bodJoint, discardedOrigin, axis);
-			std::swap( axis[0], axis[2] ); // Koz fixme just swap like the rocketlauncher this should work now test and cleanup
-			//axis[0] = -axis[0];
-			//common->Printf( "GMPWH returning value for WEAPON_SHOTGUN_DOUBLE \n" );
-
-			break;
-		}
-
-		case WEAPON_GRABBER:
-		{
-
-			idVec3 forward = axis[0];
-			forward.Normalize();
-			const float scaleOffset = 4.0f;
-			forward *= scaleOffset;
-			origin += forward;
-			break;
-
-		}
-
-        case WEAPON_PLASMAGUN:
-        {
-            // the barrel of the plasma rifle is angled down by default, bring it up a little so it shoots straight.
-            const idMat3 adj = idAngles( 0.0f, 4.0f, 0.0f ).ToMat3();
-            axis = adj * axis;
-            break;
-        }
-    }
-
-    return true;
-
-}
-
-/*
-================
-idWeapon::GetProjectileLaunchOriginAndAxis
-================
-*/
-void idWeapon::GetProjectileLaunchOriginAndAxis( idVec3& origin, idMat3& axis )
-{
-    assert( owner != NULL );
-    if ( game->isVR )
-    {
-        static weapon_t curWeap = WEAPON_NONE;
-
-        // Koz debug common->Printf( "GPLOAA getting muzzle position w/ hacks\n" ); // Koz delete me
-        GetMuzzlePositionWithHacks( origin, axis );
-
-        curWeap = IdentifyWeapon();
-
-        switch ( curWeap )
-        {
-            case WEAPON_BFG:
-            {
-                // BFG pitches up when fired before the projectile is launched.
-                // Hack to correct pitch so projectile doesn't shoot high.
-                static idMat3 bfgCorrection = idAngles( 0.0, -15.0, 0.0 ).ToMat3();
-                axis = bfgCorrection * axis;
-
-            }
-                break;
-
-            case WEAPON_HANDGRENADE:
-            {
-                // if using motion controls, the muzzle axis should be the tracked direction of
-                // hand movement, not the barrel axis. (unless the controller is mounted on something like a topshot, then you have a grenade launcher.)
-                if ( commonVr->VR_USE_MOTION_CONTROLS && !vr_mountedWeaponController.GetBool() )
-                {
-                    axis = owner->hands[GetHand()].throwDirection.ToMat3();
-                    break;
-                }
-            }
-            default:
-                break;
-
-        }
-        return;
-    }
-
-    // calculate the muzzle position
-    if( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) )
-    {
-        // there is an explicit joint for the muzzle
-        // GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
-        GetMuzzlePositionWithHacks( origin, axis );
-    }
-    else
-    {
-        // go straight out of the view
-        origin = playerViewOrigin;
-        axis = playerViewAxis;
-    }
-
-    axis = playerViewAxis;	// Fix for plasma rifle not firing correctly on initial shot of a burst fire
-}
-
 /*
 ================
 idWeapon::SetPushVelocity
@@ -2165,11 +1290,7 @@ idWeapon::LowerWeapon
 ================
 */
 void idWeapon::LowerWeapon( void ) {
-
-    if ( game->isVR && commonVr->handInGui ) return;// Koz never lower weapon if hand is in gui
-    if ( !owner->GuiActive() && !gameLocal.inCinematic ) return;
-
-    if ( !hide ) {
+	if ( !hide ) {
 		hideStart	= 0.0f;
 		hideEnd		= hideDistance;
 		if ( gameLocal.time - hideStartTime < hideTime ) {
@@ -2277,7 +1398,7 @@ void idWeapon::OwnerDied( void ) {
 idWeapon::BeginAttack
 ================
 */
-void idWeapon::BeginAttack( void ) {
+void idWeapon::BeginAttack( void ) {	
 	if ( status != WP_OUTOFAMMO ) {
 		lastAttack = gameLocal.time;
 	}
@@ -2287,31 +1408,11 @@ void idWeapon::BeginAttack( void ) {
 	}
 
 	if ( !WEAPON_ATTACK ) {
-		if ( sndHum )  {
+		if ( sndHum ) {
 			StopSound( SND_CHANNEL_BODY, false );
 		}
 	}
 	WEAPON_ATTACK = true;
-
-	int position = vr_weaponHand.GetInteger() ? 1 : 2;
-
-	vrClientInfo *pVRClientInfo = owner->GetVRClientInfo();
-
-    weapon_t currentWeapon = WEAPON_NONE;
-    currentWeapon = IdentifyWeapon();
-    if (currentWeapon == WEAPON_HANDGRENADE)
-    {
-        common->HapticEvent("handgrenade_init", position, 0, 100, 0, 0);
-    }
-    if (currentWeapon == WEAPON_CHAINGUN)
-    {
-		position = commonVr->GetWeaponStabilised() ? 4 : position;
-		common->HapticEvent("chaingun_init", position, 0, 100, 0, 0);
-    }
-    if (currentWeapon == WEAPON_BFG)
-    {
-        common->HapticEvent("bfg_init", position, 0, 100, 0, 0);
-    }
 }
 
 /*
@@ -2325,15 +1426,8 @@ void idWeapon::EndAttack( void ) {
 	}
 	if ( WEAPON_ATTACK ) {
 		WEAPON_ATTACK = false;
-		if( sndHum )  {	// _D3XP :: don't stop grabber hum
+		if ( sndHum ) {
 			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
-		}
-
-		weapon_t currentWeapon = WEAPON_NONE;
-		currentWeapon = IdentifyWeapon();
-		if (currentWeapon == WEAPON_CHAINSAW)
-		{
-			common->HapticEvent("chainsaw_idle", vr_weaponHand.GetInteger() ? 1 : 2, 1, 100, 0, 0);
 		}
 	}
 }
@@ -2619,7 +1713,7 @@ void idWeapon::MuzzleRise( idVec3 &origin, idMat3 &axis ) {
 	if ( time > muzzle_kick_maxtime ) {
 		time = muzzle_kick_maxtime;
 	}
-
+	
 	amount = ( float )time / ( float )muzzle_kick_maxtime;
 	ang		= muzzle_kick_angles * amount;
 	offset	= muzzle_kick_offset * amount;
@@ -2676,7 +1770,7 @@ void idWeapon::DeconstructScriptObject( void ) {
 	if ( !thread ) {
 		return;
 	}
-
+	
 	// don't bother calling the script object's destructor on map shutdown
 	if ( gameLocal.GameState() == GAMESTATE_SHUTDOWN ) {
 		return;
@@ -2778,292 +1872,144 @@ void idWeapon::AlertMonsters( void ) {
 
 /*
 ================
-idWeapon::CalculateHideRise
-================
-*/
-void idWeapon::CalculateHideRise( idVec3& origin, idMat3& axis )
-{
-// hide offset is for dropping the gun when approaching a GUI or NPC
-// This is simpler to manage than doing the weapon put-away animation
-	if ( gameLocal.time - hideStartTime < hideTime )
-	{
-		float frac = (float)(gameLocal.time - hideStartTime) / (float)hideTime;
-		if ( hideStart < hideEnd )
-		{
-			frac = 1.0f - frac;
-			frac = 1.0f - frac * frac;
-		}
-		else
-		{
-			frac = frac * frac;
-		}
-		hideOffset = hideStart + (hideEnd - hideStart) * frac;
-	}
-	else
-	{
-		hideOffset = hideEnd;
-		if ( hide && disabled )
-		{
-			Hide();
-		}
-	}
-	//viewWeaponOrigin += hideOffset * viewWeaponAxis[2]; // Koz adjust the gui pointer by this offset later
-	//viewWeaponOrigin.z += hideOffset;
-	origin.z += hideOffset;
-	// kick up based on repeat firing
-	MuzzleRise( origin, axis );
-}
-
-/*
-================
 idWeapon::PresentWeapon
 ================
 */
-void idWeapon::PresentWeapon( bool showViewModel, int hand ) {
-
-    worldModel.GetEntity()->GetRenderEntity()->allowSurfaceInViewID = -1;
-
-    playerViewOrigin = owner->firstPersonViewOrigin;
+void idWeapon::PresentWeapon( bool showViewModel ) {
+	playerViewOrigin = owner->firstPersonViewOrigin;
 	playerViewAxis = owner->firstPersonViewAxis;
-    weapon_t currentWeapon = WEAPON_NONE;
-    currentWeapon = IdentifyWeapon();
 
-    if ( isPlayerFlashlight || (hand != vr_weaponHand.GetInteger() && owner->hands[hand].idealWeapon != owner->weapon_pda))
-    {
-        viewWeaponOrigin = playerViewOrigin;
-        viewWeaponAxis = playerViewAxis;
-        owner->CalculateViewFlashlightPos( viewWeaponOrigin, viewWeaponAxis, flashlightOffsets[owner->hands[vr_weaponHand.GetInteger()].currentWeapon] );
-    }
-    else
-    {
-        // calculate weapon position based on player movement bobbing
-        owner->CalculateViewWeaponPos( hand, viewWeaponOrigin, viewWeaponAxis );
-        // Koz hide weapon and muzzlerise was here, now called as weapon::CalculateHideRise in player->CalculateViewWeaponPosition to allow hand animations
-    }
+	// calculate weapon position based on player movement bobbing
+	owner->CalculateViewWeaponPos( viewWeaponOrigin, viewWeaponAxis );
 
-	//HACKADOODLE-DOOO!
-	idMat3 axis = viewWeaponAxis;
-	if (currentWeapon == WEAPON_CHAINSAW)
-	{
-		axis = idAngles(45, 0, 0).ToMat3() * viewWeaponAxis;
+	// hide offset is for dropping the gun when approaching a GUI or NPC
+	// This is simpler to manage than doing the weapon put-away animation
+	if ( gameLocal.time - hideStartTime < hideTime ) {		
+		float frac = ( float )( gameLocal.time - hideStartTime ) / ( float )hideTime;
+		if ( hideStart < hideEnd ) {
+			frac = 1.0f - frac;
+			frac = 1.0f - frac * frac;
+		} else {
+			frac = frac * frac;
+		}
+		hideOffset = hideStart + ( hideEnd - hideStart ) * frac;
+	} else {
+		hideOffset = hideEnd;
+		if ( hide && disabled ) {
+			Hide();
+		}
 	}
+	viewWeaponOrigin += hideOffset * viewWeaponAxis[ 2 ];
 
 #if !HUMANHEAD // called from physics now
 	// kick up based on repeat firing
 	MuzzleRise( viewWeaponOrigin, viewWeaponAxis );
 #endif
 
-    // set the physics position and orientation
-    GetPhysics()->SetOrigin( viewWeaponOrigin );
-    GetPhysics()->SetAxis( axis );
+	// set the physics position and orientation
+	GetPhysics()->SetOrigin( viewWeaponOrigin );
+	GetPhysics()->SetAxis( viewWeaponAxis );
+	UpdateVisuals();
 
-    UpdateVisuals();
+	// update the weapon script
+	UpdateScript();
 
-    // update the weapon script
-    UpdateScript();
+	UpdateGUI();
 
-    UpdateGUI();
+	// update animation
+	UpdateAnimation();
 
-    // update animation
-    UpdateAnimation();
+	// only show the surface in player view
+	renderEntity.allowSurfaceInViewID = owner->entityNumber+1;
 
-    // in VR don't suppress drawing the player's body
-    // also show the viewmodel
-    if ( (hide && disabled) ) // hide the weapon if in a cinematic
-    {
-        renderEntity.allowSurfaceInViewID = -1;
-        showViewModel = false;
-    }    //show the viewmodel in all views - flashlight visibilty set in calcViewFlashPosition
-    else if (!isPlayerFlashlight && !commonVr->handInGui  ) renderEntity.allowSurfaceInViewID = 0; // Koz fixme
-    owner->GetRenderEntity()->suppressSurfaceInViewID = 0;
+	// crunch the depth range so it never pokes into walls this breaks the machine gun gui
+	renderEntity.weaponDepthHack = true;
 
-    // crunch the depth range so it never pokes into walls this breaks the machine gun gui
-    renderEntity.weaponDepthHack = g_useWeaponDepthHack.GetBool();
+	// present the model
+	if ( showViewModel ) {
+		Present();
+	} else {
+		FreeModelDef();
+	}
 
-    // present the model
-    if ( showViewModel )
-    {
-        Present();
-    }
-    else
-    {
-        FreeModelDef();
-    }
+	if ( worldModel.GetEntity() && worldModel.GetEntity()->GetRenderEntity() ) {
+		// deal with the third-person visible world model
+		// don't show shadows of the world model in first person
+		if ( gameLocal.isMultiplayer || g_showPlayerShadow.GetBool() || pm_thirdPerson.GetBool() ) {
+			worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID	= 0;
+		} else {
+			worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID	= owner->entityNumber+1;
+			worldModel.GetEntity()->GetRenderEntity()->suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + owner->entityNumber;
+		}
+	}
 
-    if ( worldModel.GetEntity() && worldModel.GetEntity()->GetRenderEntity() )
-    {
-        // deal with the third-person visible world model
-        // don't show shadows of the world model in first person
-        if ( g_showPlayerShadow.GetBool() || pm_thirdPerson.GetBool() || game->isVR ) // Koz fixme only in vr
-        {
-            worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID = 0;
-        }
-        else
-        {
-            worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID = owner->entityNumber + 1;
-            worldModel.GetEntity()->GetRenderEntity()->suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + owner->entityNumber;
-        }
-    }
+	if ( nozzleFx ) {
+		UpdateNozzleFx();
+	}
 
-    if ( nozzleFx )
-    {
-        UpdateNozzleFx();
-    }
+	// muzzle smoke
+	if ( showViewModel && !disabled && weaponSmoke && ( weaponSmokeStartTime != 0 ) ) {
+		// use the barrel joint if available
+		if ( barrelJointView ) {
+			GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
+		} else {
+			// default to going straight out the view
+			muzzleOrigin = playerViewOrigin;
+			muzzleAxis = playerViewAxis;
+		}
+		// spit out a particle
+		if ( !gameLocal.smokeParticles->EmitSmoke( weaponSmoke, weaponSmokeStartTime, gameLocal.random.RandomFloat(), muzzleOrigin, muzzleAxis ) ) {
+			weaponSmokeStartTime = ( continuousSmoke ) ? gameLocal.time : 0;
+		}
+	}
 
-    // muzzle smoke
-    if ( showViewModel && !disabled && weaponSmoke && (weaponSmokeStartTime != 0) )
-    {
-        // use the barrel joint if available
+	if ( showViewModel && strikeSmoke && strikeSmokeStartTime != 0 ) {
+		// spit out a particle
+		if ( !gameLocal.smokeParticles->EmitSmoke( strikeSmoke, strikeSmokeStartTime, gameLocal.random.RandomFloat(), strikePos, strikeAxis ) ) {
+			strikeSmokeStartTime = 0;
+		}
+	}
 
-        if ( smokeJointView != INVALID_JOINT )
-        {
-            GetGlobalJointTransform( true, smokeJointView, muzzleOrigin, muzzleAxis );
-        }
-        else if ( barrelJointView != INVALID_JOINT )
-        {
-            GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
-        }
-        else
-        {
-            // default to going straight out the view
-            muzzleOrigin = playerViewOrigin;
-            muzzleAxis = playerViewAxis;
-        }
-        // spit out a particle
-	    if (!gameLocal.smokeParticles->EmitSmoke(weaponSmoke, weaponSmokeStartTime, gameLocal.random.RandomFloat(), muzzleOrigin, muzzleAxis)) {
-            weaponSmokeStartTime = (continuousSmoke) ? gameLocal.time : 0;
-        }
-    }
+	// remove the muzzle flash light when it's done
+	if ( ( !lightOn && ( gameLocal.time >= muzzleFlashEnd ) ) || IsHidden() ) {
+		if ( muzzleFlashHandle != -1 ) {
+			gameRenderWorld->FreeLightDef( muzzleFlashHandle );
+			muzzleFlashHandle = -1;
+		}
+		if ( worldMuzzleFlashHandle != -1 ) {
+			gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
+			worldMuzzleFlashHandle = -1;
+		}
+	}
 
-    if ( showViewModel && strikeSmoke && strikeSmokeStartTime != 0 )
-    {
-        // spit out a particle
-	    if (!gameLocal.smokeParticles->EmitSmoke(strikeSmoke, strikeSmokeStartTime, gameLocal.random.RandomFloat(), strikePos, strikeAxis)) {
-            strikeSmokeStartTime = 0;
-        }
-    }
+	// update the muzzle flash light, so it moves with the gun
+	if ( muzzleFlashHandle != -1 ) {
+		UpdateFlashPosition();
+		gameRenderWorld->UpdateLightDef( muzzleFlashHandle, &muzzleFlash );
+		gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
 
-    if ( showViewModel && !hide )
-    {
-        for ( int i = 0; i < weaponParticles.Num(); i++ )
-        {
-            WeaponParticle_t* part = weaponParticles.GetIndex( i );
+		// wake up monsters with the flashlight
+		if ( !gameLocal.isMultiplayer && lightOn && !owner->fl.notarget ) {
+			AlertMonsters();
+		}
+	}
 
-            if ( part->active )
-            {
-                if ( part->smoke )
-                {
-                    if ( part->joint != INVALID_JOINT )
-                    {
-                        GetGlobalJointTransform( true, part->joint, muzzleOrigin, muzzleAxis );
-                    }
-                    else
-                    {
-                        // default to going straight out the view
-                        muzzleOrigin = playerViewOrigin;
-                        muzzleAxis = playerViewAxis;
-                    }
-	                if (!gameLocal.smokeParticles->EmitSmoke(part->particle, part->startTime, gameLocal.random.RandomFloat(), muzzleOrigin, muzzleAxis)) {
-                        part->active = false;	// all done
-                        part->startTime = 0;
-                    }
-                }
-                else
-                {
-                    if ( part->emitter != NULL )
-                    {
-                        //Manually update the position of the emitter so it follows the weapon
-                        renderEntity_t* rendEnt = part->emitter->GetRenderEntity();
-                        GetGlobalJointTransform( true, part->joint, rendEnt->origin, rendEnt->axis );
+	// update the gui light
+	if ( guiLight.lightRadius[0] && guiLightJointView != INVALID_JOINT ) {
+		GetGlobalJointTransform( true, guiLightJointView, guiLight.origin, guiLight.axis );
 
-                        if ( part->emitter->GetModelDefHandle() != -1 )
-                        {
-                            gameRenderWorld->UpdateEntityDef( part->emitter->GetModelDefHandle(), rendEnt );
-                        }
-                    }
-                }
-            }
-        }
+		if ( ( guiLightHandle != -1 ) ) {
+			gameRenderWorld->UpdateLightDef( guiLightHandle, &guiLight );
+		} else {
+			guiLightHandle = gameRenderWorld->AddLightDef( &guiLight );
+		}
+	}
 
-        for ( int i = 0; i < weaponLights.Num(); i++ )
-        {
-            WeaponLight_t* light = weaponLights.GetIndex( i );
+	if ( status != WP_READY && sndHum ) {
+		StopSound( SND_CHANNEL_BODY, false );
+	}
 
-            if ( light->active )
-            {
-
-                GetGlobalJointTransform( true, light->joint, light->light.origin, light->light.axis );
-                if ( (light->lightHandle != -1) )
-                {
-                    gameRenderWorld->UpdateLightDef( light->lightHandle, &light->light );
-                }
-                else
-                {
-                    light->lightHandle = gameRenderWorld->AddLightDef( &light->light );
-                }
-            }
-        }
-    }
-
-    // remove the muzzle flash light when it's done
-    if ( (!lightOn && (gameLocal.time >= muzzleFlashEnd)) || IsHidden() )
-    {
-        if ( muzzleFlashHandle != -1 )
-        {
-            gameRenderWorld->FreeLightDef( muzzleFlashHandle );
-            muzzleFlashHandle = -1;
-        }
-        if ( worldMuzzleFlashHandle != -1 )
-        {
-            gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
-            worldMuzzleFlashHandle = -1;
-        }
-    }
-
-    // update the muzzle flash light, so it moves with the gun
-    if ( muzzleFlashHandle != -1 )
-    {
-        UpdateFlashPosition();
-        gameRenderWorld->UpdateLightDef( muzzleFlashHandle, &muzzleFlash );
-        gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
-
-        // wake up monsters with the flashlight
-        if ( lightOn && !owner->fl.notarget )
-        {
-            AlertMonsters();
-        }
-    }
-
-    // update the gui light
-    if ( guiLight.lightRadius[0] && guiLightJointView != INVALID_JOINT )
-    {
-        GetGlobalJointTransform( true, guiLightJointView, guiLight.origin, guiLight.axis );
-
-        if ( (guiLightHandle != -1) )
-        {
-            gameRenderWorld->UpdateLightDef( guiLightHandle, &guiLight );
-        }
-        else
-        {
-            guiLightHandle = gameRenderWorld->AddLightDef( &guiLight );
-        }
-    }
-
-    if ( status != WP_READY && sndHum )
-    {
-        StopSound( SND_CHANNEL_BODY, false );
-    }
-
-    UpdateSound();
-
-    // constant rumble...
-    float highMagnitude = weaponDef->dict.GetFloat( "controllerConstantShakeHighMag" );
-    int highDuration = weaponDef->dict.GetInt( "controllerConstantShakeHighTime" );
-    float lowMagnitude = weaponDef->dict.GetFloat( "controllerConstantShakeLowMag" );
-    int lowDuration = weaponDef->dict.GetInt( "controllerConstantShakeLowTime" );
-
-    if ( vr_rumbleChainsaw.GetBool() || !commonVr->VR_USE_MOTION_CONTROLS )
-        owner->hands[hand].SetControllerShake( highMagnitude, highDuration, lowMagnitude, lowDuration );
+	UpdateSound();
 }
 
 /*
@@ -3082,8 +2028,7 @@ void idWeapon::EnterCinematic( void ) {
 		WEAPON_RELOAD		= false;
 		WEAPON_NETRELOAD	= false;
 		WEAPON_NETENDRELOAD	= false;
-		if(WEAPON_NETFIRING.IsLinked())
-			WEAPON_NETFIRING	= false;
+		WEAPON_NETFIRING	= false;
 		WEAPON_RAISEWEAPON	= false;
 		WEAPON_LOWERWEAPON	= false;
 	}
@@ -3171,7 +2116,6 @@ ammo_t idWeapon::GetAmmoNumForName( const char *ammoname ) {
 
 	ammoDict = gameLocal.FindEntityDefDict( "ammo_types", false );
 	if ( !ammoDict ) {
-		return 0;
 		gameLocal.Error( "Could not find entity definition for 'ammo_types'\n" );
 	}
 
@@ -3180,31 +2124,7 @@ ammo_t idWeapon::GetAmmoNumForName( const char *ammoname ) {
 	}
 
 	if ( !ammoDict->GetInt( ammoname, "-1", num ) ) {
-		//Lets look in a game specific ammo type definition for the weapon
-		idStr gamedir;
-		int i;
-
-		for (i = 0; i < 2; i++) {
-			if (i == 0) {
-				gamedir = cvarSystem->GetCVarString("fs_game_base");
-			} else if (i == 1) {
-				gamedir = cvarSystem->GetCVarString("fs_game");
-			}
-
-			if (gamedir.Length() > 0) {
-				ammoDict = gameLocal.FindEntityDefDict(va("ammo_types_%s", gamedir.c_str()), false);
-
-				if (ammoDict) {
-					if (ammoDict->GetInt(ammoname, "-1", num)) {
-						break;
-					}
-				}
-			}
-		}
-
-		if (i == 2) {
-			gameLocal.Error("Unknown ammo type '%s'", ammoname);
-		}
+		gameLocal.Error( "Unknown ammo type '%s'", ammoname );
 	}
 
 	if ( ( num < 0 ) || ( num >= AMMO_NUMTYPES ) ) {
@@ -3238,33 +2158,6 @@ const char *idWeapon::GetAmmoNameForNum( ammo_t ammonum ) {
 		kv = ammoDict->GetKeyVal( i );
 		if ( kv->GetValue() == text ) {
 			return kv->GetKey();
-		}
-	}
-
-	// Look in the game specific ammo types
-	idStr gamedir;
-
-	for (i = 0; i < 2; i++) {
-		if (i == 0) {
-			gamedir = cvarSystem->GetCVarString("fs_game_base");
-		} else if (i == 1) {
-			gamedir = cvarSystem->GetCVarString("fs_game");
-		}
-
-		if (gamedir.Length() > 0) {
-			ammoDict = gameLocal.FindEntityDefDict(va("ammo_types_%s", gamedir.c_str()), false);
-
-			if (ammoDict) {
-				num = ammoDict->GetNumKeyVals();
-
-				for (i = 0; i < num; i++) {
-					kv = ammoDict->GetKeyVal(i);
-
-					if (kv->GetValue() == text) {
-						return kv->GetKey();
-					}
-				}
-			}
 		}
 	}
 
@@ -3311,14 +2204,7 @@ int idWeapon::AmmoAvailable( void ) const {
 	if ( owner ) {
 		return owner->inventory.HasAmmo( ammoType, ammoRequired );
 	} else {
-		if( g_infiniteAmmo.GetBool() )
-		{
-			return 10;	// arbitrary number, just so whatever's calling thinks there's sufficient ammo...
-		}
-		else
-		{
-			return 0;
-		}
+		return 0;
 	}
 }
 
@@ -3378,23 +2264,6 @@ int	idWeapon::AmmoRequired( void ) const {
 
 /*
 ================
-idWeapon::AmmoCount
-
-Returns the total number of rounds regardless of the required ammo
-================
-*/
-int idWeapon::AmmoCount() const
-{
-
-	if (owner) {
-		return owner->inventory.HasAmmo(ammoType, 1);
-	} else {
-		return 0;
-	}
-}
-
-/*
-================
 idWeapon::WriteToSnapshot
 ================
 */
@@ -3410,7 +2279,7 @@ void idWeapon::WriteToSnapshot( idBitMsgDelta &msg ) const {
 idWeapon::ReadFromSnapshot
 ================
 */
-void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
+void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {	
 	ammoClip = msg.ReadBits( GetClipBits() ); //HUMANHEAD rww
 	worldModel.SetSpawnId( msg.ReadBits( 32 ) );
 	bool snapLight = msg.ReadBits( 1 ) != 0;
@@ -3424,36 +2293,12 @@ void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 			idealState = "Fire";
 		}
 
-		// immediately switch back to idle
-		if ( WEAPON_NETFIRING && !isFiring ) {
-			idealState = "Idle";
-		}
-
 		WEAPON_NETFIRING = isFiring;
 	}
 
 	if ( snapLight != lightOn ) {
 		Reload();
 	}
-}
-
-/*
-================
-idWeapon::RemoveMuzzleFlashlight
-================
-*/
-void idWeapon::RemoveMuzzleFlashlight()
-{
-    if( muzzleFlashHandle != -1 )
-    {
-        gameRenderWorld->FreeLightDef( muzzleFlashHandle );
-        muzzleFlashHandle = -1;
-    }
-    if( worldMuzzleFlashHandle != -1 )
-    {
-        gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
-        worldMuzzleFlashHandle = -1;
-    }
 }
 
 /*
@@ -3488,11 +2333,11 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			}
 			return true;
 		}
-		default:
-			break;
+		default: {
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
 	}
-
-	return idEntity::ClientReceiveEvent( event, time, msg );
+	return false;
 }
 
 /***********************************************************************
@@ -3535,10 +2380,8 @@ void idWeapon::Event_WeaponState( const char *statename, int blendFrames ) {
 
 	idealState = statename;
 
-	weapon_t currentWeap = IdentifyWeapon();
 	if ( !idealState.Icmp( "Fire" ) ) {
 		isFiring = true;
-
 	} else {
 		isFiring = false;
 	}
@@ -3548,80 +2391,19 @@ void idWeapon::Event_WeaponState( const char *statename, int blendFrames ) {
 }
 
 /*
-================
-idWeapon::FlashlightOn
-================
-*/
-void idWeapon::FlashlightOn()
-{
-    const function_t* func;
-
-    if( !isLinked )
-    {
-        return;
-    }
-
-    func = scriptObject.GetFunction( "TurnOn" );
-    if( !func )
-    {
-        common->Warning( "Can't find function 'TurnOn' in object '%s'", scriptObject.GetTypeName() );
-        return;
-    }
-
-    // use the frameCommandThread since it's safe to use outside of framecommands
-    gameLocal.frameCommandThread->CallFunction( this, func, true );
-    gameLocal.frameCommandThread->Execute();
-
-    return;
-}
-
-
-/*
-================
-idWeapon::FlashlightOff
-================
-*/
-void idWeapon::FlashlightOff()
-{
-    const function_t* func;
-
-    if( !isLinked )
-    {
-        return;
-    }
-
-    func = scriptObject.GetFunction( "TurnOff" );
-    if( !func )
-    {
-        common->Warning( "Can't find function 'TurnOff' in object '%s'", scriptObject.GetTypeName() );
-        return;
-    }
-
-    // use the frameCommandThread since it's safe to use outside of framecommands
-    gameLocal.frameCommandThread->CallFunction( this, func, true );
-    gameLocal.frameCommandThread->Execute();
-
-    return;
-}
-
-/*
 ===============
 idWeapon::Event_WeaponReady
 ===============
 */
 void idWeapon::Event_WeaponReady( void ) {
-    if (status == WP_RELOAD) {
-        common->HapticEvent("weapon_reload_finish", vr_weaponHand.GetInteger() ? 1 : 2, 0, 100, 0,
-                            0);
-    }
-
-    status = WP_READY;
+	status = WP_READY;
 	if ( isLinked ) {
 		WEAPON_RAISEWEAPON = false;
 	}
 	if ( sndHum ) {
 		StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
 	}
+
 }
 
 /*
@@ -3643,8 +2425,6 @@ idWeapon::Event_WeaponReloading
 */
 void idWeapon::Event_WeaponReloading( void ) {
 	status = WP_RELOAD;
-
-    common->HapticEvent("weapon_reload", vr_weaponHand.GetInteger() ? 1 : 2, 0, 100, 0,0);
 }
 
 /*
@@ -3716,21 +2496,15 @@ void idWeapon::Event_AddToClip( int amount ) {
 		return;
 	}
 
-	int oldAmmo = ammoClip;
-	ammoAvail = owner->inventory.HasAmmo(ammoType, ammoRequired) + AmmoInClip();
-
 	ammoClip += amount;
 	if ( ammoClip > clipSize ) {
 		ammoClip = clipSize;
 	}
 
+	ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
 	if ( ammoClip > ammoAvail ) {
 		ammoClip = ammoAvail;
 	}
-
-	// for shared ammo we need to use the ammo when it is moved into the clip
-	int usedAmmo = ammoClip - oldAmmo;
-	owner->inventory.UseAmmo(ammoType, usedAmmo);
 }
 
 /*
@@ -3740,7 +2514,7 @@ idWeapon::Event_AmmoInClip
 */
 void idWeapon::Event_AmmoInClip( void ) {
 	int ammo = AmmoInClip();
-	idThread::ReturnFloat( ammo );
+	idThread::ReturnFloat( ammo );	
 }
 
 /*
@@ -3749,8 +2523,7 @@ idWeapon::Event_AmmoAvailable
 ===============
 */
 void idWeapon::Event_AmmoAvailable( void ) {
-	int ammoAvail = owner->inventory.HasAmmo(ammoType, ammoRequired);
-	ammoAvail += AmmoInClip();
+	int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -3770,7 +2543,7 @@ idWeapon::Event_ClipSize
 ===============
 */
 void idWeapon::Event_ClipSize( void ) {
-	idThread::ReturnFloat( clipSize );
+	idThread::ReturnFloat( clipSize );	
 }
 
 /*
@@ -3818,7 +2591,7 @@ idWeapon::Event_PlayAnim
 */
 void idWeapon::Event_PlayAnim( int channel, const char *animname ) {
 	int anim;
-
+	
 	anim = animator.GetAnim( animname );
 	if ( !anim ) {
 		gameLocal.Warning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
@@ -3924,12 +2697,6 @@ void idWeapon::Event_SetSkin( const char *skinname ) {
 		skinDecl = declManager->FindSkin( skinname );
 	}
 
-    // Don't update if the skin hasn't changed.
-    if( renderEntity.customSkin == skinDecl && worldModel.GetEntity() != NULL && worldModel.GetEntity()->GetSkin() == skinDecl )
-    {
-        return;
-    }
-
 	renderEntity.customSkin = skinDecl;
 	UpdateVisuals();
 
@@ -3937,7 +2704,7 @@ void idWeapon::Event_SetSkin( const char *skinname ) {
 		worldModel.GetEntity()->SetSkin( skinDecl );
 	}
 
-	if ( gameLocal.isServer && !isPlayerFlashlight) {
+	if ( gameLocal.isServer ) {
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
@@ -4047,27 +2814,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	idVec3			muzzle_pos;
 	idBounds		ownerBounds, projBounds;
 
-    // Koz the shotgun is supposed to be a closeup weapon in the game, but the depth provided in VR really changes
-    // how it feels. IMO, it seems underpowered unless you are on top of an enemy, due to the extreme pellet spread.
-    // This enables an optional 'choke' for the shotgun, by reducing the spread.
-    weapon_t currentWeap;
-
-    currentWeap = IdentifyWeapon();
-	if ( currentWeap == WEAPON_SHOTGUN || currentWeap == WEAPON_SHOTGUN_DOUBLE || currentWeap == WEAPON_SHOTGUN_DOUBLE_MP )
-    {
-        //idPlayer *player;
-        //player = gameLocal.GetLocalPlayer();
-        //if ( 1 || player == owner )
-        //{
-        common->Printf( "Event_LaunchProjectiles spread = %f , ", spread );
-        spread -= 14 * vr_shotgunChoke.GetFloat() / 100.0f;
-        spread = idMath::ClampFloat( 8.0f, 22.0f, spread ); // not too low, or the shotgun gets WAY too powerful at range.
-        common->Printf( "choke spread = %f\n", spread );
-        //}
-    }
-
-    assert( owner != NULL );
-
 	if ( IsHidden() ) {
 		return;
 	}
@@ -4081,18 +2827,19 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	// avoid all ammo considerations on an MP client
 	if ( !gameLocal.isClient ) {
 
-		int ammoAvail = owner->inventory.HasAmmo(ammoType, ammoRequired);
-		if ((clipSize != 0) && (ammoClip <= 0)) {
+		// check if we're out of ammo or the clip is empty
+		int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+		if ( !ammoAvail || ( ( clipSize != 0 ) && ( ammoClip <= 0 ) ) ) {
 			return;
 		}
 
-		// if this is a power ammo weapon ( currently only the bfg ) then make sure
+		// if this is a power ammo weapon ( currently only the bfg ) then make sure 
 		// we only fire as much power as available in each clip
 		if ( powerAmmo ) {
 			// power comes in as a float from zero to max
 			// if we use this on more than the bfg will need to define the max
 			// in the .def as opposed to just in the script so proper calcs
-			// can be done here.
+			// can be done here. 
 			dmgPower = ( int )dmgPower + 1;
 			if ( dmgPower > ammoClip ) {
 				dmgPower = ammoClip;
@@ -4122,17 +2869,14 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	}
 
 	// calculate the muzzle position
-	GetProjectileLaunchOriginAndAxis( muzzleOrigin, muzzleAxis );
-
-	// calculate the muzzle position
-	/*
 	if ( barrelJointView != INVALID_JOINT && projectileDict.GetBool( "launchFromBarrel" ) ) {
 		// there is an explicit joint for the muzzle
 		GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
 	} else {
-		muzzleOrigin = viewWeaponOrigin;
-		muzzleAxis = viewWeaponAxis;
-	}*/
+		// go straight out of the view
+		muzzleOrigin = playerViewOrigin;
+		muzzleAxis = playerViewAxis;
+	}
 
 	// add some to the kick time, incrementally moving repeat firing weapons back
 	if ( kick_endtime < gameLocal.realClientTime ) {
@@ -4143,192 +2887,16 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		kick_endtime = gameLocal.realClientTime + muzzle_kick_maxtime;
 	}
 
-	// "Predict" damage effects on clients by just spawning a local projectile that deals no damage. Used only
-	// for sound & visual effects. Damage will be handled through reliable messages to the host.
-	const bool isHitscan = projectileDict.GetBool( "net_instanthit" );
-	const bool attackerIsLocal = owner->IsLocallyControlled();
-	const bool actuallySpawnProjectile = gameLocal.isServer || attackerIsLocal || isHitscan;
-
-	if( actuallySpawnProjectile )
-	{
-		ownerBounds = owner->GetPhysics()->GetAbsBounds();
-
-		owner->AddProjectilesFired( num_projectiles );
-
-		float spreadRad = DEG2RAD( spread );
-		for( i = 0; i < num_projectiles; i++ )
-		{
-			ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
-			spin = ( float )DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = muzzleAxis[ 0 ] + muzzleAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - muzzleAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
-			dir.Normalize();
-
-			if( projectileEnt )
-			{
-				ent = projectileEnt;
-				ent->Show();
-				ent->Unbind();
-				projectileEnt = NULL;
-			}
-			else
-			{
-				if( gameLocal.isClient )
-				{
-					// This is predicted on a client, don't replicate.
-					// Must be set before spawn, so that the entity can be spawned into the correct area of the entities array.
-					projectileDict.SetBool( "net_skip_replication", true );
-				}
-				else
-				{
-					projectileDict.SetBool( "net_skip_replication", false );
-				}
-				gameLocal.SpawnEntityDef( projectileDict, &ent, false );
-			}
-
-			if( ent == NULL || !ent->IsType( idProjectile::Type ) )
-			{
-				const char* projectileName = weaponDef->dict.GetString( "def_projectile" );
-				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
-				return;
-			}
-
-
-
-			if( projectileDict.GetBool( "net_instanthit" ) )
-			{
-				// don't synchronize this on top of the already predicted effect
-				ent->fl.networkSync = false;
-			}
-			else if( owner != NULL )
-			{
-				/*
-				int predictedKey = idEntity::INVALID_PREDICTION_KEY;
-				// Set the prediction key only for non-instanthit projectiles.
-				if( gameLocal.isClient )
-				{
-					owner->IncrementFireCount();
-				}
-				predictedKey = gameLocal.GeneratePredictionKey( this, owner, -1 );
-				ent->SetPredictedKey( predictedKey );*/
-			}
-
-			proj = static_cast<idProjectile*>( ent );
-			proj->Create( owner, muzzleOrigin, dir );
-
-			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
-
-			// make sure the projectile starts inside the bounding box of the owner
-			// Carl: unless it's a grenade, in which case we want to be able to drop it over a railing without inexplicably killing ourselves
-			if( IdentifyWeapon() == WEAPON_HANDGRENADE && game->isVR && commonVr->VR_USE_MOTION_CONTROLS && i == 0 )
-			{
-				muzzle_pos = muzzleOrigin + muzzleAxis[ 0 ] * 2.0f;
-				// Carl: check that there's a grenade-sized gap at hand height from the center of our chest to our grenade,
-				// so we can drop grenades over a railing, but not through a solid wall or glass window.
-				// Ideally start should be our right shoulder at grenade height, but I'm not sure how to get that.
-				start = ownerBounds.GetCenter();
-				start.z = muzzleOrigin.z;
-				// MASK_SHOT_RENDERMODEL goes through chainlink fences, but a grenade shouldn't.
-				gameLocal.clip.Translation(tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL | CONTENTS_PLAYERCLIP, owner);
-				// Try reaching down from neck height if sticking our hand out straight doesn't work.
-				// Ideally this should be our right shoulder at shoulder height, but I'm not sure how to get that.
-				if ( tr.fraction < 1.0f )
-				{
-					start.z = commonVr->lastHMDViewOrigin.z - 6;
-					gameLocal.clip.Translation(tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL | CONTENTS_PLAYERCLIP, owner);
-				}
-				muzzle_pos = tr.endpos;
-			}
-			else if( i == 0 )
-			{
-				muzzle_pos = muzzleOrigin + muzzleAxis[ 0 ] * 2.0f;
-				if( ( ownerBounds - projBounds ).RayIntersection( muzzle_pos, muzzleAxis[0], distance ) )
-				{
-					start = muzzle_pos + distance * muzzleAxis[0];
-				}
-				else
-				{
-					start = ownerBounds.GetCenter();
-				}
-				gameLocal.clip.Translation( tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
-				muzzle_pos = tr.endpos;
-			}
-
-			// Koz if throwing a grenade use the tracked hand velocity when using motion controls if the controller is not mounted
-			// Carl: Dual Wielding
-			float speed = 0;
-			if( IdentifyWeapon() == WEAPON_HANDGRENADE && game->isVR && commonVr->VR_USE_MOTION_CONTROLS && !vr_mountedWeaponController.GetBool() )
-			{
-				int h = GetHand();
-				if( h >= 0 )
-					speed = owner->hands[ h ].throwVelocity * vr_throwPower.GetFloat();
-			}
-			// Koz end
-
-			// Normal launch
-			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower, speed );
-
-			int position = vr_weaponHand.GetInteger() ? 1 : 2;
-
-			if (currentWeap == WEAPON_PISTOL)
-            {
-				position = commonVr->GetWeaponStabilised() ? 4 : position;
-			    common->HapticEvent("pistol_fire", position, 0, 100, 0, 0);
-            }
-			if (currentWeap == WEAPON_SHOTGUN)
-            {
-				position = commonVr->GetWeaponStabilised() ? 4 : position;
-			    common->HapticEvent("shotgun_fire",  position, 0, 100, 0, 0);
-            }
-			if (currentWeap == WEAPON_PLASMAGUN)
-            {
-				position = commonVr->GetWeaponStabilised() ? 4 : position;
-			    common->HapticEvent("plasmagun_fire",  position, 0, 100, 0, 0);
-            }
-			if (currentWeap == WEAPON_HANDGRENADE)
-            {
-			    common->HapticEvent("handgrenade_fire",  position, 0, 100, 0, 0);
-            }
-			if (currentWeap == WEAPON_MACHINEGUN)
-            {
-				position = commonVr->GetWeaponStabilised() ? 4 : position;
-			    common->HapticEvent("machinegun_fire",  position, 0, 100, 0, 0);
-            }
-			if (currentWeap == WEAPON_CHAINGUN)
-            {
-				position = commonVr->GetWeaponStabilised() ? 4 : position;
-			    common->HapticEvent("chaingun_fire",  position, 0, 100, 0, 0);
-            }
-			if (currentWeap == WEAPON_BFG)
-            {
-			    common->HapticEvent("bfg_fire",  position, 0, 100, 0, 0);
-            }
-			if (currentWeap == WEAPON_ROCKETLAUNCHER)
-            {
-				position = commonVr->GetWeaponStabilised() ? 4 : position;
-			    common->HapticEvent("rocket_fire",  position, 0, 100, 0, 0);
-            }
-
-		}
-
-		// toss the brass
-		if( brassDelay >= 0 )
-		{
-			PostEventMS( &EV_Weapon_EjectBrass, brassDelay );
-		}
-	}
-
-	/*if ( gameLocal.isClient ) {
+	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
 		if ( projectileDict.GetBool( "net_instanthit" ) ) {
 			float spreadRad = DEG2RAD( spread );
-			//muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
-			muzzle_pos = muzzleOrigin + viewWeaponAxis[ 0 ] * 2.0f;
+			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
 			for( i = 0; i < num_projectiles; i++ ) {
 				ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
 				spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-
-				dir = viewWeaponAxis[ 0 ] + viewWeaponAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - viewWeaponAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+				dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
 				dir.Normalize();
 				gameLocal.clip.Translation( tr, muzzle_pos, muzzle_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
 				if ( tr.fraction < 1.0f ) {
@@ -4347,37 +2915,8 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		for( i = 0; i < num_projectiles; i++ ) {
 			ang = idMath::Sin( spreadRad * idMath::Sin( gameLocal.random.RandomFloat() ) );	// HUMANHEAD bjk: uniform distro
 			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = muzzleAxis[ 0 ] + muzzleAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - muzzleAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+			dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
 			dir.Normalize();
-
-
-			/* vrClientInfo *pVRClientInfo = owner->GetVRClientInfo();
-			 * if (owner->GetCurrentWeaponId() == WEAPON_HANDGRENADE &&
-				pVRClientInfo != nullptr &&
-				vr_throwables.GetBool())
-			{
-				idVec3	releaseOffset( -pVRClientInfo->throw_origin[2],
-										 -pVRClientInfo->throw_origin[0],
-										 pVRClientInfo->throw_origin[1]);
-				idAngles a(0, owner->viewAngles.yaw - pVRClientInfo->hmdorientation[YAW], 0);
-				releaseOffset *= a.ToMat3();
-				releaseOffset *= ((100.0f / 2.54f) * vr_scale.GetFloat());
-				muzzle_pos = owner->firstPersonViewOrigin + releaseOffset;
-
-				idVec3	throw_direction( -pVRClientInfo->throw_trajectory[2],
-										   -pVRClientInfo->throw_trajectory[0],
-										   pVRClientInfo->throw_trajectory[1]);
-				throw_direction *= a.ToMat3();
-				throw_direction.Normalize();
-				dir = throw_direction;
-
-				launchPower = pVRClientInfo->throw_power * 0.5f;
-			} else {
-				dir = viewWeaponAxis[0] + viewWeaponAxis[2] * (ang * idMath::Sin(spin)) -
-					  viewWeaponAxis[1] * (ang * idMath::Cos(spin));
-
-				dir.Normalize();
-			}***
 
 			if ( projectileEnt ) {
 				ent = projectileEnt;
@@ -4403,316 +2942,34 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
 
-			if (owner->GetCurrentWeaponId() != WEAPON_HANDGRENADE ||
-				!vr_throwables.GetBool()) {
-				// make sure the projectile starts inside the bounding box of the owner
-				if (i == 0) {
-					//muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
-					muzzle_pos = muzzleOrigin + viewWeaponAxis[0] * 2.0f;
-					// DG: sometimes the assertion in idBounds::operator-(const idBounds&) triggers
-					//     (would get bounding box with negative volume)
-					//     => check that before doing ownerBounds - projBounds (equivalent to the check in the assertion)
-					idVec3 obDiff = ownerBounds[1] - ownerBounds[0];
-					idVec3 pbDiff = projBounds[1] - projBounds[0];
-					bool boundsSubLegal =
-							obDiff.x > pbDiff.x && obDiff.y > pbDiff.y && obDiff.z > pbDiff.z;
-					if (boundsSubLegal &&
-						(ownerBounds - projBounds).RayIntersection(muzzle_pos, viewWeaponAxis[0],
-																   distance)) {
-						//start = muzzle_pos + distance * playerViewAxis[0];
-						start = muzzle_pos + distance * viewWeaponAxis[0];
-					} else {
-						start = ownerBounds.GetCenter();
-					}
-					gameLocal.clip.Translation(tr, start, muzzle_pos,
-											   proj->GetPhysics()->GetClipModel(),
-											   proj->GetPhysics()->GetClipModel()->GetAxis(),
-											   MASK_SHOT_RENDERMODEL, owner);
-					muzzle_pos = tr.endpos;
+			// make sure the projectile starts inside the bounding box of the owner
+			if ( i == 0 ) {
+				muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
+				if ( ( ownerBounds - projBounds).RayIntersection( muzzle_pos, playerViewAxis[0], distance ) ) {
+					start = muzzle_pos + distance * playerViewAxis[0];
+				} else {
+					start = ownerBounds.GetCenter();
 				}
+				gameLocal.clip.Translation( tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
+				muzzle_pos = tr.endpos;
 			}
 
-            proj->Launch(muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower);
+			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
 		}
 
 		// toss the brass
 		PostEventMS( &EV_Weapon_EjectBrass, brassDelay );
-	}*/
+	}
 
 	// add the light for the muzzleflash
 	if ( !lightOn ) {
 		MuzzleFlashLight();
 	}
 
-	owner->WeaponFireFeedback( GetHand(), &weaponDef->dict );
+	owner->WeaponFireFeedback( &weaponDef->dict );
 
 	// reset muzzle smoke
 	weaponSmokeStartTime = gameLocal.realClientTime;
-}
-
-/*
-================
-idWeapon::Event_LaunchProjectilesEllipse
-================
-*/
-void idWeapon::Event_LaunchProjectilesEllipse(int num_projectiles, float spreada, float spreadb, float fuseOffset, float power)
-{
-	idProjectile	*proj;
-	idEntity		*ent;
-	int				i;
-	idVec3			dir;
-	float			anga, angb;
-	float			spin;
-	float			distance;
-	trace_t			tr;
-	idVec3			start;
-	idVec3			muzzle_pos;
-	idBounds		ownerBounds, projBounds;
-
-	if (IsHidden()) {
-		return;
-	}
-
-	if (!projectileDict.GetNumKeyVals()) {
-		const char *classname = weaponDef->dict.GetString("classname");
-		gameLocal.Warning("No projectile defined on '%s'", classname);
-		return;
-	}
-
-	// avoid all ammo considerations on a client
-	if (!gameLocal.isClient) {
-
-		int ammoAvail = owner->inventory.HasAmmo(ammoType, ammoRequired);
-
-		if ((clipSize != 0) && (ammoClip <= 0)) {
-			return;
-		}
-
-		if (clipSize == 0) {
-			//Weapons with a clip size of 0 launch strait from inventory without moving to a clip
-			owner->inventory.UseAmmo(ammoType, ammoRequired);
-		}
-
-		if (clipSize && ammoRequired) {
-			ammoClip -= ammoRequired;
-		}
-
-		if (!silent_fire) {
-			// wake up nearby monsters
-			gameLocal.AlertAI(owner);
-		}
-
-	}
-
-	// set the shader parm to the time of last projectile firing,
-	// which the gun material shaders can reference for single shot barrel glows, etc
-	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC(gameLocal.time);
-
-	if (worldModel.GetEntity()) {
-		worldModel.GetEntity()->SetShaderParm(SHADERPARM_DIVERSITY, renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]);
-		worldModel.GetEntity()->SetShaderParm(SHADERPARM_TIMEOFFSET, renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]);
-	}
-
-	// calculate the muzzle position
-	if (barrelJointView != INVALID_JOINT && projectileDict.GetBool("launchFromBarrel")) {
-		// there is an explicit joint for the muzzle
-		GetGlobalJointTransform(true, barrelJointView, muzzleOrigin, muzzleAxis);
-	} else {
-		// go straight out of the view
-		muzzleOrigin = playerViewOrigin;
-		muzzleAxis = playerViewAxis;
-	}
-
-	// add some to the kick time, incrementally moving repeat firing weapons back
-	if (kick_endtime < gameLocal.time) {
-		kick_endtime = gameLocal.time;
-	}
-
-	kick_endtime += muzzle_kick_time;
-
-	if (kick_endtime > gameLocal.time + muzzle_kick_maxtime) {
-		kick_endtime = gameLocal.time + muzzle_kick_maxtime;
-	}
-
-	if (!gameLocal.isClient) {
-		ownerBounds = owner->GetPhysics()->GetAbsBounds();
-
-		owner->AddProjectilesFired(num_projectiles);
-
-		float spreadRadA = DEG2RAD(spreada);
-		float spreadRadB = DEG2RAD(spreadb);
-
-		for (i = 0; i < num_projectiles; i++) {
-			//Ellipse Form
-			spin = (float)DEG2RAD(360.0f) * gameLocal.random.RandomFloat();
-			anga = idMath::Sin(spreadRadA * gameLocal.random.RandomFloat());
-			angb = idMath::Sin(spreadRadB * gameLocal.random.RandomFloat());
-			dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * (angb*idMath::Sin(spin)) - playerViewAxis[ 1 ] * (anga*idMath::Cos(spin));
-			dir.Normalize();
-
-			gameLocal.SpawnEntityDef(projectileDict, &ent);
-
-			if (!ent || !ent->IsType(idProjectile::Type)) {
-				const char *projectileName = weaponDef->dict.GetString("def_projectile");
-				gameLocal.Error("'%s' is not an idProjectile", projectileName);
-			}
-
-			proj = static_cast<idProjectile *>(ent);
-			proj->Create(owner, muzzleOrigin, dir);
-
-			projBounds = proj->GetPhysics()->GetBounds().Rotate(proj->GetPhysics()->GetAxis());
-
-			// make sure the projectile starts inside the bounding box of the owner
-			if (i == 0) {
-				muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
-
-				if ((ownerBounds - projBounds).RayIntersection(muzzle_pos, playerViewAxis[0], distance)) {
-					start = muzzle_pos + distance * playerViewAxis[0];
-				} else {
-					start = ownerBounds.GetCenter();
-				}
-
-				gameLocal.clip.Translation(tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, owner);
-				muzzle_pos = tr.endpos;
-			}
-
-			proj->Launch(muzzle_pos, dir, pushVelocity, fuseOffset, power);
-		}
-
-		// toss the brass
-		if (brassDelay >= 0) {
-			PostEventMS(&EV_Weapon_EjectBrass, brassDelay);
-		}
-	}
-
-	// add the light for the muzzleflash
-	if (!lightOn) {
-		MuzzleFlashLight();
-	}
-
-	owner->WeaponFireFeedback(vr_weaponHand.GetInteger(), &weaponDef->dict);
-
-	// reset muzzle smoke
-	weaponSmokeStartTime = gameLocal.time;
-
-}
-
-/**
-* Gives the player a powerup as if it were a weapon shot. It will use the ammo amount specified
-* as ammoRequired.
-*/
-void idWeapon::Event_LaunchPowerup(const char *powerup, float duration, int useAmmo)
-{
-
-	if (IsHidden()) {
-		return;
-	}
-
-	// check if we're out of ammo
-	if (useAmmo) {
-		int ammoAvail = owner->inventory.HasAmmo(ammoType, ammoRequired);
-
-		if (!ammoAvail) {
-			return;
-		}
-
-		owner->inventory.UseAmmo(ammoType, ammoRequired);
-	}
-
-	// set the shader parm to the time of last projectile firing,
-	// which the gun material shaders can reference for single shot barrel glows, etc
-	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC(gameLocal.time);
-
-	if (worldModel.GetEntity()) {
-		worldModel.GetEntity()->SetShaderParm(SHADERPARM_DIVERSITY, renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]);
-		worldModel.GetEntity()->SetShaderParm(SHADERPARM_TIMEOFFSET, renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]);
-	}
-
-	// add the light for the muzzleflash
-	if (!lightOn) {
-		MuzzleFlashLight();
-	}
-
-	owner->Give(powerup, va("%f", duration));
-
-
-}
-
-void idWeapon::Event_StartWeaponSmoke()
-{
-
-	// reset muzzle smoke
-	weaponSmokeStartTime = gameLocal.time;
-}
-
-void idWeapon::Event_StopWeaponSmoke()
-{
-
-	// reset muzzle smoke
-	weaponSmokeStartTime = 0;
-}
-
-void idWeapon::Event_StartWeaponParticle(const char *name)
-{
-	WeaponParticle_t *part;
-	weaponParticles.Get(name, &part);
-
-	if (part) {
-		part->active = true;
-		part->startTime = gameLocal.time;
-
-		//Toggle the emitter
-		if (!part->smoke) {
-			part->emitter->Show();
-			part->emitter->PostEventMS(&EV_Activate, 0, this);
-		}
-	}
-}
-
-void idWeapon::Event_StopWeaponParticle(const char *name)
-{
-	WeaponParticle_t *part;
-	weaponParticles.Get(name, &part);
-
-	if (part) {
-		part->active = false;
-		part->startTime = 0;
-
-		//Toggle the emitter
-		if (!part->smoke) {
-			part->emitter->Hide();
-			part->emitter->PostEventMS(&EV_Activate, 0, this);
-		}
-	}
-}
-
-void idWeapon::Event_StartWeaponLight(const char *name)
-{
-	WeaponLight_t *light;
-	weaponLights.Get(name, &light);
-
-	if (light) {
-		light->active = true;
-		light->startTime = gameLocal.time;
-	}
-}
-
-void idWeapon::Event_StopWeaponLight(const char *name)
-{
-	WeaponLight_t *light;
-	weaponLights.Get(name, &light);
-
-	if (light) {
-		light->active = false;
-		light->startTime = 0;
-
-		if (light->lightHandle != -1) {
-			gameRenderWorld->FreeLightDef(light->lightHandle);
-			light->lightHandle = -1;
-		}
-	}
 }
 
 /*
@@ -4728,19 +2985,8 @@ void idWeapon::Event_Melee( void ) {
 		gameLocal.Error( "No meleeDef on '%s'", weaponDef->dict.GetString( "classname" ) );
 	}
 
-	weapon_t currentWeapon = IdentifyWeapon();
-	if (currentWeapon == WEAPON_FISTS)
-	{
-		common->HapticEvent("punch", 2 - GetHand(), 0, 100, 0, 0);
-	}
-	if (currentWeapon == WEAPON_CHAINSAW)
-	{
-		common->HapticStopEvent("chainsaw_idle");
-		common->HapticEvent("chainsaw_fire", vr_weaponHand.GetInteger() ? 1 : 2, 0, 100, 0, 0);
-	}
-
 	if ( !gameLocal.isClient ) {
-		idVec3 start = viewWeaponOrigin;
+		idVec3 start = playerViewOrigin;
 		idVec3 end = start + playerViewAxis[0] * ( meleeDistance /* * owner->PowerUpModifier( MELEE_DISTANCE )*/ );	// HUMANHEAD pdm: not used
 		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
 		if ( tr.fraction < 1.0f ) {
@@ -4775,12 +3021,9 @@ void idWeapon::Event_Melee( void ) {
 			if ( gameLocal.isMultiplayer
 				&& weaponDef && weaponDef->dict.GetBool( "stealing" )
 				&& ent->IsType( idPlayer::Type )
-			       //				&& !owner->PowerUpActive( BERSERK )	// HUMANHEAD pdm: not used
+//				&& !owner->PowerUpActive( BERSERK )	// HUMANHEAD pdm: not used
 				&& ( gameLocal.gameType != GAME_TDM || gameLocal.serverInfo.GetBool( "si_teamDamage" ) || ( owner->team != static_cast< idPlayer * >( ent )->team ) )
 				) {
-				if (gameLocal.mpGame.IsGametypeFlagBased()) {
-					/* Do nothing ... */
-				} else
 				owner->StealWeapon( static_cast< idPlayer * >( ent ) );
 			}
 
@@ -4788,14 +3031,7 @@ void idWeapon::Event_Melee( void ) {
 				idVec3 kickDir, globalKickDir;
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
-				float mod = owner->PowerUpModifier(MELEE_DAMAGE);
-
-				if (!strcmp(ent->GetEntityDefName(), "monster_hunter_invul")) {
-					//Only do a quater of the damage mod
-					mod *= 0.25f;
-				}
-
-				ent->Damage(owner, owner, globalKickDir, meleeDefName, mod, tr.c.id);
+				ent->Damage( owner, owner, globalKickDir, meleeDefName, 1/*owner->PowerUpModifier( MELEE_DAMAGE )*/, tr.c.id );	// HUMANHEAD pdm: not used
 				hit = true;
 			}
 
@@ -4805,6 +3041,7 @@ void idWeapon::Event_Melee( void ) {
 
 // HUMANHEAD pdm: not used
 //					hitSound = meleeDef->dict.GetString( owner->PowerUpActive( BERSERK ) ? "snd_hit_berserk" : "snd_hit" );
+					hitSound = meleeDef->dict.GetString( "snd_hit" );
 
 					ent->AddDamageEffect( tr, impulse, meleeDef->dict.GetString( "classname" ) );
 
@@ -4848,13 +3085,12 @@ void idWeapon::Event_Melee( void ) {
 		}
 
 		idThread::ReturnInt( hit );
-
-		owner->WeaponFireFeedback( GetHand(), &weaponDef->dict );
+		owner->WeaponFireFeedback( &weaponDef->dict );
 		return;
 	}
 
 	idThread::ReturnInt( 0 );
-	owner->WeaponFireFeedback( GetHand(), &weaponDef->dict );
+	owner->WeaponFireFeedback( &weaponDef->dict );
 }
 
 /*
@@ -4915,78 +3151,11 @@ void idWeapon::Event_EjectBrass( void ) {
 	debris->Create( owner, origin, axis );
 	debris->Launch();
 
-    // Koz begin
-    idAngles vwa = viewWeaponAxis.ToAngles();
-    vwa.yaw += 30.0f;
-    idMat3 ba = vwa.Normalize180().ToMat3();
-
-    //linear_velocity = 50 * (viewWeaponAxis[0] + viewWeaponAxis[1] + viewWeaponAxis[2]);
-    linear_velocity = 50 * ( ba[0] + ba[1] + ba[2] );
-
-    // Koz end
-	//linear_velocity = 40 * ( playerViewAxis[0] + playerViewAxis[1] + playerViewAxis[2] );
-	//linear_velocity = 40 * ( viewWeaponAxis[0] + viewWeaponAxis[1] + viewWeaponAxis[2] );
+	linear_velocity = 40 * ( playerViewAxis[0] + playerViewAxis[1] + playerViewAxis[2] );
 	angular_velocity.Set( 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat() );
 
 	debris->GetPhysics()->SetLinearVelocity( linear_velocity );
 	debris->GetPhysics()->SetAngularVelocity( angular_velocity );
-}
-
-/*Koz - what a mess
-===============
-idWeapon::Event_GetWeaponSkin
-===============
-*/
-void idWeapon::Event_GetWeaponSkin()
-{
-	if ( !owner || !game->isVR )
-	{
-		idThread::ReturnString( "" );
-		return;
-	}
-
-	// game is vr, return a string name for the skin matching the hand/statwatch config.
-
-	static idStr vrSkinName;
-
-	// Koz fixme - need to go through all the weapon models and delete the meshes for the hands and statwatch.  Also need to delete all the skin definitions, no longer necessary.
-
-	// this has all changed.  Originally, hands were part of the weapon models, and hands and statwatch were turned on and off
-	// by changing the skin for model.  Now the hands are always drawn as part of the player body, so all the skins
-	// are no longer needed.  The only skin used now is for the mini flashlight when mounted to the weapon.
-
-
-	if ( isPlayerFlashlight )
-	{
-		vrSkinName = ( commonVr->GetCurrentFlashlightMode() == FLASHLIGHT_GUN || commonVr->GetCurrentFlashlightMode() == FLASHLIGHT_PISTOL ) ? "minivr/flashhands/0h" : "vr/flashhands/0h"; // mini flashlight skin for gun mount : normal flashlight skin
-	}
-	else
-	{
-		//vrSkinName = "vr/weaponhands/0h";
-		vrSkinName = "";
-	}
-
-	//common->Printf( "idWeapon::Event_GetWeaponSkin() returning %s\n", vrSkinName.c_str() );
-	idThread::ReturnString( vrSkinName.c_str() );
-
-}
-
-/*
-==================
-idPlayer::Event_IsMotionControlled
-==================
-*/
-void idWeapon::Event_IsMotionControlled()
-{
-	static int isMC;
-
-	//isMC = (game->isVR && commonVr->VR_USE_MOTION_CONTROLS) ? 1 : 0;
-	isMC = 1;
-
-	// Koz debug common->Printf( "Event_IsMotionControlled returning %d\n", isMC );
-	//	idThread::ReturnInt( ( game->isVR && commonVr->VR_USE_MOTION_CONTROLS ) ? 1 : 0 );
-
-	idThread::ReturnInt( isMC );
 }
 
 /*
@@ -5008,5 +3177,5 @@ idWeapon::ClientPredictionThink
 ===============
 */
 void idWeapon::ClientPredictionThink( void ) {
-	UpdateAnimation();
+	UpdateAnimation();	
 }

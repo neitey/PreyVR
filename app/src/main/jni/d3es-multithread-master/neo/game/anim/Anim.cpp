@@ -1,36 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-
-#include "Game_local.h"
-
-#include "anim/Anim.h"
+#include "../Game_local.h"
 
 bool idAnimManager::forceExport = false;
 
@@ -106,14 +80,6 @@ idMD5Anim::Length
 ====================
 */
 int idMD5Anim::Length( void ) const {
-	if ( strstr( name, "idle" ) && strstr( name, "md5/weapons" ) )
-	{
-		// let the idle animations play for the soulcube, artifact, & bloodstone
-		if ( !strstr( name, "soulcube" ) && !strstr( name, "artifact" ) && !strstr( name, "blood_orb" ) )
-		{
-			return 1;	// set anmination length to 1
-		}
-	}
 	return animLength;
 }
 
@@ -225,7 +191,7 @@ bool idMD5Anim::LoadAnim( const char *filename ) {
 	for( i = 0; i < numJoints; i++ ) {
 		parser.ReadToken( &token );
 		jointInfo[ i ].nameIndex = animationLib.JointIndex( token );
-
+		
 		// parse parent num
 		jointInfo[ i ].parentNum = parser.ParseInt();
 		if ( jointInfo[ i ].parentNum >= i ) {
@@ -287,7 +253,7 @@ bool idMD5Anim::LoadAnim( const char *filename ) {
 			parser.Error( "Expected frame number %d", i );
 		}
 		parser.ExpectTokenString( "{" );
-
+		
 		for( j = 0; j < numAnimatedComponents; j++, componentPtr++ ) {
 			*componentPtr = parser.ParseFloat();
 		}
@@ -411,7 +377,7 @@ void idMD5Anim::ConvertTimeToFrame( int time, int cyclecount, frameBlend_t &fram
 		frame.cycleCount	= 0;
 		return;
 	}
-
+	
 	frameTime			= time * frameRate;
 	frameNum			= frameTime / 1000;
 	frame.cycleCount	= frameNum / ( numFrames - 1 );
@@ -424,7 +390,7 @@ void idMD5Anim::ConvertTimeToFrame( int time, int cyclecount, frameBlend_t &fram
 		frame.frontlerp		= 1.0f;
 		return;
 	}
-
+	
 	frame.frame1 = frameNum % ( numFrames - 1 );
 	frame.frame2 = frame.frame1 + 1;
 	if ( frame.frame2 >= numFrames ) {
@@ -445,7 +411,7 @@ void idMD5Anim::GetOrigin( idVec3 &offset, int time, int cyclecount ) const {
 
 	offset = baseFrame[ 0 ].t;
 	if ( !( jointInfo[ 0 ].animBits & ( ANIM_TX | ANIM_TY | ANIM_TZ ) ) ) {
-		// just use the baseframe
+		// just use the baseframe		
 		return;
 	}
 
@@ -483,10 +449,10 @@ idMD5Anim::GetOriginRotation
 void idMD5Anim::GetOriginRotation( idQuat &rotation, int time, int cyclecount ) const {
 	frameBlend_t	frame;
 	int				animBits;
-
+	
 	animBits = jointInfo[ 0 ].animBits;
 	if ( !( animBits & ( ANIM_QX | ANIM_QY | ANIM_QZ ) ) ) {
-		// just use the baseframe
+		// just use the baseframe		
 		rotation = baseFrame[ 0 ].q;
 		return;
 	}
@@ -1193,7 +1159,7 @@ void idAnimManager::ListAnims( void ) const {
 		if ( animptr && *animptr ) {
 			anim = *animptr;
 			s = anim->Size();
-			gameLocal.Printf( "%8zd bytes : %2d refs : %s\n", s, anim->NumRefs(), anim->Name() );
+			gameLocal.Printf( "%8d bytes : %2d refs : %s\n", s, anim->NumRefs(), anim->Name() );
 			size += s;
 			num++;
 		}
@@ -1204,10 +1170,9 @@ void idAnimManager::ListAnims( void ) const {
 		namesize += jointnames[ i ].Size();
 	}
 
-	gameLocal.Printf( "\n%zd memory used in %d anims\n", size, num );
-	gameLocal.Printf( "%zd memory used in %d joint names\n", namesize, jointnames.Num() );
+	gameLocal.Printf( "\n%d memory used in %d anims\n", size, num );
+	gameLocal.Printf( "%d memory used in %d joint names\n", namesize, jointnames.Num() );
 }
-
 
 // HUMANHEAD pdm: print animation memory statistics
 void idAnimManager::PrintMemInfo( MemInfo_t *mi ) {
@@ -1277,7 +1242,7 @@ void idAnimManager::FlushUnusedAnims( void ) {
 	int						i;
 	idMD5Anim				**animptr;
 	idList<idMD5Anim *>		removeAnims;
-
+	
 	for( i = 0; i < animations.Num(); i++ ) {
 		animptr = animations.GetIndex( i );
 		if ( animptr && *animptr ) {

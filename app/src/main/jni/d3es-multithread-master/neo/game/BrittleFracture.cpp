@@ -1,38 +1,11 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/DeclEntityDef.h"
-#include "renderer/ModelManager.h"
-
-#include "Fx.h"
-
-#include "BrittleFracture.h"
 
 CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_Activate, idBrittleFracture::Event_Activate )
@@ -112,7 +85,7 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 	entityFlags_s flags = fl;
 	LittleBitField( &flags, sizeof( flags ) );
 	savefile->Write( &flags, sizeof( flags ) );
-
+	
 	// setttings
 	savefile->WriteMaterial( material );
 	savefile->WriteMaterial( decalMaterial );
@@ -179,6 +152,7 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 	int i, j , num;
 
 	renderEntity.hModel = renderModelManager->AllocModel();
+
 #if _HH_RENDERDEMO_HACKS //HUMANHEAD rww - demos need unique names per fracture entity
 	idStr::snPrintf(uniqueFractureName, 64, "%s_%i", brittleFracture_SnapshotName, brittleFractureUniqueNum);
 	brittleFractureUniqueNum++;
@@ -190,7 +164,6 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 #if _HH_RENDERDEMO_HACKS //HUMANHEAD rww
 	//renderEntity.hModel->SetGameUpdatedModel(true);
 #endif //HUMANHEAD END
-
 	renderEntity.callback = idBrittleFracture::ModelCallback;
 	renderEntity.noShadow = true;
 	renderEntity.noSelfShadow = true;
@@ -318,6 +291,7 @@ void idBrittleFracture::Spawn( void ) {
 	FindNeighbours();
 
 	renderEntity.hModel = renderModelManager->AllocModel();
+
 #if _HH_RENDERDEMO_HACKS //HUMANHEAD rww - demos need unique names per fracture entity
 	idStr::snPrintf(uniqueFractureName, 64, "%s_%i", brittleFracture_SnapshotName, brittleFractureUniqueNum);
 	brittleFractureUniqueNum++;
@@ -437,7 +411,7 @@ bool idBrittleFracture::UpdateRenderEntity( renderEntity_s *renderEntity, const 
 		}
 		packedColor = PackColor( idVec4( renderEntity->shaderParms[ SHADERPARM_RED ] * fade,
 										renderEntity->shaderParms[ SHADERPARM_GREEN ] * fade,
-										renderEntity->shaderParms[ SHADERPARM_BLUE ] * fade,
+                                        renderEntity->shaderParms[ SHADERPARM_BLUE ] * fade,
 										fade ) );
 
 		const idWinding &winding = shards[i]->winding;
@@ -646,7 +620,6 @@ void idBrittleFracture::Think( void ) {
 				continue;
 			}
 
-
 			//HUMANHEAD rww
 			if (cheapShards && shard->isCheap) { //stupid fake physics
 				const float fakeVelocityFactor = 0.03f;
@@ -679,7 +652,7 @@ void idBrittleFracture::Think( void ) {
 				}
 			}
 			else {
-				//HUMANHEAD END
+			//HUMANHEAD END
 				shard->physicsObj.Evaluate( endTime - startTime, endTime );
 				if ( !shard->physicsObj.IsAtRest() ) {
 					atRest = false;
@@ -1013,7 +986,7 @@ void idBrittleFracture::DropFloatingIslands( const idVec3 &point, const idVec3 &
 			continue;
 		}
 
-		queueStart = 0;
+        queueStart = 0;
 		queueEnd = 1;
 		queue[0] = shards[i];
 		shards[i]->islandNum = numIslands+1;
@@ -1195,21 +1168,19 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin(), 0 );
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), 0 );
 
-	for (i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++) {
-		surf = renderModel->Surface(i);
+	for ( i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++ ) {
+		surf = renderModel->Surface( i );
 		material = surf->shader;
 
-		for (j = 0; j < surf->geometry->numIndexes; j += 3) {
+		for ( j = 0; j < surf->geometry->numIndexes; j += 3 ) {
 			w.Clear();
-
-			for (k = 0; k < 3; k++) {
+			for ( k = 0; k < 3; k++ ) {
 				v = &surf->geometry->verts[ surf->geometry->indexes[ j + 2 - k ] ];
-				w.AddPoint(v->xyz);
+				w.AddPoint( v->xyz );
 				w[k].s = v->st[0];
 				w[k].t = v->st[1];
 			}
-
-			Fracture_r(w);
+			Fracture_r( w );
 		}
 	}
 
@@ -1381,9 +1352,9 @@ bool idBrittleFracture::ClientReceiveEvent( int event, int time, const idBitMsg 
 			Shatter( point, dir, time );
 			return true;
 		}
-		default:
-			break;
+		default: {
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
 	}
-
-	return idEntity::ClientReceiveEvent( event, time, msg );
+	return false;
 }

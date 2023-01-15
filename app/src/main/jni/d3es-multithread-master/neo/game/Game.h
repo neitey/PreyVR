@@ -1,50 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_H__
 #define __GAME_H__
-
-
-#include "idlib/BitMsg.h"
-#include "idlib/Dict.h"
-#include "framework/UsercmdGen.h"
-#include "renderer/RenderWorld.h"
-#include "sound/sound.h"
-
-#include "../../../Doom3Quest/VrClientInfo.h"
-
-class idAASFileManager;
-class idCollisionModelManager;
-class idRenderSystem;
-class idRenderModelManager;
-class idUserInterface;
-class idUserInterfaceManager;
-class idNetworkSystem;
 
 /*
 ===============================================================================
@@ -54,34 +12,21 @@ class idNetworkSystem;
 ===============================================================================
 */
 
-
 // default scripts
 #define SCRIPT_DEFAULTDEFS			"script/doom_defs.script"
 #define SCRIPT_DEFAULT				"script/prey_main.script"	// HUMANHEAD pdm
 #define SCRIPT_DEFAULTFUNC			"prey_main"					// HUMANHEAD pdm
 
-struct gameReturn_t {
-	gameReturn_t() :
-			syncNextGameFrame( false )
-	{
-		for( int h = 0; h < 2; h++ )
-		{
-			vibrationLow[h] = 0;
-			vibrationHigh[h] = 0;
-		}
-	}
-
+typedef struct {
 	char		sessionCommand[MAX_STRING_CHARS];	// "map", "disconnect", "victory", etc
 	int			consistencyHash;					// used to check for network game divergence
 	int			health;
 	int			heartRate;
-    int			vibrationLow[2];
-    int			vibrationHigh[2];
 	int			stamina;
 	int			combat;
 	bool		syncNextGameFrame;					// used when cinematics are skipped to prevent session from simulating several game frames to
 													// keep the game time in sync with real time
-};
+} gameReturn_t;
 
 typedef enum {
 	ALLOW_YES = 0,
@@ -111,25 +56,6 @@ public:
 
 	// Set the local client number. Distinguishes listen ( == 0 ) / dedicated ( == -1 )
 	virtual void				SetLocalClient( int clientNum ) = 0;
-
-	virtual void 				SetVRClientInfo(vrClientInfo *pVRClientInfo) = 0;
-	virtual void				CheckRenderCvars() = 0;
-	virtual void 				EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn) = 0;
-    virtual bool 				CMDButtonsAttackCall(int &teleportCanceled) = 0;
-    virtual bool 				CMDButtonsPhysicalCrouch() = 0;
-
-	virtual bool 				InCinematic() = 0;
-
-	// Release the mouse when the PDA is open
-	virtual bool				IsPDAOpen() const = 0;
-
-	//GB Trying to move animator function
-	virtual bool				AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis ) = 0;
-
-	// Koz begin
-	// VR State
-	bool						isVR = 1;
-	// Koz end
 
 	// Sets the user info for a client.
 	// if canModify is true, the game can modify the user info in the returned dictionary pointer, server will forward the change back
@@ -172,9 +98,6 @@ public:
 	// Runs a game frame, may return a session command for level changing, etc
 	virtual gameReturn_t		RunFrame( const usercmd_t *clientCmds ) = 0;
 
-	// Indicates to the game library that the frame has now ended
-	virtual void 				EndFrame() = 0;
-
 	// Makes rendering and sound system calls to display for a given clientNum.
 	virtual bool				Draw( int clientNum ) = 0;
 
@@ -188,14 +111,11 @@ public:
 	// return NULL once the fullscreen UI mode should stop, or "main" to go to main menu
 	virtual const char *		HandleGuiCommands( const char *menuCommand ) = 0;
 
-	// main menu commands not caught in the engine are passed here
-	virtual void				HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui ) = 0;
-
 	// Early check to deny connect.
 	virtual allowReply_t		ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] ) = 0;
 
 	// Connects a client.
-	virtual void				ServerClientConnect( int clientNum, const char *guid = 0 ) = 0;
+	virtual void				ServerClientConnect( int clientNum ) = 0;
 
 	// Spawns the player entity to be used by the client.
 	virtual void				ServerClientBegin( int clientNum ) = 0;
@@ -225,13 +145,13 @@ public:
 	virtual void				ClientProcessReliableMessage( int clientNum, const idBitMsg &msg ) = 0;
 
 	// Runs prediction on entities at the client.
-	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame = false ) = 0;
+	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds ) = 0;
 
 	// Used to manage divergent time-lines
 	virtual void				SelectTimeGroup( int timeGroup ) = 0;
 	virtual int					GetTimeGroupTime( int timeGroup ) = 0;
 
-	virtual void				GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] = 0 ) = 0;
+	virtual idStr				GetBestGameType( const char* map, const char* gametype ) = 0;
 
 	// HUMANHEAD pdm: print game side memory statistics
 	virtual void				PrintMemInfo( MemInfo_t *mi ) = 0;
@@ -243,12 +163,6 @@ public:
 	virtual void				SwitchTeam( int clientNum, int team ) = 0;
 
 	virtual bool				DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] ) = 0;
-
-	virtual void				GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) = 0;
-
-	// Added by Emile
-	virtual bool				InGameGuiActive() = 0;
-	virtual bool			    ObjectiveSystemActive() = 0;
 
 	// HUMANHEAD mdl:  Check if we're deathwalking for game saves
 	virtual bool				PlayerIsDeathwalking( void ) = 0;
@@ -303,7 +217,7 @@ public:
 
 	// Animation system calls for non-game based skeletal rendering.
 	virtual idRenderModel *		ANIM_GetModelFromEntityDef( const char *classname );
-	virtual const idVec3		&ANIM_GetModelOffsetFromEntityDef( const char *classname );
+	virtual const idVec3 		&ANIM_GetModelOffsetFromEntityDef( const char *classname );
 	virtual idRenderModel *		ANIM_GetModelFromEntityDef( const idDict *args );
 	virtual idRenderModel *		ANIM_GetModelFromName( const char *modelName );
 	virtual const idMD5Anim *	ANIM_GetAnimFromEntityDef( const char *classname, const char *animname );
@@ -386,7 +300,7 @@ extern idGameEdit *				gameEdit;
 ===============================================================================
 */
 
-const int GAME_API_VERSION		= 9;
+const int GAME_API_VERSION		= 7;
 
 typedef struct {
 
@@ -408,8 +322,9 @@ typedef struct {
 	// HUMANHEAD pdm
 #if INGAME_PROFILER_ENABLED
 	hhProfiler *				profiler;				// in-game profiler
-#endif
+#endif	
 	// HUMANHEAD END
+
 } gameImport_t;
 
 typedef struct {

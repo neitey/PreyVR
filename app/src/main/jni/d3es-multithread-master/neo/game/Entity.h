@@ -1,44 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
-
-#include "idlib/math/Curve.h"
-#include "framework/DeclParticle.h"
-
-#include "physics/Physics_Static.h"
-#include "physics/Physics.h"
-#include "script/Script_Program.h"
-#include "gamesys/Class.h"
-#include "gamesys/Event.h"
-#include "Game_local.h"
-#include "Prey/game_woundmanager.h"
 
 /*
 ===============================================================================
@@ -190,7 +154,6 @@ public:
 	idLinkList<idEntity>	snapshotNode;			// for being linked into snapshotEntities list
 	int						snapshotSequence;		// last snapshot this entity was in
 	int						snapshotBits;			// number of bits this entity occupied in the last snapshot
-	bool					snapshotStale;			// Set to true if this entity is considered stale in the snapshot
 
 	idStr					name;					// name of entity
 	idDict					spawnArgs;				// key/value pairs used to spawn and initialize entity
@@ -230,7 +193,7 @@ public:
 		bool				accurateGuiTrace	:1; // forces more expensive/accurate gui trace (set on console)
 		//HUMANHEAD PCF rww 05/27/06 - force pusher sort
 		bool				forcePusherSort		:1; //forces entity to be sorted as a pusher, ignoring status as a bindmaster
-		//no more bits left!
+						//no more bits left!
 		//HUMANHEAD END
 		//HUMANHEAD END
 		bool				notarget			:1;	// if true never attack or target this entity
@@ -245,30 +208,26 @@ public:
 		bool				isDormant			:1;	// if true the entity is dormant
 		bool				hasAwakened			:1;	// before a monster has been awakened the first time, use full PVS for dormant instead of area-connected
 		bool				networkSync			:1; // if true the entity is synchronized over the network
-		bool				grabbed				:1;	// if true object is currently being grabbed
 	} fl;
 
-
-	// HUMANHEAD Variables
+	// HUMANHEAD Variables 
 public:
-
+	
 	idDict *			 	lastTimeSoundPlayed;	// nla - To prevent the same sound from being played too often
 	int						spawnHealth;			// jrm - the initial health we were spawned with
 	int						lastDamageTime;			// jrm - time stamp of the last time this entity received damage
-	int						lastHealTime;			// jrm - time stamp of the last time this entity received health
+	int						lastHealTime;			// jrm - time stamp of the last time this entity received health	
 	mutable int				nextCallbackTime;		// pdm - for deforms, only needed on rendered entities
 	deferredEntityCallback_t	animCallback;		// pdm - original md5 callback, used when deform is present
 
 	float					thinkMS;				// MS spent thinking (for dormancy comparison and profiling)
 	float					dormantMS;				// MS spent checking for dormancy (temp for profiling dormancy)
-
+	
 	bool					pushes;
 	float					pushCosine;
 
-	int						timeGroup;
-
 	int						GetNumReactions(void)				const	{return reactions.Num();}
-	hhReaction*				GetReaction(int i)							{return reactions[i];}
+	hhReaction*				GetReaction(int i)							{return reactions[i];}	
 protected:
 	void					LoadReactions();	// HUMANHEAD JRM: Load this entity's reactions - called from spawn
 	idList<hhReaction*>		reactions;			// HUMANHEAD JRM: All of the reactions this entity can send
@@ -278,16 +237,11 @@ protected:
 	virtual hhWoundManagerRenderEntity* GetWoundManager() { if(!woundManager) { woundManager = CreateWoundManager(); } return woundManager; }
 	// HUMANHEAD END
 
-	void					DetermineTimeGroup(bool slowmo);
-
-	void					SetGrabbedState(bool grabbed);
-	bool					IsGrabbed();
-
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
 							idEntity();
-							~idEntity();
+	virtual					~idEntity();
 
 	void					Spawn( void );
 
@@ -298,10 +252,7 @@ public:
 	void					SetName( const char *name );
 	const char *			GetName( void ) const;
 	virtual void			UpdateChangeableSpawnArgs( const idDict *source );
-    int						GetEntityNumber() const
-    {
-        return entityNumber;
-    }
+
 							// clients generate views based on all the player specific options,
 							// cameras have custom code, and everything else just uses the axis orientation
 	virtual renderView_t *	GetRenderView();
@@ -322,7 +273,7 @@ public:
 	virtual void			DrawDebug(int page);					// HUMANHEAD pdm: to do custom debug drawing when selected
 	virtual void			FillDebugVars(idDict *args, int page);	// HUMANHEAD pdm: to show debug variables when selected (GAMEINFO)
 	virtual idVec3			GetPortalPoint( void ) { return GetPhysics()->GetOrigin(); } // HUMANHEAD cjr:  The entity will portal when this point crosses the portal plane.  Origin for most, eye location for players
-	virtual void			Portalled(idEntity *portal);			// HUMANHEAD:  This entity was just portalled
+	virtual void			Portalled(idEntity *portal);			// HUMANHEAD:  This entity was just portalled 
 	virtual bool			CheckPortal( const idEntity *other, int contentMask ); // HUMANHEAD CJR
 	virtual bool			CheckPortal( const idClipModel *mdl, int contentMask ); // HUMANHEAD CJR
 	virtual void			CollideWithPortal( const idEntity *other ); // HUMANHEAD CJR PCF 04/26/06
@@ -352,7 +303,7 @@ public:
 	virtual const char *	GetChannelNameForAnim( const char *animName ) const;
 	virtual //HUMANHEAD jsh made virtual
 	bool					Pushes( ) { return( pushes ); };
-	float					PushCosine() { return( pushCosine ); };
+	float					PushCosine() { return( pushCosine ); };			
 	virtual void			RestoreGUI( const char* guiKey, idUserInterface** gui );
 	virtual void			RestoreGUIs();
 	virtual void			StartDisposeCountdown();
@@ -405,11 +356,11 @@ public:
 	void					Event_MoveToJointWeighted( idEntity *master, const char *bonename, idVec3 &weight );  // nla
 	void					Event_MoveJointToJoint( const char *ourBone, idEntity *master, const char *masterBone );  // nla
 	void					Event_MoveJointToJointOffset( const char *ourBone, idEntity *master, const char *masterBone, idVec3 &offset ); // nla
-	void					Event_SetSkinByName( const char *skinname );
-	void					Event_SpawnDebris(const char *debrisKey);
+	void					Event_SetSkinByName( const char *skinname );	
+	void					Event_SpawnDebris(const char *debrisKey);	
 	virtual void			Event_DamageEntity( idEntity *target, const char *damageDefName );// HUMANHEAD JRM
-	virtual void			Event_DelayDamageEntity( idEntity *target, const char *damageDefName, float secs );//HUMANHEAD JRM
-	virtual void			Event_Dispose();
+	virtual void			Event_DelayDamageEntity( idEntity *target, const char *damageDefName, float secs );//HUMANHEAD JRM	
+	virtual void			Event_Dispose();	
 	virtual void			Event_ResetGravity();
 	void					Event_LoadReactions();
 	void					Event_SetDeformation(int deformType, float parm1, float parm2);
@@ -434,6 +385,7 @@ public:
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
 	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant
 	bool					IsActive( void ) const;
+	virtual // HUMANHEAD
 	void					BecomeActive( int flags );
 	void					BecomeInactive( int flags );
 	void					UpdatePVSAreas( const idVec3 &pos );
@@ -459,9 +411,9 @@ public:
 	virtual void			Show( void );
 	bool					IsHidden( void ) const;
 	void					UpdateVisuals( void );
-	virtual //HUMANHEAD
+	virtual //HUMANHEAD: aob
 	void					UpdateModel( void );
-	virtual //HUMANHEAD
+	virtual //HUMANHEAD: aob
 	void					UpdateModelTransform( void );
 	virtual void			ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material );
 	int						GetNumPVSAreas( void );
@@ -472,7 +424,7 @@ public:
 	// animation
 	virtual bool			UpdateAnimationControllers( void );
 	virtual		// HUMANHEAD nla - Used to test which anims are played in the hand
-	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView );
+	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const;
 	static bool				ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
 	// HUMANHEAD nla - Made return type hhAnimator
 	virtual hhAnimator *	GetAnimator( void );	// returns animator object used by this entity
@@ -534,7 +486,7 @@ public:
 							// set the origin of the physics object (relative to bindMaster if not NULL)
 	void					SetOrigin( const idVec3 &org );
 							// set the axis of the physics object (relative to bindMaster if not NULL)
-	virtual		// HUMANHEAD nla
+	virtual //HUMANHEAD: aob
 	void					SetAxis( const idMat3 &axis );
 							// use angles to set the axis of the physics object (relative to bindMaster if not NULL)
 	void					SetAngles( const idAngles &ang );
@@ -756,11 +708,6 @@ protected://HUMANHEAD
 	void					Event_PlayRumbleEffect( int effect );
 	void					Event_StopRumbleEffect( void );
 #endif // VENOM END
-	void					Event_SetGui(int guiNum, const char *guiName);
-	void					Event_PrecacheGui(const char *guiName);
-	void					Event_GetGuiParm(int guiNum, const char *key);
-	void					Event_GetGuiParmFloat(int guiNum, const char *key);
-	void					Event_GuiNamedEvent(int guiNum, const char *event);
 };
 
 /*
@@ -831,80 +778,12 @@ protected:
 
 private:
 	void					Event_GetJointHandle( const char *jointname );
-	void					Event_ClearAllJoints( void );
-	void					Event_ClearJoint( jointHandle_t jointnum );
-	void					Event_SetJointPos( jointHandle_t jointnum, jointModTransform_t transform_type, const idVec3 &pos );
-	void					Event_SetJointAngle( jointHandle_t jointnum, jointModTransform_t transform_type, const idAngles &angles );
-	void					Event_GetJointPos( jointHandle_t jointnum );
-	void					Event_GetJointAngle( jointHandle_t jointnum );
+	void 					Event_ClearAllJoints( void );
+	void 					Event_ClearJoint( jointHandle_t jointnum );
+	void 					Event_SetJointPos( jointHandle_t jointnum, jointModTransform_t transform_type, const idVec3 &pos );
+	void 					Event_SetJointAngle( jointHandle_t jointnum, jointModTransform_t transform_type, const idAngles &angles );
+	void 					Event_GetJointPos( jointHandle_t jointnum );
+	void 					Event_GetJointAngle( jointHandle_t jointnum );
 };
-
-class SetTimeState
-{
-	bool					activated;
-	bool					previousFast;
-	bool					fast;
-
-public:
-	SetTimeState();
-	SetTimeState(int timeGroup);
-	~SetTimeState();
-
-	void					PushState(int timeGroup);
-};
-
-ID_INLINE SetTimeState::SetTimeState()
-{
-	activated = false;
-}
-
-ID_INLINE SetTimeState::SetTimeState(int timeGroup)
-{
-	activated = false;
-	PushState(timeGroup);
-}
-
-ID_INLINE void SetTimeState::PushState(int timeGroup)
-{
-
-	// Don't mess with time in Multiplayer
-	if (!gameLocal.isMultiplayer) {
-
-		activated = true;
-
-		// determine previous fast setting
-		if (gameLocal.time == gameLocal.slow.time) {
-			previousFast = false;
-		} else {
-			previousFast = true;
-		}
-
-		// determine new fast setting
-		if (timeGroup) {
-			fast = true;
-		} else {
-			fast = false;
-		}
-
-		// set correct time
-		if (fast) {
-			gameLocal.fast.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		} else {
-			gameLocal.slow.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		}
-	}
-}
-
-ID_INLINE SetTimeState::~SetTimeState()
-{
-	if (activated && !gameLocal.isMultiplayer) {
-		// set previous correct time
-		if (previousFast) {
-			gameLocal.fast.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		} else {
-			gameLocal.slow.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		}
-	}
-}
 
 #endif /* !__GAME_ENTITY_H__ */

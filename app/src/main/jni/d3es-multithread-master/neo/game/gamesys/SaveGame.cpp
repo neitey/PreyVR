@@ -1,45 +1,18 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "../Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/DeclSkin.h"
-#include "renderer/ModelManager.h"
-
-#include "physics/Clip.h"
-#include "Entity.h"
-#include "Game_local.h"
-
-#include "SaveGame.h"
+#include "TypeInfo.h"
+//k: #include "../../framework/BuildVersion.h" // HUMANHEAD mdl
 
 /*
 Save game related helper classes.
 
-Save games are implemented in two classes, idSaveGame and idRestoreGame, that implement write/read functions for
+Save games are implemented in two classes, idSaveGame and idRestoreGame, that implement write/read functions for 
 common types.  They're passed in to each entity and object for them to archive themselves.  Each class
 implements save/restore functions for it's own data.  When restoring, all the objects are instantiated,
 then the restore function is called on each, superclass first, then subclasses.
@@ -142,7 +115,7 @@ void idSaveGame::CallSave_r( const idTypeInfo *cls, const idClass *obj ) {
 			return;
 		}
 	}
-
+	
 	WRITE_SAVEDEBUG_MARKER( this, 0xD00F00BB ); // HUMANHEAD mdl
 	( obj->*cls->Save )( this );
 	WRITE_SAVEDEBUG_MARKER( this, 0xD00F00CC ); // HUMANHEAD mdl
@@ -233,13 +206,13 @@ void idSaveGame::WriteBool( const bool value ) {
 ================
 idSaveGame::WriteString
 ================
-*/
+*/  
 void idSaveGame::WriteString( const char *string ) {
 	int len;
 
 	len = strlen( string );
 	WriteInt( len );
-	file->Write( string, len );
+    file->Write( string, len );
 }
 
 /*
@@ -545,10 +518,7 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 	WriteBool( renderEntity.noDynamicInteractions );
 	WriteBool( renderEntity.weaponDepthHack );
 
-	WriteInt( renderEntity.forceUpdate );
-
-	WriteInt(renderEntity.timeGroup);
-	WriteInt(renderEntity.xrayIndex);
+	WriteBool( renderEntity.forceUpdate );
 
 	// HUMANHEAD mdl
 	if( renderEntity.declBeam ) {
@@ -643,6 +613,10 @@ void idSaveGame::WriteRefSound( const refSound_t &refSound ) {
 	WriteFloat( refSound.parms.shakes );
 	WriteInt( refSound.parms.soundShaderFlags );
 	WriteInt( refSound.parms.soundClass );
+	WriteInt( refSound.parms.subIndex );
+	WriteInt( refSound.parms.profanityIndex );
+	WriteFloat( refSound.parms.profanityDelay );
+	WriteFloat( refSound.parms.profanityDuration );
 }
 
 /*
@@ -737,7 +711,7 @@ void idSaveGame::WriteTrace( const trace_t &trace ) {
  */
 void idSaveGame::WriteTraceModel( const idTraceModel &trace ) {
 	int j, k;
-
+	
 	WriteInt( (int&)trace.type );
 	WriteInt( trace.numVerts );
 	for ( j = 0; j < MAX_TRACEMODEL_VERTS; j++ ) {
@@ -803,7 +777,7 @@ void idSaveGame::WriteBuildNumber( const int value ) {
 /***********************************************************************
 
 	idRestoreGame
-
+	
 ***********************************************************************/
 
 /*
@@ -876,8 +850,8 @@ void idRestoreGame::RestoreObjects( void ) {
 	for( i = 1; i < objects.Num(); i++ ) {
 		if ( objects[ i ]->IsType( idEntity::Type ) ) {
 			idEntity *ent = static_cast<idEntity *>( objects[ i ] );
-            ent->UpdateVisuals();
-            ent->Present();
+			ent->UpdateVisuals();
+			ent->Present();
 		}
 	}
 
@@ -934,7 +908,7 @@ void idRestoreGame::CallRestore_r( const idTypeInfo *cls, idClass *obj ) {
 			return;
 		}
 	}
-
+	
 	READ_SAVEDEBUG_MARKER( this, 0xD00F00BB ); // HUMANHEAD mdl
 
 	( obj->*cls->Restore )( this );
@@ -1354,10 +1328,9 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadBool( renderEntity.noDynamicInteractions );
 	ReadBool( renderEntity.weaponDepthHack );
 
-	ReadInt( renderEntity.forceUpdate );
-
-	ReadInt(renderEntity.timeGroup);
-	ReadInt(renderEntity.xrayIndex);
+	bool b = false;
+	ReadBool( b );
+	renderEntity.forceUpdate = b;
 
 	// HUMANHEAD mdl
 	bool bTmp;
@@ -1373,7 +1346,7 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadBool( bTmp );
 	if( bTmp ) {
 		renderEntity.beamNodes = (hhBeamNodes_t *)Mem_ClearedAlloc(sizeof(hhBeamNodes_t) * renderEntity.declBeam->numBeams);
-
+	
 		for( i = 0; i < MAX_BEAM_NODES; i++ ) {
 			ReadVec3( renderEntity.beamNodes->nodes[i] );
 		}
@@ -1461,6 +1434,10 @@ void idRestoreGame::ReadRefSound( refSound_t &refSound ) {
 	ReadFloat( refSound.parms.shakes );
 	ReadInt( refSound.parms.soundShaderFlags );
 	ReadInt( refSound.parms.soundClass );
+	ReadInt( refSound.parms.subIndex );
+	ReadInt( refSound.parms.profanityIndex );
+	ReadFloat( refSound.parms.profanityDelay );
+	ReadFloat( refSound.parms.profanityDuration );
 }
 
 /*
@@ -1555,7 +1532,7 @@ void idRestoreGame::ReadTrace( trace_t &trace ) {
  */
 void idRestoreGame::ReadTraceModel( idTraceModel &trace ) {
 	int j, k;
-
+	
 	ReadInt( (int&)trace.type );
 	ReadInt( trace.numVerts );
 	for ( j = 0; j < MAX_TRACEMODEL_VERTS; j++ ) {
@@ -1631,6 +1608,7 @@ int idRestoreGame::GetBuildNumber( void ) {
 }
 
 
+
 // HUMANHEAD ADDITIONS
 
 void idSaveGame::WriteEventDef( const idEventDef *event ) {
@@ -1684,3 +1662,4 @@ void idRestoreGame::ReadStringList( idList<idStr> &list ) {
 		list.Append( tmp );
 	}
 }
+

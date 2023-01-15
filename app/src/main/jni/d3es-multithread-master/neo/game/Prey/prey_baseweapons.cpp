@@ -2291,7 +2291,7 @@ HUMANHEAD: aob
 */
 void hhWeapon::SetViewAnglesSensitivity( float fov ) {
 	if( owner.IsValid() ) {
-		owner->SetViewAnglesSensitivity( fov / 90/*g_fov.GetFloat()*/ ); //VR hack
+		owner->SetViewAnglesSensitivity( fov / g_fov.GetFloat() );
 	}
 }
 

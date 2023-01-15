@@ -1,37 +1,9 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_CAMERA_H__
 #define __GAME_CAMERA_H__
 
-#include "idlib/math/Quat.h"
-
-#include "Entity.h"
 
 /*
 ===============================================================================
@@ -77,7 +49,7 @@ protected:
 	void					Event_Activate( idEntity *activator );
 	void					Event_SetAttachments();
 	void					SetAttachment( idEntity **e, const char *p );
-	float					fov;
+	idInterpolateAccelDecelSine<float>	fov;
 	idEntity				*attachedTo;
 	idEntity				*attachedView;
 	bool					bPlayerBoundCamera;
@@ -99,16 +71,6 @@ typedef struct {
 	float				fov;
 } cameraFrame_t;
 
-// Koz
-typedef struct
-{
-	int					cutFrame;
-	bool				posOverride;
-	bool				rotOverride;
-	idVec3				posNew;
-	idCQuat				rotNew;
-} cameraCut_t;
-
 class idCameraAnim : public idCamera {
 public:
 	CLASS_PROTOTYPE( idCameraAnim );
@@ -129,8 +91,7 @@ private:
 	int						frameRate;
 	int						starttime;
 	int						cycle;
-	//idList<int>				cameraCuts;
-	idList<cameraCut_t>		cameraCuts; // Koz enable position and angle overrides for camera cut positions. ( When using immersive cutscenes, overrides allow better clamped camera positions without having to completely rewrite the camera files. )
+	idList<int>				cameraCuts;
 	idList<cameraFrame_t>	camera;
 	idEntityPtr<idEntity>	activator;
 

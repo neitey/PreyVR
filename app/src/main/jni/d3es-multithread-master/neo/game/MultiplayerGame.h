@@ -1,39 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MULTIPLAYERGAME_H__
 #define	__MULTIPLAYERGAME_H__
-
-#include "idlib/BitMsg.h"
-#include "idlib/Str.h"
-#include "ui/UserInterface.h"
-
-#include "GameBase.h"
 
 /*
 ===============================================================================
@@ -50,9 +19,7 @@ typedef enum {
 	GAME_DM,
 	GAME_TOURNEY,
 	GAME_TDM,
-	GAME_LASTMAN,
-	GAME_CTF,
-	GAME_COUNT
+	GAME_LASTMAN
 } gameType_t;
 
 typedef enum {
@@ -81,11 +48,9 @@ const int MAX_HISTORY_LIST			= 50;		//fixme: bump up once we fix the wrap around
 const int FRAGLIMIT_DELAY			= -1; //HUMANHEAD rww - was 2000, doing away with sudden death
 
 const int MP_PLAYER_MINFRAGS = -100;
-const int MP_PLAYER_MAXFRAGS = 400;	// in CTF frags are player points
+const int MP_PLAYER_MAXFRAGS = 100;
 const int MP_PLAYER_MAXWINS	= 100;
 const int MP_PLAYER_MAXPING	= 999;
-
-const int MP_CTF_MAXPOINTS = 25;
 
 // HUMANHEAD pdm: Reworked for our chat system
 typedef struct mpChatLine_s {
@@ -110,13 +75,6 @@ typedef enum {
 	SND_LEADLOST,
 	SND_LEADTIED,
 	//HUMANHEAD END
-	SND_FLAG_CAPTURED_YOURS,
-	SND_FLAG_CAPTURED_THEIRS,
-	SND_FLAG_RETURN,
-	SND_FLAG_TAKEN_YOURS,
-	SND_FLAG_TAKEN_THEIRS,
-	SND_FLAG_DROPPED_YOURS,
-	SND_FLAG_DROPPED_THEIRS,
 	SND_COUNT
 } snd_evt_t;
 
@@ -140,7 +98,7 @@ public:
 	// checks rules and updates state of the mp game
 	void			Run( void );
 
-	// draws mp hud, scoredboard, etc..
+	// draws mp hud, scoredboard, etc.. 
 	bool			Draw( int clientNum );
 
 	// updates a player vote
@@ -177,7 +135,6 @@ public:
 
 	static const char *GlobalSoundStrings[ SND_COUNT ];
 	void			PlayGlobalSound( int to, snd_evt_t evt, const char *shader = NULL );
-	void			PlayTeamSound(int toTeam, snd_evt_t evt, const char *shader = NULL);	// sound that's sent only to member of toTeam team
 
 	// more compact than a chat line
 	typedef enum {
@@ -197,13 +154,6 @@ public:
 		MSG_TELEFRAGGED,
 		MSG_JOINTEAM,
 		MSG_HOLYSHIT,
-		MSG_POINTLIMIT,
-
-		MSG_FLAGTAKEN,
-		MSG_FLAGDROP,
-		MSG_FLAGRETURN,
-		MSG_FLAGCAPTURE,
-		MSG_SCOREUPDATE,
 		MSG_COUNT
 	} msg_evt_t;
 	//HUMANHEAD rww
@@ -273,7 +223,7 @@ public:
 	void			ProcessVoiceChat( int clientNum, bool team, int index );
 
 	void			Precache( void );
-
+	
 	// throttle UI switch rates
 	void			ThrottleUserInfo( void );
 	void			ToggleSpectate( void );
@@ -292,15 +242,6 @@ public:
 	void			ClientReadWarmupTime( const idBitMsg &msg );
 
 	void			ServerClientConnect( int clientNum );
-
-	void            ClearHUDStatus(void);
-	int             GetFlagPoints(int team);	// Team points in CTF
-	void			SetFlagMsg(bool b);		// allow flag event messages to be sent
-	bool			IsFlagMsgOn(void);		// should flag event messages go through?
-	void			ClearGuis(void);
-
-	int             player_red_flag;            // Ent num of red flag carrier for HUD
-	int             player_blue_flag;           // Ent num of blue flag carrier for HUD
 
 	void			PlayerStats( int clientNum, char *data, const int len );
 
@@ -383,21 +324,15 @@ private:
 
 	bool			bTeamsTied;				//HUMANHEAD rww - needs to be set in TDM before any calls to UpdateWinsLosses with removal of suddendeath concept
 
-	int				teamPoints[ 2 ];
-
-	bool			flagMsgOn;
-
-	const char 	*gameTypeVoteMap[ GAME_COUNT ];
-
 private:
 	void			UpdatePlayerRanks();
 
 	// updates the passed gui with current score information
 	void			UpdateScoreboard( idUserInterface *scoreBoard, idPlayer *player );
-	void            UpdateCTFScoreboard(idUserInterface *scoreBoard, idPlayer *player);
 	void			UpdateDMScoreboard( idUserInterface *scoreBoard, idPlayer *player );
 	void			UpdateTeamScoreboard( idUserInterface *scoreBoard, idPlayer *player );
 
+	void			ClearGuis( void );
 	void			DrawScoreBoard( idPlayer *player );
 	void			UpdateHud( idPlayer *player, idUserInterface *hud );
 	bool			Warmup( void );
@@ -410,9 +345,6 @@ private:
 	idPlayer *		FragLeader( void );
 	bool			TimeLimitHit( void );
 	bool			CheckTeamsTied(void); //HUMANHEAD rww
-	bool			PointLimitHit(void);
-	// return team with most points
-	int				WinningTeam(void);
 	void			NewState( gameState_t news, idPlayer *player = NULL );
 	void			UpdateWinsLosses( idPlayer *winner );
 	// fill any empty tourney slots based on the current tourney ranks
@@ -442,17 +374,6 @@ private:
 	void			VoiceChat( const idCmdArgs &args, bool team );
 	void			DumpTourneyLine( void );
 	void			SuddenRespawn( void );
-
-public:
-	void			SetBestGametype(const char *map);
-	void			ReloadScoreboard();
-
-	idStr			GetBestGametype(const char *map, const char *gametype);
-
-	/* #ifdef CTF ... merge the below IsGametypeFlagBased */
-	bool            IsGametypeFlagBased(void);
-	bool            IsGametypeTeamBased(void);
-	/* #endif CTF */
 };
 
 ID_INLINE idMultiplayerGame::gameState_t idMultiplayerGame::GetGameState( void ) const {
@@ -470,3 +391,4 @@ ID_INLINE bool idMultiplayerGame::IsInGame( int clientNum ) {
 }
 
 #endif	/* !__MULTIPLAYERGAME_H__ */
+

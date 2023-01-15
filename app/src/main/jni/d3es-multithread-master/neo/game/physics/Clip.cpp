@@ -1,37 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SaveGame.h"
-#include "Entity.h"
-#include "Game_local.h"
-
-#include "physics/Clip.h"
+#include "../Game_local.h"
 
 #define	MAX_SECTOR_DEPTH				12
 #define MAX_SECTORS						((1<<(MAX_SECTOR_DEPTH+1))-1)
@@ -71,7 +44,6 @@ idVec3 vec3_boxEpsilon( CM_BOX_EPSILON, CM_BOX_EPSILON, CM_BOX_EPSILON );
 
 idBlockAlloc<clipLink_t, 1024>	clipLinkAllocator;
 
-
 /*
 ===============================================================
 
@@ -82,7 +54,7 @@ idBlockAlloc<clipLink_t, 1024>	clipLinkAllocator;
 
 static idList<trmCache_s*>		traceModelCache;
 static idHashIndex				traceModelHash;
-
+	
 /*
 ===============
 idClipModel::ClearTraceModelCache
@@ -172,7 +144,7 @@ void idClipModel::SaveTraceModels( idSaveGame *savefile ) {
 	savefile->WriteInt( traceModelCache.Num() );
 	for ( i = 0; i < traceModelCache.Num(); i++ ) {
 		trmCache_t *entry = traceModelCache[i];
-
+		
 		savefile->WriteTraceModel( entry->trm );
 		savefile->WriteFloat( entry->volume );
 		savefile->WriteVec3( entry->centerOfMass );
@@ -195,7 +167,7 @@ void idClipModel::RestoreTraceModels( idRestoreGame *savefile ) {
 
 	for ( i = 0; i < num; i++ ) {
 		trmCache_t *entry = new trmCache_t;
-
+		
 		savefile->ReadTraceModel( entry->trm );
 
 		savefile->ReadFloat( entry->volume );
@@ -711,7 +683,7 @@ clipSector_t *idClip::CreateClipSectors_r( const int depth, const idBounds &boun
 	nodeOffsetVisual = bounds[ 0 ];
 
 	int i;
-	for( i = 0; i < 3; i++ ) {
+	for( i = 0; i < 3; i++ ) {		
 		nodeScale[ i ] = depth / ( bounds[ 1 ][ i ] - bounds[ 0 ][ i ] );
 		nodeOffset[ i ] = nodeOffsetVisual[ i ] + ( 0.5f / nodeScale[ i ] );
 	}
@@ -753,9 +725,9 @@ clipSector_t *idClip::CreateClipSectors_r( const int depth, const idBounds &boun
 
 	front = bounds;
 	back = bounds;
-
+	
 	front[0][anode->axis] = back[1][anode->axis] = anode->dist;
-
+	
 	anode->children[0] = CreateClipSectors_r( depth+1, front, maxSector );
 	anode->children[1] = CreateClipSectors_r( depth+1, back, maxSector );
 
@@ -848,7 +820,6 @@ typedef struct listParms_s {
 	int				maxCount;
 } listParms_t;
 
-
 #if !_HH_CLIP_FASTSECTORS //HUMANHEAD rww
 void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listParms_t &parms ) const {
 
@@ -883,11 +854,11 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listPa
 
 		// if the bounds really do overlap
 		if (	check->absBounds[0][0] > parms.bounds[1][0] ||
-		        check->absBounds[1][0] < parms.bounds[0][0] ||
-		        check->absBounds[0][1] > parms.bounds[1][1] ||
-		        check->absBounds[1][1] < parms.bounds[0][1] ||
-		        check->absBounds[0][2] > parms.bounds[1][2] ||
-		        check->absBounds[1][2] < parms.bounds[0][2] ) {
+				check->absBounds[1][0] < parms.bounds[0][0] ||
+				check->absBounds[0][1] > parms.bounds[1][1] ||
+				check->absBounds[1][1] < parms.bounds[0][1] ||
+				check->absBounds[0][2] > parms.bounds[1][2] ||
+				check->absBounds[1][2] < parms.bounds[0][2] ) {
 			continue;
 		}
 
@@ -1006,7 +977,7 @@ int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, i
 
 	for( x = 0; x < clipCount; x++ ) {
 		idClipModel* model = clipModels[ x ];
-
+		
 		// if the bounds really do overlap
 		if (	model->absBounds[0].x > parms.bounds[1].x ||
 				model->absBounds[1].x < parms.bounds[0].x ||
@@ -1062,7 +1033,6 @@ int idClip::EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idE
 
 	return entCount;
 }
-
 
 #if _HH_CLIP_FASTSECTORS //HUMANHEAD rww
 /*
@@ -1140,7 +1110,7 @@ int idClip::GetTraceClipModels( const idBounds &bounds, int contentMask, const i
 			clipModelList[i] = NULL;			// missiles don't clip with their owner
 		// HUMANHEAD pdm: Disallowed shuttles hitting their own pilots with projectiles, which happens in rare cases
 		} else if ( cm->entity && cm->entity->GetBindMaster() && passOwner &&
-		            cm->entity->GetBindMaster() == passOwner ) {
+			cm->entity->GetBindMaster() == passOwner ) {
 			clipModelList[i] = NULL;			// missiles don't clip with things bound to their owner (player bound to shuttle)
 		// HUMANHEAD END
 		} else if ( cm->owner ) {
@@ -1220,7 +1190,6 @@ ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, co
 		results.endAxis = trmAxis;
 		memset( &results.c, 0, sizeof( results.c ) );
 		results.c.point = start;
-		results.c.entityNum = ENTITYNUM_WORLD;
 
 		if ( mdl->GetEntity() ) {
 			gameLocal.Printf( "huge translation for clip model %d on entity %d '%s'\n", mdl->GetId(), mdl->GetEntity()->entityNumber, mdl->GetEntity()->GetName() );
@@ -1313,6 +1282,7 @@ void idClip::TranslationEntities( trace_t &results, const idVec3 &start, const i
 idClip::Translation
 ============
 */
+
 bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &end,
 						const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
 	int i, num;
@@ -1405,7 +1375,7 @@ idClip::TranslationWithExceptions
 ============
 */
 bool idClip::TranslationWithExceptions( trace_t &results, const idVec3 &start, const idVec3 &end, idEntity *ent,
-                                        const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
+									   const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
 	int i, num;
 	idClipModel *touch, *clipModelList[MAX_GENTITIES];
 	idBounds traceBounds;
@@ -1464,7 +1434,7 @@ bool idClip::TranslationWithExceptions( trace_t &results, const idVec3 &start, c
 		} else {
 			idClip::numTranslations++;
 			collisionModelManager->Translation( &trace, start, end, trm, trmAxis, contentMask,
-			                                    touch->Handle(), touch->origin, touch->axis );
+									touch->Handle(), touch->origin, touch->axis );
 		}
 
 		if ( trace.fraction < results.fraction ) {
@@ -1475,7 +1445,7 @@ bool idClip::TranslationWithExceptions( trace_t &results, const idVec3 &start, c
 				}
 				continue; // Don't collide with portals
 			} // END HUMANHEAD CJR PCF 04/26/06
-				//HUMANHEAD PCF rww 04/27/06 - readd AllowCollision check after previous change accidentally removed
+			//HUMANHEAD PCF rww 04/27/06 - readd AllowCollision check after previous change accidentally removed
 			else if ( ent && !ent->AllowCollision(trace) ) {
 				continue;
 			}

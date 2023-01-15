@@ -1,35 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "Entity.h"
-
-#include "physics/Physics_Parametric.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Parametric )
 END_CLASS
@@ -228,7 +203,7 @@ void idPhysics_Parametric_SavePState( idSaveGame *savefile, const parametricPSta
 	} else {
 		savefile->WriteBool( false );
 	}
-	// HUMANHEAD END
+	// HUMANHEAD END 
 }
 
 /*
@@ -314,7 +289,7 @@ void idPhysics_Parametric_RestorePState( idRestoreGame *savefile, parametricPSta
 		state.deltaSplineAnglesInverse = new idMat3;
 		*state.deltaSplineAnglesInverse = state.deltaSplineAngles->Inverse();
 	}
-	// HUMANHEAD END
+	// HUMANHEAD END 
 }
 
 /*
@@ -663,6 +638,7 @@ idPhysics_Parametric::Evaluate
 ================
 */
 bool idPhysics_Parametric::Evaluate( int timeStepMSec, int endTimeMSec ) {
+	PROFILE_SCOPE("Parametric", PROFMASK_PHYSICS);
 	idVec3 oldLocalOrigin, oldOrigin, masterOrigin;
 	idAngles oldLocalAngles, oldAngles;
 	idMat3 oldAxis, masterAxis;
@@ -760,12 +736,12 @@ bool idPhysics_Parametric::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	}
 
 	// HUMANHEAD nla - Fixes issue of bound movers saying they are at
-	//   rest when bound to something rotating them.  Caused probs with
+	//   rest when bound to something rotating them.  Caused probs with 
 	//   movables not moving down, as they think what they are resting on is
 	//   at rest.
-	if ( ( current.atRest >= 0 ) &&
-	     ( current.origin != oldOrigin || current.axis != oldAxis ) ) {
-		Activate();
+	if ( ( current.atRest >= 0 ) && 
+		 ( current.origin != oldOrigin || current.axis != oldAxis ) ) {
+		Activate(); 
 	}
 	// HUMANHEAD END
 
@@ -1142,6 +1118,7 @@ int idPhysics_Parametric::GetAngularEndTime( void ) const {
 		return current.angularExtrapolation.GetEndTime();
 	}
 }
+
 
 /*
 ================

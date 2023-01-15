@@ -1,39 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __AI_H__
 #define __AI_H__
-
-#include "physics/Physics_Monster.h"
-#include "Entity.h"
-#include "Actor.h"
-#include "Misc.h"
-#include "Projectile.h"
 
 /*
 ===============================================================================
@@ -47,7 +16,7 @@ const float	SQUARE_ROOT_OF_2			= 1.414213562f;
 const float	AI_TURN_PREDICTION			= 0.2f;
 const float	AI_TURN_SCALE				= 60.0f;
 const float	AI_SEEK_PREDICTION			= 0.3f;
-const float AI_FLY_DAMPENING			= 0.01f;	// HUMANHEAD JRM: Was 0.06
+const float AI_FLY_DAMPENING			= 0.01f;	// HUMANHEAD JRM: Was 0.06 
 const float AI_HEARING_RANGE			= 1024.0f;	// HUNANHEAD JRM: Reduced from 2048
 const int	DEFAULT_FLY_OFFSET			= 68;
 
@@ -77,7 +46,7 @@ typedef enum {
 
 	MOVE_TO_ENEMY = NUM_NONMOVING_COMMANDS,
 	MOVE_TO_ENEMYHEIGHT,
-	MOVE_TO_ENTITY,
+	MOVE_TO_ENTITY, 
 	MOVE_OUT_OF_RANGE,
 	MOVE_TO_ATTACK_POSITION,
 	MOVE_TO_COVER,
@@ -119,9 +88,9 @@ typedef struct obstaclePath_s {
 	idVec3				seekPos;					// seek position avoiding obstacles
 	idEntity *			firstObstacle;				// if != NULL the first obstacle along the path
 	idVec3				startPosOutsideObstacles;	// start position outside obstacles
-	idEntity *			startPosObstacle;			// if != NULL the obstacle containing the start position
+	idEntity *			startPosObstacle;			// if != NULL the obstacle containing the start position 
 	idVec3				seekPosOutsideObstacles;	// seek position outside obstacles
-	idEntity *			seekPosObstacle;			// if != NULL the obstacle containing the seek position
+	idEntity *			seekPosObstacle;			// if != NULL the obstacle containing the seek position 
 } obstaclePath_t;
 
 // path prediction
@@ -151,10 +120,6 @@ extern const idEventDef AI_MuzzleFlash;
 extern const idEventDef AI_CreateMissile;
 extern const idEventDef AI_AttackMissile;
 extern const idEventDef AI_FireMissileAtTarget;
-extern const idEventDef AI_LaunchProjectile;
-extern const idEventDef AI_TriggerFX;
-extern const idEventDef AI_StartEmitter;
-extern const idEventDef AI_StopEmitter;
 extern const idEventDef AI_AttackMelee;
 extern const idEventDef AI_DirectDamage;
 extern const idEventDef AI_JumpFrame;
@@ -184,12 +149,6 @@ typedef struct particleEmitter_s {
 	int					time;
 	jointHandle_t		joint;
 } particleEmitter_t;
-
-typedef struct funcEmitter_s {
-	char				name[64];
-	idFuncEmitter		*particle;
-	jointHandle_t		joint;
-} funcEmitter_t;
 
 class idMoveState {
 public:
@@ -232,25 +191,6 @@ private:
 	int					PVSAreas[ idEntity::MAX_PVS_AREAS ];
 };
 
-//HUMANHEAD mdc - added to allow for multiple projectile types for a creature
-// note: this struct just contains all the precomputed info used for projectiles
-//each time you switch projectile types, this info just gets copied to the variables in idAI
-typedef struct projectileInfo_s {
-	projectileInfo_s() {
-		projectileDef = NULL;
-		projectileClipModel = NULL;
-		projectileRadius = 0.f;
-		projectileSpeed = 0.f;
-	};
-	const idDict *			projectileDef;
-	mutable idClipModel		*projectileClipModel;
-	float					projectileRadius;
-	float					projectileSpeed;
-	idVec3					projectileVelocity;
-	idVec3					projectileGravity;
-} projectileInfo_t;
-//HUMANHEAD END
-
 class idAASFindAreaOutOfRange : public idAASCallback {
 public:
 						idAASFindAreaOutOfRange( const idVec3 &targetPos, float maxDist );
@@ -261,8 +201,6 @@ private:
 	idVec3				targetPos;
 	float				maxDistSqr;
 };
-
-class idAI;
 
 class idAASFindAttackPosition : public idAASCallback {
 public:
@@ -282,6 +220,25 @@ private:
 	int					PVSAreas[ idEntity::MAX_PVS_AREAS ];
 };
 
+//HUMANHEAD mdc - added to allow for multiple projectile types for a creature
+// note: this struct just contains all the precomputed info used for projectiles
+//each time you switch projectile types, this info just gets copied to the variables in idAI
+typedef struct projectileInfo_s {
+	projectileInfo_s() {
+		projectileDef = NULL;
+		projectileClipModel = NULL;
+		projectileRadius = 0.f;
+		projectileSpeed = 0.f;
+	};
+	const idDict *			projectileDef;
+	mutable idClipModel		*projectileClipModel;
+	float					projectileRadius;
+	float					projectileSpeed;
+	idVec3					projectileVelocity;
+	idVec3					projectileGravity;
+} projectileInfo_t;
+//HUMANHEAD END
+
 class idAI : public idActor {
 public:
 	CLASS_PROTOTYPE( idAI );
@@ -293,15 +250,15 @@ public:
 	void					Restore( idRestoreGame *savefile );
 
 	// HUMANHEAD START jrm
-	idAAS*					GetAAS(void)				{return aas;}
+	idAAS*					GetAAS(void)				{return aas;}	
 	bool					IsFlying(void)				{return move.moveType == MOVETYPE_FLY;}
 	idVec3					GetLastEnemyPos(void)		{return lastVisibleEnemyPos;}
 	// HUMANHEAD END
 	// HUMANHEAD nla - Moved from AI_navigate
-	int						GetDestEnemyNum( void ) { return( enemyEntityNum ); };
+	int						GetDestEnemyNum( void ) { return( enemyEntityNum ); };	
 	// HUMANHEAD jrm
 	int						GetMoveType(void)	{return move.moveType;}
-	idVec3					GetMoveDest(void)	{return move.moveDest;}
+	idVec3					GetMoveDest(void)	{return move.moveDest;}	
 	hhAIVehicleInterface*	GetVehicleInterfaceLocal() { return &vehicleInterfaceLocal; }
 	virtual const char *	GetJointForFrameCommand( const char *cmd ) { return( va( "%s", cmd ) ); }
 	// HUMANHEAD end
@@ -310,9 +267,10 @@ public:
 	void					HeardSound( idEntity *ent, const char *action );
 	idActor					*GetEnemy( void ) const;
 	void					TalkTo( idActor *actor );
-	void					ListenTo( idEntity* ent );
 	talkState_t				GetTalkState( void ) const;
 
+	// HUMANHEAD JRM - changed to entity - not just actor
+	virtual
 	bool					GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity *ignore, idVec3 &aimDir ) const;
 
 	void					TouchedByFlashlight( idActor *flashlight_owner );
@@ -330,8 +288,6 @@ public:
 	static bool				TestTrajectory( const idVec3 &start, const idVec3 &end, float zVel, float gravity, float time, float max_height, const idClipModel *clip, int clipmask, const idEntity *ignore, const idEntity *targetEntity, int drawtime );
 							// Finds the best collision free trajectory for a clip model.
 	static bool				PredictTrajectory( const idVec3 &firePos, const idVec3 &target, float projectileSpeed, const idVec3 &projGravity, const idClipModel *clip, int clipmask, float max_height, const idEntity *ignore, const idEntity *targetEntity, int drawtime, idVec3 &aimDir );
-
-	virtual void			Gib(const idVec3 &dir, const char *damageDefName);
 
 protected:
 	// navigation
@@ -356,9 +312,10 @@ protected:
 	float					anim_turn_amount;
 	float					anim_turn_angles;
 
-	// HUMANHEAD: aob
+	// physics
+// HUMANHEAD: aob
 	hhPhysics_AI			physicsObj;
-	// HUMANHEAD END
+// HUMANHEAD END
 
 	// flying
 	jointHandle_t			flyTiltJoint;
@@ -379,7 +336,7 @@ protected:
 	bool					allowHiddenMovement;		// allows character to still move around while hidden
 	bool					disableGravity;				// disables gravity and allows vertical movement by the animation
 	bool					af_push_moveables;			// allow the articulated figure to push moveable objects
-
+	
 	// weapon/attack vars
 	bool					lastHitCheckResult;
 	int						lastHitCheckTime;
@@ -401,8 +358,6 @@ protected:
 	idVec3					projectileGravity;
 	idEntityPtr<idProjectile> projectile;
 	idStr					attack;
-
-	idVec3					homingMissileGoal;
 
 	// chatter/talking
 	const idSoundShader		*chat_snd;
@@ -442,7 +397,7 @@ protected:
 	// special fx
 	float					shrivel_rate;
 	int						shrivel_start;
-
+	
 	bool					restartParticles;			// should smoke emissions restart
 	bool					useBoneAxis;				// use the bone vs the model axis
 	idList<particleEmitter_t> particles;				// particle data
@@ -467,19 +422,12 @@ protected:
 	idVec3					lastReachableEnemyPos;
 	bool					wakeOnFlashlight;
 
-	bool					spawnClearMoveables;
-
-	idHashTable<funcEmitter_t> funcEmitters;
-
-	idEntityPtr<idHarvestable>	harvestEnt;
-
-
 	// HUMANHEAD nla
 	// Max size of the clip model in the XY plane.  (diameter of sorts)
 	float					clipModelXYDiameter;
 	bool					frozen;
 	// HUMANHEAD jrm - Moved in from old idNavigate
-	int						enemyEntityNum;	// If is an enemy, what is his number?
+	int						enemyEntityNum;	// If is an enemy, what is his number?	
 	hhAIVehicleInterface	vehicleInterfaceLocal;
 	// HUMANHEAD END
 
@@ -530,13 +478,13 @@ protected:
 	// movement
 	// HUMANHEAD nla
 	virtual void			ClientImpacts( void );
-	virtual void			ClampZ( idVec3 &delta, idVec3 &goalPos, idVec3 &goalDelta ) { };
+	virtual void			ClampZ( idVec3 &delta, idVec3 &goalPos, idVec3 &goalDelta ) { };	
 	// HUMANHEAD END
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 	virtual  // HUMANHEAD JRM - added virtual
 	void					GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delta );
 	void					CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos );
-	virtual // HUMANHEAD mdl - Made virtual
+	virtual // HUMANHEAD mdl - Made virtual   
 	void					DeadMove( void );
 	virtual	// HUMANHEAD nla - Made virual for crash logic in hhAI
 	void					AnimMove( void );
@@ -647,11 +595,6 @@ protected:
 	void					UpdateParticles( void );
 	void					TriggerParticles( const char *jointName );
 
-	void					TriggerFX(const char *joint, const char *fx);
-	idEntity				*StartEmitter(const char *name, const char *joint, const char *particle);
-	idEntity				*GetEmitter(const char *name);
-	void					StopEmitter(const char *name);
-
 	// AI script state management
 	virtual // HUMANHEAD
 	void					LinkScriptVariables( void );
@@ -676,13 +619,10 @@ protected:
 	void					Event_ClearEnemy( void );
 	void					Event_MuzzleFlash( const char *jointname );
 	void					Event_CreateMissile( const char *jointname );
-	virtual		// HUMANHEAD: Made virtual
+	virtual		// HUMANHEAD: Made virtual	
 	void					Event_AttackMissile( const char *jointname, const idDict *projDef = NULL, int boneDir = 0); 		// HUMANHEAD added projdef as param
 	void					Event_FireMissileAtTarget( const char *jointname, const char *targetname );
 	void					Event_LaunchMissile( const idVec3 &muzzle, const idAngles &ang );
-	void					Event_LaunchHomingMissile();
-	void					Event_SetHomingMissileGoal();
-	void					Event_LaunchProjectile(const char *entityDefName);
 	void					Event_AttackMelee( const char *meleeDefName );
 	void					Event_DirectDamage( idEntity *damageTarget, const char *damageDefName );
 	void					Event_RadiusDamageFromJoint( const char *jointname, const char *damageDefName );
@@ -803,17 +743,10 @@ protected:
 	void					Event_AllowHiddenMovement( int enable );
 	void					Event_TriggerParticles( const char *jointName );
 	void					Event_FindActorsInBounds( const idVec3 &mins, const idVec3 &maxs );
-	void					Event_CanReachPosition( const idVec3 &pos );
-	void					Event_CanReachEntity( idEntity *ent );
+	void 					Event_CanReachPosition( const idVec3 &pos );
+	void 					Event_CanReachEntity( idEntity *ent );
 	void					Event_CanReachEnemy( void );
 	void					Event_GetReachableEntityPosition( idEntity *ent );
-	void					Event_MoveToPositionDirect(const idVec3 &pos);
-	void					Event_AvoidObstacles(int ignore);
-	void					Event_TriggerFX(const char *joint, const char *fx);
-
-	void					Event_StartEmitter(const char *name, const char *joint, const char *particle);
-	void					Event_GetEmitter(const char *name);
-	void					Event_StopEmitter(const char *name);
 };
 
 class idCombatNode : public idEntity {

@@ -101,7 +101,7 @@ void hhProjectileRocketLauncher::Launch( const idVec3 &start, const idMat3 &axis
 
 	if( modelProxy.IsValid() ) {
 		fxInfo.SetEntity( this );
-		modelProxy->BroadcastFxInfoAlongBonePrefix( &spawnArgs, "fx_blood", "joint_bloodFx", NULL, NULL, false ); //rww - don't broadcast
+		modelProxy->BroadcastFxInfoAlongBonePrefix( &spawnArgs, "fx_blood", "joint_bloodFx", false ); //rww - don't broadcast
 	}
 }
 

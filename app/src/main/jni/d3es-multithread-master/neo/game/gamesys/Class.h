@@ -1,47 +1,17 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#ifndef __SYS_CLASS_H__
-#define __SYS_CLASS_H__
-
-#include "idlib/containers/Hierarchy.h"
-
-#include "Event.h"
-
-class idClass;
-class idTypeInfo;
-
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 
 Base class for all game objects.  Provides fast run-time type checking and run-time
 instancing of objects.
 
 */
+
+#ifndef __SYS_CLASS_H__
+#define __SYS_CLASS_H__
+
+class idClass;
+class idTypeInfo;
 
 extern const idEventDef EV_Remove;
 extern const idEventDef EV_SafeRemove;
@@ -74,7 +44,7 @@ public:
 	idEventArg( const class idEntity *data )	{ type = D_EVENT_ENTITY; value = reinterpret_cast<intptr_t>( data ); };
 	idEventArg( const struct trace_s *data )	{ type = D_EVENT_TRACE; value = reinterpret_cast<intptr_t>( data ); };
 #ifdef _PREY //k: placeholder for NULL
-	#ifdef __aarch64__
+#ifdef __aarch64__
 	idEventArg(intptr_t data) { type = 'y'; value = data; };
 #endif
 #endif
@@ -113,7 +83,7 @@ CLASS_DECLARATION
 
 This macro must be included in the code to properly initialize variables
 used in type checking and run-time instanciation.  It also defines the list
-of events that the class responds to.  Take special care to ensure that the
+of events that the class responds to.  Take special care to ensure that the 
 proper superclass is indicated or the run-time type information will be
 incorrect.  Use this on concrete classes only.
 ================
@@ -169,7 +139,7 @@ on abstract classes only.
 		( idEventFunc<idClass> * )nameofclass::eventCallbacks, nameofclass::CreateInstance, ( void ( idClass::* )( void ) )&nameofclass::Spawn,	\
 		( void ( idClass::* )( idSaveGame * ) const )&nameofclass::Save, ( void ( idClass::* )( idRestoreGame * ) )&nameofclass::Restore );	\
 	idClass *nameofclass::CreateInstance( void ) {													\
-		gameLocal.Error( "Cannot instantiate abstract class %s.", #nameofclass );					\
+		gameLocal.Error( "Cannot instanciate abstract class %s.", #nameofclass );					\
 		return NULL;																				\
 	}																								\
 	idTypeInfo *nameofclass::GetType( void ) const {												\
@@ -241,9 +211,9 @@ public:
 	bool						ProcessEvent( const idEventDef *ev, idEventArg arg1, idEventArg arg2, idEventArg arg3, idEventArg arg4, idEventArg arg5, idEventArg arg6, idEventArg arg7 );
 	bool						ProcessEvent( const idEventDef *ev, idEventArg arg1, idEventArg arg2, idEventArg arg3, idEventArg arg4, idEventArg arg5, idEventArg arg6, idEventArg arg7, idEventArg arg8 );
 
-	bool						ProcessEventArgPtr( const idEventDef *ev, intptr_t *data );
+	bool						ProcessEventArgPtr( const idEventDef *ev, intptr_t*data );
 	void						CancelEvents( const idEventDef *ev );
-	virtual			// HUMANHEAD nla
+	virtual			// HUMANHEAD nla 
 	void						Event_Remove( void );
 
 	// Static functions
@@ -306,7 +276,7 @@ public:
 
 	idHierarchy<idTypeInfo>		node;
 
-								idTypeInfo( const char *classname, const char *superclass,
+								idTypeInfo( const char *classname, const char *superclass, 
 												idEventFunc<idClass> *eventCallbacks, idClass *( *CreateInstance )( void ), void ( idClass::*Spawn )( void ),
 												void ( idClass::*Save )( idSaveGame *savefile ) const, void	( idClass::*Restore )( idRestoreGame *savefile ) );
 								~idTypeInfo();
@@ -322,7 +292,7 @@ public:
 ================
 idTypeInfo::IsType
 
-Checks if the object's class is a subclass of the class defined by the
+Checks if the object's class is a subclass of the class defined by the 
 passed in idTypeInfo.
 ================
 */
@@ -349,7 +319,7 @@ ID_INLINE bool idTypeInfo::RespondsTo( const idEventDef &ev ) const {
 ================
 idClass::IsType
 
-Checks if the object's class is a subclass of the class defined by the
+Checks if the object's class is a subclass of the class defined by the 
 passed in idTypeInfo.
 ================
 */

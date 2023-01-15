@@ -1,36 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_MOVER_H__
 #define __GAME_MOVER_H__
-
-#include "physics/Physics_Parametric.h"
-#include "Entity.h"
 
 extern const idEventDef EV_TeamBlocked;
 extern const idEventDef EV_PartBlocked;
@@ -172,7 +144,7 @@ protected://HUMANHEAD: changed to protected
 	void					VectorForDir( float dir, idVec3 &vec );
 	idCurve_Spline<idVec3> *GetSpline( idEntity *splineEntity ) const;
 
-	void					Event_SetCallback( void );
+	void					Event_SetCallback( void );	
 	void					Event_TeamBlocked( idEntity *blockedPart, idEntity *blockingEntity );
 	void					Event_StopMoving( void );
 	void					Event_StopRotating( void );
@@ -220,7 +192,7 @@ public:
 							idSplinePath();
 
 	void					Spawn( void );
-
+	
 	//HUMANHEAD START rdr
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -291,7 +263,6 @@ private:
 	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
 	void					Event_Activate( idEntity *activator );
 	void					Event_PostFloorArrival();
-	void					Event_SetGuiStates();
 
 };
 
@@ -375,7 +346,6 @@ protected:
 	idPhysics_Parametric	physicsObj;
 	qhandle_t				areaPortal;			// 0 = no portal
 	bool					blocked;
-	bool					playerOnly;
 	idList< idEntityPtr<idEntity> >	guiTargets;
 
 	void					MatchActivateTeam( moverState_t newstate, int time );
@@ -422,7 +392,6 @@ public:
 
 	bool					IsOpen( void );
 	bool					IsNoTouch( void );
-	bool					AllowPlayerOnly(idEntity *ent);
 	int						IsLocked( void );
 	void					Lock( int f );
 	void					Use( idEntity *other, idEntity *activator );
@@ -435,7 +404,7 @@ public:
 protected:	// HUMANHEAD aob
 	// HUMANHEAD nla
 	virtual bool			ForcedOpen( void ) { return( false ); };
-	idList<idStr>			buddyNames;
+	idList<idStr>			buddyNames;	
 	// HUMANHEAD END
 	float					triggersize;
 	bool					crusher;
@@ -522,7 +491,7 @@ public:
 							idMover_Periodic( void );
 
 	void					Spawn( void );
-
+	
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 

@@ -1,37 +1,9 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_TARGET_H__
 #define __GAME_TARGET_H__
 
-#include "idlib/math/Interpolate.h"
-
-#include "Entity.h"
 
 /*
 ===============================================================================
@@ -58,23 +30,6 @@ idTarget_Remove
 class idTarget_Remove : public idTarget {
 public:
 	CLASS_PROTOTYPE( idTarget_Remove );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
-idTarget_Show
-
-===============================================================================
-*/
-
-class idTarget_Show : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_Show );
 
 private:
 	void				Event_Activate( idEntity *activator );
@@ -283,24 +238,6 @@ private:
 /*
 ===============================================================================
 
-idTarget_GiveEmail
-
-===============================================================================
-*/
-
-class idTarget_GiveEmail : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_GiveEmail );
-
-	void				Spawn( void );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
 idTarget_SetModel
 
 ===============================================================================
@@ -314,56 +251,6 @@ public:
 
 private:
 	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
-idTarget_SetInfluence
-
-===============================================================================
-*/
-typedef struct SavedGui_s {
-	SavedGui_s() {
-		memset(gui, 0, sizeof(idUserInterface *)*MAX_RENDERENTITY_GUI);
-	};
-	idUserInterface	*gui[MAX_RENDERENTITY_GUI];
-} SavedGui_t;
-
-class idTarget_SetInfluence : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_SetInfluence );
-
-						idTarget_SetInfluence( void );
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-	void				Spawn( void );
-
-private:
-	void				Event_Activate( idEntity *activator );
-	void				Event_RestoreInfluence();
-	void				Event_GatherEntities();
-	void				Event_Flash( float flash, int out );
-	void				Event_ClearFlash( float flash );
-	void				Think( void );
-
-	idList<int>			lightList;
-	idList<int>			guiList;
-	idList<int>			soundList;
-	idList<int>			genericList;
-	float				flashIn;
-	float				flashOut;
-	float				delay;
-	idStr				flashInSound;
-	idStr				flashOutSound;
-	idEntity *			switchToCamera;
-	idInterpolate<float>fovSetting;
-	bool				soundFaded;
-	bool				restoreOnTrigger;
-	idList<SavedGui_t>	savedGuiList;
 };
 
 
@@ -399,46 +286,12 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	void				Think( void );
-
 private:
 	idInterpolate<int>	fovSetting;
 
 	void				Event_Activate( idEntity *activator );
 };
 
-
-/*
-===============================================================================
-
-idTarget_SetPrimaryObjective
-
-===============================================================================
-*/
-
-class idTarget_SetPrimaryObjective : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_SetPrimaryObjective );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-idTarget_LockDoor
-
-===============================================================================
-*/
-
-class idTarget_LockDoor: public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_LockDoor );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
 
 /*
 ===============================================================================
@@ -460,7 +313,7 @@ private:
 /*
 ===============================================================================
 
-idTarget_LockDoor
+idTarget_EnableLevelWeapons
 
 ===============================================================================
 */
@@ -484,9 +337,9 @@ idTarget_Tip
 
 class idTarget_Tip : public idTarget {
 public:
-CLASS_PROTOTYPE( idTarget_Tip );
+	CLASS_PROTOTYPE( idTarget_Tip );
 
-	idTarget_Tip();
+						idTarget_Tip();
 	void				Spawn( void );
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
@@ -498,21 +351,6 @@ private:
 
 	bool				bDisabled;
 };
-
-/*
-===============================================================================
-
-idTarget_GiveSecurity
-
-===============================================================================
-*/
-class idTarget_GiveSecurity : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_GiveSecurity );
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
 
 /*
 ===============================================================================

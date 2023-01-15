@@ -1,38 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
-
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-
-#include "Light.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
@@ -126,10 +98,10 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	idMat3 mat;
 	if ( !args->GetMatrix( "light_rotation", "1 0 0 0 1 0 0 0 1", mat ) ) {
 		if ( !args->GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", mat ) ) {
-			args->GetFloat( "angle", "0", angles[ 1 ] );
-			angles[ 0 ] = 0;
+	   		args->GetFloat( "angle", "0", angles[ 1 ] );
+   			angles[ 0 ] = 0;
 			angles[ 1 ] = idMath::AngleNormalize360( angles[ 1 ] );
-			angles[ 2 ] = 0;
+	   		angles[ 2 ] = 0;
 			mat = angles.ToMat3();
 		}
 	}
@@ -232,7 +204,7 @@ archives object for save game file
 */
 void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteRenderLight( renderLight );
-
+	
 	savefile->WriteBool( renderLight.prelightModel != NULL );
 
 	savefile->WriteVec3( localLightOrigin );
@@ -362,11 +334,6 @@ void idLight::Spawn( void ) {
 		Off();
 	}
 
-	// Midnight CTF
-	if (gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool("si_midnight") && !spawnArgs.GetBool("midnight_override")) {
-		Off();
-	}
-
 	health = spawnArgs.GetInt( "health", "0" );
 	spawnArgs.GetString( "broken", "", brokenModel );
 	spawnArgs.GetBool( "break", "0", breakOnTrigger );
@@ -395,7 +362,7 @@ void idLight::Spawn( void ) {
 			int	pos;
 
 			needBroken = false;
-
+		
 			pos = model.Find( "." );
 			if ( pos < 0 ) {
 				pos = model.Length();
@@ -408,7 +375,7 @@ void idLight::Spawn( void ) {
 				brokenModel += &model[ pos ];
 			}
 		}
-
+	
 		// make sure the model gets cached
 		if ( !renderModelManager->CheckModel( brokenModel ) ) {
 			if ( needBroken ) {
@@ -420,7 +387,7 @@ void idLight::Spawn( void ) {
 #endif
 
 		GetPhysics()->SetContents( spawnArgs.GetBool( "nonsolid" ) ? 0 : CONTENTS_SOLID );
-
+	
 		// make sure the collision model gets cached
 		idClipModel::CheckModel( brokenModel );
 	}
@@ -488,16 +455,6 @@ idLight::SetColor
 */
 void idLight::SetColor( float red, float green, float blue ) {
 	baseColor.Set( red, green, blue );
-	SetLightLevel();
-}
-
-/*
-================
-idLight::SetColor
-================
-*/
-void idLight::SetColor( const idVec3 &color ) {
-	baseColor = color;
 	SetLightLevel();
 }
 
@@ -1118,7 +1075,7 @@ void idLight::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		}
 	}
 	UnpackColor( msg.ReadLong(), baseColor );
-	// lightParentEntityNum = msg.ReadBits( GENTITYNUM_BITS );
+	// lightParentEntityNum = msg.ReadBits( GENTITYNUM_BITS );	
 
 /*	// only helps prediction
 	UnpackColor( msg.ReadLong(), fadeFrom );
@@ -1167,9 +1124,9 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			BecomeBroken( NULL );
 			return true;
 		}
-		default:
-			break;
+		default: {
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
 	}
-
-	return idEntity::ClientReceiveEvent( event, time, msg );
+	return false;
 }

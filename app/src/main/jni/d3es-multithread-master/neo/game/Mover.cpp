@@ -1,39 +1,12 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-#include "Player.h"
-
-#include "Mover.h"
-
-// a mover will update any gui entities in it's target list with
+// a mover will update any gui entities in it's target list with 
 // a key/val pair of "mover" "state" from below.. guis can represent
 // realtime info like this
 // binary only
@@ -46,10 +19,10 @@ extern const char *guiBinaryMoverStates[] = {
 };
 #else
 static const char *guiBinaryMoverStates[] = {
-		"1",	// pos 1
-		"2",	// pos 2
-		"3",	// moving 1 to 2
-		"4"		// moving 2 to 1
+	"1",	// pos 1
+	"2",	// pos 2
+	"3",	// moving 1 to 2
+	"4"		// moving 2 to 1
 };
 #endif
 
@@ -189,7 +162,7 @@ void idMover::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( move.movetime );
 	savefile->WriteInt( move.deceleration );
 	savefile->WriteVec3( move.dir );
-
+	
 	savefile->WriteInt( rot.stage );
 	savefile->WriteInt( rot.acceleration );
 	savefile->WriteInt( rot.movetime );
@@ -197,7 +170,7 @@ void idMover::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( rot.rot.pitch );
 	savefile->WriteFloat( rot.rot.yaw );
 	savefile->WriteFloat( rot.rot.roll );
-
+	
 	savefile->WriteInt( move_thread );
 	savefile->WriteInt( rotate_thread );
 
@@ -258,7 +231,7 @@ void idMover::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( move.movetime );
 	savefile->ReadInt( move.deceleration );
 	savefile->ReadVec3( move.dir );
-
+	
 	savefile->ReadInt( (int&)rot.stage );
 	savefile->ReadInt( rot.acceleration );
 	savefile->ReadInt( rot.movetime );
@@ -266,7 +239,7 @@ void idMover::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( rot.rot.pitch );
 	savefile->ReadFloat( rot.rot.yaw );
 	savefile->ReadFloat( rot.rot.roll );
-
+	
 	savefile->ReadInt( move_thread );
 	savefile->ReadInt( rotate_thread );
 
@@ -314,7 +287,7 @@ void idMover::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( useAngles );
 
 		PostEventMS( &EV_PostRestore, 0, starttime, totaltime, accel, decel, useAngles );
-	}
+	} 
 }
 
 /*
@@ -555,7 +528,7 @@ idMover::FindGuiTargets
 ================
 */
 void idMover::FindGuiTargets( void ) {
-	gameLocal.GetTargets( spawnArgs, guiTargets, "guiTarget" );
+   	gameLocal.GetTargets( spawnArgs, guiTargets, "guiTarget" );
 }
 
 /*
@@ -620,7 +593,7 @@ void idMover::Event_InitGuiTargets( void ) {
 /***********************************************************************
 
 	Translation control functions
-
+	
 ***********************************************************************/
 
 /*
@@ -836,7 +809,7 @@ void idMover::BeginMove( idThread *thread ) {
 /***********************************************************************
 
 	Rotation control functions
-
+	
 ***********************************************************************/
 
 /*
@@ -1054,8 +1027,8 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 
 /***********************************************************************
 
-	Script callable routines
-
+	Script callable routines  
+	
 ***********************************************************************/
 
 /*
@@ -1324,6 +1297,7 @@ idMover::Event_RotateTo
 */
 void idMover::Event_RotateTo( idAngles &angles ) {
 	dest_angles = angles;
+
 	BeginRotation( idThread::CurrentThread(), true );
 }
 
@@ -1645,8 +1619,8 @@ const idEventDef EV_GetSplineLength( "getSplineLength", NULL, 'f' ); //HUMANHEAD
 const idEventDef EV_GetPositionForLength( "getPositionForLength", "f", 'v' ); //HUMANHEAD rdr
 
 CLASS_DECLARATION( idEntity, idSplinePath )
-				EVENT( EV_GetSplineLength,		idSplinePath::Event_GetSplineLength ) //HUMANHEAD rdr
-				EVENT( EV_GetPositionForLength,	idSplinePath::Event_GetPositionForLength ) //HUMANHEAD rdr
+	EVENT( EV_GetSplineLength,		idSplinePath::Event_GetSplineLength ) //HUMANHEAD rdr
+	EVENT( EV_GetPositionForLength,	idSplinePath::Event_GetPositionForLength ) //HUMANHEAD rdr
 END_CLASS
 
 /*
@@ -1655,6 +1629,7 @@ idSplinePath::idSplinePath
 ================
 */
 idSplinePath::idSplinePath() {
+	splineLength = 0.0f;
 }
 
 /*
@@ -1718,7 +1693,6 @@ void idSplinePath::Event_GetPositionForLength( float length ) {
 }
 //HUMANHEAD END rdr
 
-
 /*
 ===============================================================================
 
@@ -1728,7 +1702,6 @@ idElevator
 */
 const idEventDef EV_PostArrival( "postArrival", NULL );
 const idEventDef EV_GotoFloor( "gotoFloor", "d" );
-const idEventDef EV_SetGuiStates("setGuiStates");
 
 CLASS_DECLARATION( idMover, idElevator )
 	EVENT( EV_Activate,				idElevator::Event_Activate )
@@ -1737,7 +1710,6 @@ CLASS_DECLARATION( idMover, idElevator )
 	EVENT( EV_PostArrival,			idElevator::Event_PostFloorArrival )
 	EVENT( EV_GotoFloor,			idElevator::Event_GotoFloor )
 	EVENT( EV_Touch,				idElevator::Event_Touch )
-	EVENT(EV_SetGuiStates,			idElevator::Event_SetGuiStates)
 END_CLASS
 
 /*
@@ -1854,7 +1826,7 @@ idElevator::Event_Touch
 ===============
 */
 void idElevator::Event_Touch( idEntity *other, trace_t *trace ) {
-
+	
 	if ( gameLocal.time < lastTouchTime + 2000 ) {
 		return;
 	}
@@ -1916,7 +1888,7 @@ void idElevator::Think( void ) {
 				MoveToPos( fi->pos );
 			}
 		}
-	}
+	} 
 	RunPhysics();
 	Present();
 }
@@ -1961,10 +1933,6 @@ idElevator::HandleSingleGuiCommand
 */
 bool idElevator::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 	idToken token;
-
-	if ( controlsDisabled ) {
-		return false;
-	}
 
 	if ( !src->ReadToken( &token ) ) {
 		return false;
@@ -2136,11 +2104,6 @@ void idElevator::Event_PostFloorArrival() {
 	}
 }
 
-void idElevator::Event_SetGuiStates()
-{
-	SetGuiStates((currentFloor == 1) ? guiBinaryMoverStates[0] : guiBinaryMoverStates[1]);
-}
-
 /*
 ================
 idElevator::DoneMoving
@@ -2240,6 +2203,7 @@ void idElevator::Event_PartBlocked( idEntity *blockingEntity ) {
 	blockingEntity->SquishedByDoor(this);
 }
 
+
 /*
 ===============================================================================
 
@@ -2299,7 +2263,6 @@ idMover_Binary::idMover_Binary() {
 	updateStatus = 0;
 	areaPortal = 0;
 	blocked = false;
-	playerOnly = false;
 	fl.networkSync = true;
 }
 
@@ -2378,7 +2341,6 @@ void idMover_Binary::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( gameRenderWorld->GetPortalState( areaPortal ) );
 	}
 	savefile->WriteBool( blocked );
-	savefile->WriteBool(playerOnly);
 
 	savefile->WriteInt( guiTargets.Num() );
 	for( i = 0; i < guiTargets.Num(); i++ ) {
@@ -2440,7 +2402,6 @@ void idMover_Binary::Restore( idRestoreGame *savefile ) {
 		gameLocal.SetPortalState( areaPortal, portalState );
 	}
 	savefile->ReadBool( blocked );
-	savefile->ReadBool(playerOnly);
 
 	guiTargets.Clear();
 	savefile->ReadInt( num );
@@ -2617,7 +2578,7 @@ idMover_Binary::SetMoverState
 ===============
 */
 void idMover_Binary::SetMoverState( moverState_t newstate, int time ) {
-	idVec3	delta;
+	idVec3 	delta;
 
 	moverState = newstate;
 	move_thread = 0;
@@ -2698,7 +2659,7 @@ void idMover_Binary::Event_MatchActivateTeam( moverState_t newstate, int time ) 
 ================
 idMover_Binary::BindTeam
 
-All entities in a mover team will be bound
+All entities in a mover team will be bound 
 ================
 */
 void idMover_Binary::BindTeam( idEntity *bindTo ) {
@@ -2767,9 +2728,6 @@ void idMover_Binary::Event_OpenPortal( void ) {
 		if ( slave->areaPortal ) {
 			slave->SetPortalState( true );
 		}
-		if (slave->playerOnly) {
-			gameLocal.SetAASAreaState(slave->GetPhysics()->GetAbsBounds(), AREACONTENTS_CLUSTERPORTAL, false);
-		}
 	}
 }
 
@@ -2787,9 +2745,6 @@ void idMover_Binary::Event_ClosePortal( void ) {
 		if ( !slave->IsHidden() ) {
 			if ( slave->areaPortal ) {
 				slave->SetPortalState( false );
-			}
-			if (slave->playerOnly) {
-				gameLocal.SetAASAreaState(slave->GetPhysics()->GetAbsBounds(), AREACONTENTS_CLUSTERPORTAL, true);
 			}
 		}
 	}
@@ -2832,7 +2787,7 @@ void idMover_Binary::Event_Reached_BinaryMover( void ) {
 			// return to pos1 after a delay
 			PostEventSec( &EV_Mover_ReturnToPos1, wait );
 		}
-
+		
 		// fire targets
 		ActivateTargets( moveMaster->GetActivator() );
 
@@ -3091,7 +3046,7 @@ idMover_Binary::FindGuiTargets
 ================
 */
 void idMover_Binary::FindGuiTargets( void ) {
-	gameLocal.GetTargets( spawnArgs, guiTargets, "guiTarget" );
+   	gameLocal.GetTargets( spawnArgs, guiTargets, "guiTarget" );
 }
 
 /*
@@ -3483,7 +3438,7 @@ void idDoor::Spawn( void ) {
 
 	spawnArgs.GetString( "buddy", "", buddyStr );
 	// HUMANHEAD nla
-	hhUtils::GetValues( spawnArgs, "buddy", buddyNames, true );
+	hhUtils::GetValues( spawnArgs, "buddy", buddyNames, true );	
 	// HUMANHEAD END
 
 	spawnArgs.GetString( "requires", "", requires );
@@ -3507,7 +3462,7 @@ void idDoor::Spawn( void ) {
 	// if "start_open", reverse position 1 and 2
 	if ( start_open ) {
 		// post it after EV_SpawnBind
-		PostEventMS( &EV_Door_StartOpen, 1 );
+		PostEventMS( &EV_Door_StartOpen, 1 );		
 	}
 #endif
 
@@ -3734,7 +3689,7 @@ void idDoor::Use( idEntity *other, idEntity *activator ) {
 		}
 		ActivateTargets( activator );
 		Use_BinaryMover( activator );
-	}
+	} 
 }
 
 /*
@@ -3833,20 +3788,6 @@ bool idDoor::IsNoTouch( void ) {
 }
 
 /*
-================
-idDoor::AllowPlayerOnly
-================
-*/
-bool idDoor::AllowPlayerOnly(idEntity *ent)
-{
-	if (playerOnly && !ent->IsType(idPlayer::Type)) {
-		return false;
-	}
-
-	return true;
-}
-
-/*
 ======================
 idDoor::CalcTriggerBounds
 
@@ -3864,7 +3805,7 @@ void idDoor::CalcTriggerBounds( float size, idBounds &bounds ) {
 	// find the bounds of everything on the team
 	bounds = GetPhysics()->GetAbsBounds();
 #endif
-
+	
 	fl.takedamage = true;
 	for( other = activateChain; other != NULL; other = other->GetActivateChain() ) {
 		if ( other->IsType( idDoor::Type ) ) {
@@ -4065,9 +4006,7 @@ void idDoor::Event_Touch( idEntity *other, trace_t *trace ) {
 
 	if ( trigger && trace->c.id == trigger->GetId() ) {
 		if ( !IsNoTouch() && !IsLocked() && GetMoverState() != MOVER_1TO2 ) {
-			if (AllowPlayerOnly(other)) {
-				Use(this, other);
-			}
+			Use( this, other );
 		}
 	} else if ( sndTrigger && trace->c.id == sndTrigger->GetId() ) {
 		if ( other && other->IsType( idPlayer::Type ) && IsLocked() && gameLocal.time > nextSndTriggerTime ) {
@@ -4133,13 +4072,13 @@ void idDoor::Event_Activate( idEntity *activator ) {
 		}
 	}
 
-	if ( syncLock.Length() ) {
+  	if ( syncLock.Length() ) {
 		idEntity *sync = gameLocal.FindEntity( syncLock );
 		if ( sync && sync->IsType( idDoor::Type ) ) {
 			if ( static_cast<idDoor *>( sync )->IsOpen() ) {
-				return;
-			}
-		}
+  				return;
+  			}
+  		}
 	}
 
 	ActivateTargets( activator );
@@ -4442,7 +4381,7 @@ void idPlat::SpawnPlatTrigger( idVec3 &pos ) {
 		tmin[1] = ( bounds[0][1] + bounds[1][1] ) * 0.5f;
 		tmax[1] = tmin[1] + 1;
 	}
-
+	
 	trigger = new idClipModel( idTraceModel( idBounds( tmin, tmax ) ) );
 	trigger->Link( gameLocal.clip, this, 255, GetPhysics()->GetOrigin(), mat3_identity );
 	trigger->SetContents( CONTENTS_TRIGGER );
@@ -4696,7 +4635,7 @@ void idRotater::Event_Activate( idEntity *activator ) {
 		spawnArgs.GetFloat( "speed", "100", speed );
 		spawnArgs.GetBool( "x_axis", "0", x_axis );
 		spawnArgs.GetBool( "y_axis", "0", y_axis );
-
+		
 		// set the axis of rotation
 		if ( x_axis ) {
 			delta[2] = speed;

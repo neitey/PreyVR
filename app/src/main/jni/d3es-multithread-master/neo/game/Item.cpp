@@ -1,41 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-
-#include "idlib/precompiled.h"
-#include "renderer/RenderSystem.h"
-
-#include "gamesys/SysCvar.h"
-#include "Player.h"
-#include "Fx.h"
-#include "SmokeParticles.h"
-
-#include "Item.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
@@ -170,7 +139,7 @@ bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_
 		}
 	}
 
-	// fade down after the last pulse finishes
+	// fade down after the last pulse finishes 
 	if ( !inView && cycle > lastCycle ) {
 		renderEntity->shaderParms[4] = 0.0f;
 	} else {
@@ -312,10 +281,9 @@ void idItem::Spawn( void ) {
 		if ( !ent ) {
 			gameLocal.Error( "Item couldn't find owner '%s'", giveTo.c_str() );
 		}
-		PostEventMS( &EV_Touch, 0, ent, 0 );
+		PostEventMS( &EV_Touch, 0, ent, NULL );
 	}
 
-	// idItemTeam does not rotate and bob
 	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
 		if (!IsType(idMoveableItem::Type)) { //HUMANHEAD rww
 			spin = true;
@@ -365,8 +333,8 @@ bool idItem::GiveToPlayer( idPlayer *player ) {
 
 	if ( spawnArgs.GetBool( "inv_carry" ) ) {
 		return player->GiveInventoryItem( &spawnArgs );
-	}
-
+	} 
+	
 	return player->GiveItem( this );
 }
 
@@ -376,7 +344,7 @@ idItem::Pickup
 ================
 */
 bool idItem::Pickup( idPlayer *player ) {
-
+	
 	if ( !GiveToPlayer( player ) ) {
 		return false;
 	}
@@ -415,7 +383,7 @@ bool idItem::Pickup( idPlayer *player ) {
 		const char *sfx = spawnArgs.GetString( "fxRespawn" );
 		if ( sfx && *sfx ) {
 			PostEventSec( &EV_RespawnFx, respawn - 0.5f );
-		}
+		} 
 		PostEventSec( &EV_RespawnItem, respawn );
 	} else if ( !spawnArgs.GetBool( "inv_objective" ) && !no_respawn ) {
 		// give some time for the pickup sound to play
@@ -441,7 +409,7 @@ const idDeclSkin *idItem::GetNonRespawnSkin(void) const {
 	{
 		return NULL;
 	}
-
+	
 	return declManager->FindSkin(customSkin);
 }
 //HUMANHEAD END
@@ -531,11 +499,11 @@ bool idItem::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			Event_RespawnFx();
 			return true;
 		}
-		default:
-			break;
+		default: {
+			return idEntity::ClientReceiveEvent( event, time, msg );
+		}
 	}
-
-	return idEntity::ClientReceiveEvent( event, time, msg );
+	return false;
 }
 
 /*
@@ -659,15 +627,15 @@ void idItem::Event_RespawnFx( void ) {
 ===============================================================================
 
   idMoveableItem
-
+	
 ===============================================================================
 */
 
 //HUMANHEAD pdm: Now inherits from our hhItem
 //CLASS_DECLARATION( idItem, idMoveableItem )
 CLASS_DECLARATION( hhItem, idMoveableItem )
-				EVENT( EV_DropToFloor,	idMoveableItem::Event_DropToFloor )
-				EVENT( EV_Gib,			idMoveableItem::Event_Gib )
+	EVENT( EV_DropToFloor,	idMoveableItem::Event_DropToFloor )
+	EVENT( EV_Gib,			idMoveableItem::Event_Gib )
 END_CLASS
 
 /*
@@ -698,7 +666,7 @@ idMoveableItem::Save
 ================
 */
 void idMoveableItem::Save( idSaveGame *savefile ) const {
-	savefile->WriteStaticObject( physicsObj );
+   	savefile->WriteStaticObject( physicsObj );
 
 	savefile->WriteClipModel( trigger );
 
@@ -731,7 +699,6 @@ void idMoveableItem::Spawn( void ) {
 	float density, friction, bouncyness, tsize;
 	idStr clipModelName;
 	idBounds bounds;
-	SetTimeState ts(timeGroup);
 
 	// create a trigger for item pickup
 	spawnArgs.GetFloat( "triggersize", "16.0", tsize );
@@ -772,7 +739,7 @@ void idMoveableItem::Spawn( void ) {
 	physicsObj.SetBouncyness( bouncyness );
 	physicsObj.SetFriction( 0.6f, 0.6f, friction );
 	physicsObj.SetGravity( gameLocal.GetGravity() );
-	physicsObj.SetContents( CONTENTS_RENDERMODEL );
+	physicsObj.SetContents( CONTENTS_SHOOTABLE );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP );
 	SetPhysics( &physicsObj );
 
@@ -805,11 +772,6 @@ void idMoveableItem::Think( void ) {
 
 	RunPhysics();
 
-	if ( thinkFlags & TH_PHYSICS ) {
-		// update trigger position
-		trigger->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), mat3_identity );
-	}
-
 	if ( thinkFlags & TH_UPDATEPARTICLES ) {
 		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() ) ) {
 			smokeTime = 0;
@@ -841,10 +803,9 @@ bool idMoveableItem::Pickup( idPlayer *player ) {
 	//HUMANHEAD rww - er, hhItem::Pickup always returns true! i'll just check if it's been hidden instead.
 	if ( IsHidden() ) {
 		trigger->SetContents( 0 );
-	}
+	} 
 	return IsHidden();
 }
-
 
 //HUMANHEAD rww
 /*
@@ -1077,7 +1038,7 @@ idItemRemover::RemoveItem
 */
 void idItemRemover::RemoveItem( idPlayer *player ) {
 	const char *remove;
-
+	
 	remove = spawnArgs.GetString( "remove" );
 	player->RemoveInventoryItem( remove );
 }
@@ -1100,3 +1061,4 @@ void idItemRemover::Event_Trigger( idEntity *activator ) {
 
 ===============================================================================
 */
+
