@@ -150,6 +150,11 @@ idRenderWorldLocal::idRenderWorldLocal() {
 	interactionTable = 0;
 	interactionTableWidth = 0;
 	interactionTableHeight = 0;
+#ifdef _HUMANHEAD
+	#if DEATHWALK_AUTOLOAD
+	numAppendPortalAreas = 0;
+#endif
+#endif
 }
 
 /*
