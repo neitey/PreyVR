@@ -70,7 +70,7 @@ bool hhSound::StartSoundShader( const idSoundShader *shader, const s_channelType
 		const char *subtitleText = spawnArgs.GetString( "subtitle", NULL );
 		if ( result && subtitleText ) {
 			idPlayer *player = gameLocal.GetLocalPlayer();
-			if ( length > 0 && player && player->hud ) {
+			if ( length && player && player->hud ) {
 				player->hud->SetStateInt("subtitlefadetime", 0);
 				player->hud->SetStateInt("subtitlex", 0 );
 				player->hud->SetStateInt("subtitley", 400 );

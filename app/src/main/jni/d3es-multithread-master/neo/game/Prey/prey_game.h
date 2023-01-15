@@ -20,6 +20,26 @@ public:
 	virtual void			Shutdown( void );
 	void					UnregisterEntity( idEntity *ent );
 
+	//Lubos BEGIN
+	virtual void 				SetVRClientInfo(vrClientInfo *pVRClientInfo);
+	virtual void				CheckRenderCvars();
+	virtual void 				EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn);
+	virtual bool 				CMDButtonsAttackCall(int &teleportCanceled);
+	virtual bool 				CMDButtonsPhysicalCrouch();
+
+	virtual bool 				InCinematic();
+
+	// Release the mouse when the PDA is open
+	virtual bool				IsPDAOpen() const;
+
+	//GB Trying to move animator function
+	virtual bool				AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis );
+
+	// Added by Emile
+	virtual bool				InGameGuiActive();
+	virtual bool				ObjectiveSystemActive();
+	//Lubos END
+
 	virtual void			MapShutdown( void );	
 	virtual void			InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randseed );
 	virtual void			RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );// jrm

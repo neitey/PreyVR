@@ -1436,3 +1436,59 @@ bool hhGameLocal::SetTip(idUserInterface* gui, const char *binding, const char *
 	return (keyMaterial.Length() > 0);
 }
 
+//Lubos BEGIN
+vrClientInfo *pVRClientInfo;
+
+void hhGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
+	pVRClientInfo = pVR;
+
+	static bool firstTime = true;
+	if (firstTime) {
+		common->HapticEnable();
+		firstTime = false;
+	}
+}
+
+void hhGameLocal::CheckRenderCvars() {
+	//TODO:implement
+}
+
+
+void hhGameLocal::EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn) {
+	//TODO:implement
+}
+
+bool hhGameLocal::CMDButtonsAttackCall(int &teleportCanceled) {
+	//TODO:implement
+	return false;
+}
+
+bool hhGameLocal::CMDButtonsPhysicalCrouch() {
+	//TODO:implement
+	return false;
+}
+
+bool hhGameLocal::InCinematic() {
+	//TODO:implmenet vr_cinematics
+	return inCinematic;
+}
+
+bool hhGameLocal::IsPDAOpen() const {
+	return false;
+}
+
+bool hhGameLocal::AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis ) {
+	return animator->GetJointTransform( jointHandle, -1, offset, axis );
+}
+
+bool hhGameLocal::InGameGuiActive() {
+	//TODO:implement
+	return true;
+}
+
+bool hhGameLocal::ObjectiveSystemActive() {
+	//TODO:implement
+	return false;
+}
+
+//Lubos END

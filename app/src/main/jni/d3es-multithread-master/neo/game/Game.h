@@ -13,6 +13,8 @@
 */
 
 // default scripts
+#include "../../../Doom3Quest/VrClientInfo.h"
+
 #define SCRIPT_DEFAULTDEFS			"script/doom_defs.script"
 #define SCRIPT_DEFAULT				"script/prey_main.script"	// HUMANHEAD pdm
 #define SCRIPT_DEFAULTFUNC			"prey_main"					// HUMANHEAD pdm
@@ -56,6 +58,31 @@ public:
 
 	// Set the local client number. Distinguishes listen ( == 0 ) / dedicated ( == -1 )
 	virtual void				SetLocalClient( int clientNum ) = 0;
+
+	//Lubos BEGIN
+	virtual void 				SetVRClientInfo(vrClientInfo *pVRClientInfo) = 0;
+	virtual void				CheckRenderCvars() = 0;
+	virtual void 				EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn) = 0;
+	virtual bool 				CMDButtonsAttackCall(int &teleportCanceled) = 0;
+	virtual bool 				CMDButtonsPhysicalCrouch() = 0;
+
+	virtual bool 				InCinematic() = 0;
+
+	// Release the mouse when the PDA is open
+	virtual bool				IsPDAOpen() const = 0;
+
+	//GB Trying to move animator function
+	virtual bool				AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis ) = 0;
+
+	// Added by Emile
+	virtual bool				InGameGuiActive() = 0;
+	virtual bool				ObjectiveSystemActive() = 0;
+	//Lubos END
+
+	// Koz begin
+	// VR State
+	bool						isVR = 1;
+	// Koz end
 
 	// Sets the user info for a client.
 	// if canModify is true, the game can modify the user info in the returned dictionary pointer, server will forward the change back
