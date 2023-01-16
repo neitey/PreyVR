@@ -56,7 +56,7 @@ import java.util.Vector;
 	private static final int WRITE_EXTERNAL_STORAGE_PERMISSION_ID = 2;
 
 
-	private static final String APPLICATION = "PreyVR";
+	private static final String APPLICATION = "Doom3Quest";
 
 	private String commandLineParams;
 
