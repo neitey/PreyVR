@@ -1,6 +1,22 @@
-# This is an attempt to bring more idTech4A++ games into VR.
+# Introduction
 
-The work is based on this project: https://github.com/glKarin/com.n0n3m4.diii4a (last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/93f17683981e92586fc2ad7b733879e52d1772e1)
+This a work-in-progress project bringing Prey 2006 game into VR (on Oculus Quest 2).
+
+Running this game require a copy of the original Prey 2006 data. Tested on English version patched with 1.4 patch.
+
+Copy the `preybase` folder from the original game into the headset as `PreyVR/preybase`.
+
+![PreyVR Banner](https://github.com/lvonasek/Doom3Quest/blob/master/app/src/main/res/drawable/ic_launcher.png?raw=true)
+
+Logo created by madrapper: https://www.deviantart.com/madrapper/art/Prey-Icon-129814229
+
+
+===
+
+# How was it done
+
+The work is based on DrBeef's Doom3Quest and this project: https://github.com/glKarin/com.n0n3m4.diii4a
+(last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/93f17683981e92586fc2ad7b733879e52d1772e1).
 
 As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I merge them together.
 
@@ -19,11 +35,6 @@ Current status (in `Doom3Quest/app/src/main/jni/d3es-multithread-master/neo/`):
 * ui - merged
 
 Note that this version is not backward compatible with DrBeef's Doom3Quest. It uses different format for save games.
-
-
-![Doom3Quest Banner](https://github.com/lvonasek/Doom3Quest/blob/prey2006/app/src/main/res/drawable/ic_launcher.png)
-
-Logo created by madrapper: https://www.deviantart.com/madrapper/art/Prey-Icon-129814229
 
 ===
 
