@@ -1,36 +1,12 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __AAS_LOCAL_H__
 #define __AAS_LOCAL_H__
 
-#include "ai/AAS.h"
-#include "Pvs.h"
+#include "AAS.h"
+#include "../Pvs.h"
+
 
 class idRoutingCache {
 	friend class idAASLocal;
@@ -81,6 +57,61 @@ private:
 	idList<int>					areas;					// areas the bounds are in
 };
 
+//HUMANHEAD nla 
+// Helper class/data class for the near point functions
+class hhNearPoint {
+
+public:
+	hhNearPoint(const idVec3 &anAllyOrigin, const idVec3 &anOurOrigin, float desiredDist) :
+		allyOrigin(anAllyOrigin), ourOrigin(anOurOrigin),
+		desiredDistSq(desiredDist * desiredDist),
+		bestBlocked(true), bestDot(0), bestPoint(vec3_origin) { 
+		
+		direction = anOurOrigin - anAllyOrigin;
+	}
+
+	idVec3		getBestPoint(void) { return(bestPoint); }
+
+	// These really should be protected with accessors, but for the sake
+	//	  of speed, will leave as public access
+public:
+	idVec3		allyOrigin;		// Point where ally is
+	idVec3		ourOrigin;      // Point where we are
+	idVec3		direction;		// Vector from ally to follower
+	float		desiredDistSq;	// Min distance to be, squared
+	float		bestDistSq;		// Current best point distance squared
+	float		bestBlocked;    // Is the best so far blocked?
+	float		bestDot;		// Current best point * direction
+	idVec3		bestPoint;		// Current best point
+
+};
+
+
+//HUMANHEAD nla
+// Typedefs for return codes
+typedef enum {
+	AREA_NO_VALID_POINTS,		// No valid points were found
+	AREA_MIXED,					// Points were a mixture
+	AREA_ALL_DESIRED			// All points were desired points
+} findAreaType_t;
+
+typedef enum {
+	POINT_NOT_VALID = 0,		// Point was on wrong side of origin
+	POINT_VALID = 1,			// Point was within desired distance
+	POINT_DESIRED = 2			// Point was outside desired distance
+} findPointType_t;
+
+//
+// HUMANHEAD jrm
+class hhPathApproach
+{
+public:
+	hhPathApproach() {totalPathDistSqr = 0.0f; totalApproachDistSqr = 0.0f; minDistSqr = 0.0f; maxDistSqr = 0.0f;}
+	float   totalPathDistSqr;		// Total path dist sqr
+	float	totalApproachDistSqr;	// The total distance squared spent approaching the target 
+	float   minDistSqr, maxDistSqr;	// The closest and farthest we got from the target
+};
+
 
 class idAASLocal : public idAAS {
 public:
@@ -114,9 +145,10 @@ public:
 	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const;
 	virtual bool				FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const;
 	virtual bool				FlyPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const;
-	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags = TFL_WALK | TFL_AIR ) const;
+	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
+	const char *				GetName( void ) const { return file ? file->GetName() : NULL; }
 
 private:
 	idAASFile *					file;
@@ -174,8 +206,12 @@ private:	// debug
 	const idBounds &			DefaultSearchBounds( void ) const;
 	void						DrawCone( const idVec3 &origin, const idVec3 &dir, float radius, const idVec4 &color ) const;
 	void						DrawArea( int areaNum ) const;
-	void						DrawFace( int faceNum, bool side ) const;
-	void						DrawEdge( int edgeNum, bool arrow ) const;
+	// HUMANHEAD nla
+	void						DrawBounds( int areaNum ) const;
+	void						DrawBoundsEdge( const idVec3 &p0, const idVec3 &ip1, int keep, int draw ) const;
+	// HUMANHEAD nla - Added color parameter
+	void						DrawFace( int faceNum, bool side, idVec4 *color = &colorRed ) const;
+	void						DrawEdge( int edgeNum, bool arrow, idVec4 *color = &colorRed ) const;
 	void						DrawReachability( const idReachability *reach ) const;
 	void						ShowArea( const idVec3 &origin ) const;
 	void						ShowWallEdges( const idVec3 &origin ) const;

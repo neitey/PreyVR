@@ -1,38 +1,12 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "AAS_local.h"
+#include "../Game_local.h"		// for cvars and debug drawing
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "ai/AI.h"
-#include "Player.h"
-#include "Game_local.h"
-
-#include "ai/AAS_local.h"
 
 /*
 ============
@@ -66,10 +40,26 @@ idAASLocal::DrawReachability
 ============
 */
 void idAASLocal::DrawReachability( const idReachability *reach ) const {
+#ifdef HUMANHEAD
+	idVec3 dir = (reach->end - reach->start).ToNormal() * 10;
+	gameRenderWorld->DebugArrow( colorCyan, reach->start - dir, reach->end + dir, 2 );
+	gameRenderWorld->DrawText( va( "%d", reach->toAreaNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis );
+#else
 	gameRenderWorld->DebugArrow( colorCyan, reach->start, reach->end, 2 );
 
 	if ( gameLocal.GetLocalPlayer() ) {
 		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis );
+	}
+#endif
+
+	switch( reach->travelType ) {
+		case TFL_WALK: {
+			const idReachability_Walk *walk = static_cast<const idReachability_Walk *>(reach);
+			break;
+		}
+		default: {
+			break;
+		}
 	}
 }
 
@@ -78,16 +68,15 @@ void idAASLocal::DrawReachability( const idReachability *reach ) const {
 idAASLocal::DrawEdge
 ============
 */
-void idAASLocal::DrawEdge( int edgeNum, bool arrow ) const {
+// HUMANHEAD nla - Added color parameterv
+void idAASLocal::DrawEdge( int edgeNum, bool arrow, idVec4 *color ) const {
 	const aasEdge_t *edge;
-	idVec4 *color;
 
 	if ( !file ) {
 		return;
 	}
 
 	edge = &file->GetEdge( edgeNum );
-	color = &colorRed;
 	if ( arrow ) {
 		gameRenderWorld->DebugArrow( *color, file->GetVertex( edge->vertexNum[0] ), file->GetVertex( edge->vertexNum[1] ), 1 );
 	} else {
@@ -104,7 +93,8 @@ void idAASLocal::DrawEdge( int edgeNum, bool arrow ) const {
 idAASLocal::DrawFace
 ============
 */
-void idAASLocal::DrawFace( int faceNum, bool side ) const {
+// HUMANHEAD nla - Added color parameter
+void idAASLocal::DrawFace( int faceNum, bool side, idVec4 *color ) const {
 	int i, j, numEdges, firstEdge;
 	const aasFace_t *face;
 	idVec3 mid, end;
@@ -119,7 +109,7 @@ void idAASLocal::DrawFace( int faceNum, bool side ) const {
 
 	mid = vec3_origin;
 	for ( i = 0; i < numEdges; i++ ) {
-		DrawEdge( abs( file->GetEdgeIndex( firstEdge + i ) ), ( face->flags & FACE_FLOOR ) != 0 );
+		DrawEdge( abs( file->GetEdgeIndex( firstEdge + i ) ), ( face->flags & FACE_FLOOR ) != 0, color );
 		j = file->GetEdgeIndex( firstEdge + i );
 		mid += file->GetVertex( file->GetEdge( abs( j ) ).vertexNum[ j < 0 ] );
 	}
@@ -152,7 +142,9 @@ void idAASLocal::DrawArea( int areaNum ) const {
 	firstFace = area->firstFace;
 
 	for ( i = 0; i < numFaces; i++ ) {
-		DrawFace( abs( file->GetFaceIndex( firstFace + i ) ), file->GetFaceIndex( firstFace + i ) < 0 );
+		// HUMANHEAD nla - added color parameter
+		DrawFace( abs( file->GetFaceIndex( firstFace + i ) ), file->GetFaceIndex( firstFace + i ) < 0,
+			&colorRed );
 	}
 
 	for ( reach = area->reach; reach; reach = reach->next ) {
@@ -187,7 +179,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 	if ( aas_goalArea.GetInteger() ) {
 		int travelTime;
 		idReachability *reach;
-
+		
 		RouteToGoalArea( areaNum, org, aas_goalArea.GetInteger(), TFL_WALK|TFL_AIR, travelTime, &reach );
 		gameLocal.Printf( "\rtt = %4d", travelTime );
 		if ( reach ) {
@@ -232,7 +224,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 idAASLocal::ShowWalkPath
 ============
 */
-void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const {
+void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const {
 	int i, areaNum, curAreaNum, travelTime;
 	idReachability *reach;
 	idVec3 org, areaCenter;
@@ -462,6 +454,56 @@ void idAASLocal::ShowPushIntoArea( const idVec3 &origin ) const {
 
 /*
 ============
+idAASLocal::DrawBounds
+============
+*/
+// HUMANHEAD nla
+void idAASLocal::DrawBounds( int areaNum ) const {
+	const aasArea_t	*area;
+	const idBounds	*bounds;
+	const idVec3		*p0, *p1;
+
+	area = &file->GetArea(areaNum);
+	if (area->numFaces < -1) {	// Not a valid area
+		return;
+	}
+	
+	bounds = &area->bounds;
+	
+	for (int i = 0; i < 2; ++i) {
+		p0 = &(*bounds)[i];
+		p1 = &(*bounds)[(i + 1) % 2];
+		for (int j = 0; j < 3; ++j) {
+			DrawBoundsEdge(*p0, *p1, j, 0);
+		}
+	}
+}
+
+
+/*
+============
+idAASLocal::DrawBoundsEdge
+============
+*/
+// HUMANHEAD nla
+void idAASLocal::DrawBoundsEdge( const idVec3 &p0, const idVec3 &ip1, int keep, int draw ) const {
+	idVec3 p1((*(keep == 0 ? &p0 : &ip1))[0],
+			  (*(keep == 1 ? &p0 : &ip1))[1], 
+			  (*(keep == 2 ? &p0 : &ip1))[2]);
+
+
+	if (draw) {
+		gameRenderWorld->DebugLine( colorWhite, p0, p1);
+	}
+	else {
+		for (int i = 1; i < 3; ++i) {
+			DrawBoundsEdge(p0, p1, (keep + i) % 3, true);
+		}
+	}
+}
+
+/*
+============
 idAASLocal::Test
 ============
 */
@@ -487,8 +529,35 @@ void idAASLocal::Test( const idVec3 &origin ) {
 	if ( ( aas_showHideArea.GetInteger() > 0 ) && ( aas_showHideArea.GetInteger() < file->GetNumAreas() ) ) {
 		ShowHideArea( origin, aas_showHideArea.GetInteger() );
 	}
+	if ( ai_debugPath.GetBool() ) {
+		int i, areaNum, numEdges, edges[1024];
+		idVec3 start, end;
+		if ( gameLocal.GetLocalPlayer() ) {
+			areaNum = PointReachableAreaNum( origin, DefaultSearchBounds(), (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
+			numEdges = GetWallEdges( areaNum, idBounds( origin ).Expand( 256.0f ), TFL_WALK, edges, 1024 );
+			for ( i = 0; i < numEdges; i++ ) {
+				GetEdge( edges[i], start, end );
+				gameRenderWorld->DebugLine( colorWhite, start, end );
+			}
+		}
+	}
 	if ( aas_showAreas.GetBool() ) {
-		ShowArea( origin );
+		//HUMANHEAD nla		
+		if (aas_showAreas.GetInteger() > 2) {
+			int counter;
+
+			for (counter = 0; counter < file->GetNumAreas(); counter++) {
+				if (aas_showAreas.GetInteger() > 3) {
+					DrawBounds(counter);
+				}
+				else {
+					DrawArea(counter);
+				}
+			}
+		}
+		else {
+			ShowArea( origin );
+		}
 	}
 	if ( aas_showWallEdges.GetBool() ) {
 		ShowWallEdges( origin );

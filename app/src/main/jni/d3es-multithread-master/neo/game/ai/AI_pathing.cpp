@@ -1,40 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-
-#include "gamesys/SysCvar.h"
-#include "Moveable.h"
-#include "WorldSpawn.h"
-
-#include "ai/AI.h"
-
-#include <stddef.h>
+#include "../Game_local.h"
 
 /*
 ===============================================================================
@@ -57,10 +27,10 @@ If you have questions concerning this license or the applicable additional terms
 const float MAX_OBSTACLE_RADIUS			= 256.0f;
 const float PUSH_OUTSIDE_OBSTACLES		= 0.5f;
 const float CLIP_BOUNDS_EPSILON			= 10.0f;
-const int	MAX_AAS_WALL_EDGES			= 256;
-const int	MAX_OBSTACLES				= 256;
+const int 	MAX_AAS_WALL_EDGES			= 256;
+const int 	MAX_OBSTACLES				= 256;
 const int	MAX_PATH_NODES				= 256;
-const int	MAX_OBSTACLE_PATH			= 64;
+const int 	MAX_OBSTACLE_PATH			= 64;
 
 typedef struct obstacle_s {
 	idVec2				bounds[2];
@@ -190,9 +160,6 @@ void GetPointOutsideObstacles( const obstacle_t *obstacles, const int numObstacl
 		}
 	}
 
-	if (i == 0)
-		return;
-
 	newPoint = point - ( bestd + PUSH_OUTSIDE_OBSTACLES ) * bestPlane.ToVec2();
 	if ( PointInsideObstacle( obstacles, numObstacles, newPoint ) == -1 ) {
 		point = newPoint;
@@ -268,7 +235,7 @@ void GetPointOutsideObstacles( const obstacle_t *obstacles, const int numObstacl
 			return;
 		}
 	}
-	gameLocal.Warning( "GetPointOutsideObstacles: no valid point found" );
+	gameLocal.Warning( "GetPointOutsideObstacles: no valid point found" ); 
 }
 
 /*
@@ -372,6 +339,9 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			}
 		} else if ( obEnt->IsType( idMoveable::Type ) ) {
 			// moveables are considered obstacles
+#ifdef HUMANHEAD
+		} else if ( obEnt->IsType( hhVehicle::Type ) ) {
+#endif
 		} else {
 			// ignore everything else
 			continue;
@@ -431,10 +401,9 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 		lastVerts[0] = lastVerts[1] = 0;
 		lastEdgeNormal.Zero();
-		nextEdgeNormal.Zero();
 		nextVerts[0] = nextVerts[1] = 0;
 		for ( i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ ) {
-			aas->GetEdge( wallEdges[i], start, end );
+            aas->GetEdge( wallEdges[i], start, end );
 			aas->GetEdgeVertexNumbers( wallEdges[i], verts );
 			edgeDir = end.ToVec2() - start.ToVec2();
 			edgeDir.Normalize();
@@ -602,8 +571,7 @@ pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const 
 	int blockingEdgeNum, blockingObstacle, obstaclePoints, bestNumNodes = MAX_OBSTACLE_PATH;
 	float blockingScale;
 	pathNode_t *root, *node, *child;
-	// gcc 4.0
-	idQueueTemplate<pathNode_t, offsetof( pathNode_t, next ) > pathNodeQueue, treeQueue;
+	idQueue(pathNode_t, next) pathNodeQueue, treeQueue;
 
 	root = pathNodeAllocator.Alloc();
 	root->Init();
@@ -611,7 +579,6 @@ pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const 
 
 	root->delta = seekPos - root->pos;
 	root->numNodes = 0;
-    
 	pathNodeQueue.Add( root );
 
 	for ( node = pathNodeQueue.Get(); node && pathNodeAllocator.GetAllocCount() < MAX_PATH_NODES; node = pathNodeQueue.Get() ) {
@@ -905,7 +872,14 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 	}
 
 	if ( !pathToGoalExists ) {
-		seekPos.ToVec2() = root->children[0]->pos;
+		//HUMANHEAD rww
+		if (!root->children[0]) {
+			seekPos.ToVec2() = root->pos;
+		}
+		else {
+			seekPos.ToVec2() = root->children[0]->pos;
+		}
+		//HUMANHEAD END
 	} else if ( !optimizedPathCalculated ) {
 		OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 		seekPos.ToVec2() = optimizedPath[1];
@@ -993,7 +967,15 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
 
 	// find the optimal path
+#ifdef HUMANHEAD //jsh if pitch/roll is rotated, don't change seekPos based on monster's current height 
+	if ( physics->GetAxis().ToAngles().pitch != 0.0 || physics->GetAxis().ToAngles().pitch != 0.0 ) {
+		pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, path.seekPos.z, physics->GetLinearVelocity(), path.seekPos );
+	} else {
+		pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
+	}
+#else
 	pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
+#endif
 
 	// free the tree
 	FreePathTree_r( root );
@@ -1022,7 +1004,7 @@ void idAI::FreeObstacleAvoidanceNodes( void ) {
 ===============================================================================
 */
 
-const float OVERCLIP			= 1.001f;
+//const float OVERCLIP			= 1.001f;
 const int MAX_FRAME_SLIDE		= 5;
 
 typedef struct pathTrace_s {
@@ -1342,17 +1324,15 @@ HeightForTrajectory
 Returns the maximum hieght of a given trajectory
 =====================
 */
-#if 0
 static float HeightForTrajectory( const idVec3 &start, float zVel, float gravity ) {
 	float maxHeight, t;
 
 	t = zVel / gravity;
 	// maximum height of projectile
 	maxHeight = start.z - 0.5f * gravity * ( t * t );
-
+	
 	return maxHeight;
 }
-#endif
 
 /*
 =====================
@@ -1470,9 +1450,20 @@ bool idAI::PredictTrajectory( const idVec3 &firePos, const idVec3 &target, float
 	if ( projectileSpeed <= 0.0f || projGravity == vec3_origin ) {
 
 		aimDir = target - firePos;
+#if HUMANHEAD // jsh - do a point trace if trace distance is large
+		if ( aimDir.LengthSqr() > CM_MAX_TRACE_DIST*CM_MAX_TRACE_DIST ) {
+			aimDir.Normalize();
+			gameLocal.clip.Translation( trace, firePos, target, NULL, mat3_identity, clipmask, ignore );	
+		} else {
+			aimDir.Normalize();
+			gameLocal.clip.Translation( trace, firePos, target, clip, mat3_identity, clipmask, ignore );
+		}
+#else
+		aimDir = target - firePos;
 		aimDir.Normalize();
 
 		gameLocal.clip.Translation( trace, firePos, target, clip, mat3_identity, clipmask, ignore );
+#endif
 
 		if ( drawtime ) {
 			gameRenderWorld->DebugLine( colorRed, firePos, target, drawtime );

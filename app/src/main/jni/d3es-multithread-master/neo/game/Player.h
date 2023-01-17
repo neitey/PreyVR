@@ -1,56 +1,14 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_PLAYER_H__
 #define __GAME_PLAYER_H__
-
-#include <idlib/math/Quat.h>
-#include "idlib/math/Interpolate.h"
-
-#include "physics/Physics_Player.h"
-#include "Item.h"
-#include "Actor.h"
-#include "Misc.h"
-#include "Weapon.h"
-#include "Projectile.h"
-#include "PlayerIcon.h"
-#include "GameEdit.h"
-#include "PredictedValue.h"
-#include "Vr.h"
-#include "gamesys/SysCvar.h"
-
-class idAI;
 
 /*
 ===============================================================================
 
 	Player entity.
-
+	
 ===============================================================================
 */
 
@@ -66,16 +24,15 @@ extern const idEventDef EV_SpectatorTouch;
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
 const int	LAND_RETURN_TIME = 300;
-const int	FOCUS_TIME = 300;
-const int	FOCUS_GUI_TIME = 200; // Koz fixme, only change in VR. Previously 500, reduced to 200 to drop weapon out of guis faster.
-const int	NUM_QUICK_SLOTS = 4;
+const int	FOCUS_TIME = 200;		//HUMANHEAD bjk
+const int	FOCUS_GUI_TIME = 300;	//HUMANHEAD bjk
 
-const int MAX_WEAPONS = 32;
+const int MAX_WEAPONS = 16;
 
-const int weapon_empty_hand = -2; // Carl: todo, maybe a different constant
+#define MP_PLAYERNOSHADOW_DEFAULT	true //HUMANEHAD rww - subject to (frequent) change
 
 const int DEAD_HEARTRATE = 0;			// fall to as you die
-const int LOWHEALTH_HEARTRATE_ADJ = 20; //
+const int LOWHEALTH_HEARTRATE_ADJ = 20; // 
 const int DYING_HEARTRATE = 30;			// used for volumen calc when dying/dead
 const int BASE_HEARTRATE = 70;			// default
 const int ZEROSTAMINA_HEARTRATE = 115;  // no stamina
@@ -86,44 +43,25 @@ const int DEATH_VOLUME = 15;			// volume at death
 
 const int SAVING_THROW_TIME = 5000;		// maximum one "saving throw" every five seconds
 
-extern const int ASYNC_PLAYER_INV_AMMO_BITS;
-extern const int ASYNC_PLAYER_INV_CLIP_BITS;
+const int ASYNC_PLAYER_INV_AMMO_BITS = idMath::BitsForInteger( 999 );	// 9 bits to cover the range [0, 999]
+const int ASYNC_PLAYER_INV_CLIP_BITS = -7;								// -7 bits to cover the range [-1, 60]
 
 struct idItemInfo {
 	idStr name;
 	idStr icon;
+// HUMANHEAD
+	int		time;
+	int		slotZeroTime;
+	float	matcolorAlpha;
+	bool	bDoubleWide;
+// HUMANHEAD END
 };
 
-struct idObjectiveInfo {
-	idStr title;
-	idStr text;
-	idStr screenshot;
-};
+// struct idObjectiveInfo (HUMANHEAD pdm: removed)
 
 struct idLevelTriggerInfo {
 	idStr levelName;
 	idStr triggerName;
-};
-
-// powerups - the "type" in item .def must match
-enum {
-	BERSERK = 0,
-	INVISIBILITY,
-	MEGAHEALTH,
-	ADRENALINE,
-    INVULNERABILITY,
-    HELLTIME,
-    ENVIROSUIT,
-    ENVIROTIME,
-    MAX_POWERUPS
-};
-
-// powerup modifiers
-enum {
-	SPEED = 0,
-	PROJECTILE_DAMAGE,
-	MELEE_DAMAGE,
-	MELEE_DISTANCE
 };
 
 // influence levels
@@ -134,67 +72,20 @@ enum {
 	INFLUENCE_LEVEL3,			// slow player movement
 };
 
-enum gameExpansionType_t
-{
-	GAME_BASE,
-	GAME_D3XP,
-	GAME_D3LE,
-	GAME_UNKNOWN
-};
-
-typedef struct
-{
-    int ammo;
-    int rechargeTime;
-    char ammoName[128];
-} RechargeAmmo_t;
-
-typedef struct
-{
-    char		name[64];
-    idList<int>	toggleList;
-    int			lastUsed;
-} WeaponToggle_t;
-
 class idInventory {
 public:
 	int						maxHealth;
-    int						weapons, duplicateWeapons, foundWeapons;
-	int						powerups;
-	int						armor;
-	int						maxarmor;
+	int						weapons;
 	int						ammo[ AMMO_NUMTYPES ];
 	int						clip[ MAX_WEAPONS ];
-	int						clipDuplicate[ MAX_WEAPONS ];
-	int						powerupEndTime[ MAX_POWERUPS ];
-	RechargeAmmo_t			rechargeAmmo[ AMMO_NUMTYPES ];
 
 	// mp
 	int						ammoPredictTime;
 
-	int						deplete_armor;
-	float					deplete_rate;
-	int						deplete_ammount;
-	int						nextArmorDepleteTime;
-
-	int						pdasViewed[4]; // 128 bit flags for indicating if a pda has been viewed
-
-	int						selPDA;
-	int						selEMail;
-	int						selVideo;
-	int						selAudio;
-	bool					pdaOpened;
-	bool					turkeyScore;
 	idList<idDict *>		items;
-	idStrList				pdas;
-	idStrList				pdaSecurity;
-	idStrList				videos;
-	idStrList				emails;
 
 	bool					ammoPulse;
 	bool					weaponPulse;
-	bool					armorPulse;
-	int						lastGiveTime;
 
 	idList<idLevelTriggerInfo> levelTriggers;
 
@@ -205,40 +96,31 @@ public:
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
+	virtual				// HUMANHEAD nla 
 	void					Clear( void );
-	void					GivePowerUp( idPlayer *player, int powerup, int msec );
-	void					ClearPowerUps( void );
+	virtual				// HUMANHEAD nla 
 	void					GetPersistantData( idDict &dict );
+	virtual				// HUMANHEAD nla 
 	void					RestoreInventory( idPlayer *owner, const idDict &dict );
+	virtual				// HUMANHEAD nla 
 	bool					Give( idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon, bool updateHud );
 	void					Drop( const idDict &spawnArgs, const char *weapon_classname, int weapon_index );
 	ammo_t					AmmoIndexForAmmoClass( const char *ammo_classname ) const;
 	int						MaxAmmoForAmmoClass( idPlayer *owner, const char *ammo_classname ) const;
 	int						WeaponIndexForAmmoClass( const idDict & spawnArgs, const char *ammo_classname ) const;
 	ammo_t					AmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired );
+	ammo_t					AltAmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired );	//HUMANHEAD bjk
 	const char *			AmmoPickupNameForIndex( ammo_t ammonum ) const;
-	void					AddPickupName(const char *name, const char *icon, idPlayer *owner);   //_D3XP
+	void					AddPickupName( const char *name, const char *icon );
 
+	virtual				// HUMANHEAD
 	int						HasAmmo( ammo_t type, int amount );
+	virtual				// HUMANHEAD
 	bool					UseAmmo( ammo_t type, int amount );
-	int						HasAmmo(const char *weapon_classname, bool includeClip = false, idPlayer *owner = NULL);			// _D3XP
+	virtual				// HUMANHEAD CJR
+	int						HasAmmo( const char *weapon_classname );			// looks up the ammo information for the weapon class first
 
-	bool					HasEmptyClipCannotRefill(const char *weapon_classname, idPlayer *owner);
-
-	void					UpdateArmor( void );
-	int						GetClipAmmoForWeapon( const int weapon, const bool duplicate ) const;
-
-	bool					CanGive( idPlayer* owner, const idDict& spawnArgs, const char* statname, const char* value );
-
-	int						nextItemPickup;
-	int						nextItemNum;
-	int						onePickupTime;
 	idList<idItemInfo>		pickupItemNames;
-	idList<idObjectiveInfo>	objectiveNames;
-
-	void					InitRechargeAmmo(idPlayer *owner);
-	void					RechargeAmmo(idPlayer *owner);
-	bool					CanGive(idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon);
 };
 
 typedef struct {
@@ -246,186 +128,14 @@ typedef struct {
 	idVec3	dir;		// scaled larger for running
 } loggedAccel_t;
 
+// HUMANHEAD nla - Has to be here.  Must be after idInventory so can subclass, but before idPlayer so we can instantiate
+#include "Prey/game_inventory.h"
+// HUMANHEAD END
+
 typedef struct {
 	int		areaNum;
 	idVec3	pos;
 } aasLocation_t;
-
-enum slotIndex_t
-{
-    SLOT_NONE = -1,
-    SLOT_PDA_HIP,
-    SLOT_WEAPON_HIP,
-    SLOT_WEAPON_BACK_BOTTOM,
-    SLOT_WEAPON_BACK_TOP,
-    SLOT_FLASHLIGHT_SHOULDER,
-    SLOT_FLASHLIGHT_HEAD,
-    SLOT_COUNT
-};
-
-struct slot_t
-{
-    idVec3 origin;
-    float radiusSq;
-};
-
-class idWeaponHolder
-{
-public:
-    idPlayer* owner;
-    int currentWeapon;
-    bool isTheDuplicate; // Carl: Dual wielding, is weapon the duplicate copy or the original? (ie. Which ammo clip does it use?)
-public:
-    idWeaponHolder();
-    virtual	~idWeaponHolder();
-    void Init( idPlayer* player );
-    virtual bool isEmpty();
-};
-
-class idHolster : public idWeaponHolder
-{
-public:
-    slotIndex_t slot;
-    idVec3 origin;
-    float radiusSq;
-    renderEntity_t			renderEntity;					// used to present a model to the renderer
-    qhandle_t				modelDefHandle;					// handle to static renderer model
-    idMat3					holsterAxis;
-public:
-    idHolster();
-    virtual	~idHolster();
-    void Init( idPlayer* player );
-    void FreeSlot();
-    void HolsterModelByName( const char* modelname, idRenderModel* renderModel = NULL );
-    void HolsterPDA();
-    void HolsterFlashlight();
-    void EmptyHolster();
-    void HolsterCurrentWeapon( int stashed, int hand );
-    void StashToExtraHolster();
-    void RestoreFromExtraHolster();
-    void UpdateSlot();
-};
-
-class idPlayerHand : public idWeaponHolder {
-public:
-	int whichHand;
-
-	// laser sight - technically every weapon instance could have its own laser sight,
-	// but laser sights are only active when in a player's hand, so make it one per hand
-	renderEntity_t laserSightRenderEntity;    // replace crosshair for 3DTV
-	qhandle_t laserSightHandle;
-	renderEntity_t crosshairEntity; // Koz add a model to place the crosshair into the world
-	qhandle_t crosshairHandle;
-	int lastCrosshairMode;
-	bool laserSightActive; // Koz allow lasersight toggle
-
-	// throwing is per hand
-	idVec3 throwDirection; // for motion control throwing actions e.g. grenade
-	float throwVelocity;
-	int frameTime[10];
-	idVec3 position[10];
-	int frameNum;
-	int curTime;
-	int timeDelta;
-	int startFrameNum;
-
-	// slots
-	idVec3 handOrigin;
-	idMat3 handAxis;
-	slotIndex_t handSlot;
-
-	bool grabbingWorld, oldGrabbingWorld; // currently this corresponds more to the state of the grip trigger/button which may actually act as a toggle
-	bool virtualGrabDown, oldVirtualGrabDown; // this is the actual virtual grab state, when this goes false you should drop what you're holding
-	bool triggerDown, oldTriggerDown, oldFlashlightTriggerDown;
-	bool thumbDown, oldThumbDown;
-
-	idEntityPtr<idWeapon> weapon;
-	bool weaponGone;            // force stop firing
-
-	// currentWeapon is inherited from the idWeaponHolder superclass
-	int idealWeapon;
-	int previousWeapon;
-	int weaponSwitchTime;
-
-	// Weapon positioning
-	bool PDAfixed; // Koz has the PDA been fixed in space?
-	bool lastPdaFixed;
-	idVec3 playerPdaPos; // position player was at when pda fixed in space
-	idVec3 motionPosition;
-	idQuat motionRotation;// = idQuat_zero;
-	bool wasPDA;
-
-	idStr animPrefix; // player hand anims
-
-	//-----------------------------------------------------------------
-	// controller shake parms
-	//-----------------------------------------------------------------
-
-	const static int MAX_SHAKE_BUFFER = 3;
-	float controllerShakeHighMag[MAX_SHAKE_BUFFER];        // magnitude of the high frequency controller shake
-	float controllerShakeLowMag[MAX_SHAKE_BUFFER];        // magnitude of the low frequency controller shake
-	int controllerShakeHighTime[MAX_SHAKE_BUFFER];    // time the controller shake ends for high frequency.
-	int controllerShakeLowTime[MAX_SHAKE_BUFFER];        // time the controller shake ends for low frequency.
-	int controllerShakeTimeGroup;
-
-public:
-	idPlayerHand();
-
-	virtual                    ~idPlayerHand();
-
-	void Init(idPlayer *player, int hand);
-
-	void TrackWeaponDirection(idVec3 origin);
-
-	virtual bool holdingFlashlight();
-
-	virtual bool holdingWeapon(); // physically holding it, not just levitating or using fists
-	virtual bool
-	floatingWeapon(); // the soul cube and the artifact float next to your hand rather than being held
-	virtual bool controllingWeapon(); // holding or floating
-	virtual bool holdingPDA();
-
-	virtual bool holdingPhysics();
-
-	virtual bool holdingItem();
-
-	virtual bool holdingSomethingDroppable();
-
-	bool isOverMountedFlashlight();
-
-	bool tooFullToInteract();
-
-	bool
-	handExists(); // false if our character is missing a hand or has something mounted on their forearm instead
-
-	bool contextToggleVirtualGrab();
-
-	bool startVirtualGrab();
-
-	bool releaseVirtualGrab(); // will drop whatever you're holding
-
-	idStr GetCurrentWeaponString();
-
-	void NextWeapon(int dir = 1);
-
-	void PrevWeapon();
-
-	void NextBestWeapon();
-
-	void SelectWeapon(int num, bool force, bool specific);
-
-	void DropWeapon(bool died);
-
-	// Controller Shake
-	void
-	SetControllerShake(float highMagnitude, int highDuration, float lowMagnitude, int lowDuration);
-
-	void ResetControllerShake();
-
-	void GetControllerShake(int &highMagnitude, int &lowMagnitude) const;
-
-	void debugPrint();
-};
 
 class idPlayer : public idActor {
 public:
@@ -435,100 +145,37 @@ public:
 		EVENT_ABORT_TELEPORTER,
 		EVENT_POWERUP,
 		EVENT_SPECTATE,
-        EVENT_PICKUPNAME,
-        EVENT_FORCE_ORIGIN,
-        EVENT_KNOCKBACK,
+		EVENT_MENUEVENT, //HUMANHEAD rww
+		EVENT_HITNOTIFICATION, //HUMANHEAD rww
+		EVENT_PORTALLED, //HUMANHEAD rww
+		EVENT_REPORTATTACK, //HUMANHEAD rww
 		EVENT_MAXEVENTS
 	};
 
-    static const int MAX_PLAYER_PDA = 100;
-    static const int MAX_PLAYER_VIDEO = 100;
-    static const int MAX_PLAYER_AUDIO = 100;
-    static const int MAX_PLAYER_AUDIO_ENTRIES = 2;
+	//HUMANHEAD rww - for EVENT_MENUEVENT
+	enum {
+		MENU_NET_EVENT_HEALTHPULSE,
+		MENU_NET_EVENT_MAXHEALTHPULSE,
+		MENU_NET_EVENT_SPIRITPULSE,
+		MENU_NET_EVENT_AMMOPULSE,
+		MENU_NET_EVENT_WEAPONPULSE,
+		MENU_NET_EVENT_INVPICKUP,
+		MENU_NET_EVENT_NUM
+	};
+	//HUMANHEAD END
 
-    usercmd_t				oldCmd;
-    usercmd_t				usercmd;
+	usercmd_t				usercmd;
 
+	// HUANHEAD: Changed to our version
+#ifdef HUMANHEAD
+	class hhPlayerView		playerView;			// handles damage kicks and effects
+#else
 	class idPlayerView		playerView;			// handles damage kicks and effects
-
-    idPlayerHand hands[2];
-
-	renderEntity_t			flashlightRenderEntity;					// used to present a model to the renderer
-	qhandle_t				flashlightModelDefHandle;					// handle to static renderer model
-
-	// Koz begin
-    const idDeclSkin*		skinHeadingSolid;
-    const idDeclSkin*		skinHeadingArrows;
-    const idDeclSkin*		skinHeadingArrowsScroll;
-
-    renderEntity_t			pdaRenderEntity;					// used to present a model to the renderer
-    qhandle_t				pdaModelDefHandle;					// handle to static renderer model
-    idMat3					pdaHolsterAxis;
-
-    renderEntity_t			holsterRenderEntity;					// used to present a model to the renderer
-    qhandle_t				holsterModelDefHandle;					// handle to static renderer model
-    idMat3					holsterAxis;
-    int						holsteredWeapon, extraHolsteredWeapon;
-    const char*				extraHolsteredWeaponModel;
-
-    renderEntity_t			hudEntity; // Koz add a model to place the hud into the world
-    qhandle_t				hudHandle;
-    bool					hudActive;
-
-    bool resetHUDYaw;
-    float hud_yaw_x = 0.0f;
-    float hud_yaw_y = 0.0f;
-
-
-    const idDeclSkin*		skinCrosshairDot;
-    const idDeclSkin*		skinCrosshairCircleDot;
-    const idDeclSkin*		skinCrosshairCross;
-
-    const idDeclSkin*		skinTelepadCrouch;
-
-
-    idEntityPtr<idAnimatedEntity>	teleportTarget;
-    idAnimator*						teleportTargetAnimator;
-
-    jointHandle_t			teleportBeamJoint[24];
-    jointHandle_t			teleportPadJoint;
-    jointHandle_t			teleportCenterPadJoint;
-
-    idVec3					teleportPoint; // Carl: used for teleporting
-    idVec3					teleportAimPoint; // Carl: used for teleporting
-    idVec3					teleportDir; // direction of teleport movement - needed for scripts where entities check player movement.
-
-    float					teleportAimPointPitch;
-
-    bool					aimValidForTeleport;
-
-    //GB
-    bool					velocityPunched;
-
-    bool                    flashlightPreviouslyInHand;
-
-    idVec3					PDAorigin; // Koz
-    idMat3					PDAaxis; // Koz
-
-    idMat3					chestPivotCorrectAxis; //made these public so could be accessed by hmdgetorientation;
-    idVec3					chestPivotDefaultPos;
-    jointHandle_t			chestPivotJoint;
-    //float					independentWeaponPitch; // deltas to provide aim independent of body/view orientation
-    //float					independentWeaponYaw;
-
-
-    // Koz end
+#endif
+	// HUMANHEAD END
 
 	bool					noclip;
 	bool					godmode;
-    bool					warpMove, warpAim;
-    idVec3					warpVel, warpDest;
-    int						warpTime;
-
-    bool					jetMove;
-    idVec3					jetMoveVel;
-    int						jetMoveTime;
-    int						jetMoveCoolDownTime;
 
 	bool					spawnAnglesSet;		// on first usercmd, we must set deltaAngles
 	idAngles				spawnAngles;
@@ -542,10 +189,6 @@ public:
 	int						lastHitTime;			// last time projectile fired by player hit target
 	int						lastSndHitTime;			// MP hit sound - != lastHitTime because we throttle
 	int						lastSavingThrowTime;	// for the "free miss" effect
-
-    bool					pdaHasBeenRead[ MAX_PLAYER_PDA ];
-    bool					videoHasBeenViewed[ MAX_PLAYER_VIDEO ];
-    bool					audioHasBeenHeard[ MAX_PLAYER_AUDIO ][ MAX_PLAYER_AUDIO_ENTRIES ];
 
 	idScriptBool			AI_FORWARD;
 	idScriptBool			AI_BACKWARD;
@@ -566,67 +209,32 @@ public:
 	idScriptBool			AI_TELEPORT;
 	idScriptBool			AI_TURN_LEFT;
 	idScriptBool			AI_TURN_RIGHT;
+	idScriptBool			AI_REALLYFALL; //HUMANHEAD rww
 
 	// inventory
-	idInventory				inventory;
+	hhInventory				inventory;			// HUMANHEAD - Changed to our version
 
-    int						flashlightBattery;
-    idEntityPtr<idWeapon>   flashlight;
-
+	idEntityPtr<hhWeapon>	weapon;				// HUMANHEAD - Changed to our version
 	idUserInterface *		hud;				// MP: is NULL if not local player
-	idUserInterface *		objectiveSystem;
-	bool					objectiveSystemOpen;
-    int						quickSlot[ NUM_QUICK_SLOTS ];
 
-	vrClientInfo *pVRClientInfo;
-
-	//Gb added this to match upto the enums
-	int						weapon_none;
-	int						weapon_soulcube;
-	int						weapon_pda;
 	int						weapon_fists;
-	int						weapon_flashlight;
-	int						weapon_chainsaw;
-	int						weapon_bloodstone;
-	int						weapon_bloodstone_active1;
-	int						weapon_bloodstone_active2;
-	int						weapon_bloodstone_active3;
-	bool					harvest_lock;
-	// Koz begin
-	int						weapon_pistol;
-	int						weapon_shotgun;
-	int						weapon_shotgun_double;
-	int						weapon_machinegun;
-	int						weapon_chaingun;
-	int						weapon_handgrenade;
-	int						weapon_plasmagun;
-	int						weapon_rocketlauncher;
-	int						weapon_bfg;
-	int						weapon_flashlight_new;
-	int						weapon_grabber;
 
-
-	int						heartRate;
-	idInterpolate<float>	heartInfo;
-	int						lastHeartAdjust;
-	int						lastHeartBeat;
 	int						lastDmgTime;
 	int						deathClearContentsTime;
 	bool					doingDeathSkin;
-	int						lastArmorPulse;		// lastDmgTime if we had armor at time of hit
 	float					stamina;
 	float					healthPool;			// amount of health to give over time
 	int						nextHealthPulse;
 	bool					healthPulse;
+	bool					spiritPulse;		// HUMANHEAD pdm
 	bool					healthTake;
 	int						nextHealthTake;
 
 
 	bool					hiddenWeapon;		// if the weapon is hidden ( in noWeapons maps )
-	idEntityPtr<idProjectile> soulCubeProjectile;
 
 	// mp stuff
-	static idVec3			colorBarTable[ 8 ];
+	static idVec3			colorBarTable[ 5 ];
 	int						spectator;
 	idVec3					colorBar;			// used for scoreboard and hud display
 	int						colorBarIndex;
@@ -644,7 +252,6 @@ public:
 	int						tourneyRank;		// for tourney cycling - the higher, the more likely to play next - server
 	int						tourneyLine;		// client side - our spot in the wait line. 0 means no info.
 	int						spawnedTime;		// when client first enters the game
-	bool					carryingFlag;		// is the player carrying the flag?
 
 	idEntityPtr<idEntity>	teleportEntity;		// while being teleported, this is set to the entity we'll use for exit
 	int						teleportKiller;		// entity number of an entity killing us at teleporter exit
@@ -658,32 +265,14 @@ public:
 	int						minRespawnTime;		// can respawn when time > this, force after g_forcerespawn
 	int						maxRespawnTime;		// force respawn after this time
 
-    renderEntity_t			laserSightRenderEntity;
-    qhandle_t				laserSightHandle;
-
-
-    // the first person view values are always calculated, even
+	// the first person view values are always calculated, even
 	// if a third person view is used
 	idVec3					firstPersonViewOrigin;
 	idMat3					firstPersonViewAxis;
 
-    idVec3					waistOrigin;
-    idMat3					waistAxis;
+	idDragEntity			dragEntity;
 
-    idDragEntity			dragEntity;
-
-    idFuncMountedObject*	mountedObject;
-    idEntityPtr<idLight>	enviroSuitLight;
-
-    bool					healthRecharge;
-    int						lastHealthRechargeTime;
-    int						rechargeSpeed;
-
-    float					new_g_damageScale;
-
-    bool					bloomEnabled;
-    float					bloomSpeed;
-    float					bloomIntensity;
+	idEntityPtr<idEntity>	MPLastSpawnSpot;	//HUMANHEAD rww - does NOT need to be saved/restored, mp-only
 
 public:
 	CLASS_PROTOTYPE( idPlayer );
@@ -691,47 +280,14 @@ public:
 							idPlayer();
 	virtual					~idPlayer();
 
-	void 					SetVRClientInfo(vrClientInfo *pVRClientInfo);
-    vrClientInfo*			GetVRClientInfo();
+
+#if GAMEPAD_SUPPORT	// VENOM BEGIN
+	int						GetCurrentRumble(void) {return iCurrentRumble;}
+#endif // VENOM END
 
 	void					Spawn( void );
+	virtual				// HUMANHEAD
 	void					Think( void );
-
-    void					SetupPDASlot( bool holsterPDA );
-    void					FreePDASlot();
-    void					UpdatePDASlot();
-
-    void					SetupHolsterSlot( int hand, int stashed = -1 );
-    void					FreeHolsterSlot();
-    void					UpdateHolsterSlot();
-
-    void					UpdateLaserSight( int hand );
-    bool					GetHandOrHeadPositionWithHacks( int hand, idVec3& origin, idMat3& axis );
-
-    // Koz begin
-    void					UpdateTeleportAim();
-    bool					GetTeleportBeamOrigin( idVec3 &beamOrigin, idMat3 &beamAxis);
-    void					UpdatePlayerSkinsPoses();
-    void					SetWeaponHandPose();
-    void					SetFlashHandPose(); // Set flashlight hand pose
-    void					ToggleLaserSight();
-    void					UpdateVrHud();
-    void					ToggleHud();
-    void					RecreateCopyJoints();
-    void					UpdateNeckPose();
-    bool					IsCrouching()
-    {
-        return physicsObj.IsCrouching();
-    }
-    void					InitTeleportTarget();
-    // Koz end
-    //GB Begin
-	float					GetHudAlpha();
-	//GB End
-
-    // Carl begin
-    bool					HasHoldableFlashlight();
-    // Carl end
 
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
@@ -740,25 +296,29 @@ public:
 	virtual void			Hide( void );
 	virtual void			Show( void );
 
+	virtual				// HUMANHEAD
 	void					Init( void );
-    void					InitPlayerBones(); // Koz
 	void					PrepareForRestart( void );
 	virtual void			Restart( void );
+	virtual				// HUMANHEAD
 	void					LinkScriptVariables( void );
+	virtual				// HUMANHEAD
 	void					SetupWeaponEntity( void );
-	void					SelectInitialSpawnPoint( idVec3 &origin, idAngles &angles );
+	void					SelectInitialSpawnPoint( idVec3 &origin, idAngles &angles, idMat3 *axis = 0 ); //HUMANHEAD rww - added axis
 	void					SpawnFromSpawnSpot( void );
+	virtual				// HUMANHEAD
 	void					SpawnToPoint( const idVec3	&spawn_origin, const idAngles &spawn_angles );
 	void					SetClipModel( void );	// spectator mode uses a different bbox size
 
 	void					SavePersistantInfo( void );
-	void					RestorePersistantInfo( void );
+	virtual void			RestorePersistantInfo( void );
 	void					SetLevelTrigger( const char *levelName, const char *triggerName );
 
 	bool					UserInfoChanged( bool canModify );
 	idDict *				GetUserInfo( void );
 	bool					BalanceTDM( void );
 
+	virtual				// HUMANHEAD
 	void					CacheWeapons( void );
 
 	void					EnterCinematic( void );
@@ -766,23 +326,15 @@ public:
 	bool					HandleESC( void );
 	bool					SkipCinematic( void );
 
+	virtual				// HUMANHEAD
 	void					UpdateConditions( void );
 	void					SetViewAngles( const idAngles &angles );
 
-    void					ControllerShakeFromDamage( int damage );
-    void					ControllerShakeFromDamage( int damage, const idVec3 &direction );
-    void					SetControllerShake( float magnitude, int duration, const idVec3 &direction );
-    void					ResetControllerShake();
-
 							// delta view angles to allow movers to rotate the view of the player
+	virtual //HUMANHEAD
 	void					UpdateDeltaViewAngles( const idAngles &angles );
 
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
-
-	// Carl : Teleporting
-	int						PointReachableAreaNum(const idVec3& pos, const float boundsScale = 2.0f) const;
-	bool					PathToGoal(aasPath_t& path, int areaNum, const idVec3& origin, int goalAreaNum, const idVec3& goalOrigin) const;
-	bool					CanReachPosition( const idVec3& pos, idVec3& betterPos );
 
 	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const;
 	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
@@ -793,170 +345,108 @@ public:
 
 							// use exitEntityNum to specify a teleport with private camera view and delayed exit
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
-    virtual bool			TeleportPathSegment( const idVec3& start, const idVec3& end, idVec3& lastPos );
-    virtual void			TeleportPath( const idVec3& target );
-    virtual bool			CheckTeleportPathSegment(const idVec3& start, const idVec3& end, idVec3& lastPos);
-    virtual bool			CheckTeleportPath(const idVec3& target, int toAreaNum = 0);
 
-    virtual void            SetupFlashlightHolster();
-    virtual void            UpdateFlashlightHolster();
-    virtual void            SetupLaserSight();
-    //virtual void            UpdateLaserSight( );
-
+	virtual				// HUMANHEAD
 	void					Kill( bool delayRespawn, bool nodamage );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	void					StartFxOnBone(const char *fx, const char *bone);
 
-	bool					ShouldBlink();
 	renderView_t *			GetRenderView( void );
+	virtual				//HUMANHEAD
 	void					CalculateRenderView( void );	// called every tic by player code
 	void					CalculateFirstPersonView( void );
-    void					CalculateWaist();
-    void					CalculateLeftHand();
-    void					CalculateRightHand();
 
+	virtual				// HUMANHEAD
 	void					DrawHUD( idUserInterface *hud );
-    //	void					DrawHUDVR( idMenuHandler_HUD* hudManager );
-	void					DrawHUDVR( idUserInterface *hud );
 
-    void					WeaponFireFeedback( int hand, const idDict* weaponDef );
+	void					WeaponFireFeedback( const idDict *weaponDef );
 
 	float					DefaultFov( void ) const;
+	virtual				// HUMANHEAD
 	float					CalcFov( bool honorZoom );
-    void					CalculateViewWeaponPos( int hand, idVec3& origin, idMat3& axis );
-    void					CalculateViewWeaponPosVR( int hand, idVec3& origin, idMat3& axis );
-    void					SetHandIKPos( int hand, idVec3 handOrigin, idMat3 handAxis, idQuat rotation, bool isFlashlight = false );
-
-    // Koz begin
-    void					CalculateViewFlashlightPos( idVec3 &origin, idMat3 &axis, idVec3 flashlightOffset ); // Koz aim the flashlight with motion controls
-    // Koz end
-
+	void					CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis );
 	idVec3					GetEyePosition( void ) const;
-	void					GetViewPos( idVec3 &origin, idMat3 &axis ) const;
-    void					GetViewPosVR( idVec3& origin, idMat3& axis ) const; // Koz fixme
-
+	virtual				// HUMANHEAD
+	void					GetViewPos( idVec3 &origin, idMat3 &axis );	// HUMANHEAD
+	virtual				// HUMANHEAD
 	void					OffsetThirdPersonView( float angle, float range, float height, bool clip );
 
+	virtual				// HUMANHEAD
 	bool					Give( const char *statname, const char *value );
-    bool					Give( const char* statname, const char* value, int hand );
+	virtual				// HUMANHEAD
 	bool					GiveItem( idItem *item );
 	void					GiveItem( const char *name );
 	void					GiveHealthPool( float amt );
-
+	
+	virtual				// HUMANHEAD
 	bool					GiveInventoryItem( idDict *item );
 	void					RemoveInventoryItem( idDict *item );
 	bool					GiveInventoryItem( const char *name );
 	void					RemoveInventoryItem( const char *name );
 	idDict *				FindInventoryItem( const char *name );
 
-    void					SetQuickSlot( int index, int val );
-    int						GetQuickSlot( int index );
-
-	void					GivePDA( const char *pdaName, idDict *item, bool toggle  );
-	void					GiveVideo( const char *videoName, idDict *item );
-	void					GiveEmail( const char *emailName );
-	void					GiveSecurity( const char *security );
-	void					GiveObjective( const char *title, const char *text, const char *screenshot );
-	void					CompleteObjective( const char *title );
-
-	bool					GivePowerUp( int powerup, int time );
-	void					ClearPowerUps( void );
-	bool					PowerUpActive( int powerup ) const;
-	float					PowerUpModifier( int type );
-
-	bool					OtherHandImpulseSlot();
-	bool					WeaponHandImpulseSlot();
-	bool					GrabWorld( int hand, bool pressed ); // 0 = right hand, 1 = left hand; true if pressed, false if released; returns true if handled as grab
-    bool					TriggerClickWorld( int hand, bool pressed ); // 0 = right hand, 1 = left hand; true if pressed, false if released; returns true if handled as trigger
-    bool					ThumbClickWorld( int hand, bool pressed ); // 0 = right hand, 1 = left hand; true if pressed, false if released; returns true if handled as thumb click
-
 	int						SlotForWeapon( const char *weaponName );
+	virtual				// HUMANHEAD
 	void					Reload( void );
+	virtual				// HUMANHEAD
 	void					NextWeapon( void );
+	virtual				// HUMANHEAD
 	void					NextBestWeapon( void );
+	virtual				// HUMANHEAD
 	void					PrevWeapon( void );
-	void					SetPreviousWeapon( int num )
-	{
-		hands[ vr_weaponHand.GetInteger() ].previousWeapon = num;
-	}
-    void					SelectWeapon( int num, bool force, bool specific = false );
-	void					DropWeapons( bool died ) ;
+	virtual				// HUMANHEAD
+	void					SelectWeapon( int num, bool force );
+	void					DropWeapon( bool died ) ;
 	void					StealWeapon( idPlayer *player );
 	void					AddProjectilesFired( int count );
 	void					AddProjectileHits( int count );
 	void					SetLastHitTime( int time );
+	void					LowerWeapon( void );
+	void					RaiseWeapon( void );
 	void					WeaponLoweringCallback( void );
 	void					WeaponRisingCallback( void );
 	void					RemoveWeapon( const char *weap );
 	bool					CanShowWeaponViewmodel( void ) const;
-	// Carl: Dual wielding
-	bool					CanDualWield( int num ) const;
-    idWeapon*				GetWeaponInHand( int hand ) const;
-    // Carl: when the code needs just one weapon, guess which one is the "main" one
-    idWeapon*				GetMainWeapon();
-	idWeapon*				GetGrabberWeapon() const;
-    idWeapon*				GetPDAWeapon() const;
-    idWeapon*				GetWeaponWithMountedFlashlight();
-    int						GetBestWeaponHand();
-    int						GetBestWeaponHandToSteal( idPlayer* thief );
-    // Carl: get the specific weapon used to harvest souls (Soul Cube or Artifact)
-    // Returns the required one if you're holding it in a hand, or the other one, or the main weapon
-    idWeapon*				GetHarvestWeapon( idStr requiredWeapons );
-    idStr					GetCurrentHarvestWeapon( idStr requiredWeapons );
-    virtual int				GetAnim( int channel, const char* name );
-    // Carl end
 
 	void					AddAIKill( void );
-	void					SetSoulCubeProjectile( idProjectile *projectile );
-
-	void					AdjustHeartRate( int target, float timeInSecs, float delay, bool force );
-	void					SetCurrentHeartRate( void );
-	int						GetBaseHeartRate( void );
-	void					UpdateAir( void );
-	void					UpdatePowerupHud();
 
 	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src );
 	bool					GuiActive( void ) { return focusGUIent != NULL; }
-    bool					HandleGuiEvents( const sysEvent_t* ev );
 
+	virtual				// HUMANHEAD
 	void					PerformImpulse( int impulse );
 	void					Spectate( bool spectate );
-	int 					MapWeaponHudId( int inGame );
-	void					TogglePDA( int hand );
 	void					ToggleScoreboard( void );
 	void					RouteGuiMouse( idUserInterface *gui );
-	void					UpdateHud( void );
-	const idDeclPDA *		GetPDA( void ) const;
-	const idDeclVideo *		GetVideo( int index );
-	void					SetInfluenceFov( float fov );
-	void					SetInfluenceView( const char *mtr, const char *skinname, float radius, idEntity *ent );
-	void					SetInfluenceLevel( int level );
+	virtual				// HUMANHEAD
+	void					UpdateHud( idUserInterface *_hud );
 	int						GetInfluenceLevel( void ) { return influenceActive; };
-
-	void					SetPrivateCameraView( idCamera *camView );
+	void					SetPrivateCameraView( idCamera *camView, bool noHide = false );
 	idCamera *				GetPrivateCameraView( void ) const { return privateCameraView; }
-
 	void					StartFxFov( float duration  );
-	void					UpdateHudWeapon( int flashWeaponHand );
+	virtual				// HUMANHEAD
+	void					UpdateHudWeapon( bool flashWeapon = true );
+	virtual				// HUMANHEAD
 	void					UpdateHudStats( idUserInterface *hud );
-	void					UpdateHudAmmo( idUserInterface *hud, int hand );
-	void					Event_StopAudioLog( void );
-    bool					IsSoundChannelPlaying( const s_channelType channel = SND_CHANNEL_ANY );
-	void					StartAudioLog( void );
-	void					StopAudioLog( void );
-	void					ShowTip( const char *title, const char *tip, bool autoHide );
+	virtual				// HUMANHEAD
+	void					UpdateHudAmmo( idUserInterface *hud );
+	void					ShowTip( const char *keyMaterial, const char *tip, const char *key, const char *topMaterial, bool keywide, int xOffset=0, int yOffset=0 );
 	void					HideTip( void );
-
 	bool					IsTipVisible( void ) { return tipUp; };
-
-	void					ShowObjective( const char *obj );
-	void					HideObjective( void );
-
 	virtual void			ClientPredictionThink( void );
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
-	void					WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const;
-	void					ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg );
+	//HUMANHEAD rww - made virtual
+	virtual void			WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const;
+	virtual void			ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg );
+	//HUMANHEAD END
+
+	//HUMANHEAD
+	virtual bool			DoThirdPersonDeath(void);					// HUMANHEAD rww
+	virtual	bool			IsDead() const { return (health <= 0); }	// HUMANHEAD cjr:  Deathwalk
+	virtual idVec4			GetTeamColor();								// HUMANHEAD pdm
+	bool					InDialogDamageMode() const { return bDialogDamageMode;	}
+	//HUMANHEAD END
 
 	virtual bool			ServerReceiveEvent( int event, int time, const idBitMsg &msg );
 
@@ -980,7 +470,12 @@ public:
 	void					SetLeader( bool lead );
 	bool					IsLeader( void );
 
-	void					UpdateSkinSetup();
+	//HUMANHEAD rww
+	void					SetPlayerModel( bool preserveChannels );
+	void					SetSkin( const idDeclSkin *skin );
+	const char				*GetModelPortraitName(bool bThumb = false);
+	//HUMANHEAD END
+	void					UpdateSkinSetup( bool restart );
 
 	bool					OnLadder( void ) const;
 
@@ -989,85 +484,24 @@ public:
 	virtual	void			HidePlayerIcons( void );
 	bool					NeedsIcon( void );
 
-	void					StartHealthRecharge(int speed);
-	void					StopHealthRecharge();
-
-	idStr					GetCurrentWeapon();
-
-	bool					CanGive(const char *statname, const char *value);
-
-	void					StopHelltime(bool quick = true);
-	void					PlayHelltimeStopSound();
-
-	void					DropFlag(void);	// drop CTF item
-	void					ReturnFlag();
-
 	bool					SelfSmooth( void );
 	void					SetSelfSmooth( bool b );
-    int					    GetCurrentWeaponId();
-	int						GetCurrentWeaponSlot()
-	{
-		return hands[ vr_weaponHand.GetInteger() ].currentWeapon;
-	}
-	int						GetIdealWeapon()
-	{
-		return hands[ vr_weaponHand.GetInteger() ].idealWeapon;
-	}
-	idHashTable<WeaponToggle_t>	GetWeaponToggles() const
-	{
-		return weaponToggles;
-	}
 
-    virtual void			FreeModelDef();
+	idUserInterface *		ActiveGui( void ); //HUMANHEAD rww - made public
+	void					ClearFocus( void ); //HUMANHEAD rww - made public
 
-    const idAngles& 		GetViewBobAngles()
-    {
-        return viewBobAngles;
-    }
-    const idVec3& 			GetViewBob()
-    {
-        return viewBob;
-    }
-
-    bool					IsLocallyControlled() const
-    {
-        return entityNumber == gameLocal.localClientNum;
-    }
-
-    gameExpansionType_t		GetExpansionType() const;
-
-    friend class idWeaponHolder;
-    friend class idHolster;
-    friend class idPlayerHand;
-
-private:
+	//HUMANHEAD PCF rww 09/15/06 - female mp sounds
+	bool					IsFemale(void);
+	//HUMANHEAD END
+protected:				// HUMANHEAD nla - need to be protected for access by hhPlayer
 	jointHandle_t			hipJoint;
 	jointHandle_t			chestJoint;
 	jointHandle_t			headJoint;
 
-    // Koz begin
-    jointHandle_t			neckJoint;
-
-    jointHandle_t			ik_hand[2];
-    jointHandle_t			ik_elbow[2];
-    jointHandle_t			ik_shoulder[2];
-    jointHandle_t			ik_handAttacher[2];
-    bool					handLowered;
-    bool					handRaised;
-
-    //idMat3					chestPivotCorrectAxis; //made these public so could be accessed by hmdge
-    //idVec3					chestPivotDefaultPos;
-    idMat3					ik_elbowCorrectAxis[2];
-    idMat3					ik_handCorrectAxis[2][32];
-    idVec3					handWeaponAttachertoWristJointOffset[2][32];
-    idVec3					handWeaponAttacherToDefaultOffset[2][32];
-
-    int						aasState;
-    // Koz end
-
-	bool					blink;
-
-	idPhysics_Player		physicsObj;			// player physics
+	// HUMANHEAD - Changed to our version
+	//idPhysics_Player		physicsObj;			// player physics
+	hhPhysics_Player		physicsObj;			// player physics
+	// HUMANHEAD END
 
 	idList<aasLocation_t>	aasLocation;		// for AI tracking the player
 
@@ -1087,12 +521,14 @@ private:
 	int						landChange;
 	int						landTime;
 
+	int						currentWeapon;
+	int						idealWeapon;
+	int						previousWeapon;
+	int						weaponSwitchTime;
 	bool					weaponEnabled;
-    int						risingWeaponHand; // Carl: getWeaponEntity script function assumes there is only one weapon and assigns it during raise
 	bool					showWeaponViewModel;
 
 	const idDeclSkin *		skin;
-	const idDeclSkin *		powerUpSkin;
 	idStr					baseSkinName;
 
 	int						numProjectilesFired;	// number of projectiles fired
@@ -1128,22 +564,18 @@ private:
 	// if there is a focusGUIent, the attack button will be changed into mouse clicks
 	idEntity *				focusGUIent;
 	idUserInterface *		focusUI;				// focusGUIent->renderEntity.gui, gui2, or gui3
-	idAI *					focusCharacter;
-	int						talkCursor;				// show the state of the focusCharacter (0 == can't talk/dead, 1 == ready to talk, 2 == busy talking)
 	int						focusTime;
-	idAFEntity_Vehicle *	focusVehicle;
 	idUserInterface *		cursor;
-
+	
 	// full screen guis track mouse movements directly
 	int						oldMouseX;
 	int						oldMouseY;
 
-	idStr					pdaAudio;
-	idStr					pdaVideo;
-	idStr					pdaVideoWave;
+#if GAMEPAD_SUPPORT	// VENOM BEGIN
+	int						iCurrentRumble;
+#endif // VENOM END
 
 	bool					tipUp;
-	bool					objectiveUp;
 
 	int						lastDamageDef;
 	idVec3					lastDamageDir;
@@ -1152,11 +584,6 @@ private:
 	bool					smoothedOriginUpdated;
 	idVec3					smoothedOrigin;
 	idAngles				smoothedAngles;
-
-    idHashTable<WeaponToggle_t>	weaponToggles;
-	int						hudPowerup;
-	int						lastHudPowerup;
-	int						hudPowerupDuration;
 
 	// mp
 	bool					ready;					// from userInfo
@@ -1167,67 +594,66 @@ private:
 	unsigned int			lastSnapshotSequence;	// track state hitches on clients
 	bool					weaponCatchup;			// raise up the weapon silently ( state catchups )
 	int						MPAim;					// player num in aim
+// HUMANHEAD pdm
 	int						lastMPAim;
 	int						lastMPAimTime;			// last time the aim changed
 	int						MPAimFadeTime;			// for GUI fade
 	bool					MPAimHighlight;
+	bool					bDialogDamageMode;		// Disallow health from dropping below 1
+	bool					bDialogWeaponMode;		// lock weapon during dialog
+// HUMANHEAD END
 	bool					isTelefragged;			// proper obituaries
 
 	idPlayerIcon			playerIcon;
 
+	hhPlayerTeamIcon		playerTeamIcon; //HUMANHEAD rww
+
 	bool					selfSmooth;
+
+	bool					bBufferNextSnapAngles; //HUMANHEAD rww
 
 	void					LookAtKiller( idEntity *inflictor, idEntity *attacker );
 
 	void					StopFiring( void );
-    void					FireWeapon( int hand, idWeapon* weap );
+	virtual				// HUMANHEAD
+	void					FireWeapon( void );
+	virtual				// HUMANHEAD
 	void					Weapon_Combat( void );
-	void					Weapon_NPC( void );
+	virtual				// HUMANHEAD
 	void					Weapon_GUI( void );
+	virtual				// HUMANHEAD
 	void					UpdateWeapon( void );
-    void					UpdateFlashlight();
-    void					FlashlightOn();
-    void					FlashlightOff();
 	void					UpdateSpectating( void );
 	void					SpectateFreeFly( bool force );	// ignore the timeout to force when followed spec is no longer valid
 	void					SpectateCycle( void );
+	virtual				// HUMANHEAD
 	idAngles				GunTurningOffset( void );
+	virtual				// HUMANHEAD
 	idVec3					GunAcceleratingOffset( void );
 
-
 	void					UseObjects( void );
+	virtual				// HUMANHEAD
 	void					CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity );
+	virtual				// HUMANHEAD
 	void					BobCycle( const idVec3 &pushVelocity );
+	virtual				// HUMANHEAD
 	void					UpdateViewAngles( void );
+	virtual				// HUMANHEAD
 	void					EvaluateControls( void );
 	void					AdjustSpeed( void );
+	virtual				// HUMANHEAD
 	void					AdjustBodyAngles( void );
-
-	void					SnapBodyToView(); // Koz align body to current view;
-    void					OrientHMDBody(); // Koz reset hmd/body orientations
-
-    void					SetAAS( bool forceAAS48 = false );
-    void					InitAASLocation( void );
+	void					InitAASLocation( void );
 	void					SetAASLocation( void );
+	virtual				// HUMANHEAD
 	void					Move( void );
-	void					Move_Interpolated( float fraction );
-	void					UpdatePowerUps( void );
 	void					UpdateDeathSkin( bool state_hitch );
-	void					ClearPowerup( int i );
 	void					SetSpectateOrigin( void );
 
-	void					ClearFocus( void );
+	virtual				// HUMANHEAD
 	void					UpdateFocus( void );
-    void					SendPDAEvent( const sysEvent_t* sev );
-    bool					UpdateFocusPDA( void );
+	virtual				// HUMANHEAD
 	void					UpdateLocation( void );
-	idUserInterface *		ActiveGui( void );
-	void					UpdatePDAInfo( bool updatePDASel );
-	int						AddGuiPDAData( const declType_t dataType, const char *listName, const idDeclPDA *src, idUserInterface *gui );
-	void					ExtractEmailInfo( const idStr &email, const char *scan, idStr &out );
-	void					UpdateObjectiveInfo( void );
-
-    bool					WeaponAvailable( const char* name );
 
 	void					UseVehicle( void );
 
@@ -1241,31 +667,10 @@ private:
 	void					Event_GetPreviousWeapon( void );
 	void					Event_SelectWeapon( const char *weaponName );
 	void					Event_GetWeaponEntity( void );
-	void					Event_OpenPDA( void );
-	void					Event_PDAAvailable( void );
-	void					Event_InPDA( void );
 	void					Event_ExitTeleporter( void );
 	void					Event_HideTip( void );
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
-	void					Event_GiveInventoryItem(const char *name);
-	void					Event_RemoveInventoryItem(const char *name);
-    void					Event_ForceOrigin( idVec3& origin, idAngles& angles );
-	void					Event_GetIdealWeapon( void );
-    void					Event_WeaponAvailable( const char* name );
-    void					Event_SetPowerupTime( int powerup, int time );
-    void					Event_IsPowerupActive( int powerup );
-    void					Event_StartWarp();
-	void					Event_StopHelltime(int mode);
-	void					Event_ToggleBloom(int on);
-	void					Event_SetBloomParms(float speed, float intensity);
-
-    // Koz
-    void					Event_GetWeaponHand();
-    void					Event_GetWeaponHandState();
-    void					Event_GetFlashHand(); // get flashlight hand
-    void					Event_GetFlashHandState(); // get flashlight hand state
-    void					Event_GetFlashState(); // get flashlight state
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
@@ -1301,3 +706,4 @@ ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
 }
 
 #endif /* !__GAME_PLAYER_H__ */
+

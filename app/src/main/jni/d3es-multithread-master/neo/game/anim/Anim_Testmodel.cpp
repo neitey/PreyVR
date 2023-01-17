@@ -1,39 +1,5 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
-
-#include "gamesys/SysCvar.h"
-#include "Player.h"
-
-#include "anim/Anim_Testmodel.h"
-
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 =============================================================================
 
@@ -41,7 +7,7 @@ If you have questions concerning this license or the applicable additional terms
 
 Model viewing can begin with either "testmodel <modelname>"
 
-The names must be the full pathname after the basedir, like
+The names must be the full pathname after the basedir, like 
 "models/weapons/v_launch/tris.md3" or "players/male/tris.md3"
 
 Extension will default to ".ase" if not specified.
@@ -57,9 +23,14 @@ move around it to view it from different angles.
 =============================================================================
 */
 
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
+
+#include "../Game_local.h"
+
 CLASS_DECLARATION( idAnimatedEntity, idTestModel )
 	EVENT( EV_FootstepLeft,			idTestModel::Event_Footstep )
-	EVENT( EV_FootstepRight,		idTestModel::Event_Footstep )
+	EVENT( EV_FootstepRight,		idTestModel::Event_Footstep )	
 END_CLASS
 
 /*
@@ -123,7 +94,18 @@ void idTestModel::Spawn( void ) {
 
 	physicsObj.SetSelf( this );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
-	physicsObj.SetAxis( GetPhysics()->GetAxis() );
+#ifdef HUMANHEAD
+	if ( g_testModelPitch.GetFloat() != 0.0  ) {
+		idAngles spawnAngles;
+		spawnAngles = GetPhysics()->GetAxis().ToAngles();
+		spawnAngles.pitch = g_testModelPitch.GetFloat();
+		physicsObj.SetAxis( spawnAngles.ToMat3() );
+	} else {
+		physicsObj.SetAxis( GetPhysics()->GetAxis() );
+	}
+#else
+		physicsObj.SetAxis( GetPhysics()->GetAxis() );
+#endif
 
 	if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) ) {
 		spawnArgs.GetVector( "maxs", NULL, bounds[1] );
@@ -139,7 +121,8 @@ void idTestModel::Spawn( void ) {
 	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
 
 	// add the head model if it has one
-	headModel = spawnArgs.GetString( "def_head", "" );
+	// HUMANHEAD pdm: changed from def_head to model_head for precaching
+	headModel = spawnArgs.GetString( "model_head", "" );
 	if ( headModel[ 0 ] ) {
 		jointName = spawnArgs.GetString( "head_joint" );
 		joint = animator.GetJointHandle( jointName );
@@ -154,14 +137,19 @@ void idTestModel::Spawn( void ) {
 				sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
 			}
 
-			head = gameLocal.SpawnEntityType( idAnimatedEntity::Type, &args );
+			head = gameLocal.SpawnEntityType( hhAnimatedEntity::Type, &args );	//HUMANHEAD jsh switched to hhAnimatedEntity from idAnimatedEntity
 			animator.GetJointTransform( joint, gameLocal.time, origin, axis );
+#ifdef HUMANHEAD //added offset
+			idVec3 offset = spawnArgs.GetVector( "head_offset" );
+			origin = GetPhysics()->GetOrigin() + ( origin + modelOffset + offset ) * GetPhysics()->GetAxis();
+#else
 			origin = GetPhysics()->GetOrigin() + ( origin + modelOffset ) * GetPhysics()->GetAxis();
+#endif
 			head.GetEntity()->SetModel( headModel );
 			head.GetEntity()->SetOrigin( origin );
 			head.GetEntity()->SetAxis( GetPhysics()->GetAxis() );
 			head.GetEntity()->BindToJoint( this, animator.GetJointName( joint ), true );
-
+		
 			headAnimator = head.GetEntity()->GetAnimator();
 
 			// set up the list of joints to copy to the head
@@ -328,7 +316,7 @@ void idTestModel::Think( void ) {
 				}
 				break;
 			}
-
+			
 			mode = g_testModelAnimate.GetInteger();
 		}
 
@@ -376,13 +364,25 @@ void idTestModel::Think( void ) {
 
 			joint = animator.GetJointHandle( "origin" );
 			animator.GetJointTransform( joint, gameLocal.time, neworigin, axis );
-			neworigin = ( ( neworigin - animator.ModelDef()->GetVisualOffset() ) * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin();
+
+			if ( animator.ModelDef() ) { // HUMANHEAD CJR:  Added check for validity of the modelDef
+				neworigin = ( ( neworigin - animator.ModelDef()->GetVisualOffset() ) * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin();
+			} else {
+				neworigin = ( neworigin * physicsObj.GetAxis() ) + GetPhysics()->GetOrigin(); // HUMANHEAD CJR:  old version
+			} // END HUMANHEAD
+
 			clip->Link( gameLocal.clip, this, 0, neworigin, clip->GetAxis() );
 		}
 	}
 
 	UpdateAnimation();
 	Present();
+
+	// HUMANHEAD nla - Add bounding box to test models
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugBounds( colorMagenta, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin() );
+	}
+	// HUMANHEAD end
 
 	if ( ( gameLocal.testmodel == this ) && g_showTestModelFrame.GetInteger() && anim ) {
 		gameLocal.Printf( "^5 Anim: ^7%s  ^5Frame: ^7%d/%d  Time: %.3f\n", animator.AnimFullName( anim ), animator.CurrentAnim( ANIMCHANNEL_ALL )->GetFrameNumber( gameLocal.time ),
@@ -418,7 +418,7 @@ void idTestModel::NextAnim( const idCmdArgs &args ) {
 	headAnim = 0;
 	if ( headAnimator ) {
 		headAnimator->ClearAllAnims( gameLocal.time, 0 );
-		headAnim = headAnimator->GetAnim( animname );
+        headAnim = headAnimator->GetAnim( animname );
 		if ( !headAnim ) {
 			headAnim = headAnimator->GetAnim( "idle" );
 		}
@@ -460,7 +460,7 @@ void idTestModel::PrevAnim( const idCmdArgs &args ) {
 	headAnim = 0;
 	if ( headAnimator ) {
 		headAnimator->ClearAllAnims( gameLocal.time, 0 );
-		headAnim = headAnimator->GetAnim( animname );
+        headAnim = headAnimator->GetAnim( animname );
 		if ( !headAnim ) {
 			headAnim = headAnimator->GetAnim( "idle" );
 		}
@@ -530,16 +530,17 @@ idTestModel::TestAnim
 void idTestModel::TestAnim( const idCmdArgs &args ) {
 	idStr			name;
 	int				animNum;
+	const idAnim	*newanim;
 
 	if ( args.Argc() < 2 ) {
 		gameLocal.Printf( "usage: testanim <animname>\n" );
 		return;
 	}
 
+	newanim = NULL;
+
 	name = args.Argv( 1 );
 #if 0
-	const idAnim	*newanim = NULL;
-
 	if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
 		const idMD5Anim	*md5anims[ ANIM_MaxSyncedAnims ];
 		idModelExport exporter;
@@ -568,7 +569,7 @@ void idTestModel::TestAnim( const idCmdArgs &args ) {
 	headAnim = 0;
 	if ( headAnimator ) {
 		headAnimator->ClearAllAnims( gameLocal.time, 0 );
-		headAnim = headAnimator->GetAnim( animname );
+        headAnim = headAnimator->GetAnim( animname );
 		if ( !headAnim ) {
 			headAnim = headAnimator->GetAnim( "idle" );
 			if ( !headAnim ) {
@@ -769,8 +770,8 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 			// without appending an ase
 			if ( name[ 0 ] != '_' ) {
 				name.DefaultFileExtension( ".ase" );
-			}
-
+			} 
+			
 			if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
 				idModelExport exporter;
 				exporter.ExportModel( name );
@@ -785,10 +786,17 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 		}
 	}
 
+	
 	offset = player->GetPhysics()->GetOrigin() + player->viewAngles.ToForward() * 100.0f;
 
 	dict.Set( "origin", offset.ToString() );
 	dict.Set( "angle", va( "%f", player->viewAngles.yaw + 180.0f ) );
+	// HUMANHEAD nla - Size key is needed to successfully animate.  Try doing a test model on a non-entity def, and you'll see the problem.
+	if ( !dict.GetString( "size", NULL ) ) {
+		//? Should we dynamically get this?
+		dict.Set( "size", "32 32 32" );
+	}
+	// HUAMNHEAD END
 	gameLocal.testmodel = ( idTestModel * )gameLocal.SpawnEntityType( idTestModel::Type, &dict );
 	gameLocal.testmodel->renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
 }

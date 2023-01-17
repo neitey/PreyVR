@@ -1,39 +1,9 @@
-/*
-===========================================================================
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/Licensee.h"
-#include "MayaImport/maya_main.h"
-
-#include "gamesys/SysCvar.h"
-#include "Game_local.h"
-
-#include "anim/Anim.h"
+#include "../Game_local.h"
+#include "../../MayaImport/maya_main.h"
 
 /***********************************************************************
 
@@ -45,7 +15,7 @@ static idStr				Maya_Error;
 
 static exporterInterface_t	Maya_ConvertModel = NULL;
 static exporterShutdown_t	Maya_Shutdown = NULL;
-static uintptr_t			importDLL = 0;
+static int					importDLL = 0;
 
 bool idModelExport::initialized = false;
 
@@ -96,7 +66,11 @@ bool idModelExport::CheckMayaInstall( void ) {
 	lres = RegOpenKey( HKEY_LOCAL_MACHINE, "SOFTWARE\\Alias|Wavefront\\Maya\\4.5\\Setup\\InstallPath", &hKey );
 
 	if ( lres != ERROR_SUCCESS ) {
-		return false;
+		// HUMANHEAD - cjr:  Check for Maya 4.0 as well
+		lres = RegOpenKey( HKEY_LOCAL_MACHINE, "SOFTWARE\\Alias|Wavefront\\Maya\\4.0\\Setup\\InstallPath", &hKey );
+		if ( lres != ERROR_SUCCESS ) {
+			return false;
+		} // END HUMANHEAD
 	}
 
 	lres = RegQueryValueEx( hKey, "MAYA_INSTALL_LOCATION", NULL, (unsigned long*)&lType, (unsigned char*)NULL, (unsigned long*)NULL );
@@ -108,6 +82,8 @@ bool idModelExport::CheckMayaInstall( void ) {
 	}
 	return true;
 #else
+	//HH rww SDK - the standard EE libs don't support these reg functions
+	/*
 	HKEY	hKey;
 	long	lres;
 
@@ -119,6 +95,8 @@ bool idModelExport::CheckMayaInstall( void ) {
 		return false;
 	}
 	return true;
+	*/
+	return false;
 #endif
 }
 
@@ -143,7 +121,7 @@ void idModelExport::LoadMayaDll( void ) {
 	}
 
 	// look up the dll interface functions
-	dllEntry = ( exporterDLLEntry_t )sys->DLL_GetProcAddress( importDLL, "dllEntry" );
+	dllEntry = ( exporterDLLEntry_t )sys->DLL_GetProcAddress( importDLL, "dllEntry" ); 
 	Maya_ConvertModel = ( exporterInterface_t )sys->DLL_GetProcAddress( importDLL, "Maya_ConvertModel" );
 	Maya_Shutdown = ( exporterShutdown_t )sys->DLL_GetProcAddress( importDLL, "Maya_Shutdown" );
 	if ( !Maya_ConvertModel || !dllEntry || !Maya_Shutdown ) {
@@ -171,14 +149,13 @@ void idModelExport::LoadMayaDll( void ) {
 =====================
 idModelExport::ConvertMayaToMD5
 
-Checks if a Maya model should be converted to an MD5, and converts if if the time/date or
+Checks if a Maya model should be converted to an MD5, and converts if if the time/date or 
 version number has changed.
 =====================
 */
 bool idModelExport::ConvertMayaToMD5( void ) {
-	ID_TIME_T
-		sourceTime;
-	ID_TIME_T		destTime;
+	ID_TIME_T	sourceTime;
+	ID_TIME_T	destTime;
 	int			version;
 	idToken		cmdLine;
 	idStr		path;
@@ -242,18 +219,16 @@ bool idModelExport::ConvertMayaToMD5( void ) {
 	}
 
 	// we need to make sure we have a full path, so convert the filename to an OS path
-	// _D3XP :: we work out of the cdpath, at least until we get Alienbrain
-	src = fileSystem->RelativePathToOSPath(src, "fs_cdpath");
-	dest = fileSystem->RelativePathToOSPath(dest, "fs_cdpath");
+	src = fileSystem->RelativePathToOSPath( src );
+	dest = fileSystem->RelativePathToOSPath( dest );
 
-	dest.ExtractFilePath(path);
-
-	if (path.Length()) {
-		fileSystem->CreateOSPath(path);
+	dest.ExtractFilePath( path );
+	if ( path.Length() ) {
+		fileSystem->CreateOSPath( path );
 	}
 
 	// get the os path in case it needs to create one
-	path = fileSystem->RelativePathToOSPath("", "fs_cdpath" /* _D3XP */);
+	path = fileSystem->RelativePathToOSPath( "" );
 
 	common->SetRefreshOnPrint( true );
 	Maya_Error = Maya_ConvertModel( path, commandLine );
@@ -261,7 +236,7 @@ bool idModelExport::ConvertMayaToMD5( void ) {
 	if ( Maya_Error != "Ok" ) {
 		return false;
 	}
-
+	
 	// conversion succeded
 	return true;
 }
@@ -309,17 +284,23 @@ idModelExport::ExportAnim
 ====================
 */
 bool idModelExport::ExportAnim( const char *anim ) {
+#if !HUMANHEAD	// HUMANHEAD pdm: Unmerged this at JimDose's suggestion to avoid reexporting our models.  Would be handy for an add-on pack though
 	const char *game = cvarSystem->GetCVarString( "fs_game" );
 	if ( strlen(game) == 0 ) {
 		game = BASE_GAMEDIR;
 	}
+#endif
 
 	Reset();
 	src  = anim;
 	dest = anim;
 	dest.SetFileExtension( MD5_ANIM_EXT );
 
+#if HUMANHEAD	// HUMANHEAD pdm: Unmerged this at JimDose's suggestion to avoid reexporting our models.  Would be handy for an add-on pack though
+	sprintf( commandLine, "anim %s -dest %s -game %s", src.c_str(), dest.c_str(), CD_BASEDIR );
+#else
 	sprintf( commandLine, "anim %s -dest %s -game %s", src.c_str(), dest.c_str(), game );
+#endif
 	if ( !ConvertMayaToMD5() ) {
 		gameLocal.Printf( "Failed to export '%s' : %s", src.c_str(), Maya_Error.c_str() );
 		return false;
@@ -414,7 +395,7 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 			return 0;
 		}
 
-		parser.ReadToken( &token );
+        parser.ReadToken( &token );
 		if ( token.Icmp( g_exportMask.GetString() ) ) {
 			parser.SkipBracedSection();
 			return 0;
@@ -467,10 +448,12 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 
 			Reset();
 			if ( ParseOptions( lex ) ) {
+#if !HUMANHEAD	// HUMANHEAD pdm: Unmerged this at JimDose's suggestion to avoid reexporting our models.  Would be handy for an add-on pack though
 				const char *game = cvarSystem->GetCVarString( "fs_game" );
 				if ( strlen(game) == 0 ) {
 					game = BASE_GAMEDIR;
 				}
+#endif
 
 				if ( command == "mesh" ) {
 					dest.SetFileExtension( MD5_MESH_EXT );
@@ -482,7 +465,11 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 					dest.SetFileExtension( command );
 				}
 				idStr back = commandLine;
+#if HUMANHEAD	// HUMANHEAD pdm: Unmerged this at JimDose's suggestion to avoid reexporting our models.  Would be handy for an add-on pack though
+				sprintf( commandLine, "%s %s -dest %s -game %s%s", command.c_str(), src.c_str(), dest.c_str(), CD_BASEDIR, commandLine.c_str() );
+#else
 				sprintf( commandLine, "%s %s -dest %s -game %s%s", command.c_str(), src.c_str(), dest.c_str(), game, commandLine.c_str() );
+#endif
 				if ( ConvertMayaToMD5() ) {
 					count++;
 				} else {
@@ -547,7 +534,7 @@ int idModelExport::ExportModels( const char *pathname, const char *extension ) {
 		return 0;
 	}
 
-	gameLocal.Printf( "----- Exporting models -----\n" );
+	gameLocal.Printf( "--------- Exporting models --------\n" );
 	if ( !g_exportMask.GetString()[ 0 ] ) {
 		gameLocal.Printf( "  Export mask: '%s'\n", g_exportMask.GetString() );
 	}
@@ -561,6 +548,7 @@ int idModelExport::ExportModels( const char *pathname, const char *extension ) {
 	fileSystem->FreeFileList( files );
 
 	gameLocal.Printf( "...%d models exported.\n", count );
+	gameLocal.Printf( "-----------------------------------\n" );
 
 	return count;
 }

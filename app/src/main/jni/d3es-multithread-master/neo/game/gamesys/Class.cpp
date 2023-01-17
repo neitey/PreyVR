@@ -1,43 +1,19 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-
-#include "Class.h"
-
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
 
 Base class for all C++ objects.  Provides fast run-time type checking and run-time
 instancing of objects.
 
 */
+
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
+
+#include "../Game_local.h"
+
+#include "TypeInfo.h"
+
 
 /***********************************************************************
 
@@ -61,7 +37,7 @@ initialized in any order, the constructor must handle the case that subclasses
 are initialized before superclasses.
 ================
 */
-idTypeInfo::idTypeInfo( const char *classname, const char *superclass, idEventFunc<idClass> *eventCallbacks, idClass *( *CreateInstance )( void ),
+idTypeInfo::idTypeInfo( const char *classname, const char *superclass, idEventFunc<idClass> *eventCallbacks, idClass *( *CreateInstance )( void ), 
 	void ( idClass::*Spawn )( void ), void ( idClass::*Save )( idSaveGame *savefile ) const, void ( idClass::*Restore )( idRestoreGame *savefile ) ) {
 
 	idTypeInfo *type;
@@ -82,7 +58,7 @@ idTypeInfo::idTypeInfo( const char *classname, const char *superclass, idEventFu
 
 	// Check if any subclasses were initialized before their superclass
 	for( type = typelist; type != NULL; type = type->next ) {
-		if ( ( type->super == NULL ) && !idStr::Cmp( type->superclass, this->classname ) &&
+		if ( ( type->super == NULL ) && !idStr::Cmp( type->superclass, this->classname ) && 
 			idStr::Cmp( type->classname, "idClass" ) ) {
 			type->super	= this;
 		}
@@ -116,7 +92,7 @@ idTypeInfo::~idTypeInfo() {
 ================
 idTypeInfo::Init
 
-Initializes the event callback table for the class.  Creates a
+Initializes the event callback table for the class.  Creates a 
 table for fast lookups of event functions.  Should only be called once.
 ================
 */
@@ -202,7 +178,7 @@ void idTypeInfo::Init( void ) {
 idTypeInfo::Shutdown
 
 Should only be called when DLL or EXE is being shutdown.
-Although it cleans up any allocated memory, it doesn't bother to remove itself
+Although it cleans up any allocated memory, it doesn't bother to remove itself 
 from the class list since the program is shutting down.
 ================
 */
@@ -284,7 +260,7 @@ idClass::FindUninitializedMemory
 */
 void idClass::FindUninitializedMemory( void ) {
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned int *ptr = ( ( unsigned int * )this ) - 1;
+	unsigned long *ptr = ( ( unsigned long * )this ) - 1;
 	int size = *ptr;
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
@@ -393,7 +369,7 @@ void idClass::Init( void ) {
 	// is a subclass of another
 	num = 0;
 	for( c = classHierarchy.GetNext(); c != NULL; c = c->node.GetNext(), num++ ) {
-		c->typeNum = num;
+        c->typeNum = num;
 		c->lastChild += num;
 	}
 
@@ -453,10 +429,12 @@ void * idClass::operator new( size_t s ) {
 	numobjects++;
 
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned int *ptr = (unsigned int *)p;
+	unsigned long *ptr = (unsigned long *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
-	size >>= 3;
+	// HUMANHEAD tmj: bugfix - shifting by 2 gives the number of DWORDs to fill.
+	// Shifting by 3 is incorrect as it only fills the memory half way.
+	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
 	}
@@ -475,10 +453,12 @@ void * idClass::operator new( size_t s, int, int, char *, int ) {
 	numobjects++;
 
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned int *ptr = (unsigned int *)p;
+	unsigned long *ptr = (unsigned long *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
-	size >>= 3;
+	// HUMANHEAD tmj: bugfix - shifting by 2 gives the number of DWORDs to fill.
+	// Shifting by 3 is incorrect as it only fills the memory half way.
+	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
 	}
@@ -503,7 +483,7 @@ void idClass::operator delete( void *ptr ) {
 		p = ( ( int * )ptr ) - 1;
 		memused -= *p;
 		numobjects--;
-		Mem_Free( p );
+        Mem_Free( p );
 	}
 }
 
@@ -514,7 +494,7 @@ void idClass::operator delete( void *ptr, int, int, char *, int ) {
 		p = ( ( int * )ptr ) - 1;
 		memused -= *p;
 		numobjects--;
-		Mem_Free( p );
+        Mem_Free( p );
 	}
 }
 
@@ -582,6 +562,64 @@ idTypeInfo *idClass::GetType( const int typeNum ) {
 	return NULL;
 }
 
+#ifdef _HH_NET_DEBUGGING //HUMANHEAD rww
+void idClass::PrintHHNetStats_f( const idCmdArgs &args ) {
+	for( int i = 0; i < types.Num(); i++ ) {
+		idTypeInfo *type = types[ i ];
+		idLib::NetworkEntStats(type->classname, type->typeNum);
+	}
+}
+#endif //HUMANHEAD END
+
+#if !GOLD //HUMANHEAD rww
+void idClass::TestSnap_f( const idCmdArgs &args ) {
+	for( int i = 0; i < types.Num(); i++ ) {
+		byte testBuffer[16384];
+		byte testBufferDelta[16384];
+		idBitMsg base;
+		idBitMsg delta;
+		idBitMsgDelta msg;
+
+		memset(testBuffer, 0, sizeof(testBuffer));
+		base.Init(testBuffer, sizeof(testBuffer));
+		int j = 0;
+		while (j < sizeof(testBuffer)/4) { //hack
+			base.WriteBits(0, 32);
+			j++;
+		}
+		delta.Init(testBufferDelta, sizeof(testBufferDelta));
+		msg.Init(&base, (idBitMsg *)NULL, &delta);
+
+		idTypeInfo *type = types[i];
+		if (strcmp(type->classname, "hhDock") &&
+			strcmp(type->classname, "hhFireController") &&
+			strcmp(type->classname, "hhGravityZoneBase") &&
+			strcmp(type->classname, "hhProxDoorSection") &&
+			strcmp(type->classname, "hhVehicle") &&
+			strcmp(type->classname, "hhZone") &&
+			strcmp(type->classname, "idCamera") &&
+			strcmp(type->classname, "idClass") &&
+			strcmp(type->classname, "idEntity") &&
+			strcmp(type->classname, "idPhysics")) { //more hacks
+			idClass *cl = type->CreateInstance();
+			if (cl && cl->IsType(idEntity::Type) &&
+				!cl->IsType(hhWeapon::Type) && !cl->IsType(idWorldspawn::Type)) {
+				idEntity *ent = (idEntity *)cl;
+
+				ent->SetPhysics(NULL);
+				ent->GetPhysics()->SetSelf(ent);
+				ent->WriteToSnapshot(msg);
+				ent->ReadFromSnapshot(msg);
+				if (delta.GetSize() != delta.GetReadCount()) {
+					gameLocal.Error("Snapshot not aligned for '%s'!", type->classname);
+				}
+				ent->Event_Remove();
+			}
+		}
+	}
+}
+#endif //HUMANHEAD END
+
 /*
 ================
 idClass::GetClassname
@@ -628,9 +666,9 @@ bool idClass::PostEventArgs( const idEventDef *ev, int time, int numargs, ... ) 
 	idTypeInfo	*c;
 	idEvent		*event;
 	va_list		args;
-
+	
 	assert( ev );
-
+	
 	if ( !idEvent::initialized ) {
 		return false;
 	}
@@ -644,8 +682,22 @@ bool idClass::PostEventArgs( const idEventDef *ev, int time, int numargs, ... ) 
 	// we service events on the client to avoid any bad code filling up the event pool
 	// we don't want them processed usually, unless when the map is (re)loading.
 	// we allow threads to run fine, though.
-	if ( gameLocal.isClient && ( gameLocal.GameState() != GAMESTATE_STARTUP ) && !IsType( idThread::Type ) ) {
-		return true;
+	if ( gameLocal.isClient && ( gameLocal.GameState() != GAMESTATE_STARTUP ) && !IsType( idThread::Type ) )
+	{
+		//HUMANHEAD rww - take client ents into account.
+		if (IsType(idEntity::Type))
+		{
+			idEntity *ent = static_cast<idEntity *>(this);
+			if (!ent->fl.clientEntity && !ent->fl.clientEvents)
+			{ //we add events for client entities, otherwise get out of here.
+				return true;
+			}
+		}
+		else
+		{
+			return true;
+		}
+		//END HUMANHEAD
 	}
 
 	va_start( args, numargs );
@@ -653,6 +705,11 @@ bool idClass::PostEventArgs( const idEventDef *ev, int time, int numargs, ... ) 
 	va_end( args );
 
 	event->Schedule( this, c, time );
+
+	// HUMANHEAD cjr: for showing all posted events
+	if(g_postEventsDebug.GetBool()) {
+		gameLocal.Printf("PostEvent: %s [%s]\n", ev->GetName(), this->GetClassname() );
+	}
 
 	return true;
 }
@@ -829,7 +886,7 @@ bool idClass::ProcessEventArgs( const idEventDef *ev, int numargs, ... ) {
 	int			num;
 	intptr_t	data[ D_EVENT_MAXARGS ];
 	va_list		args;
-
+	
 	assert( ev );
 	assert( idEvent::initialized );
 
@@ -935,48 +992,89 @@ bool idClass::ProcessEvent( const idEventDef *ev, idEventArg arg1, idEventArg ar
 idClass::ProcessEventArgPtr
 ================
 */
-bool idClass::ProcessEventArgPtr( const idEventDef *ev, intptr_t *data ) {
-	idTypeInfo	*c;
+bool idClass::ProcessEventArgPtr( const idEventDef *ev, intptr_t*data ) {
+	idTypeInfo* c;
 	int			num;
 	eventCallback_t	callback;
-
-	assert( ev );
-	assert( idEvent::initialized );
-
-	SetTimeState ts;
-
-	if (IsType(idEntity::Type)) {
-		idEntity *ent = (idEntity *)this;
-		ts.PushState(ent->timeGroup);
+	assert(ev);
+	assert(idEvent::initialized);
+	if (g_debugTriggers.GetBool() && (ev == &EV_Activate) && IsType(idEntity::Type)) {
+		const idEntity* ent = *reinterpret_cast<idEntity**>(data);
+		gameLocal.Printf("%d: '%s' activated by '%s'\n", gameLocal.framenum, static_cast<idEntity*>(this)->GetName(), ent ? ent->GetName() : "NULL");
 	}
-
-	if ( g_debugTriggers.GetBool() && ( ev == &EV_Activate ) && IsType( idEntity::Type ) ) {
-		const idEntity *ent = *reinterpret_cast<idEntity **>( data );
-		gameLocal.Printf( "%d: '%s' activated by '%s'\n", gameLocal.framenum, static_cast<idEntity *>( this )->GetName(), ent ? ent->GetName() : "NULL" );
-	}
-
 	c = GetType();
 	num = ev->GetEventNum();
-	if ( !c->eventMap[ num ] ) {
+	if (!c->eventMap[num]) {
 		// we don't respond to this event, so ignore it
 		return false;
 	}
-
-	callback = c->eventMap[ num ];
-
-	switch( ev->GetFormatspecIndex() ) {
-	case 1 << D_EVENT_MAXARGS :
-		( this->*callback )();
+	callback = c->eventMap[num];
+	// RB: I tried first to get CPU_EASYARGS switch running with x86_64
+	// but it caused many crashes with the Doom scripts.
+	// The new Callbacks.cpp was generated with intptr_t and it works fine.
+#if 1 //k: CPU_EASYARGS
+	/*
+	on ppc architecture, floats are passed in a separate set of registers
+	the function prototypes must have matching float declaration
+	http://developer.apple.com/documentation/DeveloperTools/Conceptual/MachORuntime/2rt_powerpc_abi/chapter_9_section_5.html
+	*/
+	switch (ev->GetFormatspecIndex())
+	{
+	case 1 << D_EVENT_MAXARGS:
+		(this->*callback)();
 		break;
-
-// generated file - see CREATE_EVENT_CODE
+		// generated file - see CREATE_EVENT_CODE
 #include "Callbacks.cpp"
-
 	default:
-		gameLocal.Warning( "Invalid formatspec on event '%s'", ev->GetName() );
+		gameLocal.Warning("Invalid formatspec on event '%s'", ev->GetName());
 		break;
 	}
-
+#else
+	assert(D_EVENT_MAXARGS == 8);
+	// RB: 64 bit fixes, changed int to intptr_t
+	switch (ev->GetNumArgs())
+	{
+	case 0:
+		(this->*callback)();
+		break;
+	case 1:
+		typedef void (idClass::* eventCallback_1_t)(const intptr_t);
+		(this->*(eventCallback_1_t)callback)(data[0]);
+		break;
+	case 2:
+		typedef void (idClass::* eventCallback_2_t)(const intptr_t, const intptr_t);
+		(this->*(eventCallback_2_t)callback)(data[0], data[1]);
+		break;
+	case 3:
+		typedef void (idClass::* eventCallback_3_t)(const intptr_t, const intptr_t, const intptr_t);
+		(this->*(eventCallback_3_t)callback)(data[0], data[1], data[2]);
+		break;
+	case 4:
+		typedef void (idClass::* eventCallback_4_t)(const intptr_t, const intptr_t, const intptr_t, const intptr_t);
+		(this->*(eventCallback_4_t)callback)(data[0], data[1], data[2], data[3]);
+		break;
+	case 5:
+		typedef void (idClass::* eventCallback_5_t)(const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t);
+		(this->*(eventCallback_5_t)callback)(data[0], data[1], data[2], data[3], data[4]);
+		break;
+	case 6:
+		typedef void (idClass::* eventCallback_6_t)(const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t);
+		(this->*(eventCallback_6_t)callback)(data[0], data[1], data[2], data[3], data[4], data[5]);
+		break;
+	case 7:
+		typedef void (idClass::* eventCallback_7_t)(const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t);
+		(this->*(eventCallback_7_t)callback)(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+		break;
+	case 8:
+		typedef void (idClass::* eventCallback_8_t)(const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t, const intptr_t);
+		(this->*(eventCallback_8_t)callback)(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+		break;
+	default:
+		gameLocal.Warning("Invalid formatspec on event '%s'", ev->GetName());
+		break;
+	}
+	// RB end
+#endif
 	return true;
 }
 

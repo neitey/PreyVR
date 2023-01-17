@@ -1,42 +1,13 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 #ifndef __SCRIPT_COMPILER_H__
 #define __SCRIPT_COMPILER_H__
-
-#include "idlib/Parser.h"
-
-#include "script/Script_Program.h"
 
 const char * const RESULT_STRING = "<RESULT>";
 
 typedef struct opcode_s {
-	const char	*name;
-	const char	*opname;
+	char		*name;
+	char		*opname;
 	int			priority;
 	bool		rightAssociative;
 	idVarDef	*type_a;
@@ -72,7 +43,7 @@ enum {
 	OP_ADD_SV,
 	OP_SUB_F,
 	OP_SUB_V,
-
+	
 	OP_EQ_F,
 	OP_EQ_V,
 	OP_EQ_S,
@@ -80,7 +51,7 @@ enum {
 	OP_EQ_EO,
 	OP_EQ_OE,
 	OP_EQ_OO,
-
+	
 	OP_NE_F,
 	OP_NE_V,
 	OP_NE_S,
@@ -88,7 +59,7 @@ enum {
 	OP_NE_EO,
 	OP_NE_OE,
 	OP_NE_OO,
-
+	
 	OP_LE,
 	OP_GE,
 	OP_LT,
@@ -100,7 +71,7 @@ enum {
 	OP_INDIRECT_ENT,
 	OP_INDIRECT_BOOL,
 	OP_INDIRECT_OBJ,
-
+	
 	OP_ADDRESS,
 
 	OP_EVENTCALL,
@@ -188,7 +159,7 @@ enum {
 	OP_OR_BOOLF,
 	OP_OR_FBOOL,
 	OP_OR_BOOLBOOL,
-
+	
 	OP_BITAND,
 	OP_BITOR,
 
@@ -201,15 +172,15 @@ enum {
 class idCompiler {
 private:
 	static bool		punctuationValid[ 256 ];
-	static const char		*punctuation[];
+	static char		*punctuation[];
 
 	idParser		parser;
 	idParser		*parserPtr;
 	idToken			token;
-
+					
 	idTypeDef		*immediateType;
 	eval_t			immediate;
-
+					
 	bool			eof;
 	bool			console;
 	bool			callthread;
@@ -218,7 +189,7 @@ private:
 	int				currentLineNumber;
 	int				currentFileNumber;
 	int				errorCount;
-
+					
 	idVarDef		*scope;				// the function being parsed, or NULL
 	const idVarDef	*basetype;			// for accessing fields
 
@@ -273,7 +244,7 @@ private:
 	void			ParseNamespace( idVarDef *newScope );
 
 public :
-	static const opcode_t	opcodes[];
+	static opcode_t	opcodes[];
 
 					idCompiler();
 	void			CompileFile( const char *text, const char *filename, bool console );

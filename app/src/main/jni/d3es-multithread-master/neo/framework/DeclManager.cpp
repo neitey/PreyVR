@@ -2840,12 +2840,12 @@ idDeclEntityDef * idDeclManagerLocal::GetMapDef(const char *mapName, const char 
 #endif
 
 #ifdef _HUMANHEAD
-const hhDeclBeam *		idDeclManagerLocal::FindBeam( const char *name, bool makeDefault = true )
+const hhDeclBeam *		idDeclManagerLocal::FindBeam( const char *name, bool makeDefault )
 {
 	return static_cast<const hhDeclBeam*>(FindType(DECL_BEAM, name, makeDefault));
 }
 
-const hhDeclBeam *		idDeclManagerLocal::BeamByIndex( int index, bool forceParse = true )
+const hhDeclBeam *		idDeclManagerLocal::BeamByIndex( int index, bool forceParse )
 {
 	return static_cast<const hhDeclBeam*>(DeclByIndex(DECL_BEAM, index, forceParse));
 }

@@ -1,48 +1,22 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 // This is real evil but allows the code to inspect arbitrary class variables.
+#define _ALLOW_KEYWORD_MACROS
 #define private		public
 #define protected	public
 
-#include "idlib/precompiled.h"
-#include "framework/Common.h"
-#include "framework/FileSystem.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Entity.h"
+#include "../Game_local.h"
+#include "../Prey/prey_local.h"	// HUMANHEAD tmj: Prey types should be included in parse
 
-#ifdef ID_DEBUG_MEMORY
-#include "GameTypeInfo.h"				// Make sure this is up to date!
-#else
+//#ifdef ID_DEBUG_MEMORY
+//#include "GameTypeInfo.h"				// Make sure this is up to date!
+//#else
 #include "NoGameTypeInfo.h"
-#endif
-
-#include "TypeInfo.h"
+//#endif
 
 // disabled because it's adds about 64MB to state dumps and takes a really long time
 //#define DUMP_GAMELOCAL
@@ -108,6 +82,13 @@ const char *GetTypeVariableName( const char *typeName, int offset ) {
 			i = -1;
 		}
 	}
+
+	// HUMANHEAD tmj: if type wasn't included in the typeinfo parse, just warn about it
+	if(NULL == classTypeInfo[i].typeName) {
+		idStr::snPrintf( varName, sizeof( varName ), "[unregistered type: %s]", typeName );
+		return varName;
+	}
+	// HUMANHEAD END
 
 	const classTypeInfo_t &classInfo = classTypeInfo[i];
 
@@ -379,6 +360,7 @@ bool IsRenderHandleVariable( const char *varName, const char *varType, const cha
 		if ( idStr::Icmp( varName, "itemShellHandle" ) == 0 ) {
 			return true;
 		}
+/*	HUMANHEAD pdm: removed, unused
 	} else if ( idStr::Icmp( scope, "idExplodingBarrel" ) == 0 ) {
 		if ( idStr::Icmp( varName, "particleModelDefHandle" ) == 0 ) {
 			return true;
@@ -386,14 +368,17 @@ bool IsRenderHandleVariable( const char *varName, const char *varType, const cha
 		if ( idStr::Icmp( varName, "lightDefHandle" ) == 0 ) {
 			return true;
 		}
+*/
 	} else if ( idStr::Icmp( scope, "idProjectile" ) == 0 ) {
 		if ( idStr::Icmp( varName, "lightDefHandle" ) == 0 ) {
 			return true;
 		}
+/*	HUMANHEAD pdm: removed, unused
 	} else if ( idStr::Icmp( scope, "idBFGProjectile" ) == 0 ) {
 		if ( idStr::Icmp( varName, "secondModelDefHandle" ) == 0 ) {
 			return true;
 		}
+*/
 	} else if ( idStr::Icmp( scope, "idSmokeParticles" ) == 0 ) {
 		if ( idStr::Icmp( varName, "renderEntityHandle" ) == 0 ) {
 			return true;
@@ -566,7 +551,7 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 	// if this is a pointer
 	isPointer = 0;
 	for ( i = typeString.Length(); i > 0 && typeString[i - 1] == '*'; i -= 2 ) {
-		if ( varPtr == (void *)0xcdcdcdcd || ( varPtr != NULL && *((unsigned int *)varPtr) == 0xcdcdcdcd ) ) {
+		if ( varPtr == (void *)0xcdcdcdcd || ( varPtr != NULL && *((unsigned long *)varPtr) == 0xcdcdcdcd ) ) {
 			common->Warning( "%s%s::%s%s references uninitialized memory", prefix, scope, varName, "" );
 			return typeSize;
 		}
@@ -1132,7 +1117,7 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 
 	i = 0;
 	do {
-		if ( *((unsigned int *)varPtr) == 0xcdcdcdcd ) {
+		if ( *((unsigned long *)varPtr) == 0xcdcdcdcd ) {
 			common->Warning( "%s%s::%s%s uses uninitialized memory", prefix, scope, varName, "" );
 			break;
 		}

@@ -1,60 +1,14 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/async/NetworkSystem.h"
-#include "framework/DeclEntityDef.h"
-#include "framework/FileSystem.h"
-#include "renderer/ModelManager.h"
-
-#include "gamesys/SysCvar.h"
-#include "gamesys/SysCmds.h"
-#include "script/Script_Thread.h"
-#include "ai/AI.h"
-#include "anim/Anim_Testmodel.h"
-#include "Camera.h"
-#include "SmokeParticles.h"
-#include "Player.h"
-#include "WorldSpawn.h"
-#include "Misc.h"
-#include "Trigger.h"
-
-#include "framework/Licensee.h" // DG: for ID__DATE__
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "Game_local.h"
-#include "../../../Doom3Quest/VrClientInfo.h"
-#include "sys/platform.h"
-
-const int NUM_RENDER_PORTAL_BITS	= idMath::BitsForInteger( PS_BLOCK_ALL );
-
-const float	DEFAULT_GRAVITY			= 1066.0f;
-const idVec3	DEFAULT_GRAVITY_VEC3( 0, 0, -DEFAULT_GRAVITY );
-const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
+//HUMANHEAD: aob
+#include "Prey/prey_local.h"
+//k: #include "../framework/BuildVersion.h" // HUMANHEAD mdl
+//HUMANHEAD END
 
 #ifdef GAME_DLL
 
@@ -73,7 +27,14 @@ idAASFileManager *			AASFileManager = NULL;
 idCollisionModelManager *	collisionModelManager = NULL;
 idCVar *					idCVar::staticVars = NULL;
 
+// HUMANHEAD pdm
+#if INGAME_PROFILER_ENABLED
+hhProfiler *				profiler = NULL;
+#endif
+// HUMANHEAD END
+
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL|CVAR_SYSTEM, "force generic platform independent SIMD" );
+idCVar g_printlocations( "g_printlocations", "0", CVAR_BOOL, "print area/location mappings");
 
 #endif
 
@@ -86,56 +47,43 @@ static gameExport_t			gameExport;
 idAnimManager				animationLib;
 
 // the rest of the engine will only reference the "game" variable, while all local aspects stay hidden
-idGameLocal					gameLocal;
+// HUMANHEAD mdl:  Commented out the old gameLocal because it was messing up tagging
+//#ifdef HUMANHEAD
+hhGameLocal					gameLocal;
+//#else
+//idGameLocal					gameLocal;
+//#endif
 idGame *					game = &gameLocal;	// statically pointed at an idGameLocal
 
+#ifdef HUMANHEAD
+//NOTE: Duplicated in tr_rendertools and CamWnd, make any changes there also
+const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
+	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "tile",
+	"wallwalk", "altmetal", "forcefield", "pipe", "spirit", "chaff"
+};
+#else
 const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };
-
-// List of all defs used by the player that will stay on the fast timeline
-static const char* fastEntityList[] =
-        {
-                "player_doommarine",
-                "weapon_chainsaw",
-                "weapon_fists",
-                "weapon_flashlight",
-                "weapon_rocketlauncher",
-                "projectile_rocket",
-                "weapon_machinegun",
-                "projectile_bullet_machinegun",
-                "weapon_pistol",
-                "projectile_bullet_pistol",
-                "weapon_handgrenade",
-                "projectile_grenade",
-                "weapon_bfg",
-                "projectile_bfg",
-                "weapon_chaingun",
-                "projectile_chaingunbullet",
-                "weapon_pda",
-                "weapon_plasmagun",
-                "projectile_plasmablast",
-                "weapon_shotgun",
-                "projectile_bullet_shotgun",
-                "weapon_soulcube",
-                "projectile_soulblast",
-                "weapon_shotgun_double",
-                "projectile_shotgunbullet_double",
-                "weapon_grabber",
-                "weapon_bloodstone_active1",
-                "weapon_bloodstone_active2",
-                "weapon_bloodstone_active3",
-                "weapon_bloodstone_passive",
-                NULL
-        };
+#endif	// HUMANHEAD
 
 /*
 ===========
 GetGameAPI
 ============
 */
-extern "C" ID_GAME_API gameExport_t *GetGameAPI( gameImport_t *import ) {
+#if __MWERKS__
+#pragma export on
+#endif
+#if __GNUC__ >= 4
+#pragma GCC visibility push(default)
+#endif
+extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
+#if __MWERKS__
+#pragma export off
+#endif
+
 	if ( import->version == GAME_API_VERSION ) {
 
 		// set interface pointers used by the game
@@ -152,6 +100,12 @@ extern "C" ID_GAME_API gameExport_t *GetGameAPI( gameImport_t *import ) {
 		declManager					= import->declManager;
 		AASFileManager				= import->AASFileManager;
 		collisionModelManager		= import->collisionModelManager;
+
+		// HUMANHEAD pdm
+#if INGAME_PROFILER_ENABLED
+		profiler					= import->profiler;
+#endif		
+		// HUMANHEAD END
 	}
 
 	// set interface pointers used by idLib
@@ -167,6 +121,9 @@ extern "C" ID_GAME_API gameExport_t *GetGameAPI( gameImport_t *import ) {
 
 	return &gameExport;
 }
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
+#endif
 
 /*
 ===========
@@ -190,6 +147,12 @@ void TestGameAPI( void ) {
 	testImport.declManager				= ::declManager;
 	testImport.AASFileManager			= ::AASFileManager;
 	testImport.collisionModelManager	= ::collisionModelManager;
+
+	// HUMANHEAD pdm
+#if INGAME_PROFILER_ENABLED
+	testImport.profiler					= ::profiler;
+#endif
+	// HUMANHEAD END
 
 	testExport = *GetGameAPI( &testImport );
 }
@@ -227,6 +190,10 @@ void idGameLocal::Clear( void ) {
 	numEntitiesToDeactivate = 0;
 	sortPushers = false;
 	sortTeamMasters = false;
+	//HUMANHEAD rww
+	sortSnapshotPushers = false;
+	sortSnapshotTeamMasters = false;
+	//HUMANHEAD END
 	persistentLevelInfo.Clear();
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
@@ -240,7 +207,9 @@ void idGameLocal::Clear( void ) {
 	locationEntities = NULL;
 	smokeParticles = NULL;
 	editEntities = NULL;
-	entityHash.Clear( 1024, MAX_GENTITIES );
+	//HUMANHEAD rww - for client entities.
+	entityHash.Clear( 1024, MAX_GENTITIES+MAX_CENTITIES );
+	//HUMANHEAD END
 	inCinematic = false;
 	cinematicSkipTime = 0;
 	cinematicStopTime = 0;
@@ -260,11 +229,15 @@ void idGameLocal::Clear( void ) {
 	lastAIAlertTime = 0;
 	spawnArgs.Clear();
 	gravity.Set( 0, 0, -1 );
-	playerPVS.h = (unsigned int)-1;
-	playerConnectedAreas.h = (unsigned int)-1;
+	playerPVS.h = -1;
+	playerConnectedAreas.h = -1;
 	gamestate = GAMESTATE_UNINITIALIZED;
 	skipCinematic = false;
 	influenceActive = false;
+
+	// HUMANHEAD pdm:
+	isCoop = false;
+	// HUMANHEAD END
 
 	localClientNum = 0;
 	isMultiplayer = false;
@@ -276,10 +249,18 @@ void idGameLocal::Clear( void ) {
 	entityDefBits = 0;
 
 	nextGibTime = 0;
+	nextSteamTime = 0; // HUMANHEAD mdl
 	globalMaterial = NULL;
 	newInfo.Clear();
 	lastGUIEnt = NULL;
 	lastGUI = 0;
+
+	//HUMANHEAD rww
+	logitechLCDEnabled = false;
+	logitechLCDDisplayAlt = false;
+	logitechLCDButtonsLast = 0;
+	logitechLCDUpdateTime = 0;
+	//HUMANHEAD END
 
 	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
 	memset( clientPVS, 0, sizeof( clientPVS ) );
@@ -290,39 +271,15 @@ void idGameLocal::Clear( void ) {
 
 	memset( lagometer, 0, sizeof( lagometer ) );
 
-	portalSkyEnt			= NULL;
-	portalSkyActive			= false;
-
-	ResetSlowTimeVars();
+	//HUMANHEAD rww - for layeredSpawn
+#if !GOLD
+	spawnPopulating = false;
+#endif
+	// mdl:  Playtime
+	playTime = 0;
+	playTimeStart = -1;
+	//HUMANHEAD END
 }
-
-
-// DG: hack to support the Demo version of Doom3
-// NOTE: I couldn't just make this a global bool variable that's initialized
-//       in idGameLocal::Init(), because we decide whether it's the demo
-//       after loading and initializing the game DLL (when loading the main menu)
-static bool (*isDemoFnPtr)(void) = NULL;
-bool IsDoom3DemoVersion()
-{
-	bool ret = isDemoFnPtr ? isDemoFnPtr() : false;
-	return ret;
-}
-
-bool idGameLocal::InCinematic()
-{
-	return inCinematic && (vr_cinematics.GetInteger() != 0);
-}
-
-/*
-========================
-idGameLocal::IsPDAOpen
-========================
-*/
-bool idGameLocal::IsPDAOpen() const
-{
-    return GetLocalPlayer() && GetLocalPlayer()->objectiveSystemOpen;
-}
-
 
 /*
 ===========
@@ -352,8 +309,13 @@ void idGameLocal::Init( void ) {
 
 #endif
 
-	Printf( "----- Initializing Game -----\n" );
+	//HUMANHEAD rww
+	ddaManager = new hhDDAManager;
+	//HUMANHEAD END
+
+	Printf( "--------- Initializing Game ----------\n" );
 	Printf( "gamename: %s\n", GAME_VERSION );
+	Printf( "gamedate: %s\n", __DATE__ );
 
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );
@@ -369,6 +331,10 @@ void idGameLocal::Init( void ) {
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
 
+#ifdef _HH_NET_DEBUGGING //HUMANHEAD rww
+	cmdSystem->AddCommand( "networkStats", idClass::PrintHHNetStats_f, CMD_FL_SYSTEM|CMD_FL_GAME, "prints collective potential network optimizations" );
+#endif //HUMANHEAD END
+
 	Clear();
 
 	idEvent::Init();
@@ -376,39 +342,9 @@ void idGameLocal::Init( void ) {
 
 	InitConsoleCommands();
 
-	if (!g_xp_bind_run_once.GetBool()) {
-		//The default config file contains remapped controls that support the XP weapons
-		//We want to run this once after the base doom config file has run so we can
-		//have the correct xp binds
-		cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec default.cfg\n");
-		cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "seta g_xp_bind_run_once 1\n");
-		cmdSystem->ExecuteCommandBuffer();
-	}
-
 	// load default scripts
 	program.Startup( SCRIPT_DEFAULT );
-
-	//BSM Nerve: Loads a game specific main script file
-	idStr gamedir;
-	int i;
-
-	for (i = 0; i < 2; i++) {
-		if (i == 0) {
-			gamedir = cvarSystem->GetCVarString("fs_game_base");
-		} else if (i == 1) {
-			gamedir = cvarSystem->GetCVarString("fs_game");
-		}
-
-		if (gamedir.Length() > 0) {
-			idStr scriptFile = va("script/%s_main.script", gamedir.c_str());
-
-			if (fileSystem->ReadFile(scriptFile.c_str(), NULL) > 0) {
-				program.CompileFile(scriptFile.c_str());
-				program.FinishCompilation();
-			}
-		}
-	}
-
+	
 	smokeParticles = new idSmokeParticles;
 
 	// set up the aas
@@ -426,13 +362,23 @@ void idGameLocal::Init( void ) {
 		kv = dict->MatchPrefix( "type", kv );
 	}
 
+	// HUMANHEAD pdm: Startup precaching for menu stuff
+	FindEntityDef( "preCacheStartup", false );
+	if (fileSystem->PerformingCopyFiles()) {
+		FindEntityDef( "preCacheBuild", false );
+	}
+#if defined(_SYSTEM_BUILD_) || defined(ID_DEMO_BUILD)  //HUMANHEAD PCF mdl 05/26/06 - For precaching demo menu stuff.
+	if (cvarSystem->GetCVarBool("com_makingDemoBuild")) {
+		FindEntityDef( "preCacheDemoMainMenu", false );
+	}
+#endif
+	// HUMANHEAD END
+
 	gamestate = GAMESTATE_NOMAP;
 
 	Printf( "...%d aas types\n", aasList.Num() );
-
-
-	// DG: hack to support the Demo version of Doom3
-	//TODO:common->GetAdditionalFunction(idCommon::FT_IsDemo, (idCommon::FunctionPointer*)&isDemoFnPtr, NULL);
+	Printf( "game initialized.\n" );
+	Printf( "--------------------------------------\n" );
 }
 
 /*
@@ -448,7 +394,7 @@ void idGameLocal::Shutdown( void ) {
 		return;
 	}
 
-	Printf( "----- Game Shutdown -----\n" );
+	Printf( "------------ Game Shutdown -----------\n" );
 
 	mpGame.Shutdown();
 
@@ -493,6 +439,18 @@ void idGameLocal::Shutdown( void ) {
 	// shut down the animation manager
 	animationLib.Shutdown();
 
+	Printf( "--------------------------------------\n" );
+
+	//HUMANHEAD rww
+	delete ddaManager;
+	ddaManager = NULL;
+	//HUMANHEAD END
+
+	//HUMANHEAD rww
+	delete reactionHandler;
+	reactionHandler = NULL;
+	//HUMANHEAD END
+
 #ifdef GAME_DLL
 
 	// remove auto-completion function pointers pointing into this DLL
@@ -522,13 +480,20 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	idSaveGame savegame( f );
 
-	if (g_flushSave.GetBool( ) == true ) {
+	if (g_flushSave.GetBool( ) == true ) { 
 		// force flushing with each write... for tracking down
 		// save game bugs.
 		f->ForceFlush();
 	}
 
 	savegame.WriteBuildNumber( BUILD_NUMBER );
+
+#if DEATHWALK_AUTOLOAD // HUMANHEAD mdl
+	savegame.WriteBool( bShouldAppend );
+	if ( bShouldAppend ) {
+		savegame.WriteString( serverInfo.GetString("deathwalkmap") );
+	}
+#endif // HUMANHEAD END
 
 	// go through all entities and threads and add them to the object list
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
@@ -551,12 +516,22 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.AddObject( threads[i] );
 	}
 
+	// HUMANHEAD mdl:  Allows us to save objects that aren't spawned
+	for( i = 0; i < uniqueObjects.Num(); i++ ) {
+		savegame.AddObject( uniqueObjects[i] );
+	}
+	// HUMANHEAD END
+
 	// write out complete object list
 	savegame.WriteObjectList();
 
 	program.Save( &savegame );
 
-	savegame.WriteInt( g_skill.GetInteger() );
+	Save( &savegame ); // HUMANHEAD Added to allow hhGameLocal to save it's data -mdl
+
+//	savegame.WriteInt( g_skill.GetInteger() );	// HUMANHEAD pdm: not used
+	savegame.WriteInt( g_wicked.GetInteger() );	// HUMANHEAD pdm
+	savegame.WriteInt( g_casino.GetInteger() );	// HUMANHEAD pdm
 
 	savegame.WriteDict( &serverInfo );
 
@@ -592,6 +567,10 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteInt( numEntitiesToDeactivate );
 	savegame.WriteBool( sortPushers );
 	savegame.WriteBool( sortTeamMasters );
+	//HUMANHEAD rww
+	savegame.WriteBool( sortSnapshotPushers );
+	savegame.WriteBool( sortSnapshotTeamMasters );
+	//HUMANHEAD END
 	savegame.WriteDict( &persistentLevelInfo );
 
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
@@ -625,8 +604,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteInt( previousTime );
 	savegame.WriteInt( time );
 
-	savegame.WriteInt(msec);
-
 	savegame.WriteInt( vacuumAreaNum );
 
 	savegame.WriteInt( entityDefBits );
@@ -640,16 +617,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteInt( realClientTime );
 	savegame.WriteBool( isNewFrame );
 	savegame.WriteFloat( clientSmoothing );
-
-	portalSkyEnt.Save(&savegame);
-	savegame.WriteBool(portalSkyActive);
-
-	fast.Save(&savegame);
-	slow.Save(&savegame);
-
-	savegame.WriteInt(slowmoState);
-	savegame.WriteFloat(slowmoMsec);
-	savegame.WriteBool(quickSlowmoReset);
 
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
@@ -683,6 +650,11 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteBool( influenceActive );
 	savegame.WriteInt( nextGibTime );
+	// HUMANHEAD mdl
+	savegame.WriteInt( nextSteamTime );
+	savegame.WriteBool( isCoop );
+	savegame.WriteInt( GetTimePlayed() );
+	// HUMANHEAD END
 
 	// spawnSpots
 	// initialSpots
@@ -830,460 +802,12 @@ void idGameLocal::Error( const char *fmt, ... ) const {
 }
 
 /*
-===============
-gameError
-===============
-*/
-void gameError( const char *fmt, ... ) {
-	va_list		argptr;
-	char		text[MAX_STRING_CHARS];
-
-	va_start( argptr, fmt );
-	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-	va_end( argptr );
-
-	gameLocal.Error( "%s", text );
-}
-
-/*
 ===========
 idGameLocal::SetLocalClient
 ============
 */
 void idGameLocal::SetLocalClient( int clientNum ) {
 	localClientNum = clientNum;
-}
-
-void idGameLocal::SetVRClientInfo(vrClientInfo *pVR)
-{
-	pVRClientInfo = pVR;
-
-	static bool firstTime = true;
-	if (firstTime) {
-		common->HapticEnable();
-		firstTime = false;
-	}
-}
-
-/*
-================
-Koz
-idGameLocal::CalcTorsoYawDelta()
-
-Calculates a yaw offset to rotate the player model torso to a somewhat forward position
-based on view direction and tracked hand controller position.
-================
-*/
-
-float idGameLocal::CalcTorsoYawDelta(usercmd_t &cmd)
-{
-	// we want to orient the body relative to the view ( if movement, body will be auto positioned by move )
-	// to do : improve this - it's pretty hacky, just calcs a mostly naive forward vector for the body based on view direction and hand positions.
-	static int influenceLevel = 0;
-
-	if ( gameLocal.GetLocalPlayer() )
-	{
-		influenceLevel = gameLocal.GetLocalPlayer()->GetInfluenceLevel();
-
-		// for fucks sake this is now officially beyond ridiculous.
-		// Turns out the teleport sequences in delta labs are just private camera views of the 'hell tunnel'
-		// which are meshes built off in the corner of the level.  No player influece is set, and if the torso is
-		// updated here, it screws up the view rendering the teleport sequence.
-		if ( gameLocal.GetLocalPlayer()->GetPrivateCameraView() )
-		{
-			// bail if the teleport camera is active.
-			if ( strstr( gameLocal.GetLocalPlayer()->GetPrivateCameraView()->GetName(), "teleportView" ) ) return 0.0;
-		}
-	}
-
-	if ( influenceLevel == 0 && !gameLocal.inCinematic && commonVr->VR_USE_MOTION_CONTROLS && !commonVr->thirdPersonMovement && (abs( cmd.forwardmove ) < .1 || abs( cmd.rightmove ) < .1) )
-	{
-		idVec3 rightHandPos;
-		idVec3 rightHandForwardVec;
-		idVec3 leftHandPos;
-		idVec3 leftHandForwardVec;
-		idVec3 combinedHandVec;
-		idVec3 centerHandsPos;
-		idVec3 hipPos;
-		idVec3 viewDirVec;
-		idVec3 bodyDirVec;
-		idVec3 bodyToHandCenterVec;
-
-		idVec3 torsoVec;
-		static idVec3 lastTorsoVec = vec3_zero;
-
-		float bodyYaw;
-		float viewYaw;
-
-		if (!gameLocal.GetLocalPlayer()) {
-			/*if (common->GetCurrentGame() == DOOM3_BFG)
-                common->Printf("Local player null, skipping for now...\n");*/
-			return 0.0;
-		}
-		bodyYaw = gameLocal.GetLocalPlayer()->viewAngles.yaw;
-		viewYaw = gameLocal.GetLocalPlayer()->viewAngles.yaw - commonVr->bodyYawOffset + commonVr->poseHmdAngles.yaw;
-
-		viewYaw = idAngles( 0.0f, viewYaw, 0.0f ).Normalize180().yaw;
-		static float targetBodyYaw = viewYaw;
-
-		hipPos = gameLocal.GetLocalPlayer()->GetPlayerPhysics()->GetOrigin();
-		hipPos.z += 48.0f;
-
-		rightHandPos = commonVr->currentHandWorldPosition[HAND_RIGHT /*0*/ ];// right Hand
-		rightHandForwardVec = rightHandPos - hipPos;
-		rightHandForwardVec.z = 0.0f;
-		rightHandForwardVec.Normalize();
-
-		leftHandPos = commonVr->currentHandWorldPosition[HAND_LEFT /*1*/ ];// left hand
-		leftHandForwardVec = leftHandPos - hipPos;
-		leftHandForwardVec.z = 0.0f;
-		leftHandForwardVec.Normalize();
-
-		combinedHandVec = leftHandForwardVec + rightHandForwardVec;
-		combinedHandVec.Normalize();
-
-		//body direction vector;
-		bodyDirVec = hipPos + (gameLocal.GetLocalPlayer()->viewAxis[0] * 40);
-		bodyDirVec = bodyDirVec - hipPos;
-		bodyDirVec.z = 0.0f;
-		bodyDirVec.Normalize();
-
-		viewDirVec = gameLocal.GetLocalPlayer()->GetPlayerPhysics()->GetOrigin() + (idAngles( 0.0f, viewYaw, 0.0f ).ToMat3()[0] * 40);
-		viewDirVec = viewDirVec - gameLocal.GetLocalPlayer()->GetPlayerPhysics()->GetOrigin();
-		viewDirVec.z = 0.0f;
-		viewDirVec.Normalize();
-
-		// check if hands are moving behind body.
-		if ( fabs( idMath::AngleDelta( rightHandForwardVec.ToAngles().yaw, bodyDirVec.ToAngles().yaw ) ) >= 80 ||
-			 fabs( idMath::AngleDelta( leftHandForwardVec.ToAngles().yaw, bodyDirVec.ToAngles().yaw ) ) >= 80 )
-		{
-			//common->Printf( "hand deltas > 80 resetting %d\n",Sys_Milliseconds() );
-			leftHandForwardVec =  bodyDirVec; //viewDirVec
-			rightHandForwardVec = bodyDirVec; //viewDirVec
-			leftHandPos = hipPos + (gameLocal.GetLocalPlayer()->viewAxis[0] * 40); // viewDirVec * 40;
-			rightHandPos = hipPos + (gameLocal.GetLocalPlayer()->viewAxis[0] * 40); // viewDirVec * 40;
-			combinedHandVec = leftHandForwardVec + rightHandForwardVec;
-			combinedHandVec.Normalize();
-		}
-
-		centerHandsPos = (leftHandPos + rightHandPos) / 2.0f;
-
-		bodyToHandCenterVec = hipPos - centerHandsPos;
-		bodyToHandCenterVec.z = 0;
-		bodyToHandCenterVec.Normalize();
-
-		if ( bodyToHandCenterVec * viewDirVec < 0 ) // this shouldn't really happen.
-		{
-			bodyToHandCenterVec *= -1;
-		}
-
-		/*
-        gameRenderWorld->DebugLine( colorYellow, hipPos, hipPos + bodyDirVec * 40, 20 );
-        gameRenderWorld->DebugLine( colorRed, hipPos, hipPos + rightHandForwardVec * 40, 20 );
-        gameRenderWorld->DebugLine( colorBlue, hipPos, hipPos + leftHandForwardVec * 40, 20 );
-        gameRenderWorld->DebugLine( colorBrown, hipPos, hipPos + viewDirVec * 40, 20 );
-        gameRenderWorld->DebugLine( colorPink, hipPos, hipPos + combinedHandVec * 40, 20 );
-        gameRenderWorld->DebugLine( colorPurple, hipPos, hipPos + bodyToHandCenterVec * 40, 20 );
-        */
-
-		torsoVec = viewDirVec;
-
-		if ( fabs( idMath::AngleDelta( viewDirVec.ToAngles().Normalize180().yaw, combinedHandVec.ToAngles().Normalize180().yaw ) ) > 80.0f )
-		{
-			torsoVec = combinedHandVec + bodyToHandCenterVec;
-		}
-
-		torsoVec.Normalize();
-
-		if ( viewDirVec * torsoVec < 0.0f )
-		{
-			torsoVec = viewDirVec + lastTorsoVec;
-			torsoVec.z = 0.0f;
-			torsoVec.Normalize();
-		}
-
-		lastTorsoVec = torsoVec;
-
-		float desiredBody = torsoVec.ToAngles().Normalize180().yaw;
-		float angDelta = fabs( idMath::AngleDelta( targetBodyYaw, (viewYaw + bodyToHandCenterVec.ToAngles().Normalize180().yaw) / 2 ) );
-		float turnDelta;
-
-		if ( angDelta > 5.0f ) targetBodyYaw = (viewYaw + bodyToHandCenterVec.ToAngles().Normalize180().yaw) / 2;// viewYaw;
-
-		if ( fabs( idMath::AngleDelta( targetBodyYaw, viewYaw ) ) > 70.0f ) targetBodyYaw = viewYaw;
-
-		turnDelta = -idMath::AngleDelta( bodyYaw, targetBodyYaw );
-
-		float cmdYaw = 0.0f;
-		float degPerFrame = fabs( turnDelta ) > 30 ? turnDelta : fabs( turnDelta ) / (200.0f / (1000 / commonVr->hmdHz));// 1.0f;
-
-		if ( fabs( turnDelta ) < degPerFrame )
-		{
-			cmdYaw = turnDelta;
-		}
-		else
-		{
-			cmdYaw = turnDelta > 0.0f ? degPerFrame : -degPerFrame;
-		}
-
-		if ( fabs( cmdYaw ) < 0.1f ) cmdYaw = 0.0f;
-
-		commonVr->bodyYawOffset += cmdYaw;
-		commonVr->bodyYawOffset = idAngles(0.0f, commonVr->bodyYawOffset, 0.0f).Normalize180().yaw;
-
-		return cmdYaw;
-	}
-
-	return 0.0;
-}
-
-bool idGameLocal::CMDButtonsAttackCall(int &teleportCanceled)
-{
-	if ( commonVr->teleportButtonCount != 0 && vr_teleportMode.GetInteger() == 0 )// dont cancel teleport
-	{
-		commonVr->teleportButtonCount = 0;
-		teleportCanceled = 1;
-		return false;
-	}
-	else if ( teleportCanceled == 0 )
-	{
-		return true;
-	}
-	return false;
-}
-
-bool idGameLocal::CMDButtonsPhysicalCrouch()
-{
-	// Koz begin crouch trigger
-	if ( commonVr->userDuckingAmount > vr_crouchTriggerDist.GetFloat() / vr_scale.GetFloat() && vr_crouchMode.GetInteger() == 1 ) return true;
-	return false;
-}
-
-/*
- * GB Begin - Moved Render call to Animator
- */
-//GB Trying to move animator function
-bool idGameLocal::AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis )
-{
-	return animator->GetJointTransform( jointHandle, -1, offset, axis );
-}
-
-void idGameLocal::CheckRenderCvars()
-{
-	// Koz
-	if ( vr_useFloorHeight.IsModified() || ( vr_normalViewHeight.IsModified() && vr_useFloorHeight.GetInteger() == 0 ) || vr_scale.IsModified() || commonVr->shouldRecenter )
-	{
-		commonVr->HMDResetTrackingOriginOffset();
-		vr_useFloorHeight.ClearModified();
-		vr_normalViewHeight.ClearModified();
-		vr_scale.ClearModified();
-		commonVr->shouldRecenter = false;
-	}
-}
-
-
-/*
-================
-Koz begin
-idUsercmdGenLocal::EvaluateVRMoveMode()
-
-Process the different VR movement mode options
-================
-*/
-void idGameLocal::EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn)
-{
-	static int thirdPersonTime = commonVr->Sys_Milliseconds();
-	static bool moveStarted = 0; // no movement
-	static int numButtonClicks = 0; // start not pressed.
-	static int pressedLastPoll = false;
-	static int lastMoveTime = gameLocal.time;
-
-	if ( commonVr->didTeleport )
-	{
-		commonVr->didTeleport = false;
-		if ( vr_teleportMode.GetInteger() == 0 )
-		{
-			viewangles[YAW] += commonVr->teleportDir;
-			common->Printf( "Teleport dir yaw adding %f angles to view \n", commonVr->teleportDir );
-			commonVr->teleportDir = 0.0f;
-			//return;
-		}
-	}
-
-	//GB - Include Dr. Beefs SnapTurn
-	if ( snapTurn != 0.0 && (commonVr->Sys_Milliseconds() - commonVr->lastComfortTime >= vr_comfortRepeat.GetInteger() || vr_turnmode.GetInteger() == 1) )
-	{
-		idPlayer *player = GetLocalPlayer();
-		if (player != nullptr) {
-            player->resetHUDYaw = true;
-        }
-
-		viewangles[YAW] += snapTurn;
-		commonVr->lastComfortTime = commonVr->Sys_Milliseconds();
-	}
-
-	// Koz make sure the torso faces some form of forward.
-	if( !ik_debug.GetBool() ) {
-		viewangles[YAW] += CalcTorsoYawDelta(cmd);
-	}
-
-	bool okToMove = false;
-	bool moveRequested = ( abs( cmd.forwardmove ) >= 0.05 || abs( cmd.rightmove ) >= 0.05 );
-
-	if ( moveRequested )
-	{
-		lastMoveTime = gameLocal.time;
-	}
-	else if ( gameLocal.time - lastMoveTime < 100 )
-	{
-		moveRequested = true;
-	}
-
-
-	if ( game->InCinematic() == true) return; // do nothing in cinematics
-
-	if ( buttonCurrentlyClicked && !pressedLastPoll && moveRequested )
-	{
-		numButtonClicks++;
-		if ( numButtonClicks == 3 ) numButtonClicks = 1;
-		pressedLastPoll = true;
-	}
-
-	if ( !buttonCurrentlyClicked )
-	{
-		pressedLastPoll = false;
-	}
-
-	if ( !moveRequested )
-	{
-		numButtonClicks = 0;
-		moveStarted = false;
-	}
-	else
-	{
-		switch ( vr_moveClick.GetInteger() )
-		{
-			case 0: // normal movement
-
-				okToMove = true;
-				break;
-
-			case 1: // click and hold to walk
-
-				if ( numButtonClicks > 0 && buttonCurrentlyClicked )
-				{
-					okToMove = true;
-				}
-				break;
-
-			case 2: // click to start walking, then touch only.
-
-				if ( numButtonClicks > 0 )
-				{
-					okToMove = true;
-				}
-				break;
-
-			case 3: // click to start walking, pressing again will run while pressed
-				if ( numButtonClicks > 0 )
-				{
-					okToMove = true;
-				}
-				if ( numButtonClicks == 2 )
-				{
-					moveStarted = true;
-				}
-				if ( moveStarted && buttonCurrentlyClicked )
-				{
-					cmd.buttons |= BUTTON_RUN;
-				}
-				break;
-
-			case 4: // click to start walking, clicking again will toggle running on and off
-				if ( numButtonClicks > 0 )
-				{
-					okToMove = true;
-				}
-				if ( numButtonClicks == 2 )
-				{
-					cmd.buttons |= BUTTON_RUN;
-				}
-				break;
-
-			default:
-				okToMove = true;
-				break;
-		}
-	}
-
-	// okToMove is true for Doom VFR
-//	if (vr_teleportMode.GetInteger() == 2) {
-//		cmd.forwardmove = 0.0f;
-//		cmd.rightmove = 0.0f;
-//		okToMove = true;
-//	}
-
-	if ( !okToMove )
-	{
-		cmd.forwardmove = 0.0f;
-		cmd.rightmove = 0.0f;
-		return;
-	}
-
-	if (!commonVr->thirdPersonMovement && (vr_movePoint.GetInteger() == 1 || vr_movePoint.GetInteger() > 2) &&
-		(abs(cmd.forwardmove) >= .1 || abs(cmd.rightmove) >= .1) || vr_teleportMode.GetInteger() == 2) // body will follow motion from move vector
-	{
-		static idAngles controllerAng;
-		int hand;
-		switch( vr_movePoint.GetInteger() )
-		{
-			case 1: // off hand
-				hand = 1 - vr_weaponHand.GetInteger();
-				break;
-			case 3: // weapon hand
-				hand = vr_weaponHand.GetInteger();
-				break;
-			case 4:
-				hand = 1; // left hand
-				break;
-			case 5:
-				hand = 0; // right hand
-				break;
-		}
-
-		controllerAng = commonVr->poseHandRotationAngles[hand];
-		viewangles[YAW] += controllerAng.yaw - commonVr->bodyYawOffset;
-		commonVr->bodyYawOffset = controllerAng.yaw;
-	}
-	else if ( !commonVr->VR_USE_MOTION_CONTROLS || vr_movePoint.GetInteger() == 2 ) // body will follow view
-	{
-		viewangles[YAW] += commonVr->poseHmdAngles.yaw - commonVr->bodyYawOffset;
-		commonVr->bodyMoveAng = commonVr->poseHmdAngles.yaw;
-		commonVr->bodyYawOffset = commonVr->poseHmdAngles.yaw;
-	}
-
-	if ( vr_motionSickness.GetInteger() == 10 )
-	{
-		if ( cmd.forwardmove != 0 || cmd.rightmove != 0 )
-		{
-			commonVr->thirdPersonMovement = true;
-			thirdPersonTime = commonVr->Sys_Milliseconds();
-			// third person movement is switched off again in player.cpp
-			// once the speed hits zero and forwardmove and rightmove are 0
-		}
-		else
-		{
-			//in case the player has jumped on something moving in third person,
-			//put a timeout here so the view will snap back if the controls haven't been touched
-			//in a bit.
-			if ( commonVr->thirdPersonMovement == true && ( commonVr->Sys_Milliseconds() - thirdPersonTime ) > 300 ) commonVr->thirdPersonMovement = false;
-
-		}
-	}
-	else
-	{
-		commonVr->thirdPersonMovement = false;
-	}
 }
 
 /*
@@ -1308,7 +832,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 				idGameLocal::userInfo[ clientNum ].Set( "ui_name", va( "%s_", idGameLocal::userInfo[ clientNum ].GetString( "ui_name" ) ) );
 				modifiedInfo = true;
 			}
-
+		
 			// don't allow dupe nicknames
 			for ( i = 0; i < numClients; i++ ) {
 				if ( i == clientNum ) {
@@ -1391,9 +915,10 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// clear the sound system
 	gameSoundWorld->ClearAllSoundEmitters();
 
-	// clear envirosuit sound fx
-	gameSoundWorld->SetEnviroSuit(false);
-	gameSoundWorld->SetSlowmo(false);
+	// HUMANHEAD pdm
+	SpiritWalkSoundMode( false );
+	DialogSoundMode( false );
+	// HUMANHEAD END
 
 	InitAsyncNetwork();
 
@@ -1411,8 +936,23 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	}
 	mapFileName = mapFile->GetName();
 
+// HUMANHEAD pdm: Support for level appending
+#if DEATHWALK_AUTOLOAD
+	bool bUseLoaded = collisionModelManager->WillUseAlreadyLoadedCollisionMap(mapFile);
+#endif
+// HUMANHEAD END
+
 	// load the collision map
 	collisionModelManager->LoadMap( mapFile );
+
+// HUMANHEAD pdm: Support for level appending
+#if DEATHWALK_AUTOLOAD
+	if (bShouldAppend && !bUseLoaded) {
+		// load the collision map for dw
+		collisionModelManager->AppendMap( additionalMapFile );
+	}
+#endif
+// HUMANHEAD END
 
 	numClients = 0;
 
@@ -1421,12 +961,16 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	memset( usercmds, 0, sizeof( usercmds ) );
 	memset( spawnIds, -1, sizeof( spawnIds ) );
 	spawnCount = INITIAL_SPAWN_COUNT;
-
+	
 	spawnedEntities.Clear();
 	activeEntities.Clear();
 	numEntitiesToDeactivate = 0;
 	sortTeamMasters = false;
 	sortPushers = false;
+	//HUMANHEAD rww
+	sortSnapshotPushers = false;
+	sortSnapshotTeamMasters = false;
+	//HUMANHEAD END
 	lastGUIEnt = NULL;
 	lastGUI = 0;
 
@@ -1450,17 +994,20 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	lastAIAlertEntity = NULL;
 	lastAIAlertTime = 0;
-
+	
 	previousTime	= 0;
 	time			= 0;
 	framenum		= 0;
 	sessionCommand = "";
 	nextGibTime		= 0;
+	nextSteamTime	= 0; // HUMANHEAD mdl
 
-	portalSkyEnt			= NULL;
-	portalSkyActive			= false;
-
-	ResetSlowTimeVars();
+	//HUMANHEAD rww - check lglcd validity and reset values
+	logitechLCDEnabled = false; // sys->LGLCD_Valid();
+	logitechLCDDisplayAlt = false;
+	logitechLCDButtonsLast = 0;
+	logitechLCDUpdateTime = 0;
+	//HUMANHEAD END
 
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
 
@@ -1477,6 +1024,15 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	cinematicSkipTime = 0;
 	cinematicStopTime = 0;
 	cinematicMaxSkipTime = 0;
+
+	// HUMANHEAD pdm: Register our game portals so they can be used in PVS below
+#if GAMEPORTAL_PVS
+	gameRenderWorld->RegisterGamePortals(mapFile);
+#endif
+#if GAMEPORTAL_SOUND
+	gameRenderWorld->LevelInitSoundAreas();
+#endif
+	// HUMANHEAD END
 
 	clip.Init();
 	pvs.Init();
@@ -1507,7 +1063,7 @@ idGameLocal::LocalMapRestart
 void idGameLocal::LocalMapRestart( ) {
 	int i, latchSpawnCount;
 
-	Printf( "----- Game Map Restart -----\n" );
+	Printf( "----------- Game Map Restart ------------\n" );
 
 	gamestate = GAMESTATE_SHUTDOWN;
 
@@ -1528,9 +1084,11 @@ void idGameLocal::LocalMapRestart( ) {
 	// clear the sound system
 	if ( gameSoundWorld ) {
 		gameSoundWorld->ClearAllSoundEmitters();
-		// clear envirosuit sound fx
-		gameSoundWorld->SetEnviroSuit(false);
-		gameSoundWorld->SetSlowmo(false);
+
+		// HUMANHEAD pdm
+		SpiritWalkSoundMode( false );
+		DialogSoundMode( false );
+		// HUMANHEAD END
 	}
 
 	// the spawnCount is reset to zero temporarily to spawn the map entities with the same spawnId
@@ -1558,6 +1116,8 @@ void idGameLocal::LocalMapRestart( ) {
 	}
 
 	gamestate = GAMESTATE_ACTIVE;
+
+	Printf( "--------------------------------------\n" );
 }
 
 /*
@@ -1571,17 +1131,6 @@ void idGameLocal::MapRestart( ) {
 	idDict		newInfo;
 	int			i;
 	const idKeyValue *keyval, *keyval2;
-
-	if (isMultiplayer && isServer) {
-		char buf[ MAX_STRING_CHARS ];
-		idStr gametype;
-		GetBestGameType(si_map.GetString(), si_gameType.GetString(), buf);
-		gametype = buf;
-
-		if (gametype != si_gameType.GetString()) {
-			cvarSystem->SetCVarString("si_gameType", gametype);
-		}
-	}
 
 	if ( isClient ) {
 		LocalMapRestart();
@@ -1613,15 +1162,6 @@ void idGameLocal::MapRestart( ) {
 			mpGame.MapRestart();
 		}
 	}
-
-	if (isMultiplayer) {
-		gameLocal.mpGame.ReloadScoreboard();
-		//		gameLocal.mpGame.Reset();	// force reconstruct the GUIs when reloading maps, different gametypes have different GUIs
-		//		gameLocal.mpGame.UpdateMainGui();
-		//		gameLocal.mpGame.StartMenu();
-		//		gameLocal.mpGame.DisableMenu();
-		//		gameLocal.mpGame.Precache();
-	}
 }
 
 /*
@@ -1650,6 +1190,11 @@ bool idGameLocal::NextMap( void ) {
 	idDict				newInfo;
 	const idKeyValue	*keyval, *keyval2;
 	int					i;
+
+	// HUMANHEAD pdm: restart current map if cycling is disabled
+	if ( !g_runMapCycle.GetBool() ) {
+		return true;
+	}
 
 	if ( !g_mapCycle.GetString()[0] ) {
 		Printf( common->GetLanguageDict()->GetString( "#str_04294" ) );
@@ -1711,6 +1256,12 @@ idGameLocal::MapPopulate
 ===================
 */
 void idGameLocal::MapPopulate( void ) {
+	//HUMANHEAD rww - keep track of layered spawning
+#if !GOLD
+	spawnPopulating = true;
+	layeredSpawn = 0;
+#endif
+	//HUMANHEAD END
 
 	if ( isMultiplayer ) {
 		cvarSystem->SetCVarBool( "r_skipSpecular", false );
@@ -1718,15 +1269,21 @@ void idGameLocal::MapPopulate( void ) {
 	// parse the key/value pairs and spawn entities
 	SpawnMapEntities();
 
+// HUMANHEAD pdm: Support for level appending
+#if DEATHWALK_AUTOLOAD
+	if (bShouldAppend) {
+		SpawnAppendedMapEntities();
+	}
+#endif
+// HUMANHEAD END
+
 	// mark location entities in all connected areas
 	SpreadLocations();
 
 	// prepare the list of randomized initial spawn spots
-	RandomizeInitialSpawns();
+	RandomizeInitialSpawns( );
 
-	// spawnCount - 1 is the number of entities spawned into the map, their indexes started at MAX_CLIENTS (included)
-	// mapSpawnCount is used as the max index of map entities, it's the first index of non-map entities
-	mapSpawnCount = MAX_CLIENTS + spawnCount - 1;
+	mapSpawnCount = spawnCount;
 
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
@@ -1734,9 +1291,14 @@ void idGameLocal::MapPopulate( void ) {
 	Printf( "==== Processing events ====\n" );
 	idEvent::ServiceEvents();
 
-    // Must set GAME_FPS for script after populating, because some maps run their own scripts
-    // when spawning the world, and GAME_FPS will not be found before then.
-	SetScriptFPS(renderSystem->GetRefresh());
+	//HUMANHEAD rww - keep track of layered spawning
+#if !GOLD
+	if (layeredSpawn) {
+		gameLocal.Error("Uneven layeredSpawn at the end of idGameLocal::MapPopulate!\n");
+	}
+	spawnPopulating = false;
+#endif
+	//HUMANHEAD END
 }
 
 /*
@@ -1746,26 +1308,59 @@ idGameLocal::InitFromNewMap
 */
 void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randseed ) {
 
+	uniqueObjects.Clear(); // HUMANHEAD mdl
+
 	this->isServer = isServer;
 	this->isClient = isClient;
 	this->isMultiplayer = isServer || isClient;
+
+	// HUMANHEAD mdl:  Playtime
+	if ( playTimeStart != -1 ) {
+		if ( isMultiplayer ) {
+			playTime = 0; // No playtime for MP
+		} else {
+			playTime += gameLocal.time - playTimeStart;
+		}
+		playTimeStart = -1;
+	}
+	// HUMANHEAD END
 
 	if ( mapFileName.Length() ) {
 		MapShutdown();
 	}
 
-	Printf( "----- Game Map Init -----\n" );
+	Printf( "----------- Game Map Init ------------\n" );
 
 	gamestate = GAMESTATE_STARTUP;
 
 	gameRenderWorld = renderWorld;
 	gameSoundWorld = soundWorld;
 
+// HUMANHEAD pdm: Support for level appending
+#if DEATHWALK_AUTOLOAD
+	bShouldAppend = serverInfo.GetBool("shouldappendlevel");
+
+	additionalMapFile = NULL;
+	if (bShouldAppend) {
+		// Load the deathwalk map
+		idStr additionalMapName = serverInfo.GetString("deathwalkmap");
+		additionalMapName.SetFileExtension( "map" );
+		additionalMapFile = new idMapFile;
+		if ( !additionalMapFile->Parse( additionalMapName.c_str() ) ) {
+			delete additionalMapFile;
+			additionalMapFile = NULL;
+		}
+	}
+#endif
+
 	LoadMap( mapName, randseed );
 
 	InitScriptForMap();
 
 	MapPopulate();
+
+	// HUMANHEAD pdm: tell sound system about our location names
+	RegisterLocationsWithSoundWorld();
 
 	mpGame.Reset();
 
@@ -1775,6 +1370,15 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	animationLib.FlushUnusedAnims();
 
 	gamestate = GAMESTATE_ACTIVE;
+
+	// HUMANHEAD mdl:  Start session
+	if ( !isMultiplayer && playTimeStart == ( unsigned int ) -1 ) {
+		playTimeStart = gameLocal.time;
+	}
+	// HUMANHEAD END
+
+
+	Printf( "--------------------------------------\n" );
 }
 
 /*
@@ -1792,20 +1396,38 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		MapShutdown();
 	}
 
-	Printf( "----- Game Map Init SaveGame -----\n" );
+	Printf( "------- Game Map Init SaveGame -------\n" );
 
 	gamestate = GAMESTATE_STARTUP;
 
 	gameRenderWorld = renderWorld;
 	gameSoundWorld = soundWorld;
 
-    SetScriptFPS(renderSystem->GetRefresh());
+	uniqueObjects.Clear(); // HUMANHEAD mdl
 
-    idRestoreGame savegame( saveGameFile );
+	idRestoreGame savegame( saveGameFile );
 
 	savegame.ReadBuildNumber();
 
-    // Create the list of all objects in the game
+	// HUMANHEAD pdm: Support for level appending
+#if DEATHWALK_AUTOLOAD
+	savegame.ReadBool( bShouldAppend );
+
+	additionalMapFile = NULL;
+	if (bShouldAppend) {
+		// Load the deathwalk map
+		idStr additionalMapName;
+		savegame.ReadString( additionalMapName );
+		additionalMapName.SetFileExtension( "map" );
+		additionalMapFile = new idMapFile;
+		if ( !additionalMapFile->Parse( additionalMapName.c_str() ) ) {
+			delete additionalMapFile;
+			additionalMapFile = NULL;
+		}
+	}
+#endif
+
+	// Create the list of all objects in the game
 	savegame.CreateObjects();
 
 	// Load the idProgram, also checking to make sure scripting hasn't changed since the savegame
@@ -1819,20 +1441,28 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		return false;
 	}
 
-    // load the map needed for this savegame
-    LoadMap( mapName, 0 );
+	// load the map needed for this savegame
+	LoadMap( mapName, 0 );
 
-    savegame.ReadInt( i );
-	g_skill.SetInteger( i );
+	Restore( &savegame ); // HUMANHEAD Added to allow hhGameLocal to restore it's data -mdl
+
+//	savegame.ReadInt( i );		// HUMANHEAD pdm: not used
+//	g_skill.SetInteger( i );	// HUMANHEAD pdm: not used
+
+	savegame.ReadInt( i );		// HUMANHEAD pdm
+	g_wicked.SetInteger( i );
+
+	savegame.ReadInt( i );		// HUMANHEAD pdm
+	g_casino.SetInteger( i );
 
 	// precache the player
-	FindEntityDef( "player_doommarine", false );
+	FindEntityDef( GAME_PLAYERDEFNAME, false );	// HUMANHEAD pdm: removed hardcoded name
 
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
 		idMapEntity *mapEnt = mapFile->GetEntity( i );
 
-		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) {
+		if ( !idGameLocal::InhibitEntitySpawn( mapEnt->epairs ) ) { // HUMANHEAD mdl:  Need this to call the original function
 			CacheDictionaryMedia( &mapEnt->epairs );
 			const char *classname;
 			if ( mapEnt->epairs.GetString( "classname", "", &classname ) ) {
@@ -1889,6 +1519,10 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadInt( numEntitiesToDeactivate );
 	savegame.ReadBool( sortPushers );
 	savegame.ReadBool( sortTeamMasters );
+	//HUMANHEAD rww
+	savegame.ReadBool( sortSnapshotPushers );
+	savegame.ReadBool( sortSnapshotTeamMasters );
+	//HUMANHEAD END
 	savegame.ReadDict( &persistentLevelInfo );
 
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
@@ -1924,8 +1558,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadInt( previousTime );
 	savegame.ReadInt( time );
 
-	savegame.ReadInt(msec);
-
 	savegame.ReadInt( vacuumAreaNum );
 
 	savegame.ReadInt( entityDefBits );
@@ -1939,33 +1571,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadInt( realClientTime );
 	savegame.ReadBool( isNewFrame );
 	savegame.ReadFloat( clientSmoothing );
-
-	portalSkyEnt.Restore(&savegame);
-	savegame.ReadBool(portalSkyActive);
-
-	fast.Restore(&savegame);
-	slow.Restore(&savegame);
-
-	int blah;
-	savegame.ReadInt(blah);
-	slowmoState = (slowmoState_t)blah;
-
-	savegame.ReadFloat(slowmoMsec);
-	savegame.ReadBool(quickSlowmoReset);
-
-	if (slowmoState == SLOWMO_STATE_OFF) {
-		if (gameSoundWorld) {
-			gameSoundWorld->SetSlowmo(false);
-		}
-	} else {
-		if (gameSoundWorld) {
-			gameSoundWorld->SetSlowmo(true);
-		}
-	}
-
-	if (gameSoundWorld) {
-		gameSoundWorld->SetSlowmoSpeed(slowmoMsec / (float)USERCMD_MSEC);
-	}
 
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
@@ -2003,6 +1608,12 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( influenceActive );
 	savegame.ReadInt( nextGibTime );
 
+	// HUMANHEAD mdl
+	savegame.ReadInt( nextSteamTime );
+	savegame.ReadBool( isCoop );
+	savegame.ReadInt( reinterpret_cast<int &> ( playTime ) );
+	// HUMANHEAD END
+
 	// spawnSpots
 	// initialSpots
 	// currentInitialSpot
@@ -2013,6 +1624,11 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// Read out pending events
 	idEvent::Restore( &savegame );
 
+	// HUMANHEAD PCF rww 05/12/06 - fix for gravity being reset on physics objects after load
+	// update our gravity vector if needed
+	UpdateGravity();
+	// HUMANHEAD END
+
 	savegame.RestoreObjects();
 
 	mpGame.Reset();
@@ -2022,28 +1638,11 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// free up any unused animations
 	animationLib.FlushUnusedAnims();
 
-	// Carl: InitTeleportTarget here instead of in idPlayer::Restore so it is always done AFTER the teleport target is loaded
-	if (GetLocalPlayer())
-	{
-		idPlayer *player = GetLocalPlayer();
-		player->InitTeleportTarget();
-		// if we autosaved while teleporting QuakeCon style, stop the QuakeCon style effect
-		if (player->noclip)// && player->playerView.bfgVision)
-		{
-			extern idCVar timescale;
-			player->warpTime = 0;
-			player->noclip = false;
-			player->warpMove = false;
-			player->warpAim = false;
-			player->warpVel = vec3_origin;
-			player->jetMove = false;
-			player->jetMoveVel = vec3_origin;
-			timescale.SetFloat(1.0f);
-			//player->playerView.EnableBFGVision(false);
-		}
-	}
-
 	gamestate = GAMESTATE_ACTIVE;
+
+	playTimeStart = gameLocal.time; // HUMANHEAD mdl:  Start new session
+
+	Printf( "--------------------------------------\n" );
 
 	return true;
 }
@@ -2056,7 +1655,10 @@ idGameLocal::MapClear
 void idGameLocal::MapClear( bool clearClients ) {
 	int i;
 
-	for( i = ( clearClients ? 0 : MAX_CLIENTS ); i < MAX_GENTITIES; i++ ) {
+	//HUMANHEAD rww - for client entities.
+	//for( i = ( clearClients ? 0 : MAX_CLIENTS ); i < MAX_GENTITIES; i++ ) {
+	for( i = ( clearClients ? 0 : MAX_CLIENTS ); i < (MAX_GENTITIES+MAX_CENTITIES); i++ ) {
+	//HUMANHEAD END
 		delete entities[ i ];
 		// ~idEntity is in charge of setting the pointer to NULL
 		// it will also clear pending events for this entity
@@ -2064,7 +1666,10 @@ void idGameLocal::MapClear( bool clearClients ) {
 		spawnIds[ i ] = -1;
 	}
 
-	entityHash.Clear( 1024, MAX_GENTITIES );
+	//HUMANHEAD rww - for client entities.
+	//entityHash.Clear( 1024, MAX_GENTITIES );
+	entityHash.Clear( 1024, MAX_GENTITIES+MAX_CENTITIES );
+	//HUMANHEAD END
 
 	if ( !clearClients ) {
 		// add back the hashes of the clients
@@ -2094,8 +1699,8 @@ idGameLocal::MapShutdown
 ============
 */
 void idGameLocal::MapShutdown( void ) {
-	Printf( "----- Game Map Shutdown -----\n" );
-
+	Printf( "--------- Game Map Shutdown ----------\n" );
+	
 	gamestate = GAMESTATE_SHUTDOWN;
 
 	if ( gameRenderWorld ) {
@@ -2119,6 +1724,20 @@ void idGameLocal::MapShutdown( void ) {
 		smokeParticles->Shutdown();
 	}
 
+	// HUMANHEAD pdm: clear the sound system.  Fixes bug where a looper playing when you "really die" would keep stuttering during restart gui
+	if ( gameSoundWorld ) {
+		gameSoundWorld->ClearAllSoundEmitters();
+		SpiritWalkSoundMode( false );
+		DialogSoundMode( false );
+	}
+	// HUMANHEAD END
+
+#if GAMEPORTAL_SOUND
+	if (gameRenderWorld) {
+		gameRenderWorld->LevelShutdownSoundAreas();
+	}
+#endif
+
 	pvs.Shutdown();
 
 	clip.Shutdown();
@@ -2132,6 +1751,8 @@ void idGameLocal::MapShutdown( void ) {
 	gameSoundWorld = NULL;
 
 	gamestate = GAMESTATE_NOMAP;
+
+	Printf( "--------------------------------------\n" );
 }
 
 /*
@@ -2142,7 +1763,7 @@ idGameLocal::DumpOggSounds
 void idGameLocal::DumpOggSounds( void ) {
 	int i, j, k, size, totalSize;
 	idFile *file;
-	idStrList oggSounds, weaponSounds;
+	idStrList oggSounds, weaponSounds, oggOnlySounds;
 	const idSoundShader *soundShader;
 	const soundShaderParms_t *parms;
 	idStr soundName;
@@ -2159,27 +1780,41 @@ void idGameLocal::DumpOggSounds( void ) {
 				soundName = soundShader->GetSound( j );
 				soundName.BackSlashesToSlashes();
 
-				// D3XP :: don't add sounds that are in Doom 3's pak files
-				if (fileSystem->FileIsInPAK(soundName)) {
+				// HUMANHEAD mdl:  Added a check to make sure we don't try to convert OGG files to OGG files.
+				if ( !idStr::Icmp(soundName.Right( 4 ), ".ogg" ) ) {
+					oggOnlySounds.AddUnique( soundName );
 					continue;
-				} else {
-					// Also check for a pre-ogg'd version in the pak file
-					idStr testName = soundName;
-
-					testName.SetFileExtension(".ogg");
-
-					if (fileSystem->FileIsInPAK(testName)) {
-						continue;
-					}
 				}
+				// HUMANHEAD END
 
 				// don't OGG sounds that cause a shake because that would
 				// cause continuous seeking on the OGG file which is expensive
-				if ( parms->shakes != 0.0f ) {
-					shakeSounds.AddUnique( soundName );
-					continue;
-				}
+// jmarshall
+				//if ( parms->shakes != 0.0f || (parms->soundShaderFlags & SSF_VOICEAMPLITUDE)) {
+				//	shakeSounds.AddUnique( soundName );
+				//	continue;
+				//}
 
+#if HUMANHEAD	// HUMANHEAD mdc - our version of skip logic (to account for our naming conventions)
+
+				// always ogg vo, music, elements
+				if(		soundName.Find( "/elements/", false )	== -1 &&
+						soundName.Find( "/music/", false )	== -1 &&
+						soundName.Find( "/vo/", false )			== -1 ) {
+
+						//don't ogg these
+						if(		soundName.Find("/weapons/", false)			!= -1 ||
+								soundName.Find("/lights/", false )			!= -1 ||
+								(soundName.Find("/monsters/", false) != -1 && soundName.Find("fire", false) != -1) ||
+								soundName.Find("foot", false)				!= -1 ||
+								soundName.Find("pain", false)				!= -1 ) {
+
+						weaponSounds.AddUnique( soundName );
+						continue;
+
+					}
+				}
+#else
 				// if not voice over or combat chatter
 				if (	soundName.Find( "/vo/", false ) == -1 &&
 						soundName.Find( "/combat_chatter/", false ) == -1 &&
@@ -2196,6 +1831,7 @@ void idGameLocal::DumpOggSounds( void ) {
 						continue;
 					}
 				}
+#endif
 
 				for ( k = 0; k < shakeSounds.Num(); k++ ) {
 					if ( shakeSounds[k].IcmpPath( soundName ) == 0 ) {
@@ -2235,7 +1871,21 @@ void idGameLocal::DumpOggSounds( void ) {
 		weaponSounds[i].Replace( "/", "\\" );
 		file->Printf( "echo \"%s\" (%d kB)\n", weaponSounds[i].c_str(), size >> 10 );
 	}
+#if HUMANHEAD
+	file->Printf( "echo %d kB in miscellaneous skipped sounds\n\n\n", totalSize >> 10 );
+#else
 	file->Printf( "echo %d kB in weapon sounds\n\n\n", totalSize >> 10 );
+#endif
+
+	// list all the existing ogg sounds
+	totalSize = 0;
+	for ( i = 0; i < oggOnlySounds.Num(); i++ ) {
+		size = fileSystem->ReadFile( oggOnlySounds[i], NULL, NULL );
+		totalSize += size;
+		oggOnlySounds[i].Replace( "/", "\\" );
+		file->Printf( "echo \"%s\" (%d kB)\n", oggOnlySounds[i].c_str(), size >> 10 );
+	}
+	file->Printf( "echo %d kB in pre-existing OGG sounds\n\n\n", totalSize >> 10 );
 
 	// list commands to convert all other sounds to ogg
 	totalSize = 0;
@@ -2243,8 +1893,22 @@ void idGameLocal::DumpOggSounds( void ) {
 		size = fileSystem->ReadFile( oggSounds[i], NULL, NULL );
 		totalSize += size;
 		oggSounds[i].Replace( "/", "\\" );
+#if HUMANHEAD
+#ifdef _SYSTEM_BUILD_
+		for (int shakeIndex = 0; shakeIndex < shakeSounds.Num(); shakeIndex++) {
+			if ( !shakeSounds[shakeIndex].IcmpPath( oggSounds[i] ) ) {
+				file->Printf( "echo \"WARNING:  Shake sound found in ogg conversion:  %s\"\n", oggSounds[i].c_str() );
+				break;
+			}
+		}
+#endif // _SYSTEM_BUILD_  
+//HUMANHEAD mdc - modified so this will write out the directory using the fs_savepath, so we don't delete the sounds from our source
+		file->Printf( "p:\\tools\\ogg\\oggenc -q 2 \"%s\\base\\%s\"\n", cvarSystem->GetCVarString("fs_savepath"), oggSounds[i].c_str() );
+		file->Printf( "del \"%s\\base\\%s\"\n", cvarSystem->GetCVarString("fs_savepath"), oggSounds[i].c_str() );
+#else
 		file->Printf( "w:\\doom\\ogg\\oggenc -q 0 \"c:\\doom\\base\\%s\"\n", oggSounds[i].c_str() );
 		file->Printf( "del \"c:\\doom\\base\\%s\"\n", oggSounds[i].c_str() );
+#endif
 	}
 	file->Printf( "\n\necho %d kB in OGG sounds\n\n\n", totalSize >> 10 );
 
@@ -2263,9 +1927,7 @@ void idGameLocal::GetShakeSounds( const idDict *dict ) {
 	const char *soundShaderName;
 	idStr soundName;
 
-	if ( dict->GetString( "s_shader", "", &soundShaderName )
-		 && dict->GetFloat( "s_shakes" ) != 0.0f )
-	{
+	if ( dict->GetString( "s_shader", "", &soundShaderName ) && dict->GetFloat( "s_shakes" ) != 0.0f ) {
 		soundShader = declManager->FindSound( soundShaderName );
 
 		for ( int i = 0; i < soundShader->GetNumSounds(); i++ ) {
@@ -2300,6 +1962,16 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		GetShakeSounds( dict );
 	}
 
+//HUMANHEAD mdc - skip caching if we are in development mode and not making a build
+	if( !g_precache.GetBool() && !sys_forceCache.GetBool() && !cvarSystem->GetCVarBool("com_makingBuild") ) {
+		return;
+	}
+//HUMANHEAD END
+
+	//HUMANHEAD: aob
+	idList<idStr> strList;
+	//HUMANHEAD END
+
 	kv = dict->MatchPrefix( "model" );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
@@ -2333,16 +2005,20 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
 			if ( !idStr::Icmp( kv->GetKey(), "gui_noninteractive" )
-				|| !idStr::Icmpn( kv->GetKey(), "gui_parm", 8 )
+				|| !idStr::Icmpn( kv->GetKey(), "gui_parm", 8 )	
 				|| !idStr::Icmp( kv->GetKey(), "gui_inventory" ) ) {
 				// unfortunate flag names, they aren't actually a gui
 			} else {
 				declManager->MediaPrint( "Precaching gui %s\n", kv->GetValue().c_str() );
+#if 1 //HUMANHEAD rww - keep the gui around, so that we don't hit the disk again when we go to use it
+				uiManager->FindGui(kv->GetValue().c_str(), true, false, false);
+#else
 				idUserInterface *gui = uiManager->Alloc();
 				if ( gui ) {
 					gui->InitFromFile( kv->GetValue() );
 					uiManager->DeAlloc( gui );
 				}
+#endif
 			}
 		}
 		kv = dict->MatchPrefix( "gui", kv );
@@ -2356,7 +2032,13 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "mtr", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
-			declManager->FindType( DECL_MATERIAL, kv->GetValue() );
+			//HUMANHEAD: aob - this is a temp test to allow bowman to have different fade times on his materials
+			strList.Clear();
+			hhUtils::SplitString( kv->GetValue(), strList );
+			for( int ix = strList.Num() - 1; ix >= 0; --ix ) {
+				declManager->FindType( DECL_MATERIAL, strList[ix] );
+			}
+			//HUMANHEAD END
 		}
 		kv = dict->MatchPrefix( "mtr", kv );
 	}
@@ -2370,6 +2052,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		kv = dict->MatchPrefix( "inv_icon", kv );
 	}
 
+/*	HUMANHEAD pdm: not used
 	// handles teleport fx.. this is not ideal but the actual decision on which fx to use
 	// is handled by script code based on the teleport number
 	kv = dict->MatchPrefix( "teleport", NULL );
@@ -2378,6 +2061,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		const char *p = ( teleportType ) ? va( "fx/teleporter%i.fx", teleportType ) : "fx/teleporter.fx";
 		declManager->FindType( DECL_FX, p );
 	}
+*/
 
 	kv = dict->MatchPrefix( "fx", NULL );
 	while( kv ) {
@@ -2418,17 +2102,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		kv = dict->MatchPrefix( "def", kv );
 	}
 
-	// Precache all available grabber "catch" damage decls
-	kv = dict->MatchPrefix( "def_damage", NULL );
-	while( kv != NULL )
-	{
-		if( kv->GetValue().Length() )
-		{
-			FindEntityDef( kv->GetValue() + "_catch", false );
-		}
-		kv = dict->MatchPrefix( "def_damage", kv );
-	}
-
+/*	HUMANHEAD pdm: not used
 	kv = dict->MatchPrefix( "pda_name", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
@@ -2452,6 +2126,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		}
 		kv = dict->MatchPrefix( "audio", kv );
 	}
+*/
 }
 
 /*
@@ -2475,21 +2150,6 @@ void idGameLocal::InitScriptForMap( void ) {
 		}
 	}
 }
-/*
-===================
-idGameLocal::SetScriptFPS
-===================
-*/
-void idGameLocal::SetScriptFPS( const float engineHz )
-{
-    idVarDef* fpsDef = program.GetDef( &type_float, "GAME_FPS", &def_namespace );
-    if( fpsDef != NULL )
-    {
-        eval_t fpsValue;
-        fpsValue._float = engineHz;
-        fpsDef->SetValue( fpsValue, false );
-    }
-}
 
 /*
 ===========
@@ -2505,15 +2165,42 @@ void idGameLocal::SpawnPlayer( int clientNum ) {
 
 	args.SetInt( "spawn_entnum", clientNum );
 	args.Set( "name", va( "player%d", clientNum + 1 ) );
+#if HUMANHEAD	// HUMANHEAD pdm: removed hardcoded name
+	args.Set( "classname", isMultiplayer ? GAME_PLAYERDEFNAME_MP : GAME_PLAYERDEFNAME );
 
-	if (isMultiplayer && gameType != GAME_CTF)
-		args.Set("classname", "player_doommarine_mp");
-	else if (isMultiplayer && gameType == GAME_CTF)
-		args.Set("classname", "player_doommarine_ctf");
-	else
-		args.Set("classname", "player_doommarine");
+	// HUMANHEAD mdl:  Check for map specific player health
+	bool mapHealth = false;
+	int playerHealth;
+	const char *mapName = gameLocal.serverInfo.GetString( "si_map" );
+	const idDecl *mapDecl = declManager->FindType(DECL_MAPDEF, mapName, false );
+	if ( mapDecl ) {
+		const idDeclEntityDef *mapInfo = static_cast<const idDeclEntityDef *>(mapDecl);
+		playerHealth = mapInfo->dict.GetInt( "playerHealth" );
+		if ( playerHealth > 0 ) {
+			// Optionally store the old health value in storedHealth
+			if (mapInfo->dict.GetBool( "storePlayerHealth", "0" )) {
+				persistentPlayerInfo[ clientNum ].SetInt( "storedHealth", persistentPlayerInfo[ clientNum ].GetInt( "health", "100" ));
+			}
+			persistentPlayerInfo[ clientNum ].SetInt( "health", playerHealth );
+			mapHealth = true;
+		}
+		int playerSpirit = mapInfo->dict.GetInt( "playerSpirit" );
+		if ( playerSpirit > 0 ) {
+			args.SetInt( "ammo_spiritpower", playerSpirit );
+		}
+	}
 
-	if ( !SpawnEntityDef( args, &ent ) || !entities[ clientNum ] ) {
+	// See if we need to restore a previously saved health value
+	playerHealth = persistentPlayerInfo[ clientNum ].GetInt( "storedHealth", "0" );
+	if ( !mapHealth && playerHealth > 0 ) {
+		persistentPlayerInfo[ clientNum ].SetInt( "health", playerHealth );
+		persistentPlayerInfo[ clientNum ].SetInt( "storedHealth", 0 );
+	}
+#else
+	args.Set( "classname", isMultiplayer ? "player_doommarine_mp" : "player_doommarine" );
+#endif
+	//HUMANHEAD rww - ok on client
+	if ( !SpawnEntityDef( args, &ent, true, false, true ) || !entities[ clientNum ] ) {
 		Error( "Failed to spawn player as '%s'", args.GetString( "classname" ) );
 	}
 
@@ -2627,6 +2314,23 @@ idPlayer *idGameLocal::GetLocalPlayer() const {
 	return static_cast<idPlayer *>( entities[ localClientNum ] );
 }
 
+
+/*
+=================
+idGameLocal::AmLocalClient
+HUMANHEAD nla - Function that was removed
+=================
+*/
+bool idGameLocal::AmLocalClient( idPlayer *player ) {
+
+	if ( !isClient || player->entityNumber == localClientNum ) {
+		return( true );
+	}
+
+	return( false );
+}
+
+
 /*
 ================
 idGameLocal::SetupClientPVS
@@ -2649,12 +2353,27 @@ idGameLocal::SetupPlayerPVS
 */
 void idGameLocal::SetupPlayerPVS( void ) {
 	int			i;
+	//HUMANHEAD rww
+	int			startIndex = 0;
+	//HUMANHEAD END
 	idEntity *	ent;
 	idPlayer *	player;
 	pvsHandle_t	otherPVS, newPVS;
 
 	playerPVS.i = -1;
-	for ( i = 0; i < numClients; i++ ) {
+	//HUMANHEAD rww
+	if (gameLocal.isClient) {
+		startIndex = gameLocal.localClientNum;
+
+		if (gameLocal.localClientNum != -1 && gameLocal.entities[gameLocal.localClientNum] && gameLocal.entities[gameLocal.localClientNum]->IsType(hhPlayer::Type)) {
+			hhPlayer *plClient = static_cast<hhPlayer *>(gameLocal.entities[gameLocal.localClientNum]);
+			if (plClient->spectating && plClient->spectator >= 0 && plClient->spectator < MAX_CLIENTS) {
+				startIndex = plClient->spectator; //build a pvs for the player i am spectating
+			}
+		}
+	}
+	for ( i = startIndex; i < numClients; i++ ) {
+	//HUMANHEAD END
 		ent = entities[i];
 		if ( !ent || !ent->IsType( idPlayer::Type ) ) {
 			continue;
@@ -2682,22 +2401,11 @@ void idGameLocal::SetupPlayerPVS( void ) {
 			playerConnectedAreas = newPVS;
 		}
 
-		// if portalSky is preset, then merge into pvs so we get rotating brushes, etc
-		if (portalSkyEnt.GetEntity()) {
-			idEntity *skyEnt = portalSkyEnt.GetEntity();
-
-			otherPVS = pvs.SetupCurrentPVS(skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas());
-			newPVS = pvs.MergeCurrentPVS(playerPVS, otherPVS);
-			pvs.FreeCurrentPVS(playerPVS);
-			pvs.FreeCurrentPVS(otherPVS);
-			playerPVS = newPVS;
-
-			otherPVS = pvs.SetupCurrentPVS(skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas());
-			newPVS = pvs.MergeCurrentPVS(playerConnectedAreas, otherPVS);
-			pvs.FreeCurrentPVS(playerConnectedAreas);
-			pvs.FreeCurrentPVS(otherPVS);
-			playerConnectedAreas = newPVS;
+		//HUMANHEAD rww
+		if (gameLocal.isClient) {
+			break;
 		}
+		//HUMANHEAD END
 	}
 }
 
@@ -2728,7 +2436,7 @@ bool idGameLocal::InPlayerPVS( idEntity *ent ) const {
 	if ( playerPVS.i == -1 ) {
 		return false;
 	}
-	return pvs.InCurrentPVS( playerPVS, ent->GetPVSAreas(), ent->GetNumPVSAreas() );
+    return pvs.InCurrentPVS( playerPVS, ent->GetPVSAreas(), ent->GetNumPVSAreas() );
 }
 
 /*
@@ -2742,7 +2450,7 @@ bool idGameLocal::InPlayerConnectedArea( idEntity *ent ) const {
 	if ( playerConnectedAreas.i == -1 ) {
 		return false;
 	}
-	return pvs.InCurrentPVS( playerConnectedAreas, ent->GetPVSAreas(), ent->GetNumPVSAreas() );
+    return pvs.InCurrentPVS( playerConnectedAreas, ent->GetPVSAreas(), ent->GetNumPVSAreas() );
 }
 
 /*
@@ -2757,7 +2465,7 @@ void idGameLocal::UpdateGravity( void ) {
 		if ( g_gravity.GetFloat() == 0.0f ) {
 			g_gravity.SetFloat( 1.0f );
 		}
-		gravity.Set( 0, 0, -g_gravity.GetFloat() );
+        gravity.Set( 0, 0, -g_gravity.GetFloat() );
 
 		// update all physics objects
 		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
@@ -2798,8 +2506,13 @@ void idGameLocal::SortActiveEntityList( void ) {
 			next_ent = ent->activeNode.Next();
 			master = ent->GetTeamMaster();
 			if ( master && master == ent ) {
-				ent->activeNode.Remove();
-				ent->activeNode.AddToFront( activeEntities );
+				//HUMANHEAD PCF rww 05/27/06 - force pusher sort
+				//hack fix to prevent elevator skipping on harvesterb
+				if (!ent->fl.forcePusherSort) {
+				//HUMANHEAD END
+					ent->activeNode.Remove();
+					ent->activeNode.AddToFront( activeEntities );
+				}
 			}
 		}
 	}
@@ -2848,41 +2561,74 @@ void idGameLocal::SortActiveEntityList( void ) {
 	sortPushers = false;
 }
 
+//HUMANHEAD rww
 /*
 ================
-idGameLocal::RunFrame
+idGameLocal::SortSnapshotEntityList
+
+  Sorts the snapshot entity list such that pushing entities come first,
+  actors come next and physics team slaves appear after their master.
 ================
 */
-void idGameLocal::EndFrame()
-{
-	//Gb Is this causing weird movement (if so add back in height offset)
-    //CheckRenderCvars();
-}
+void idGameLocal::SortSnapshotEntityList( void ) {
+	idEntity *ent, *next_ent, *master, *part;
 
-/*
-================
-idGameLocal::RunTimeGroup2
-================
-*/
-void idGameLocal::RunTimeGroup2()
-{
-	idEntity *ent;
-	int num = 0;
-
-	fast.Increment();
-	fast.Get(time, previousTime, msec, framenum, realClientTime);
-
-	for (ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next()) {
-		if (ent->timeGroup != TIME_GROUP2) {
-			continue;
+	// if the snapshot entity list needs to be reordered to place physics team masters at the front
+	if ( sortSnapshotTeamMasters ) {
+		for ( ent = snapshotEntities.Next(); ent != NULL; ent = next_ent ) {
+			next_ent = ent->snapshotNode.Next();
+			master = ent->GetTeamMaster();
+			if ( master && master == ent ) {
+				ent->snapshotNode.Remove();
+				ent->snapshotNode.AddToFront( snapshotEntities );
+			}
 		}
-
-		ent->Think();
-		num++;
 	}
 
-	slow.Get(time, previousTime, msec, framenum, realClientTime);
+	// if the snapshot entity list needs to be reordered to place pushers at the front
+	if ( sortSnapshotPushers ) {
+
+		for ( ent = snapshotEntities.Next(); ent != NULL; ent = next_ent ) {
+			next_ent = ent->snapshotNode.Next();
+			master = ent->GetTeamMaster();
+			if ( !master || master == ent ) {
+				// check if there is an actor on the team
+				for ( part = ent; part != NULL; part = part->GetNextTeamEntity() ) {
+					if ( part->GetPhysics()->IsType( idPhysics_Actor::Type ) ) {
+						break;
+					}
+				}
+				// if there is an actor on the team
+				if ( part ) {
+					ent->snapshotNode.Remove();
+					ent->snapshotNode.AddToFront( snapshotEntities );
+				}
+			}
+		}
+
+		for ( ent = snapshotEntities.Next(); ent != NULL; ent = next_ent ) {
+			next_ent = ent->snapshotNode.Next();
+			master = ent->GetTeamMaster();
+			if ( !master || master == ent ) {
+				// check if there is an entity on the team using parametric physics
+				for ( part = ent; part != NULL; part = part->GetNextTeamEntity() ) {
+					if ( part->GetPhysics()->IsType( idPhysics_Parametric::Type ) ) {
+						break;
+					}
+				}
+				// if there is an entity on the team using parametric physics
+				if ( part ) {
+					ent->snapshotNode.Remove();
+					ent->snapshotNode.AddToFront( activeEntities );
+				}
+			}
+		}
+	}
+
+	sortSnapshotTeamMasters = false;
+	sortSnapshotPushers = false;
 }
+//HUMANHEAD END
 
 /*
 ================
@@ -2890,6 +2636,7 @@ idGameLocal::RunFrame
 ================
 */
 gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	idEntity *	ent;
 	int			num;
 	float		ms;
@@ -2906,14 +2653,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
-	ComputeSlowMsec();
-
-	slow.Get(time, previousTime, msec, framenum, realClientTime);
-	msec = slowmoMsec;
-
-    player->SetVRClientInfo(pVRClientInfo);
-
-	if ( !isMultiplayer && g_stopTime.GetBool() || commonVr->VR_GAME_PAUSED  ) {
+	if ( !isMultiplayer && g_stopTime.GetBool() ) {
 		// clear any debug lines from a previous frame
 		gameRenderWorld->DebugClearLines( time + 1 );
 
@@ -2927,10 +2667,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// update the game time
 		framenum++;
 		previousTime = time;
-		time += USERCMD_MSEC;
+		time += msec;
 		realClientTime = time;
-
-		slow.Set(time, previousTime, msec, framenum, realClientTime);
 
 #ifdef GAME_DLL
 		// allow changing SIMD usage on the fly
@@ -3010,16 +2748,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			} else {
 				num = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					if (ent->timeGroup != TIME_GROUP1) {
-						continue;
-					}
 					ent->Think();
 					num++;
 				}
 			}
 		}
-
-		RunTimeGroup2();
 
 		// remove any entities that have stopped thinking
 		if ( numEntitiesToDeactivate ) {
@@ -3043,11 +2776,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// service any pending events
 		idEvent::ServiceEvents();
 
-		// service pending fast events
-		fast.Get(time, previousTime, msec, framenum, realClientTime);
-		idEvent::ServiceFastEvents();
-		slow.Get(time, previousTime, msec, framenum, realClientTime);
-
 		timer_events.Stop();
 
 		// free the player pvs
@@ -3060,7 +2788,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 		// display how long it took to calculate the current game frame
 		if ( g_frametime.GetBool() ) {
-			Printf( "game %d: all:%u th:%u ev:%u %d ents \n",
+			Printf( "game %d: all:%.1f th:%.1f ev:%.1f %d ents \n",
 				time, timer_think.Milliseconds() + timer_events.Milliseconds(),
 				timer_think.Milliseconds(), timer_events.Milliseconds(), num );
 		}
@@ -3070,11 +2798,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		ret.sessionCommand[0] = 0;
 
 		if ( !isMultiplayer && player ) {
-            for( int h = 0; h < 2; h++ ) {
-                GetLocalPlayer()->hands[h].GetControllerShake(ret.vibrationLow[h],
-                                                              ret.vibrationHigh[h]);
-            }
-		    ret.health = player->health;
+			ret.health = player->health;
 			ret.heartRate = player->heartRate;
 			ret.stamina = idMath::FtoiFast( player->stamina );
 			// combat is a 0-100 value based on lastHitTime and lastDmgTime
@@ -3105,13 +2829,18 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	ret.syncNextGameFrame = skipCinematic;
 	if ( skipCinematic ) {
 		soundSystem->SetMute( false );
-		skipCinematic = false;
+		skipCinematic = false;		
 	}
 
 	// show any debug info for this frame
 	RunDebugInfo();
 	D_DrawDebugLines();
 
+	return ret;
+*/
+	gameReturn_t ret;
+	ret.consistencyHash = 0;
+	ret.sessionCommand[0] = 0;
 	return ret;
 }
 
@@ -3136,6 +2865,11 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	float	y;
 	float	ratio_x;
 	float	ratio_y;
+	
+	if ( !sys->FPU_StackIsEmpty() ) {
+		Printf( sys->FPU_GetState() );
+		Error( "idGameLocal::CalcFov: FPU stack not empty" );
+	}
 
 	// first, calculate the vertical fov based on a 640x480 view
 	x = 640.0f / tan( base_fov / 360.0f * idMath::PI );
@@ -3145,23 +2879,12 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	// FIXME: somehow, this is happening occasionally
 	assert( fov_y > 0 );
 	if ( fov_y <= 0 ) {
-		Error( "idGameLocal::CalcFov: bad result, fov_y == %f, base_fov == %f", fov_y, base_fov );
+		Printf( sys->FPU_GetState() );
+		Error( "idGameLocal::CalcFov: bad result" );
 	}
 
 	switch( r_aspectRatio.GetInteger() ) {
 	default :
-	case -1 :
-		// auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
-		ratio_x = renderSystem->GetScreenWidth();
-		ratio_y = renderSystem->GetScreenHeight();
-		if(ratio_x <= 0.0f || ratio_y <= 0.0f)
-		{
-			// for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
-			// returned 0. Assume default 4:3 to avoid assert()/Error() below.
-			fov_x = base_fov;
-			return;
-		}
-		break;
 	case 0 :
 		// 4:3
 		fov_x = base_fov;
@@ -3193,6 +2916,7 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	// FIXME: somehow, this is happening occasionally
 	assert( ( fov_x > 0 ) && ( fov_y > 0 ) );
 	if ( ( fov_y <= 0 ) || ( fov_x <= 0 ) ) {
+		Printf( sys->FPU_GetState() );
 		Error( "idGameLocal::CalcFov: bad result" );
 	}
 }
@@ -3205,6 +2929,7 @@ makes rendering and sound system calls
 ================
 */
 bool idGameLocal::Draw( int clientNum ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -3217,7 +2942,7 @@ bool idGameLocal::Draw( int clientNum ) {
 
 	// render the scene
 	player->playerView.RenderPlayerView( player->hud );
-
+*/
 	return true;
 }
 
@@ -3266,13 +2991,6 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 	}
 	return mpGame.HandleGuiCommands( menuCommand );
 }
-
-/*
-================
-idGameLocal::HandleMainMenuCommands
-================
-*/
-void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui ) { }
 
 /*
 ================
@@ -3399,12 +3117,105 @@ void idGameLocal::ShowTargets( void ) {
 	}
 }
 
+//HUMANHEAD rww
+void idGameLocal::GetAPUserInfo(idDict &dict, int clientNum) {
+	static const char *apNames[8] = {
+		"i have spaces in my name",
+		"DIX",
+		"j0sh",
+		"mpl",
+		"Boris",
+		"Big H",
+		"fr3d",
+		"sho"
+	};
+	if (clientNum >= 0 && clientNum < 8) {
+		dict.Set("ui_name", apNames[clientNum]);
+	}
+	else {
+		dict.Set("ui_name", va("Johnny McMuffins %i", clientNum));
+	}
+	dict.Set("ui_ready", "Ready");
+	dict.Set("ui_spectate", "Play");
+	dict.SetInt("ui_modelNum", clientNum);
+}
+
+void idGameLocal::SpawnArtificialPlayer(void) {
+	idEntity	*ent;
+	idDict		dict;
+	idDict		apUI;
+	const int	maxClients = serverInfo.GetInt( "si_maxPlayers" );
+	const char	*classname = "player_artificial_mp";
+	int			clientNum;
+
+	for (clientNum = 0; clientNum < maxClients; clientNum++) {
+		if (!entities[clientNum]) {
+			break;
+		}
+	}
+	if (clientNum == maxClients) {
+		Printf("No free player slots.\n");
+		return;
+	}
+
+	dict.Set( "classname", "player_artificial_mp" );
+	dict.SetInt( "spawn_entnum", clientNum );
+	dict.Set( "name", va( "player%d", clientNum + 1 ) );
+
+	if (!SpawnEntityDef( dict, &ent )) {
+		Warning("Couldn't spawn entityDef '%s' for artificial player.\n", classname);
+		return;
+	}
+
+	if ( clientNum >= numClients ) {
+		numClients = clientNum + 1;
+	}
+
+	GetAPUserInfo(apUI, clientNum);
+	SetUserInfo(clientNum, apUI, false, false);
+	mpGame.SpawnPlayer( clientNum );
+}
+//HUMANHEAD END
+
 /*
 ================
 idGameLocal::RunDebugInfo
 ================
 */
 void idGameLocal::RunDebugInfo( void ) {
+#if GOLD //HUMANHEAD rww
+	if (!developer.GetBool()) {
+		return;
+	}
+#endif //HUMANHEAD END
+
+	//HUMANHEAD rww
+	if (isMultiplayer && isServer && g_artificialPlayerCount.GetInteger() > 0) {
+		int numExistingAP = 0;
+		int numClients = 0;
+		bool anyNonAP = false;
+		const int maxClients = serverInfo.GetInt( "si_maxPlayers" );
+
+		for (int i = 0; i < maxClients; i++) {
+			if (entities[i]) {
+				if (entities[i]->IsType(hhPlayer::Type)) {
+					if (entities[i]->IsType(hhArtificialPlayer::Type)) {
+						numExistingAP++;
+					}
+					else {
+						anyNonAP = true;
+					}
+					numClients++;
+				}
+			}
+		}
+
+		if (anyNonAP && numClients < maxClients && numExistingAP < g_artificialPlayerCount.GetInteger()) { //if we have room and want more, spawn one this frame
+			SpawnArtificialPlayer();
+		}
+	}
+	//HUMANHEAD END
+
 	idEntity *ent;
 	idPlayer *player;
 
@@ -3492,7 +3303,7 @@ void idGameLocal::RunDebugInfo( void ) {
 		editEntities->DisplayEntities();
 	}
 
-	if ( g_showCollisionWorld.GetBool() ) {
+	if ( g_showCollisionWorld.GetBool() || ai_debugPath.GetInteger() == 1 ) {
 		collisionModelManager->DrawModel( 0, vec3_origin, mat3_identity, origin, 128.0f );
 	}
 
@@ -3507,6 +3318,35 @@ void idGameLocal::RunDebugInfo( void ) {
 	if ( g_showPVS.GetInteger() ) {
 		pvs.DrawPVS( origin, ( g_showPVS.GetInteger() == 2 ) ? PVS_ALL_PORTALS_OPEN : PVS_NORMAL );
 	}
+
+	// HUMANHEAD pdm: game portal support
+#if GAMEPORTAL_PVS
+	if ( g_showGamePortals.GetInteger() ) {
+		gameRenderWorld->DrawGamePortals(g_showGamePortals.GetInteger(), gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+	}
+#endif
+#if GAMEPORTAL_SOUND
+	if ( g_showValidSoundAreas.GetInteger() ) {
+		gameRenderWorld->DrawValidSoundAreas(origin, gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+	}
+#endif
+
+	if (g_showEntityCount.GetBool() || g_maxEntitiesWarning.GetInteger()) {
+		int count = 0;
+		for (int ix=0; ix<MAX_GENTITIES; ix++) {
+			if (entities[ix]) {
+				count++;
+			}
+		}
+		// Display warning if over the entity limit
+		if (g_maxEntitiesWarning.GetInteger() > 0 && count > g_maxEntitiesWarning.GetInteger()) {
+			Warning("%d entity slots used!  g_maxEntitiesWarning=%d\n", count, g_maxEntitiesWarning.GetInteger());
+		}
+		else if (g_showEntityCount.GetBool()) {
+			Printf("%d entity slots used\n", count);
+		}
+	}
+	// HUMANHEAD END
 
 	if ( aas_test.GetInteger() >= 0 ) {
 		idAAS *aas = GetAAS( aas_test.GetInteger() );
@@ -3603,7 +3443,7 @@ idGameLocal::AddAASObstacle
 aasHandle_t idGameLocal::AddAASObstacle( const idBounds &bounds ) {
 	int i;
 	aasHandle_t obstacle;
-	aasHandle_t check id_attribute((unused));
+	aasHandle_t check;
 
 	if ( !aasList.Num() ) {
 		return -1;
@@ -3662,7 +3502,7 @@ bool idGameLocal::CheatsOk( bool requirePlayer ) {
 	}
 
 	player = GetLocalPlayer();
-	if ( !requirePlayer || ( player && ( player->health > 0 ) ) ) {
+	if ( !requirePlayer || ( player && !player->IsDead() ) ) { // HUMANHEAD cjr: allow cheats when deathwalking
 		return true;
 	}
 
@@ -3676,23 +3516,54 @@ bool idGameLocal::CheatsOk( bool requirePlayer ) {
 idGameLocal::RegisterEntity
 ===================
 */
+extern void Cmd_EntityList(const idStr &match); //HUMANHEAD rww
 void idGameLocal::RegisterEntity( idEntity *ent ) {
 	int spawn_entnum;
 
-	if ( spawnCount >= ( 1 << ( 32 - GENTITYNUM_BITS ) ) ) {
+	if ( spawnCount >= ( 1 << ( 32 - GENTITYNUM_BITS_PLUSCENT ) ) ) { //HUMANHEAD rww cent bits
+		//HUMANHEAD rww
 		Error( "idGameLocal::RegisterEntity: spawn count overflow" );
+		//this should be a safe way to handle this, since entities will still be in different slots,
+		//even if they happen to share the same spawn id.
+		//in theory you should need a server up for a very long time for this to happen, but with enough
+		//fx and projectiles it is conceivable.
+		//spawnCount = gameLocal.GetMapSpawnCount()+1;
+		//addendum - actually, seems like this may be causing trouble with really damn old safe entity pointers.
+		//HUMANHEAD END
 	}
 
-	if ( !spawnArgs.GetInt( "spawn_entnum", "0", spawn_entnum ) ) {
-		while( entities[firstFreeIndex] && firstFreeIndex < ENTITYNUM_MAX_NORMAL ) {
-			firstFreeIndex++;
+	//HUMANHEAD rww - client entities
+	if (ent->fl.clientEntity) {
+		int clientIndex = MAX_GENTITIES;
+		if ( !spawnArgs.GetInt( "spawn_entnum", "0", spawn_entnum ) ) {
+			while( entities[clientIndex] && clientIndex < (MAX_GENTITIES+MAX_CENTITIES) ) {
+				clientIndex++;
+			}
+			if ( clientIndex >= (MAX_GENTITIES+MAX_CENTITIES) ) {
+				Error( "no free client entities" );
+			}
+			spawn_entnum = clientIndex;
 		}
-		if ( firstFreeIndex >= ENTITYNUM_MAX_NORMAL ) {
-			Error( "no free entities" );
+		else {
+			spawn_entnum += MAX_GENTITIES;
 		}
-		spawn_entnum = firstFreeIndex++;
+	}
+	else
+	{
+	//END HUMANHEAD
+		if ( !spawnArgs.GetInt( "spawn_entnum", "0", spawn_entnum ) ) {
+			while( entities[firstFreeIndex] && firstFreeIndex < ENTITYNUM_MAX_NORMAL ) {
+				firstFreeIndex++;
+			}
+			if ( firstFreeIndex >= ENTITYNUM_MAX_NORMAL ) {
+				Cmd_EntityList(""); //HUMANHEAD rww
+				Error( "no free entities" );
+			}
+			spawn_entnum = firstFreeIndex++;
+		}
 	}
 
+	assert(!entities[ spawn_entnum ]); //HUMANHEAD rww - this can happen if something decides to do something dumb like spawn a new entity with an existing dict that includes a spawn_entnum
 	entities[ spawn_entnum ] = ent;
 	spawnIds[ spawn_entnum ] = spawnCount++;
 	ent->entityNumber = spawn_entnum;
@@ -3718,9 +3589,13 @@ void idGameLocal::UnregisterEntity( idEntity *ent ) {
 
 	if ( ( ent->entityNumber != ENTITYNUM_NONE ) && ( entities[ ent->entityNumber ] == ent ) ) {
 		ent->spawnNode.Remove();
+		//ent->snapshotNode.Remove(); //HUMANHEAD rww - testing to see if this fixes mysterious prediction crash
 		entities[ ent->entityNumber ] = NULL;
 		spawnIds[ ent->entityNumber ] = -1;
-		if ( ent->entityNumber >= MAX_CLIENTS && ent->entityNumber < firstFreeIndex ) {
+		//HUMANHEAD rww - don't set this for client ents
+		//if ( ent->entityNumber >= MAX_CLIENTS && ent->entityNumber < firstFreeIndex ) {
+		if ( ent->entityNumber >= MAX_CLIENTS && ent->entityNumber < firstFreeIndex && ent->entityNumber < MAX_GENTITIES ) {
+		//HUMANHEAD END
 			firstFreeIndex = ent->entityNumber;
 		}
 		ent->entityNumber = ENTITYNUM_NONE;
@@ -3735,15 +3610,39 @@ idGameLocal::SpawnEntityType
 idEntity *idGameLocal::SpawnEntityType( const idTypeInfo &classdef, const idDict *args, bool bIsClientReadSnapshot ) {
 	idClass *obj;
 
+//HUMANHEAD rww
+#if !GOLD
+	if (isClient && !bIsClientReadSnapshot) {
+		Error( "Attempted to spawn non-client entity '%s' on client", classdef.classname );
+	}
+#endif
+	/*
 #if _DEBUG
 	if ( isClient ) {
 		assert( bIsClientReadSnapshot );
 	}
 #endif
+	*/
+//HUMANHEAD END
 
 	if ( !classdef.IsType( idEntity::Type ) ) {
 		Error( "Attempted to spawn non-entity class '%s'", classdef.classname );
 	}
+
+	//HUMANHEAD rww - keep track of layered spawning
+#if !GOLD
+	layeredSpawn++;
+	if (gameLocal.isMultiplayer) {
+		if (spawnPopulating && layeredSpawn > 1) {
+			const char *typeName = classdef.classname;
+			if (!typeName) {
+				typeName = "unknown";
+			}
+			gameLocal.Error("layeredSpawn says an entity is spawning an entity (type '%s') in idGameLocal::SpawnEntityType!\n", typeName);
+		}
+	}
+#endif
+	//HUMANHEAD END
 
 	try {
 		if ( args ) {
@@ -3760,8 +3659,52 @@ idEntity *idGameLocal::SpawnEntityType( const idTypeInfo &classdef, const idDict
 	}
 	spawnArgs.Clear();
 
+	//HUMANHEAD rww - keep track of layered spawning
+#if !GOLD
+	layeredSpawn--;
+#endif
+	//HUMANHEAD END
+
 	return static_cast<idEntity *>(obj);
 }
+
+//HUMANHEAD rww
+/*
+================
+idGameLocal::SpawnEntityTypeClient
+================
+*/
+idEntity *idGameLocal::SpawnEntityTypeClient( const idTypeInfo &classdef, const idDict *args ) {
+	idClass *obj;
+
+	if ( !classdef.IsType( idEntity::Type ) ) {
+		Error( "Attempted to spawn non-entity class '%s'", classdef.classname );
+	}
+
+	try {
+		if ( args ) {
+			spawnArgs = *args;
+		} else {
+			spawnArgs.Clear();
+		}
+		obj = classdef.CreateInstance();
+
+		if (gameLocal.isClient) {
+			idEntity *objEnt = static_cast<idEntity *>(obj);
+			objEnt->fl.clientEntity = true;
+		}
+
+		obj->CallSpawn();
+	}
+
+	catch( idAllocError & ) {
+		obj = NULL;
+	}
+	spawnArgs.Clear();
+
+	return static_cast<idEntity *>(obj);
+}
+//HUMANHEAD END
 
 /*
 ===================
@@ -3771,7 +3714,7 @@ Finds the spawn function for the entity and calls it,
 returning false if not found
 ===================
 */
-bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDefaults ) {
+bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDefaults, bool clientEntity, bool bIsClientReadSnapshot ) {
 	const char	*classname;
 	const char	*spawn;
 	idTypeInfo	*cls;
@@ -3800,25 +3743,21 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 
 	spawnArgs.SetDefaults( &def->dict );
 
-
-	if (!spawnArgs.FindKey("slowmo")) {
-		bool slowmo = true;
-
-		for (int i = 0; fastEntityList[i]; i++) {
-			if (!idStr::Cmp(classname, fastEntityList[i])) {
-				slowmo = false;
-				break;
-			}
-		}
-
-		if (!slowmo) {
-			spawnArgs.SetBool("slowmo", slowmo);
-		}
-	}
-
 	// check if we should spawn a class object
 	spawnArgs.GetString( "spawnclass", NULL, &spawn );
 	if ( spawn ) {
+
+		//HUMANHEAD rww
+#if !GOLD
+		if (isClient && !clientEntity && !bIsClientReadSnapshot) {
+			const char *typeName = classname;
+			if (!typeName) {
+				typeName = "unknown";
+			}
+			Error("idGameLocal::SpawnEntityDef: '%s' trying to spawn on client but not a client ent", typeName);
+		}
+#endif
+		//HUMANHEAD END
 
 		cls = idClass::GetClass( spawn );
 		if ( !cls ) {
@@ -3832,7 +3771,35 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 			return false;
 		}
 
+		//HUMANHEAD rww - client entities
+		if (clientEntity) {
+			idEntity *objEnt = static_cast<idEntity *>(obj);
+			objEnt->fl.clientEntity = true;
+		}
+		//END HUMANHEAD
+
+		//HUMANHEAD rww - keep track of layered spawning
+#if !GOLD
+		layeredSpawn++;
+		if (gameLocal.isMultiplayer) {
+			if (spawnPopulating && layeredSpawn > 1) {
+				const char *typeName = classname;
+				if (!typeName) {
+					typeName = "unknown";
+				}
+				gameLocal.Error("layeredSpawn says an entity is spawning an entity (type '%s') in idGameLocal::SpawnEntityDef!\n", typeName);
+			}
+		}
+#endif
+		//HUMANHEAD END
+
 		obj->CallSpawn();
+
+		//HUMANHEAD rww - keep track of layered spawning
+#if !GOLD
+		layeredSpawn--;
+#endif
+		//HUMANHEAD END
 
 		if ( ent && obj->IsType( idEntity::Type ) ) {
 			*ent = static_cast<idEntity *>(obj);
@@ -3866,10 +3833,28 @@ idGameLocal::FindEntityDef
 const idDeclEntityDef *idGameLocal::FindEntityDef( const char *name, bool makeDefault ) const {
 	const idDecl *decl = NULL;
 	if ( isMultiplayer ) {
-		decl = declManager->FindType( DECL_ENTITYDEF, va( "%s_mp", name ), false );
+#if GERMAN_VERSION
+		decl = declManager->FindType( DECL_ENTITYDEF, va( "%s_mp_nogore", name ), false );
+		if ( !decl ) // Fall through to normal mp decls below
+#else if !GOLD // For testing the german defs
+		if ( g_nogore.GetBool() ) {
+			decl = declManager->FindType( DECL_ENTITYDEF, va( "%s_mp_nogore", name ), false );
+		}
+		if ( !decl ) // Fall through to normal mp decls below
+#endif 
+			decl = declManager->FindType( DECL_ENTITYDEF, va( "%s_mp", name ), false );
 	}
 	if ( !decl ) {
-		decl = declManager->FindType( DECL_ENTITYDEF, name, makeDefault );
+#if GERMAN_VERSION
+		decl = declManager->FindType( DECL_ENTITYDEF, va( "%s_nogore", name ), false );
+		if ( !decl )
+#else if !GOLD // For testing the german defs
+		if ( g_nogore.GetBool() ) {
+			decl = declManager->FindType( DECL_ENTITYDEF, va( "%s_nogore", name ), false );
+		}
+		if ( !decl ) // Fall through to normal mp decls below
+#endif // Fall through to normal decls
+			decl = declManager->FindType( DECL_ENTITYDEF, name, makeDefault );
 	}
 	return static_cast<const idDeclEntityDef *>( decl );
 }
@@ -3890,31 +3875,30 @@ idGameLocal::InhibitEntitySpawn
 ================
 */
 bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
-
+	
 	bool result = false;
 
 	if ( isMultiplayer ) {
 		spawnArgs.GetBool( "not_multiplayer", "0", result );
-	} else if ( g_skill.GetInteger() == 0 ) {
+	}
+/* HUMANHEAD pdm: not used
+	else if ( g_skill.GetInteger() == 0 ) {
 		spawnArgs.GetBool( "not_easy", "0", result );
 	} else if ( g_skill.GetInteger() == 1 ) {
 		spawnArgs.GetBool( "not_medium", "0", result );
 	} else {
 		spawnArgs.GetBool( "not_hard", "0", result );
-		if (!result && g_skill.GetInteger() == 3) {
-			spawnArgs.GetBool("not_nightmare", "0", result);
-		}
 	}
 
 	const char *name;
-	if ( g_skill.GetInteger() == 3 ) {
+#ifndef ID_DEMO_BUILD
+	if ( g_skill.GetInteger() == 3 ) { 
 		name = spawnArgs.GetString( "classname" );
-		if (idStr::Icmp(name, "item_medkit") == 0 || idStr::Icmp(name, "item_medkit_small") == 0 ||
-		    idStr::Icmp(name, "moveable_item_medkit") == 0 || idStr::Icmp(name, "moveable_item_medkit_small") == 0) {
-
+		if ( idStr::Icmp( name, "item_medkit" ) == 0 || idStr::Icmp( name, "item_medkit_small" ) == 0 ) {
 			result = true;
 		}
 	}
+#endif
 
 	if ( gameLocal.isMultiplayer ) {
 		name = spawnArgs.GetString( "classname" );
@@ -3922,6 +3906,7 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 			result = true;
 		}
 	}
+*/
 
 	return result;
 }
@@ -3931,7 +3916,12 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 idGameLocal::SetSkill
 ================
 */
+/*	HUMANHEAD pdm: not used
 void idGameLocal::SetSkill( int value ) {
+	if (gameLocal.isMultiplayer) {
+		return;
+	}
+
 	int skill_level;
 
 	if ( value < 0 ) {
@@ -3944,6 +3934,7 @@ void idGameLocal::SetSkill( int value ) {
 
 	g_skill.SetInteger( skill_level );
 }
+*/
 
 /*
 ==============
@@ -3978,7 +3969,7 @@ void idGameLocal::SpawnMapEntities( void ) {
 		return;
 	}
 
-	SetSkill( g_skill.GetInteger() );
+//	SetSkill( g_skill.GetInteger() );		// HUMANHEAD pdm: not used
 
 	numEntities = mapFile->GetNumEntities();
 	if ( numEntities == 0 ) {
@@ -3990,7 +3981,8 @@ void idGameLocal::SpawnMapEntities( void ) {
 	mapEnt = mapFile->GetEntity( 0 );
 	args = mapEnt->epairs;
 	args.SetInt( "spawn_entnum", ENTITYNUM_WORLD );
-	if ( !SpawnEntityDef( args ) || !entities[ ENTITYNUM_WORLD ] || !entities[ ENTITYNUM_WORLD ]->IsType( idWorldspawn::Type ) ) {
+	//HUMANHEAD rww - ok on client
+	if ( !SpawnEntityDef( args, NULL, true, false, true ) || !entities[ ENTITYNUM_WORLD ] || !entities[ ENTITYNUM_WORLD ]->IsType( idWorldspawn::Type ) ) {
 		Error( "Problem spawning world entity" );
 	}
 
@@ -4005,7 +3997,8 @@ void idGameLocal::SpawnMapEntities( void ) {
 			// precache any media specified in the map entity
 			CacheDictionaryMedia( &args );
 
-			SpawnEntityDef( args );
+			//HUMANHEAD rww - ok on client
+			SpawnEntityDef( args, NULL, true, false, true );
 			num++;
 		} else {
 			inhibit++;
@@ -4024,7 +4017,7 @@ void idGameLocal::AddEntityToHash( const char *name, idEntity *ent ) {
 	if ( FindEntity( name ) ) {
 		Error( "Multiple entities named '%s'", name );
 	}
-	entityHash.Add(entityHash.GenerateKey(name, true), ent->entityNumber);
+	entityHash.Add( entityHash.GenerateKey( name, true ), ent->entityNumber );
 }
 
 /*
@@ -4067,7 +4060,7 @@ int idGameLocal::GetTargets( const idDict &args, idList< idEntityPtr<idEntity> >
 			ent = FindEntity( arg->GetValue() );
 			if ( ent ) {
 				idEntityPtr<idEntity> &entityPtr = list.Alloc();
-				entityPtr = ent;
+                entityPtr = ent;
 			}
 		}
 	}
@@ -4105,6 +4098,35 @@ Argument completion for entity names
 void idGameLocal::ArgCompletion_EntityName( const idCmdArgs &args, void(*callback)( const char *s ) ) {
 	int i;
 
+	for( i = 0; i < gameLocal.num_entities; i++ ) {
+		if ( gameLocal.entities[ i ] ) {
+			callback( va( "%s %s", args.Argv( 0 ), gameLocal.entities[ i ]->name.c_str() ) );
+		}
+	}
+}
+
+// HUMANHEAD pdm
+void idGameLocal::ArgCompletion_ClassName( const idCmdArgs &args, void(*callback)( const char *s ) ) {
+	int i;
+	idTypeInfo *type;
+
+	int numTypes = idClass::GetNumTypes();
+	for( i = 0; i < numTypes; i++ ) {
+		type = idClass::GetType(i);
+		callback( va( "%s %s", args.Argv( 0 ), type->classname ) );
+	}
+}
+
+// HUMANHEAD pdm
+void idGameLocal::ArgCompletion_EntityOrClassName( const idCmdArgs &args, void(*callback)( const char *s ) ) {
+	int i;
+	idTypeInfo *type;
+
+	int numTypes = idClass::GetNumTypes();
+	for( i = 0; i < numTypes; i++ ) {
+		type = idClass::GetType(i);
+		callback( va( "%s %s", args.Argv( 0 ), type->classname ) );
+	}
 	for( i = 0; i < gameLocal.num_entities; i++ ) {
 		if ( gameLocal.entities[ i ] ) {
 			callback( va( "%s %s", args.Argv( 0 ), gameLocal.entities[ i ]->name.c_str() ) );
@@ -4207,6 +4229,11 @@ int idGameLocal::EntitiesWithinRadius( const idVec3 org, float radius, idEntity 
 	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 		if ( ent->GetPhysics()->GetAbsBounds().IntersectsBounds( bo ) ) {
 			entityList[entCount++] = ent;
+			// HUMANHEAD mdl:  maxCount was being ignored
+			if ( entCount == maxCount ) {
+				return entCount;
+			}
+			// HUMANHEAD END
 		}
 	}
 
@@ -4246,6 +4273,7 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 
 		hit = cm->GetEntity();
 		if ( ( hit == ent ) || !hit->fl.takedamage ) {
+			hit->SquishedByDoor( ent ); // HUMANHEAD CJR: Squish certain objects when a KillBox is applied
 			continue;
 		}
 
@@ -4266,6 +4294,59 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 		}
 	}
 }
+
+//HUMANHEAD PCF rww 05/15/06 - use a custom clipmask killbox (seperated due to pcf paranoia)
+/*
+================
+idGameLocal::KillBoxMasked
+================
+*/
+void idGameLocal::KillBoxMasked( idEntity *ent, int clipMask, bool catch_teleport ) {
+	int			i;
+	int			num;
+	idEntity *	hit;
+	idClipModel *cm;
+	idClipModel *clipModels[ MAX_GENTITIES ];
+	idPhysics	*phys;
+
+	phys = ent->GetPhysics();
+	if ( !phys->GetNumClipModels() ) {
+		return;
+	}
+
+	num = clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), clipMask, clipModels, MAX_GENTITIES );
+	for ( i = 0; i < num; i++ ) {
+		cm = clipModels[ i ];
+
+		// don't check render entities
+		if ( cm->IsRenderModel() ) {
+			continue;
+		}
+
+		hit = cm->GetEntity();
+		if ( ( hit == ent ) || !hit->fl.takedamage ) {
+			hit->SquishedByDoor( ent ); // HUMANHEAD CJR: Squish certain objects when a KillBox is applied
+			continue;
+		}
+
+		if ( !phys->ClipContents( cm ) ) {
+			continue;
+		}
+
+		// nail it
+		if ( hit->IsType( idPlayer::Type ) && static_cast< idPlayer * >( hit )->IsInTeleport() ) {
+			static_cast< idPlayer * >( hit )->TeleportDeath( ent->entityNumber );
+		} else if ( !catch_teleport ) {
+			hit->Damage( ent, ent, vec3_origin, "damage_telefrag", 1.0f, INVALID_JOINT );
+		}
+
+		if ( !gameLocal.isMultiplayer ) {
+			// let the mapper know about it
+			Warning( "'%s' telefragged '%s'", ent->name.c_str(), hit->name.c_str() );
+		}
+	}
+}
+//HUMANHEAD END
 
 /*
 ================
@@ -4299,7 +4380,7 @@ idGameLocal::AlertAI
 void idGameLocal::AlertAI( idEntity *ent ) {
 	if ( ent && ent->IsType( idActor::Type ) ) {
 		// alert them for the next frame
-		lastAIAlertTime = time + USERCMD_MSEC;
+		lastAIAlertTime = time + msec;
 		lastAIAlertEntity = static_cast<idActor *>( ent );
 	}
 }
@@ -4310,13 +4391,6 @@ idGameLocal::GetAlertEntity
 ============
 */
 idActor *idGameLocal::GetAlertEntity( void ) {
-	int timeGroup = 0;
-
-	if (lastAIAlertTime && lastAIAlertEntity.GetEntity()) {
-		timeGroup = lastAIAlertEntity.GetEntity()->timeGroup;
-	}
-
-	SetTimeState ts(timeGroup);
 	if ( lastAIAlertTime >= time ) {
 		return lastAIAlertEntity.GetEntity();
 	}
@@ -4330,12 +4404,13 @@ idGameLocal::RadiusDamage
 ============
 */
 void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	float		dist, damageScale, attackerDamageScale, attackerPushScale;
 	idEntity *	ent;
 	idEntity *	entityList[ MAX_GENTITIES ];
 	int			numListedEntities;
 	idBounds	bounds;
-	idVec3		v, damagePoint, dir;
+	idVec3 		v, damagePoint, dir;
 	int			i, e, damage, radius, push;
 
 	const idDict *damageDef = FindEntityDefDict( damageDefName, false );
@@ -4420,26 +4495,14 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 			}
 
 			ent->Damage( inflictor, attacker, dir, damageDefName, damageScale, INVALID_JOINT );
-
-            // If the player is local. SHAkkkkkkeeee!
-            if( !gameLocal.isMultiplayer && GetLocalPlayer() )
-            {
-                if( ent->IsType( idPlayer::Type ) )
-                {
-                    idPlayer* player = static_cast< idPlayer* >( ent );
-                    if( player )
-                    {
-                        player->ControllerShakeFromDamage( damage, dir );
-                    }
-                }
-            }
-		}
+		} 
 	}
 
 	// push physics objects
 	if ( push ) {
 		RadiusPush( origin, radius, push * dmgPower, attacker, ignorePush, attackerPushScale, false );
 	}
+*/
 }
 
 /*
@@ -4448,6 +4511,7 @@ idGameLocal::RadiusPush
 ==============
 */
 void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake ) {
+/*	HUMANHEAD pdm: OVERRIDDEN
 	int i, numListedClipModels;
 	idClipModel *clipModel;
 	idClipModel *clipModelList[ MAX_GENTITIES ];
@@ -4515,6 +4579,7 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 			RadiusPushClipModel( origin, scale * push, clipModel );
 		}
 	}
+*/
 }
 
 /*
@@ -4570,6 +4635,10 @@ void idGameLocal::RadiusPushClipModel( const idVec3 &origin, const float push, c
 		// impulse is applied to the center of the polygon
 		center = clipModel->GetOrigin() + center * clipModel->GetAxis();
 
+		if (g_debugImpulse.GetBool()) {
+			gameRenderWorld->DebugArrow(colorRed, center, center + impulse, 25, 2000);
+		}
+
 		clipModel->GetEntity()->ApplyImpulse( world, clipModel->GetId(), center, impulse );
 	}
 }
@@ -4620,7 +4689,16 @@ void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float d
 	winding += idVec5( windingOrigin + ( axis * decalWinding[1] ) * size, idVec2( 0, 1 ) );
 	winding += idVec5( windingOrigin + ( axis * decalWinding[2] ) * size, idVec2( 0, 0 ) );
 	winding += idVec5( windingOrigin + ( axis * decalWinding[3] ) * size, idVec2( 1, 0 ) );
-	gameRenderWorld->ProjectDecalOntoWorld(winding, projectionOrigin, parallel, depth * 0.5f, declManager->FindMaterial(material), gameLocal.slow.time /* _D3XP */);
+
+	// HUMANHEAD pdm
+	if (g_debugProjections.GetBool()) {
+		idVec4 color = parallel ? colorRed : colorYellow;
+		gameRenderWorld->DebugWinding(color, winding, vec3_origin, mat3_identity, 3000, false);
+		gameRenderWorld->DebugArrow(color, projectionOrigin, winding.GetCenter(), 5, 3000);
+	}
+	// HUMANHEAD END
+
+	gameRenderWorld->ProjectDecalOntoWorld( winding, projectionOrigin, parallel, depth * 0.5f, declManager->FindMaterial( material ), time );
 }
 
 /*
@@ -4684,7 +4762,7 @@ void idGameLocal::SetCamera( idCamera *cam ) {
 
 		// set r_znear so that transitioning into/out of the player's head doesn't clip through the view
 		cvarSystem->SetCVarFloat( "r_znear", 1.0f );
-
+		
 		// hide all the player models
 		for( i = 0; i < numClients; i++ ) {
 			if ( entities[ i ] ) {
@@ -4700,7 +4778,7 @@ void idGameLocal::SetCamera( idCamera *cam ) {
 					// only kill entities that aren't needed for cinematics and aren't dormant
 					continue;
 				}
-
+				
 				if ( ent->IsType( idAI::Type ) ) {
 					ai = static_cast<idAI *>( ent );
 					if ( !ai->GetEnemy() || !ai->IsActive() ) {
@@ -4724,7 +4802,7 @@ void idGameLocal::SetCamera( idCamera *cam ) {
 
 	} else {
 		inCinematic = false;
-		cinematicStopTime = time + USERCMD_MSEC;
+		cinematicStopTime = time + msec;
 
 		// restore r_znear
 		cvarSystem->SetCVarFloat( "r_znear", 3.0f );
@@ -4825,6 +4903,31 @@ void idGameLocal::SpreadLocations() {
 			}
 		}
 	}
+
+	// HUMANHEAD pdm: print area -> location mappings for efx integration
+	if ( g_printlocations.GetBool() ) {
+		idLocationEntity *ent;
+#if 1
+		idFile *areaFile = fileSystem->OpenFileWrite( va("%s_areas.txt", gameLocal.GetMapName()) );
+		if (areaFile) {
+			for (int ix=0; ix<numAreas; ix++) {
+				ent = locationEntities[ix];
+				areaFile->Printf( "%4d: %s\n", ix, ent ? ent->GetLocation() : "<No Location>" );
+			}
+			fileSystem->CloseFile( areaFile );
+		}
+#else
+		idFile *areaFile = fileSystem->OpenFileWrite( va("%s_areas.csv", gameLocal.GetMapName()) );
+		if (areaFile) {
+			for (int ix=0; ix<numAreas; ix++) {
+				ent = locationEntities[ix];
+				idStr out = va("%d,%s\n", ix, ent ? ent->GetLocation() : "<No Location>");
+				areaFile->Write( out.c_str(), out.Length() );
+			}
+			fileSystem->CloseFile( areaFile );
+		}
+#endif
+	}
 }
 
 /*
@@ -4900,7 +5003,7 @@ prepare for a sequence of initial player spawns
 */
 void idGameLocal::RandomizeInitialSpawns( void ) {
 	spawnSpot_t	spot;
-	int i, j, k;
+	int i, j;
 	idEntity *ent;
 
 	if ( !isMultiplayer || isClient ) {
@@ -4908,90 +5011,45 @@ void idGameLocal::RandomizeInitialSpawns( void ) {
 	}
 	spawnSpots.Clear();
 	initialSpots.Clear();
-	teamSpawnSpots[0].Clear();
-	teamSpawnSpots[1].Clear();
-	teamInitialSpots[0].Clear();
-	teamInitialSpots[1].Clear();
 	spot.dist = 0;
+
+	// HUMANHEAD pdm: Coop
+	if (isMultiplayer && IsCooperative()) {
+		spot.ent = FindEntityUsingDef( NULL, "info_player_coop" );
+		while( spot.ent ) {
+			spawnSpots.Append( spot );
+			if ( spot.ent->spawnArgs.GetBool( "initial" ) ) {
+				initialSpots.Append( spot.ent );
+			}
+			spot.ent = FindEntityUsingDef( spot.ent, "info_player_coop" );
+		}
+	}
+	else {
+	// HUMANHEAD END
+
 	spot.ent = FindEntityUsingDef( NULL, "info_player_deathmatch" );
 	while( spot.ent ) {
-		spot.ent->spawnArgs.GetInt("team", "-1", spot.team);
-
-		if (mpGame.IsGametypeFlagBased()) { /* CTF */
-			if (spot.team == 0 || spot.team == 1)
-				teamSpawnSpots[spot.team].Append(spot);
-			else
-				common->Warning("info_player_deathmatch : invalid or no team attached to spawn point\n");
-		}
-
 		spawnSpots.Append( spot );
 		if ( spot.ent->spawnArgs.GetBool( "initial" ) ) {
-			if (mpGame.IsGametypeFlagBased()) { /* CTF */
-				assert(spot.team == 0 || spot.team == 1);
-				teamInitialSpots[ spot.team ].Append(spot.ent);
-			}
 			initialSpots.Append( spot.ent );
 		}
 		spot.ent = FindEntityUsingDef( spot.ent, "info_player_deathmatch" );
 	}
 
-	if (mpGame.IsGametypeFlagBased()) { /* CTF */
-		if (!teamSpawnSpots[0].Num())
-			common->Warning("red team : no info_player_deathmatch in map");
-
-		if (!teamSpawnSpots[1].Num())
-			common->Warning("blue team : no info_player_deathmatch in map");
-
-		if (!teamSpawnSpots[0].Num() || !teamSpawnSpots[1].Num())
-			return;
-	}
-
+	}	// HUMANHEAD PDM
 	if ( !spawnSpots.Num() ) {
 		common->Warning( "no info_player_deathmatch in map" );
 		return;
 	}
-
-	if (mpGame.IsGametypeFlagBased()) { /* CTF */
-		common->Printf("red team : %d spawns (%d initials)\n", teamSpawnSpots[ 0 ].Num(), teamInitialSpots[ 0 ].Num());
-
-		// if there are no initial spots in the map, consider they can all be used as initial
-		if (!teamInitialSpots[ 0 ].Num()) {
-			common->Warning("red team : no info_player_deathmatch entities marked initial in map");
-
-			for (i = 0; i < teamSpawnSpots[ 0 ].Num(); i++) {
-				teamInitialSpots[ 0 ].Append(teamSpawnSpots[ 0 ][ i ].ent);
-			}
-		}
-
-		common->Printf("blue team : %d spawns (%d initials)\n", teamSpawnSpots[ 1 ].Num(), teamInitialSpots[ 1 ].Num());
-
-		// if there are no initial spots in the map, consider they can all be used as initial
-		if (!teamInitialSpots[ 1 ].Num()) {
-			common->Warning("blue team : no info_player_deathmatch entities marked initial in map");
-
-			for (i = 0; i < teamSpawnSpots[ 1 ].Num(); i++) {
-				teamInitialSpots[ 1 ].Append(teamSpawnSpots[ 1 ][ i ].ent);
-			}
-		}
-	}
-
 	common->Printf( "%d spawns (%d initials)\n", spawnSpots.Num(), initialSpots.Num() );
 	// if there are no initial spots in the map, consider they can all be used as initial
 	if ( !initialSpots.Num() ) {
-		common->Warning( "no info_player_deathmatch entities marked initial in map" );
+		//HUMANHEAD rww - we don't actually care.
+		//common->Warning( "no info_player_deathmatch entities marked initial in map" );
 		for ( i = 0; i < spawnSpots.Num(); i++ ) {
 			initialSpots.Append( spawnSpots[ i ].ent );
 		}
 	}
-
-	for (k = 0; k < 2; k++)
-		for (i = 0; i < teamInitialSpots[ k ].Num(); i++) {
-			j = random.RandomInt(teamInitialSpots[ k ].Num());
-			ent = teamInitialSpots[ k ][ i ];
-			teamInitialSpots[ k ][ i ] = teamInitialSpots[ k ][ j ];
-			teamInitialSpots[ k ][ j ] = ent;
-		}
-
 	for ( i = 0; i < initialSpots.Num(); i++ ) {
 		j = random.RandomInt( initialSpots.Num() );
 		ent = initialSpots[ i ];
@@ -5000,9 +5058,6 @@ void idGameLocal::RandomizeInitialSpawns( void ) {
 	}
 	// reset the counter
 	currentInitialSpot = 0;
-
-	teamCurrentInitialSpot[0] = 0;
-	teamCurrentInitialSpot[1] = 0;
 }
 
 /*
@@ -5021,33 +5076,20 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 	float			dist;
 	bool			alone;
 
-	if (!isMultiplayer || !spawnSpots.Num() || (mpGame.IsGametypeFlagBased() && (!teamSpawnSpots[0].Num() || !teamSpawnSpots[1].Num()))) {       /* CTF */
+	if ( !isMultiplayer || !spawnSpots.Num() ) {
 		spot.ent = FindEntityUsingDef( NULL, "info_player_start" );
 		if ( !spot.ent ) {
 			Error( "No info_player_start on map.\n" );
 		}
+		player->MPLastSpawnSpot = NULL; //HUMANHEAD rww
 		return spot.ent;
 	}
-
-	bool useInitialSpots = false;
-
-	if (mpGame.IsGametypeFlagBased()) {   /* CTF */
-		assert(player->team == 0 || player->team == 1);
-		useInitialSpots = player->useInitialSpawns && teamCurrentInitialSpot[ player->team ] < teamInitialSpots[ player->team ].Num();
-	} else {
-		useInitialSpots = player->useInitialSpawns && currentInitialSpot < initialSpots.Num();
-	}
-
 	if ( player->spectating ) {
 		// plain random spot, don't bother
+		player->MPLastSpawnSpot = NULL; //HUMANHEAD rww
 		return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
-	} else if (useInitialSpots) {
-		if (mpGame.IsGametypeFlagBased()) {   /* CTF */
-			assert(player->team == 0 || player->team == 1);
-			player->useInitialSpawns = false;							// only use the initial spawn once
-			return teamInitialSpots[ player->team ][ teamCurrentInitialSpot[ player->team ]++ ];
-		}
-
+	} else if ( player->useInitialSpawns && currentInitialSpot < initialSpots.Num() ) {
+		player->MPLastSpawnSpot = NULL; //HUMANHEAD rww
 		return initialSpots[ currentInitialSpot++ ];
 	} else {
 		// check if we are alone in map
@@ -5059,54 +5101,14 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 			}
 		}
 		if ( alone ) {
-			if (mpGame.IsGametypeFlagBased()) { /* CTF */
-				assert(player->team == 0 || player->team == 1);
-				return teamSpawnSpots[ player->team ][ random.RandomInt(teamSpawnSpots[ player->team ].Num())].ent;
-			}
+			// don't do distance-based
+			player->MPLastSpawnSpot = NULL; //HUMANHEAD rww
+			return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
 		}
 
-		if (mpGame.IsGametypeFlagBased()) { /* CTF */
-			// TODO : make as reusable method, same code as below
-			int team = player->team;
-			assert(team == 0 || team == 1);
-
-			// find the distance to the closest active player for each spawn spot
-			for (i = 0; i < teamSpawnSpots[ team ].Num(); i++) {
-				pos = teamSpawnSpots[ team ][ i ].ent->GetPhysics()->GetOrigin();
-
-				// skip initial spawn points for CTF
-				if (teamSpawnSpots[ team ][ i ].ent->spawnArgs.GetBool("initial")) {
-					teamSpawnSpots[ team ][ i ].dist = 0x0;
-					continue;
-				}
-
-				teamSpawnSpots[ team ][ i ].dist = 0x7fffffff;
-
-				for (j = 0; j < MAX_CLIENTS; j++) {
-					if (!entities[ j ] || !entities[ j ]->IsType(idPlayer::Type)
-					    || entities[ j ] == player
-					    || static_cast< idPlayer * >(entities[ j ])->spectating) {
-						continue;
-					}
-
-					dist = (pos - entities[ j ]->GetPhysics()->GetOrigin()).LengthSqr();
-
-					if (dist < teamSpawnSpots[ team ][ i ].dist) {
-						teamSpawnSpots[ team ][ i ].dist = dist;
-					}
-				}
-			}
-
-			// sort the list
-			qsort((void *)teamSpawnSpots[ team ].Ptr(), teamSpawnSpots[ team ].Num(), sizeof(spawnSpot_t), (int ( *)(const void *, const void *))sortSpawnPoints);
-
-			// choose a random one in the top half
-			which = random.RandomInt(teamSpawnSpots[ team ].Num() / 2);
-			spot = teamSpawnSpots[ team ][ which ];
-//			assert( teamSpawnSpots[ team ][ which ].dist != 0 );
-
-			return spot.ent;
-		}
+		//HUMANHEAD rww
+		idStaticList<spawnSpot_t *, 32> distantSpawnSpots;
+		//HUMANHEAD END
 
 		// find the distance to the closest active player for each spawn spot
 		for( i = 0; i < spawnSpots.Num(); i++ ) {
@@ -5118,21 +5120,39 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 					|| static_cast< idPlayer * >( entities[ j ] )->spectating ) {
 					continue;
 				}
-
+				
 				dist = ( pos - entities[ j ]->GetPhysics()->GetOrigin() ).LengthSqr();
 				if ( dist < spawnSpots[ i ].dist ) {
 					spawnSpots[ i ].dist = dist;
 				}
 			}
+
+			//HUMANHEAD rww
+			if ((!player->MPLastSpawnSpot.IsValid() || player->MPLastSpawnSpot.GetEntity() != spawnSpots[i].ent) && spawnSpots[i].dist > (128.0f*128.0f) && distantSpawnSpots.Num() < 32) {
+				distantSpawnSpots.Append(&spawnSpots[i]);
+			}
+			//HUMANHEAD END
 		}
 
-		// sort the list
-		qsort( ( void * )spawnSpots.Ptr(), spawnSpots.Num(), sizeof( spawnSpot_t ), ( int (*)(const void *, const void *) )sortSpawnPoints );
+		//HUMANHEAD rww - take all spots > 128 units from another player and just pick a completely random one out of those
+		if (distantSpawnSpots.Num() > 0) {
+			spot = *distantSpawnSpots[random.RandomInt(distantSpawnSpots.Num())];
+		}
+		else {
+		//HUMANHEAD END
+			// sort the list
+			qsort( ( void * )spawnSpots.Ptr(), spawnSpots.Num(), sizeof( spawnSpot_t ), ( int (*)(const void *, const void *) )sortSpawnPoints );
 
-		// choose a random one in the top half
-		which = random.RandomInt( spawnSpots.Num() / 2 );
-		spot = spawnSpots[ which ];
+	#if 0
+			// choose a random one in the top half
+			which = random.RandomInt( spawnSpots.Num() / 2 );
+	#else //HUMANHEAD rww - always pick the absolute farthest
+			which = 0;
+	#endif //HUMANHEAD END
+			spot = spawnSpots[ which ];
+		}
 	}
+	player->MPLastSpawnSpot = spot.ent; //HUMANHEAD rww
 	return spot.ent;
 }
 
@@ -5145,16 +5165,19 @@ void idGameLocal::UpdateServerInfoFlags() {
 	gameType = GAME_SP;
 	if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "deathmatch" ) == 0 ) ) {
 		gameType = GAME_DM;
-	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "Tourney" ) == 0 ) ) {
+	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "notsupported1" ) == 0 ) ) { //HUMANHEAD rww
 		gameType = GAME_TOURNEY;
 	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "Team DM" ) == 0 ) ) {
 		gameType = GAME_TDM;
-	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "Last Man" ) == 0 ) ) {
+	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "notsupported2" ) == 0 ) ) {  //HUMANHEAD rww
 		gameType = GAME_LASTMAN;
 	}
-	else if ((idStr::Icmp(serverInfo.GetString("si_gameType"), "CTF") == 0)) {
-		gameType = GAME_CTF;
+	// HUMANHEAD pdm
+	else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "notsupported3" ) == 0 ) ) {  //HUMANHEAD rww (was coop)
+		isCoop = idStr::Icmp( serverInfo.GetString( "si_gameType" ), "notsupported3" ) == 0;
 	}
+	// HUMANHEAD END
+
 	if ( gameType == GAME_LASTMAN ) {
 		if ( !serverInfo.GetInt( "si_warmup" ) ) {
 			common->Warning( "Last Man Standing - forcing warmup on" );
@@ -5192,7 +5215,8 @@ idGameLocal::GetSpawnId
 ================
 */
 int idGameLocal::GetSpawnId( const idEntity* ent ) const {
-	return ( gameLocal.spawnIds[ ent->entityNumber ] << GENTITYNUM_BITS ) | ent->entityNumber;
+	//HUMANHEAD rww - take cent bits into account
+	return ( gameLocal.spawnIds[ ent->entityNumber ] << GENTITYNUM_BITS_PLUSCENT ) | ent->entityNumber;
 }
 
 /*
@@ -5205,40 +5229,11 @@ void idGameLocal::ThrottleUserInfo( void ) {
 }
 
 /*
-=================
-idPlayer::SetPortalSkyEnt
-=================
-*/
-void idGameLocal::SetPortalSkyEnt(idEntity *ent)
-{
-	portalSkyEnt = ent;
-}
-
-/*
-=================
-idPlayer::IsPortalSkyAcive
-=================
-*/
-bool idGameLocal::IsPortalSkyAcive()
-{
-	return portalSkyActive;
-}
-
-/*
 ===========
 idGameLocal::SelectTimeGroup
 ============
 */
-void idGameLocal::SelectTimeGroup(int timeGroup)
-{
-	int i = 0;
-
-	if (timeGroup) {
-		fast.Get(time, previousTime, msec, framenum, realClientTime);
-	} else {
-		slow.Get(time, previousTime, msec, framenum, realClientTime);
-	}
-}
+void idGameLocal::SelectTimeGroup( int timeGroup ) { }
 
 /*
 ===========
@@ -5246,11 +5241,7 @@ idGameLocal::GetTimeGroupTime
 ============
 */
 int idGameLocal::GetTimeGroupTime( int timeGroup ) {
-	if (timeGroup) {
-		return fast.time;
-	} else {
-		return slow.time;
-	}
+	return gameLocal.time;
 }
 
 /*
@@ -5258,132 +5249,8 @@ int idGameLocal::GetTimeGroupTime( int timeGroup ) {
 idGameLocal::GetBestGameType
 ============
 */
-void idGameLocal::GetBestGameType(const char *map, const char *gametype, char buf[ MAX_STRING_CHARS ])
-{
-	idStr aux = mpGame.GetBestGametype(map, gametype);
-	strncpy(buf, aux.c_str(), MAX_STRING_CHARS);
-	buf[ MAX_STRING_CHARS - 1 ] = '\0';
-}
-
-/*
-===========
-idGameLocal::ComputeSlowMsec
-============
-*/
-void idGameLocal::ComputeSlowMsec()
-{
-	idPlayer *player;
-	bool powerupOn;
-	float delta;
-
-	// check if we need to do a quick reset
-	if (quickSlowmoReset) {
-		quickSlowmoReset = false;
-
-		// stop the sounds
-		if (gameSoundWorld) {
-			gameSoundWorld->SetSlowmo(false);
-			gameSoundWorld->SetSlowmoSpeed(1);
-		}
-
-		// stop the state
-		slowmoState = SLOWMO_STATE_OFF;
-		slowmoMsec = USERCMD_MSEC;
-	}
-
-	// check the player state
-	player = GetLocalPlayer();
-	powerupOn = false;
-
-	if (player && player->PowerUpActive(HELLTIME)) {
-		powerupOn = true;
-	} else if (g_enableSlowmo.GetBool()) {
-		powerupOn = true;
-	}
-
-	// determine proper slowmo state
-	if (powerupOn && slowmoState == SLOWMO_STATE_OFF) {
-		slowmoState = SLOWMO_STATE_RAMPUP;
-
-		slowmoMsec = msec;
-
-		if (gameSoundWorld) {
-			gameSoundWorld->SetSlowmo(true);
-			gameSoundWorld->SetSlowmoSpeed(slowmoMsec / (float)USERCMD_MSEC);
-		}
-	} else if (!powerupOn && slowmoState == SLOWMO_STATE_ON) {
-		slowmoState = SLOWMO_STATE_RAMPDOWN;
-
-		// play the stop sound
-		if (player) {
-			player->PlayHelltimeStopSound();
-		}
-	}
-
-	// do any necessary ramping
-	if (slowmoState == SLOWMO_STATE_RAMPUP) {
-		delta = 4 - slowmoMsec;
-
-		if (fabs(delta) < g_slowmoStepRate.GetFloat()) {
-			slowmoMsec = 4;
-			slowmoState = SLOWMO_STATE_ON;
-		} else {
-			slowmoMsec += delta * g_slowmoStepRate.GetFloat();
-		}
-
-		if (gameSoundWorld) {
-			gameSoundWorld->SetSlowmoSpeed(slowmoMsec / (float)USERCMD_MSEC);
-		}
-	} else if (slowmoState == SLOWMO_STATE_RAMPDOWN) {
-		delta = 16 - slowmoMsec;
-
-		if (fabs(delta) < g_slowmoStepRate.GetFloat()) {
-			slowmoMsec = 16;
-			slowmoState = SLOWMO_STATE_OFF;
-
-			if (gameSoundWorld) {
-				gameSoundWorld->SetSlowmo(false);
-			}
-		} else {
-			slowmoMsec += delta * g_slowmoStepRate.GetFloat();
-		}
-
-		if (gameSoundWorld) {
-			gameSoundWorld->SetSlowmoSpeed(slowmoMsec / (float)USERCMD_MSEC);
-		}
-	}
-}
-
-/*
-===========
-idGameLocal::ResetSlowTimeVars
-============
-*/
-void idGameLocal::ResetSlowTimeVars()
-{
-	msec				= USERCMD_MSEC;
-	slowmoMsec			= USERCMD_MSEC;
-	slowmoState			= SLOWMO_STATE_OFF;
-
-	fast.framenum		= 0;
-	fast.previousTime	= 0;
-	fast.time			= 0;
-	fast.msec			= USERCMD_MSEC;
-
-	slow.framenum		= 0;
-	slow.previousTime	= 0;
-	slow.time			= 0;
-	slow.msec			= USERCMD_MSEC;
-}
-
-/*
-===========
-idGameLocal::QuickSlowmoReset
-============
-*/
-void idGameLocal::QuickSlowmoReset()
-{
-	quickSlowmoReset = true;
+idStr idGameLocal::GetBestGameType( const char* map, const char* gametype ) {
+	return gametype;
 }
 
 /*
@@ -5405,7 +5272,8 @@ bool idGameLocal::NeedRestart() {
 			return true;
 		}
 		// a select set of si_ changes will cause a full restart of the server
-		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
+		//HUMANHEAD rww - seems appropriate to restart for spectator toggle too
+		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) || !keyval->GetKey().Cmp( "si_spectators" ) ) ) {
 			return true;
 		}
 	}
@@ -5447,30 +5315,89 @@ void idGameLocal::SwitchTeam( int clientNum, int team ) {
 	}
 }
 
-/*
-===============
-idGameLocal::GetMapLoadingGUI
-===============
-*/
-void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) { }
 
-/*
-===============
-idGameLocal::InGameGuiActive
-===============
-*/
-bool idGameLocal::InGameGuiActive()
-{
-	if( GetLocalPlayer() && GetLocalPlayer()->GuiActive())
-		return true;
-	else
-		return false;
+// HUMANHEAD mdl
+void idGameLocal::RegisterUniqueObject( idClass *object ) {
+	HH_ASSERT( uniqueObjects.FindIndex( object ) < 0 );
+	HH_ASSERT( object->GetType() != &idClass::Type );
+	uniqueObjects.Append( object );
 }
 
-bool idGameLocal::ObjectiveSystemActive()
-{
-	if( GetLocalPlayer() && GetLocalPlayer()->objectiveSystemOpen)
-		return true;
-	else
-		return false;
+void idGameLocal::UnregisterUniqueObject( idClass *object ) {
+	if( !uniqueObjects.Remove( object ) ) {
+		Warning("idGameLocal::UnregisterUniqueObject:  Object not found.");
+	}
 }
+//HUMANHEAD END
+
+//HUMANHEAD rww - if a gui is actually getting deleted, make sure no player has it in focus.
+void idGameLocal::FocusGUICleanup(idUserInterface *gui) {
+	for (int i = 0; i < MAX_CLIENTS; i++) {
+		if (entities[i] && entities[i]->IsType(hhPlayer::Type)) {
+			hhPlayer *pl = static_cast<hhPlayer *>(entities[i]);
+			if (pl->ActiveGui() == gui) {
+				pl->ClearFocus();
+			}
+		}
+	}
+}
+//HUMANHEAD END
+
+// HUMANHEAD pdm: print game side memory statistics
+void idGameLocal::PrintMemInfo( MemInfo_t *mi ) {
+	animationLib.PrintMemInfo( mi );
+
+	//TODO: Add collision models, AAS
+}
+
+// HUMANHEAD pdm: Register locations for eax
+void idGameLocal::RegisterLocationsWithSoundWorld() {
+// jmarshall
+	//int numAreas = gameRenderWorld->NumAreas();
+	//gameSoundWorld->ClearAreaLocations();
+	//for (int ix=0; ix<numAreas; ix++) {
+	//	if (locationEntities[ix]) {
+	//		gameSoundWorld->RegisterLocation(ix, locationEntities[ix]->GetLocation());
+	//	}
+	//}
+}
+
+// HUMANHEAD pdm: call sound system to set the spiritwalk effects
+void idGameLocal::SpiritWalkSoundMode(bool active) {
+// jmarshall
+	//if (gameSoundWorld) {
+	//	if (active) {
+	//		gameSoundWorld->FadeSoundClasses( SOUNDCLASS_NORMAL, -8.0f, 1.0f );
+	//		gameSoundWorld->SetSpiritWalkEffect( true );
+	//	}
+	//	else {
+	//		gameSoundWorld->FadeSoundClasses( SOUNDCLASS_NORMAL, 0.0f, 0.5f );
+	//		gameSoundWorld->SetSpiritWalkEffect( false );
+	//	}
+	//}
+}
+
+void idGameLocal::DialogSoundMode(bool active) {
+	if (gameSoundWorld) {
+		// jmarshall
+	//	gameSoundWorld->SetVoiceDucker(active);
+	}
+}
+
+bool idGameLocal::PlayerIsDeathwalking(void) {
+	return false;
+}
+
+unsigned int idGameLocal::GetTimePlayed(void) {
+	if (playTimeStart == (unsigned int) -1) {
+		return playTime;
+	} else {
+		return playTime + (gameLocal.time - playTimeStart);
+	}
+}
+
+void idGameLocal::ClearTimePlayed( void ) {
+	playTime = 0;
+	playTimeStart = -1;
+}
+// HUMANHEAD END

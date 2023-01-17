@@ -1,37 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
 #include "Game_local.h"
-
-#include "Entity.h"
-#include "SmokeParticles.h"
 
 static const char *smokeParticle_SnapshotName = "_SmokeParticle_Snapshot_";
 
@@ -82,12 +55,25 @@ void idSmokeParticles::Init( void ) {
 	renderEntity.hModel = renderModelManager->AllocModel();
 	renderEntity.hModel->InitEmpty( smokeParticle_SnapshotName );
 
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww
+	#if _HH_OLD_RENDERDEMO_PARTICLES
+		renderEntity.hModel->SetGameUpdatedModel(true);
+	#else
+		renderEntity.notInRenderDemos = true;
+	#endif
+#endif //HUMANHEAD END
+
 	// we certainly don't want particle shadows
 	renderEntity.noShadow = 1;
 
 	// huge bounds, so it will be present in every world area
+#if HUMANHEAD	// HUMANHEAD pdm: Our deathwalk area is above 100000
+	renderEntity.bounds.AddPoint( idVec3(-200000, -200000, -200000) );
+	renderEntity.bounds.AddPoint( idVec3( 200000,  200000,  200000) );
+#else
 	renderEntity.bounds.AddPoint( idVec3(-100000, -100000, -100000) );
 	renderEntity.bounds.AddPoint( idVec3( 100000,  100000,  100000) );
+#endif
 
 	renderEntity.callback = idSmokeParticles::ModelCallback;
 	// add to renderer list
@@ -131,14 +117,7 @@ void idSmokeParticles::FreeSmokes( void ) {
 		for ( last = NULL, smoke = active->smokes; smoke; smoke = next ) {
 			next = smoke->next;
 
-			float frac;
-
-			if (smoke->timeGroup) {
-				frac = (float)(gameLocal.fast.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			} else {
-				frac = (float)(gameLocal.slow.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			}
-
+			float frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
 			if ( frac >= 1.0f ) {
 				// remove the particle from the stage list
 				if ( last != NULL ) {
@@ -171,10 +150,8 @@ idSmokeParticles::EmitSmoke
 Called by game code to drop another particle into the list
 ================
 */
-bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemStartTime, const float diversity, const idVec3 &origin, const idMat3 &axis, int timeGroup /*_D3XP*/)
-{
+bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemStartTime, const float diversity, const idVec3 &origin, const idMat3 &axis ) {
 	bool	continues = false;
-	SetTimeState ts(timeGroup);
 
 	if ( !smoke ) {
 		return false;
@@ -193,6 +170,14 @@ bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemSt
 	if ( systemStartTime > gameLocal.time ) {
 		return false;
 	}
+
+//HUMANHEAD rww
+#if _HH_RENDERDEMO_HACKS
+ #if !_HH_OLD_RENDERDEMO_PARTICLES
+	//gameRenderWorld->DemoSmokeEvent(smoke, gameLocal.time-systemStartTime, diversity, origin, axis); // jmarshall
+ #endif
+#endif
+//HUMANHEAD END
 
 	idRandom steppingRandom( 0xffff * diversity );
 
@@ -213,7 +198,49 @@ bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemSt
 		}
 
 		// see how many particles we should emit this tic
-		// FIXME:			smoke.privateStartTime += stage->timeOffset;
+#ifdef HUMANHEAD
+		//HUMANHEAD: aob - added cycles, deadTime, and timeOffset to calculations
+		int		systemTime = gameLocal.GetTime() - systemStartTime - SEC2MS(stage->timeOffset);
+		int		currentCycle = (systemTime / stage->cycleMsec) + 1;
+		
+		if( stage->cycles && currentCycle > stage->cycles ) {
+			//All done with this stage.
+			continue;
+		}
+		
+		int		inCycleTime = systemTime - (currentCycle - 1) * stage->cycleMsec;
+		float	currentStageFrac = MS2SEC(inCycleTime) / stage->particleLife;
+		float	previousStageFrac = currentStageFrac - MS2SEC(USERCMD_MSEC) / stage->particleLife;
+		if( currentStageFrac < 0.0f ) {
+			//This stage hasn't started yet
+			continues = true;
+			continue;
+		} else if( currentStageFrac > 1.0f ) {
+			//This stage is in its deadTime
+			continues = true;
+			continue;
+		}
+
+		//We assume that inCycleTime >= 0
+		inCycleTime = hhMath::hhMax<int>( USERCMD_MSEC, inCycleTime );
+		int		finalParticleTime = hhMath::hhMax<int>( USERCMD_MSEC, SEC2MS(stage->particleLife) * stage->spawnBunching );
+
+		float	currentBunchingFrac = MS2SEC(inCycleTime) / MS2SEC(finalParticleTime);
+		int		nowCount = floor( currentBunchingFrac * stage->totalParticles );
+		nowCount = hhMath::ClampInt( 0, stage->totalParticles, nowCount );
+
+		float	previousBunchingFrac = currentBunchingFrac - MS2SEC(USERCMD_MSEC) / MS2SEC(finalParticleTime);
+		int		prevCount = floor( previousBunchingFrac * stage->totalParticles );
+		prevCount = hhMath::ClampInt( -1, stage->totalParticles, prevCount );
+
+		continues = true;
+		if( currentBunchingFrac > 1.0f && previousBunchingFrac > 1.0f ) {
+			//Don't spawn any more particles until next cycle
+			continue;
+		}
+		//HUMANHEAD END
+#else
+		// FIXME: 			smoke.privateStartTime += stage->timeOffset;
 		int		finalParticleTime = stage->cycleMsec * stage->spawnBunching;
 		int		deltaMsec = gameLocal.time - systemStartTime;
 
@@ -231,7 +258,7 @@ bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemSt
 			if ( nowCount >= stage->totalParticles ) {
 				nowCount = stage->totalParticles-1;
 			}
-			prevCount = floor(((float)(deltaMsec - gameLocal.msec /*_D3XP - FIX - was USERCMD_MSEC*/) / finalParticleTime) * stage->totalParticles);
+			prevCount = floor( ((float)( deltaMsec - USERCMD_MSEC ) / finalParticleTime) * stage->totalParticles );
 			if ( prevCount < -1 ) {
 				prevCount = -1;
 			}
@@ -246,9 +273,10 @@ bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemSt
 			// the system will need to emit particles next frame as well
 			continues = true;
 		}
+#endif
 
 		// find an activeSmokeStage that matches this
-		activeSmokeStage_t	*active = NULL;
+		activeSmokeStage_t	*active;
 		int i;
 		for ( i = 0 ; i < activeStages.Num() ; i++ ) {
 			active = &activeStages[i];
@@ -276,12 +304,13 @@ bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemSt
 			freeSmokes = freeSmokes->next;
 			numActiveSmokes++;
 
-			newSmoke->timeGroup = timeGroup;
 			newSmoke->index = prevCount;
 			newSmoke->axis = axis;
 			newSmoke->origin = origin;
 			newSmoke->random = steppingRandom;
-			newSmoke->privateStartTime = systemStartTime + prevCount * finalParticleTime / stage->totalParticles;
+			//HUMANHEAD: aob - changed time calculation to just gameLocal.GetTime()
+			newSmoke->privateStartTime = gameLocal.GetTime();
+			//HUMANHEAD END
 			newSmoke->next = active->smokes;
 			active->smokes = newSmoke;
 
@@ -298,7 +327,6 @@ idSmokeParticles::UpdateRenderEntity
 ================
 */
 bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) {
-
 	// FIXME: re-use model surfaces
 	renderEntity->hModel->InitEmpty( smokeParticle_SnapshotName );
 
@@ -309,10 +337,20 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 	}
 
 	// don't regenerate it if it is current
-	if ( renderView->time == currentParticleTime && !renderView->forceUpdate ) {
-		return false;
+	//HUMANHEAD rww - viewID 0 is used only for subviews such as portals, so don't check the time against them
+	if (g_forceSingleSmokeView.GetBool() || renderView->viewID != 0) {
+		if ( renderView->time == currentParticleTime && !renderView->forceUpdate ) {
+			return false;
+		}
+		currentParticleTime = renderView->time;
 	}
-	currentParticleTime = renderView->time;
+
+	//HUMANHEAD rww
+	//for renderdemo hackery purposes this is moved down here. we need to not clear surfaces until we are about
+	//to actually render, so that they can be saved off.
+	//note: this causes terribleness with orphaned surfaces, need a proper workaround
+	//renderEntity->hModel->InitEmpty( smokeParticle_SnapshotName );
+	//HUMANHEAD END
 
 	particleGen_t g;
 
@@ -340,22 +378,27 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 		tri->numVerts = quads * 4;
 
 		// just always draw the particles
+#if HUMANHEAD	// HUMANHEAD pdm: Our deathwalk area is above 100000
+		tri->bounds[0][0] =
+		tri->bounds[0][1] =
+		tri->bounds[0][2] = -199999;
+		tri->bounds[1][0] =
+		tri->bounds[1][1] =
+		tri->bounds[1][2] = 199999;
+#else
 		tri->bounds[0][0] =
 		tri->bounds[0][1] =
 		tri->bounds[0][2] = -99999;
 		tri->bounds[1][0] =
 		tri->bounds[1][1] =
 		tri->bounds[1][2] = 99999;
+#endif
 
 		tri->numVerts = 0;
 		for ( last = NULL, smoke = active->smokes; smoke; smoke = next ) {
 			next = smoke->next;
 
-			if (smoke->timeGroup) {
-				g.frac = (float)(gameLocal.fast.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			} else {
-				g.frac = (float)(gameLocal.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			}
+			g.frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
 			if ( g.frac >= 1.0f ) {
 				// remove the particle from the stage list
 				if ( last != NULL ) {
@@ -415,6 +458,12 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 			surf.geometry = tri;
 			surf.shader = stage->material;
 			surf.id = 0;
+
+			//HUMANHEAD rww - for debugging particle locations
+			//==================================================================
+			//Debug_ClearDebugLines();
+			//Debug_AddDebugLinesForTri(tri);
+			//==================================================================
 
 			renderEntity->hModel->AddSurface( surf );
 		}

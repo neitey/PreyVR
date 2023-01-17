@@ -1,6 +1,6 @@
 # This is an attempt to bring more idTech4A++ games into VR.
 
-The work is based on this project: https://github.com/glKarin/com.n0n3m4.diii4a (last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/214c12e55661c3d07d3796f72b9f2366302f3b93)
+The work is based on this project: https://github.com/glKarin/com.n0n3m4.diii4a (last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/93f17683981e92586fc2ad7b733879e52d1772e1)
 
 As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I merge them together.
 
@@ -21,11 +21,13 @@ Current status (in `Doom3Quest/app/src/main/jni/d3es-multithread-master/neo/`):
 Note that this version is not backward compatible with DrBeef's Doom3Quest. It uses different format for save games.
 
 
-# Original README
+![Doom3Quest Banner](https://github.com/lvonasek/Doom3Quest/blob/prey2006/app/src/main/res/drawable/ic_launcher.png)
 
+Logo created by madrapper: https://www.deviantart.com/madrapper/art/Prey-Icon-129814229
 
-![Doom3Quest Banner](https://github.com/DrBeef/Doom3Quest/blob/master/assets/firelogo.jpg)
 ===
+
+# Original README
 
 Doom 3 Quest is based on the excellent port from Emile Belanger (https://github.com/emileb), with multithreaded front end and backend renderering, with an updated renderer to OpenGL ES 3.0 to take advantage of MultiView to dramatically improve VR rendering performance, and many VR specific enhancements (see below).
 

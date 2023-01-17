@@ -1,40 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
-
-#include "gamesys/SysCvar.h"
-#include "Player.h"
-#include "Projectile.h"
-#include "WorldSpawn.h"
-
-#include "Fx.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
@@ -48,7 +18,7 @@ const idEventDef EV_Fx_KillFx( "_killfx" );
 const idEventDef EV_Fx_Action( "_fxAction", "e" );		// implemented by subclasses
 
 CLASS_DECLARATION( idEntity, idEntityFx )
-EVENT( EV_Activate,		idEntityFx::Event_Trigger )
+EVENT( EV_Activate,	   	idEntityFx::Event_Trigger )
 EVENT( EV_Fx_KillFx,	idEntityFx::Event_ClearFx )
 END_CLASS
 
@@ -85,6 +55,16 @@ void idEntityFx::Save( idSaveGame *savefile ) const {
 		}
 
 		savefile->WriteFloat( actions[i].delay );
+
+		//HUMANHEAD: aob - needed because I changed particleSystem's type
+		if( actions[i].particleSystem ) {
+			savefile->WriteString( actions[i].particleSystem->GetName() );
+		} else {
+			savefile->WriteString( "" );
+		}
+		savefile->WriteInt( actions[i].particleStartTime );
+		//HUMANHEAD END
+
 		savefile->WriteInt( actions[i].start );
 		savefile->WriteBool( actions[i].soundStarted );
 		savefile->WriteBool( actions[i].shakeStarted );
@@ -134,7 +114,13 @@ void idEntityFx::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( actions[i].delay );
 
 		// let the FX regenerate the particleSystem
-		actions[i].particleSystem = -1;
+		//HUMANHEAD: aob - needed because I changed particleSystem's type
+		idStr particleName;
+		savefile->ReadString( particleName );
+		actions[i].particleSystem = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particleName, false ) );
+		actions[i].particleStartTime = gameLocal.GetTime();
+		savefile->ReadInt( actions[i].particleStartTime );
+		//HUMANHEAD END
 
 		savefile->ReadInt( actions[i].start );
 		savefile->ReadBool( actions[i].soundStarted );
@@ -184,7 +170,10 @@ void idEntityFx::Setup( const char *fx ) {
 			laction.start = -1;
 			laction.lightDefHandle = -1;
 			laction.modelDefHandle = -1;
-			laction.particleSystem = -1;
+			//HUMANHEAD: aob - needed because I changed particleSystem's type
+			laction.particleSystem = NULL;
+			laction.particleStartTime = -1;
+			//HUMANHEAD END
 			laction.shakeStarted = false;
 			laction.decalDropped = false;
 			laction.launched = false;
@@ -222,7 +211,7 @@ void idEntityFx::CleanUp( void ) {
 	for( int i = 0; i < fxEffect->events.Num(); i++ ) {
 		const idFXSingleAction& fxaction = fxEffect->events[i];
 		idFXLocalAction& laction = actions[i];
-		CleanUpSingleAction( fxaction, laction );
+		CleanUpSingleAction( fxaction, laction );		
 	}
 }
 
@@ -258,7 +247,10 @@ void idEntityFx::Start( int time ) {
 		laction.start = time;
 		laction.soundStarted = false;
 		laction.shakeStarted = false;
-		laction.particleSystem = -1;
+		//HUMANHEAD: aob - changed because particleSystem's type changed
+		laction.particleSystem = NULL;
+		laction.particleStartTime = -2; //HUMANHEAD rww - changed from time to -2
+		//HUMANHEAD END
 		laction.decalDropped = false;
 		laction.launched = false;
 	}
@@ -324,7 +316,7 @@ void idEntityFx::ApplyFade( const idFXSingleAction& fxaction, idFXLocalAction& l
 			laction.renderEntity.shaderParms[SHADERPARM_RED] = (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct;
 			laction.renderEntity.shaderParms[SHADERPARM_GREEN] = (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct;
 			laction.renderEntity.shaderParms[SHADERPARM_BLUE] = (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct;
-
+	
 			gameRenderWorld->UpdateEntityDef( laction.modelDefHandle, &laction.renderEntity );
 		}
 		if ( laction.lightDefHandle != -1 ) {
@@ -343,6 +335,7 @@ idEntityFx::Run
 ================
 */
 void idEntityFx::Run( int time ) {
+/*	HUMANHEAD pdm: overridden
 	int ieff, j;
 	idEntity *ent = NULL;
 	const idDict *projectileDef = NULL;
@@ -388,7 +381,7 @@ void idEntityFx::Run( int time ) {
 				}
 				laction.delay = totalDelay;
 				laction.start = time;
-			}
+			} 
 			continue;
 		}
 
@@ -462,7 +455,7 @@ void idEntityFx::Run( int time ) {
 			case FX_DECAL: {
 				if ( !useAction->decalDropped ) {
 					useAction->decalDropped = true;
-					gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetGravity(), 8.0f, true, fxaction.size, fxaction.data );
+					gameLocal.ProjectDecal( GetPhysics()->GetOrigin(), GetPhysics()->GetGravity(), 8.0f, true, fxaction.size, fxaction.data ); 
 				}
 				break;
 			}
@@ -516,7 +509,6 @@ void idEntityFx::Run( int time ) {
 				} else if ( fxaction.trackOrigin ) {
 					useAction->renderEntity.origin = GetPhysics()->GetOrigin() + fxaction.offset;
 					useAction->renderEntity.axis = fxaction.explicitAxis ? fxaction.axis : GetPhysics()->GetAxis();
-					gameRenderWorld->UpdateEntityDef(useAction->modelDefHandle, &useAction->renderEntity);
 				}
 				ApplyFade( fxaction, *useAction, time, actualStart );
 				break;
@@ -545,37 +537,9 @@ void idEntityFx::Run( int time ) {
 				}
 				break;
 			}
-			case FX_SHOCKWAVE: {
-				if (gameLocal.isClient) {
-					useAction->shakeStarted = true;
-					break;
-				}
-
-				if (!useAction->shakeStarted) {
-					idStr	shockDefName;
-					useAction->shakeStarted = true;
-
-					shockDefName = fxaction.data;
-
-					if (!shockDefName.Length()) {
-						shockDefName = "func_shockwave";
-					}
-
-					projectileDef = gameLocal.FindEntityDefDict(shockDefName, false);
-
-					if (!projectileDef) {
-						gameLocal.Warning("shockwave \'%s\' not found", shockDefName.c_str());
-					} else {
-						gameLocal.SpawnEntityDef(*projectileDef, &ent);
-						ent->SetOrigin(GetPhysics()->GetOrigin() + fxaction.offset);
-						ent->PostEventMS(&EV_Remove, ent->spawnArgs.GetInt("duration"));
-					}
-				}
-
-				break;
-			}
 		}
 	}
+*/
 }
 
 /*
@@ -588,6 +552,10 @@ idEntityFx::idEntityFx() {
 	started = -1;
 	nextTriggerTime = -1;
 	fl.networkSync = true;
+
+	//HUMANHEAD rww
+	persistentNetTime = false;
+	//HUMANHEAD END
 }
 
 /*
@@ -611,6 +579,10 @@ void idEntityFx::Spawn( void ) {
 		return;
 	}
 
+	//HUMANHEAD: aob
+	RemoveWhenDone( spawnArgs.GetBool("removeWhenDone") );	
+	//HUMANHEAD END
+
 	const char *fx;
 	nextTriggerTime = 0;
 	fxEffect = NULL;
@@ -619,8 +591,13 @@ void idEntityFx::Spawn( void ) {
 	}
 	if ( !spawnArgs.GetBool( "triggered" ) ) {
 		Setup( fx );
-		if ( spawnArgs.GetBool( "test" ) || spawnArgs.GetBool( "start" ) || spawnArgs.GetFloat ( "restart" ) ) {
-			PostEventMS( &EV_Activate, 0, this );
+// HUMANHEAD bg: "deferredRestart" allows a restarting effect to be triggered.
+		if ( spawnArgs.GetBool( "test" ) || spawnArgs.GetBool( "start" )
+			|| (spawnArgs.GetFloat( "restart" ) && !spawnArgs.GetBool( "deferredRestart" )) ) {
+// HUMANHEAD END
+			//HUMANHEAD: aob - changed to processevent because projectiles close to walls toggle fx before it gets started
+			ProcessEvent( &EV_Activate, this );
+			//HUMANHEAD END
 		}
 	}
 }
@@ -756,6 +733,9 @@ void idEntityFx::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	WriteBindToSnapshot( msg );
 	msg.WriteLong( ( fxEffect != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_FX, fxEffect->Index() ) : -1 );
 	msg.WriteLong( started );
+	//HUMANHEAD rww
+	msg.WriteBits(persistentNetTime, 1);
+	//HUMANHEAD END
 }
 
 /*
@@ -770,10 +750,13 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	ReadBindFromSnapshot( msg );
 	fx_index = gameLocal.ClientRemapDecl( DECL_FX, msg.ReadLong() );
 	start_time = msg.ReadLong();
+	//HUMANHEAD rww
+	persistentNetTime = !!msg.ReadBits(1);
+	//HUMANHEAD END
 
 	if ( fx_index != -1 && start_time > 0 && !fxEffect && started < 0 ) {
 		spawnArgs.GetInt( "effect_lapse", "1000", max_lapse );
-		if ( gameLocal.time - start_time > max_lapse ) {
+		if ( (gameLocal.time - start_time > max_lapse) && !persistentNetTime ) { //HUMANHEAD rww - persistentNetTime means to start regardless
 			// too late, skip the effect completely
 			started = 0;
 			return;
@@ -783,6 +766,11 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 			gameLocal.Error( "FX at index %d not found", fx_index );
 		}
 		fxEffect = fx;
+
+		//HUMANHEAD rww - store this in the spawnArgs locally so that normal fx code can reference it without modification
+		spawnArgs.Set("fx", fx->GetName());
+		//HUMANHEAD END
+
 		Setup( fx->GetName() );
 		Start( start_time );
 	}
@@ -794,8 +782,19 @@ idEntityFx::ClientPredictionThink
 =================
 */
 void idEntityFx::ClientPredictionThink( void ) {
-	if ( gameLocal.isNewFrame ) {
-		Run( gameLocal.time );
+	if (fl.clientEntity && snapshotOwner.IsValid()) {
+		if (!gameLocal.EntInClientSnapshot(snapshotOwner->entityNumber)) { //if the snapshot entity i'm associated with is not in the snapshot, i hide
+			Hide();
+			Nozzle(false);
+		}
+		else {
+			Show();
+			Nozzle(true);
+		}
+	}
+
+	if ( gameLocal.isNewFrame ) { 
+		Run( gameLocal.time ); 
 	}
 	RunPhysics();
 	Present();
@@ -805,7 +804,7 @@ void idEntityFx::ClientPredictionThink( void ) {
 ===============================================================================
 
   idTeleporter
-
+	
 ===============================================================================
 */
 
@@ -819,6 +818,9 @@ idTeleporter::Event_DoAction
 ================
 */
 void idTeleporter::Event_DoAction( idEntity *activator ) {
+	float angle;
+
+	angle = spawnArgs.GetFloat( "angle" );
 	idAngles a( 0, spawnArgs.GetFloat( "angle" ), 0 );
 	activator->Teleport( GetPhysics()->GetOrigin(), a, NULL );
 }

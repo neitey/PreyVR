@@ -1,39 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-
-#include "gamesys/SysCvar.h"
-#include "Entity.h"
-#include "Player.h"
-#include "WorldSpawn.h"
-
-#include "physics/Physics_AF.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_AF )
 END_CLASS
@@ -65,8 +36,6 @@ static int lastTimerReset = 0;
 static int numArticulatedFigures = 0;
 static idTimer timer_total, timer_pc, timer_ac, timer_collision, timer_lcp;
 #endif
-
-
 
 //===============================================================
 //
@@ -637,7 +606,6 @@ void idAFConstraint_BallAndSocketJoint::Evaluate( float invTimeStep ) {
 		c1.SubVec3(0) = -( invTimeStep * ERROR_REDUCTION ) * ( a2 + master->GetWorldOrigin() - ( a1 + body1->GetWorldOrigin() ) );
 	}
 	else {
-		a2.Zero();
 		c1.SubVec3(0) = -( invTimeStep * ERROR_REDUCTION ) * ( anchor2 - ( a1 + body1->GetWorldOrigin() ) );
 	}
 
@@ -785,12 +753,23 @@ void idAFConstraint_BallAndSocketJoint::Save( idSaveGame *saveFile ) const {
 	saveFile->WriteVec3( anchor1 );
 	saveFile->WriteVec3( anchor2 );
 	saveFile->WriteFloat( friction );
+	//HUMANHEAD PCF rww 05/02/06 - we can't just do conditional writes and not give the restore any indication.
+	//added bool writes.
 	if ( coneLimit ) {
+		saveFile->WriteBool(true);
 		coneLimit->Save( saveFile );
 	}
+	else {
+		saveFile->WriteBool(false);
+	}
 	if ( pyramidLimit ) {
+		saveFile->WriteBool(true);
 		pyramidLimit->Save( saveFile );
 	}
+	else {
+		saveFile->WriteBool(false);
+	}
+	//HUMANHEAD END
 }
 
 /*
@@ -803,12 +782,32 @@ void idAFConstraint_BallAndSocketJoint::Restore( idRestoreGame *saveFile ) {
 	saveFile->ReadVec3( anchor1 );
 	saveFile->ReadVec3( anchor2 );
 	saveFile->ReadFloat( friction );
-	if ( coneLimit ) {
+	//HUMANHEAD PCF rww 05/02/06 - check if the constraint was written
+	bool hasConstraint;
+	saveFile->ReadBool(hasConstraint);
+	if (hasConstraint) {
+		if ( !coneLimit ) {
+			coneLimit = new idAFConstraint_ConeLimit;
+		}
 		coneLimit->Restore( saveFile );
 	}
-	if ( pyramidLimit ) {
+	else if (coneLimit) {
+		delete coneLimit;
+		coneLimit = NULL;
+	}
+	saveFile->ReadBool(hasConstraint);
+	if (hasConstraint) {
+		if ( !pyramidLimit ) {
+			pyramidLimit = new idAFConstraint_PyramidLimit;
+			pyramidLimit->SetPhysics( physics );
+		}
 		pyramidLimit->Restore( saveFile );
 	}
+	else if (pyramidLimit) {
+		delete pyramidLimit;
+		pyramidLimit = NULL;
+	}
+	//HUMANHEAD END
 }
 
 
@@ -997,7 +996,7 @@ idAFConstraint_UniversalJoint::SetShafts
 */
 void idAFConstraint_UniversalJoint::SetShafts( const idVec3 &cardanShaft1, const idVec3 &cardanShaft2 ) {
 	idVec3 cardanAxis;
-	float l id_attribute((unused));
+	float l;
 
 	shaft1 = cardanShaft1;
 	l = shaft1.Normalize();
@@ -1306,12 +1305,12 @@ void idAFConstraint_UniversalJoint::DebugDraw( void ) {
 	d1 = axis1 * body1->GetWorldAxis();
 
 	if ( master ) {
-		a2 = master->GetWorldOrigin() + anchor2 * master->GetWorldAxis();
+        a2 = master->GetWorldOrigin() + anchor2 * master->GetWorldAxis();
 		s2 = shaft2 * master->GetWorldAxis();
 		d2 = axis2 * master->GetWorldAxis();
 	}
 	else {
-		a2 = anchor2;
+        a2 = anchor2;
 		s2 = shaft2;
 		d2 = axis2;
 	}
@@ -1360,12 +1359,23 @@ void idAFConstraint_UniversalJoint::Save( idSaveGame *saveFile ) const {
 	saveFile->WriteVec3( axis1 );
 	saveFile->WriteVec3( axis2 );
 	saveFile->WriteFloat( friction );
+	//HUMANHEAD PCF rww 05/02/06 - we can't just do conditional writes and not give the restore any indication.
+	//added bool writes.
 	if ( coneLimit ) {
+		saveFile->WriteBool(true);
 		coneLimit->Save( saveFile );
 	}
+	else {
+		saveFile->WriteBool(false);
+	}
 	if ( pyramidLimit ) {
+		saveFile->WriteBool(true);
 		pyramidLimit->Save( saveFile );
 	}
+	else {
+		saveFile->WriteBool(false);
+	}
+	//HUMANHEAD END
 }
 
 /*
@@ -1382,12 +1392,32 @@ void idAFConstraint_UniversalJoint::Restore( idRestoreGame *saveFile ) {
 	saveFile->ReadVec3( axis1 );
 	saveFile->ReadVec3( axis2 );
 	saveFile->ReadFloat( friction );
-	if ( coneLimit ) {
+	//HUMANHEAD PCF rww 05/02/06 - check if the constraint was written
+	bool hasConstraint;
+	saveFile->ReadBool(hasConstraint);
+	if (hasConstraint) {
+		if ( !coneLimit ) {
+			coneLimit = new idAFConstraint_ConeLimit;
+		}
 		coneLimit->Restore( saveFile );
 	}
-	if ( pyramidLimit ) {
+	else if (coneLimit) {
+		delete coneLimit;
+		coneLimit = NULL;
+	}
+	saveFile->ReadBool(hasConstraint);
+	if (hasConstraint) {
+		if ( !pyramidLimit ) {
+			pyramidLimit = new idAFConstraint_PyramidLimit;
+			pyramidLimit->SetPhysics( physics );
+		}
 		pyramidLimit->Restore( saveFile );
 	}
+	else if (pyramidLimit) {
+		delete pyramidLimit;
+		pyramidLimit = NULL;
+	}
+	//HUMANHEAD END
 }
 
 
@@ -3029,8 +3059,8 @@ void idAFConstraint_Contact::Setup( idAFBody *b1, idAFBody *b2, contactInfo_t &c
 		c2[0] = 0.0f;
 	}
 
-	if ( body1->GetBouncyness() > 0.0f && -vel > minBounceVelocity ) {
-		c1[0] = body1->GetBouncyness() * vel;
+	if ( body1->GetBouncyness() > 0.0f && vel > minBounceVelocity ) {	//HUMANHEAD bjk
+		c1[0] = body1->GetBouncyness() * -vel;		// HUMANHEAD bjk: changed back to negative, caused strange looking deaths
 	} else {
 		c1[0] = 0.0f;
 	}
@@ -3072,7 +3102,7 @@ void idAFConstraint_Contact::ApplyFriction( float invTimeStep ) {
 		return;
 	}
 
-	// separate friction per contact is silly but it's fast and often looks close enough
+	// seperate friction per contact is silly but it's fast and often looks close enough
 	if ( af_useImpulseFriction.GetBool() ) {
 
 		impulse.SetData( 6, VECX_ALLOCA( 6 ) );
@@ -3455,6 +3485,12 @@ bool idAFConstraint_ConeLimit::Add( idPhysics_AF *phys, float invTimeStep ) {
 		lm.Zero();	// constraint exerts no force
 		return false;
 	}
+	// HUMANHEAD nla - Figure out which constraints are violated 
+	if ( g_debugAFs.GetInteger() > 1 ) {
+		gameLocal.Printf( "%d Constraint %s => %s\n", gameLocal.time, body1->GetName().c_str(), body2->GetName().c_str() );
+	}	
+	// HUMANHEAD END
+	
 
 	// calculate the inward cone normal for the position the body1 axis went outside the cone
 	normal = body1ax.Cross( ax );
@@ -3719,6 +3755,11 @@ bool idAFConstraint_PyramidLimit::Add( idPhysics_AF *phys, float invTimeStep ) {
 		lm.Zero();	// constraint exerts no force
 		return false;
 	}
+	// HUMANHEAD nla - Figure out which constraints are violated 
+	if ( g_debugAFs.GetInteger() > 1 ) {
+		gameLocal.Printf( "%d Constraint %s => %s\n", gameLocal.time, body1->GetName().c_str(), body2->GetName().c_str() );
+	}
+	// HUMANHEAD END
 
 	// calculate the inward pyramid normal for the position the body1 axis went outside the pyramid
 	pyramidVector = worldBase[2];
@@ -4485,7 +4526,7 @@ idAFTree::Factor
 void idAFTree::Factor( void ) const {
 	int i, j;
 	idAFBody *body;
-	idAFConstraint *child = NULL;
+	idAFConstraint *child;
 	idMatX childI;
 
 	childI.SetData( 6, 6, MATX_ALLOCA( 6 * 6 ) );
@@ -5341,7 +5382,7 @@ void idPhysics_AF::Evolve( float timeStep ) {
 	idVec6 force;
 	idRotation rotation;
 	float vSqr, maxLinearVelocity, maxAngularVelocity;
-
+	
 	maxLinearVelocity = af_maxLinearVelocity.GetFloat() / timeStep;
 	maxAngularVelocity = af_maxAngularVelocity.GetFloat() / timeStep;
 
@@ -5917,6 +5958,11 @@ bool idPhysics_AF::TestIfAtRest( float timeStep ) {
 		return true;
 	}
 
+	// HUMANHEAD JRM - frozen - so we are likely teleporting etc.
+	if(frozen) {
+		return false;
+	}
+
 	current.activateTime += timeStep;
 
 	// if the simulation should never be suspended before a certaint amount of time passed
@@ -5957,6 +6003,13 @@ bool idPhysics_AF::TestIfAtRest( float timeStep ) {
 
 		if ( maxTranslationSqr < Square( noMoveTranslation ) && maxRotation < noMoveRotation ) {
 			// hardly moved over a period of time so the articulated figure may come to rest
+			// HUMANHEAD nla
+			if ( g_debugAFs.GetInteger() ) {
+				gameLocal.Printf( "7 Rested due to little movement (Trans: %.2f, Rot: %.2f) after %.2f secs (%.2f)",
+							idMath::Sqrt( maxTranslationSqr), maxRotation, noMoveTime,
+							current.noMoveTime );
+			}
+			// HUMANHEAD END
 			return true;
 		}
 	} else {
@@ -5968,18 +6021,44 @@ bool idPhysics_AF::TestIfAtRest( float timeStep ) {
 		body = bodies[i];
 
 		if ( body->current->spatialVelocity.SubVec3(0).LengthSqr() > Square( suspendVelocity[0] ) ) {
+			// HUMANHEAD nla
+			if ( g_debugAFs.GetInteger() ) {
+				gameLocal.Printf("1 Going because Linear Vel %.2f > %.2f\n", body->current->spatialVelocity.SubVec3(0).Length(), suspendVelocity[0] );
+			}
+			// HUMANHEAD END
 			return false;
 		}
 		if ( body->current->spatialVelocity.SubVec3(1).LengthSqr() > Square( suspendVelocity[1] ) ) {
+			// HUMANHEAD nla
+			if ( g_debugAFs.GetInteger() ) {
+				gameLocal.Printf("2 Going because Angular Vel %.2f > %.2f\n", body->current->spatialVelocity.SubVec3(1).Length(), suspendVelocity[1] );
+			}
+			// HUMANHEAD END
 			return false;
 		}
 		if ( body->acceleration.SubVec3(0).LengthSqr() > Square( suspendAcceleration[0] ) ) {
+			// HUMANHEAD nla
+			if ( g_debugAFs.GetInteger() ) {
+				gameLocal.Printf("3 Going because Linear Acc %.2f > %.2f\n", body->acceleration.SubVec3(0).Length(), suspendAcceleration[0] );
+			}
+			// HUMANHEAD END
 			return false;
 		}
 		if ( body->acceleration.SubVec3(1).LengthSqr() > Square( suspendAcceleration[1] ) ) {
+			// HUMANHEAD nla
+			if ( g_debugAFs.GetInteger() ) {			
+				gameLocal.Printf("4 Going because Angular Acc %.2f > %.2f\n", body->acceleration.SubVec3(1).Length(), suspendAcceleration[1] );
+			}
+			// HUMANHEAD END
 			return false;
 		}
 	}
+
+	// HUMANHEAD nla
+	if ( g_debugAFs.GetInteger() ) {
+		gameLocal.Printf( "5 Came to rest due to min specs met\n" );
+	}
+	// HUMANHEAD END
 
 	// all bodies have a velocity and acceleration small enough to come to rest
 	return true;
@@ -6105,6 +6184,14 @@ void idPhysics_AF::SetMass( float mass, int id ) {
 	}
 	else {
 		forceTotalMass = mass;
+		// HUMANHEAD nla
+		if ( mass > 0 ) {
+			invMass = 1 / mass;
+		}
+		else {
+			invMass = 1;
+		}
+		// HUMANHEAD 
 	}
 	SetChanged();
 }
@@ -6219,6 +6306,7 @@ idPhysics_AF::Evaluate
 ================
 */
 bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
+	PROFILE_SCOPE("AF", PROFMASK_PHYSICS);
 	float timeStep;
 
 	if ( timeScaleRampStart < MS2SEC( endTimeMSec ) && timeScaleRampEnd > MS2SEC( endTimeMSec ) ) {
@@ -6229,6 +6317,17 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		timeStep = MS2SEC( timeStepMSec ) * timeScale;
 	}
 	current.lastTimeStep = timeStep;
+
+	// HUMANHEAD JRM - To allow afs to waked up when masters change
+#if 0
+	if (current.atRest && masterBody) {
+		Activate();
+	}
+#else	// HUMANHEAD pdm: This was keeping all bound ragdolls from ever coming to rest
+	if (current.atRest && masterBody && self->GetBindMaster() && !self->GetBindMaster()->GetPhysics()->IsAtRest()) {
+		Activate();
+	}
+#endif
 
 
 	// if the articulated figure changed
@@ -6243,11 +6342,32 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		idVec3 masterOrigin;
 		idMat3 masterAxis;
 		self->GetMasterPosition( masterOrigin, masterAxis );
+
+		// HUMANHEAD nla - Logic to allow frozen bodies to just translate to the new location, and not act like ragdolls
+		if ( frozen ) {
+			idVec3 dOrigin;
+
+			dOrigin = masterOrigin - masterBody->current->worldOrigin;
+
+			// Translate lines ripped from Translate.  There is an error translating when bound, as constraints that perhaps shouldn't be changed are
+			// translate all the bodies	
+			idAFBody *body;
+			for ( int i = 0; i < bodies.Num(); i++ ) {
+				body = bodies[i];
+				body->current->worldOrigin += dOrigin;
+			}
+		}
+		// HUMANHEAD END
+		
 		if ( current.atRest >= 0 && ( masterBody->current->worldOrigin != masterOrigin || masterBody->current->worldAxis != masterAxis ) ) {
 			Activate();
 		}
 		masterBody->current->worldOrigin = masterOrigin;
 		masterBody->current->worldAxis = masterAxis;
+
+		// HUMANHEAD nla
+		if ( frozen ) { return( true ); }
+		// HUMANHEAD END
 	}
 
 	// if the simulation is suspended because the figure is at rest
@@ -6379,7 +6499,7 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	timer_total.Stop();
 
 	if ( af_showTimings.GetInteger() == 1 ) {
-		gameLocal.Printf( "%12s: t %u pc %2d, %u ac %2d %u lcp %u cd %u\n",
+		gameLocal.Printf( "%12s: t %1.4f pc %2d, %1.4f ac %2d %1.4f lcp %1.4f cd %1.4f\n",
 						self->name.c_str(),
 						timer_total.Milliseconds(),
 						numPrimary, timer_pc.Milliseconds(),
@@ -6389,7 +6509,7 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	else if ( af_showTimings.GetInteger() == 2 ) {
 		numArticulatedFigures++;
 		if ( endTimeMSec > lastTimerReset ) {
-			gameLocal.Printf( "af %d: t %u pc %2d, %u ac %2d %u lcp %u cd %u\n",
+			gameLocal.Printf( "af %d: t %1.4f pc %2d, %1.4f ac %2d %1.4f lcp %1.4f cd %1.4f\n",
 							numArticulatedFigures,
 							timer_total.Milliseconds(),
 							numPrimary, timer_pc.Milliseconds(),
@@ -6648,6 +6768,11 @@ idPhysics_AF::idPhysics_AF( void ) {
 	worldConstraintsLocked = false;
 	forcePushable = false;
 
+	// HUMANHEAD nla
+	frozen = false;
+	invMass = 1;
+	// HUMANHEAD
+
 #ifdef AF_TIMINGS
 	lastTimerReset = 0;
 #endif
@@ -6779,6 +6904,11 @@ void idPhysics_AF::Save( idSaveGame *saveFile ) const {
 	saveFile->WriteBool( noImpact );
 	saveFile->WriteBool( worldConstraintsLocked );
 	saveFile->WriteBool( forcePushable );
+
+	// HUMANHEAD mdl
+	saveFile->WriteBool( frozen );
+	saveFile->WriteFloat( invMass );
+	// HUMANHEAD END
 }
 
 /*
@@ -6857,6 +6987,11 @@ void idPhysics_AF::Restore( idRestoreGame *saveFile ) {
 	changedAF = true;
 
 	UpdateClipModels();
+
+	// HUMANHEAD mdl
+	saveFile->ReadBool( frozen );
+	saveFile->ReadFloat( invMass );
+	// HUMANHEAD END
 }
 
 /*
@@ -6960,7 +7095,7 @@ void idPhysics_AF::BuildTrees( void ) {
 		}
 
 		if ( trees.Num() > 1 ) {
-			gameLocal.Warning( "Articulated figure has multiple separate tree structures for entity '%s' type '%s'.",
+			gameLocal.Warning( "Articulated figure has multiple seperate tree structures for entity '%s' type '%s'.",
 								self->name.c_str(), self->GetType()->classname );
 		}
 
@@ -7415,9 +7550,30 @@ void idPhysics_AF::ApplyImpulse( const int id, const idVec3 &point, const idVec3
 	if ( noImpact || impulse.LengthSqr() < Square( impulseThreshold ) ) {
 		return;
 	}
+	
+	// HUMANHEAD nla - Change any external forces to take into the account of the whole mass, not just the current body.
+	idVec3 modImpulse;
+	idVec3 otherImpulse;
+
+	if ( GetMass() > .1 && self->IsType( idAFEntity_Base::Type ) && 
+		!((idAFEntity_Base *) self)->IsImpulseFromSelf() ) {
+		modImpulse = impulse * GetInvMass() * 2;
+		otherImpulse = modImpulse;
+		//otherImpulse = impulse * ( bodies[id]->mass / GetMass() ) * 2;
+		//gameLocal.Printf( "%d OUTSIDE!\n", gameLocal.time );
+	}
+	else {
+		modImpulse = impulse * bodies[id]->invMass;
+		otherImpulse = impulse;
+		//gameLocal.Printf( "%d inside!\n", gameLocal.time );
+	}
+	// HUMANHEAD END
+	
 	idMat3 invWorldInertiaTensor = bodies[id]->current->worldAxis.Transpose() * bodies[id]->inverseInertiaTensor * bodies[id]->current->worldAxis;
-	bodies[id]->current->spatialVelocity.SubVec3(0) += bodies[id]->invMass * impulse;
-	bodies[id]->current->spatialVelocity.SubVec3(1) += invWorldInertiaTensor * (point - bodies[id]->current->worldOrigin).Cross( impulse );
+	// HUMANHEAD nla - Changed to use modImpulse and otherImpulse
+	bodies[id]->current->spatialVelocity.SubVec3(0) += modImpulse;
+	bodies[id]->current->spatialVelocity.SubVec3(1) += invWorldInertiaTensor * (point - bodies[id]->current->worldOrigin).Cross( otherImpulse );
+	// HUMANHEAD END
 	Activate();
 }
 
@@ -7908,10 +8064,10 @@ const float	AF_VELOCITY_MAX				= 16000;
 const int	AF_VELOCITY_TOTAL_BITS		= 16;
 const int	AF_VELOCITY_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( AF_VELOCITY_MAX ) ) + 1;
 const int	AF_VELOCITY_MANTISSA_BITS	= AF_VELOCITY_TOTAL_BITS - 1 - AF_VELOCITY_EXPONENT_BITS;
-//const float	AF_FORCE_MAX				= 1e20f;
-//const int	AF_FORCE_TOTAL_BITS			= 16;
-//const int	AF_FORCE_EXPONENT_BITS		= idMath::BitsForInteger( idMath::BitsForFloat( AF_FORCE_MAX ) ) + 1;
-//const int	AF_FORCE_MANTISSA_BITS		= AF_FORCE_TOTAL_BITS - 1 - AF_FORCE_EXPONENT_BITS;
+const float	AF_FORCE_MAX				= 1e20f;
+const int	AF_FORCE_TOTAL_BITS			= 16;
+const int	AF_FORCE_EXPONENT_BITS		= idMath::BitsForInteger( idMath::BitsForFloat( AF_FORCE_MAX ) ) + 1;
+const int	AF_FORCE_MANTISSA_BITS		= AF_FORCE_TOTAL_BITS - 1 - AF_FORCE_EXPONENT_BITS;
 
 /*
 ================
@@ -7966,7 +8122,7 @@ idPhysics_AF::ReadFromSnapshot
 ================
 */
 void idPhysics_AF::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	int i, num id_attribute((unused));
+	int i, num;
 	idCQuat quat;
 
 	current.atRest = msg.ReadLong();

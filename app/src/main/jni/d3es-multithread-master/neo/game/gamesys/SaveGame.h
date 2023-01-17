@@ -1,40 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __SAVEGAME_H__
 #define __SAVEGAME_H__
-
-#include "idlib/precompiled.h"
-#include "framework/DeclFX.h"
-#include "renderer/Model.h"
-#include "renderer/RenderSystem.h"
-
-#include "Class.h"
 
 /*
 
@@ -92,6 +60,12 @@ public:
 	void					WriteTraceModel( const idTraceModel &trace );
 	void					WriteClipModel( const class idClipModel *clipModel );
 	void					WriteSoundCommands( void );
+
+	// HUMANHEAD pdm: additions
+	void					WriteEventDef( const idEventDef *event );
+	void					WriteQuat( const idQuat &vec ); // HUMANHEAD mdl
+	void					WriteStringList( const idList<idStr> &list ); // HUMANHEAD mdl
+	// HUMANHEAD END
 
 	void					WriteBuildNumber( const int value );
 
@@ -153,6 +127,12 @@ public:
 	void					ReadClipModel( idClipModel *&clipModel );
 	void					ReadSoundCommands( void );
 
+	// HUMANHEAD pdm: additions
+	void					ReadEventDef( const idEventDef *&event );
+	void					ReadQuat( idQuat &vec ); // HUMANHEAD mdl
+	void					ReadStringList( idList<idStr> &list ); // HUMANHEAD mdl
+	// HUMANHEAD END
+
 	void					ReadBuildNumber( void );
 
 	//						Used to retrieve the saved game buildNumber from within class Restore methods
@@ -167,5 +147,21 @@ private:
 
 	void					CallRestore_r( const idTypeInfo *cls, idClass *obj );
 };
+
+// HUMANHEAD mdl:  Savefile debugging macros
+
+#ifdef HUMANHEAD_SAVEDEBUG
+
+#define WRITE_SAVEDEBUG_MARKER( savefile, value ) savefile->WriteInt( value )
+#define READ_SAVEDEBUG_MARKER( savefile, value ) { int tmp; savefile->ReadInt( tmp ); assert( tmp == value ); }
+
+#else
+
+#define WRITE_SAVEDEBUG_MARKER( savefile, value )
+#define READ_SAVEDEBUG_MARKER( savefile, value )
+
+#endif
+
+// HUMANHEAD END
 
 #endif /* !__SAVEGAME_H__*/

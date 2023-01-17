@@ -1,39 +1,11 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-
-#include "gamesys/SysCvar.h"
-#include "Fx.h"
-#include "Moveable.h"
-#include "SmokeParticles.h"
-
-#include "ai/AI.h"
+#include "../Game_local.h"
+#include "../Prey/game_portal.h" // HUMANHEAD
 
 static const char *moveCommandString[ NUM_MOVE_COMMANDS ] = {
 	"MOVE_NONE",
@@ -76,6 +48,7 @@ idMoveState::idMoveState() {
 	lastMoveOrigin		= vec3_origin;
 	lastMoveTime		= 0;
 	anim				= 0;
+	bEnemyBlocks		= false; // HUMANHEAD mdl
 }
 
 /*
@@ -103,6 +76,7 @@ void idMoveState::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( lastMoveOrigin );
 	savefile->WriteInt( lastMoveTime );
 	savefile->WriteInt( anim );
+	savefile->WriteBool( bEnemyBlocks ); // HUMANHEAD mdl
 }
 
 /*
@@ -130,6 +104,7 @@ void idMoveState::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( lastMoveOrigin );
 	savefile->ReadInt( lastMoveTime );
 	savefile->ReadInt( anim );
+	savefile->ReadBool( bEnemyBlocks ); // HUMANHEAD mdl
 }
 
 /*
@@ -225,7 +200,7 @@ idAASFindAttackPosition::idAASFindAttackPosition( const idAI *self, const idMat3
 	this->gravityAxis	= gravityAxis;
 
 	excludeBounds		= idBounds( idVec3( -64.0, -64.0f, -8.0f ), idVec3( 64.0, 64.0f, 64.0f ) );
-	excludeBounds.TranslateSelf( self->GetPhysics()->GetOrigin() );
+	excludeBounds.TranslateSelf( self->GetPhysics()->GetOrigin() );	
 
 	// setup PVS
 	idBounds bounds( targetPos - idVec3( 16, 16, 0 ), targetPos + idVec3( 16, 16, 64 ) );
@@ -351,9 +326,6 @@ idAI::idAI() {
 	current_yaw			= 0.0f;
 	ideal_yaw			= 0.0f;
 
-	spawnClearMoveables	= false;
-	harvestEnt			= NULL;
-
 	num_cinematics		= 0;
 	current_cinematic	= 0;
 
@@ -387,6 +359,18 @@ idAI::idAI() {
 	eyeFocusRate		= 0.0f;
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
+
+#ifdef GRAPHS
+	zeroGraph.SetNumSamples( 240 );
+	diffGraph.SetNumSamples( 240 );
+	turnVelGraph.SetNumSamples( 240 );
+	idealYawGraph.SetNumSamples( 240 );
+	yawGraph.SetNumSamples( 240 );
+#endif
+
+//HUMANHEAD mdc - added to support multiple projectiles
+	projectileDefaultDefIndex = -1;
+//HUMANHEAD END
 }
 
 /*
@@ -498,6 +482,14 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteAngles( lookJointAngles[ i ] );
 	}
 
+	// HUMANHEAD pdm: Added support for look joints in head entities
+	savefile->WriteInt( headLookJoints.Num() );
+	for( i = 0; i < headLookJoints.Num(); i++ ) {
+		savefile->WriteJoint( headLookJoints[ i ] );
+		savefile->WriteAngles( headLookJointAngles[ i ] );
+	}
+	// HUMANHEAD END
+
 	savefile->WriteFloat( shrivel_rate );
 	savefile->WriteInt( shrivel_start );
 
@@ -535,16 +527,14 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
 
-	savefile->WriteInt(funcEmitters.Num());
-
-	for (int i = 0; i < funcEmitters.Num(); i++) {
-		funcEmitter_t *emitter = funcEmitters.GetIndex(i);
-		savefile->WriteString(emitter->name);
-		savefile->WriteJoint(emitter->joint);
-		savefile->WriteObject(emitter->particle);
-	}
-
-	harvestEnt.Save(savefile);
+	// HUMANHEAD mdl
+	savefile->WriteInt( projectileDefaultDefIndex );
+	savefile->WriteFloat( clipModelXYDiameter );
+	savefile->WriteInt( enemyEntityNum );
+	savefile->WriteStaticObject( vehicleInterfaceLocal );
+	savefile->WriteObject( vehicleInterfaceLocal.GetVehicle() );
+	savefile->WriteBool( frozen );
+	// HUMANHEAD END
 }
 
 /*
@@ -612,6 +602,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadString( projectileName );
 	if ( projectileName.Length() ) {
 		projectileDef = gameLocal.FindEntityDefDict( projectileName );
+		if ( !projectileDef ) {
+			gameLocal.Warning( "Unknown projectileDef '%s'", projectileName.c_str() );
+		}
 	} else {
 		projectileDef = NULL;
 	}
@@ -655,6 +648,19 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadAngles( lookJointAngles[ i ] );
 	}
 
+	// HUMANHEAD pdm: Added support for look joints in head entities
+	savefile->ReadInt( num );
+	headLookJoints.SetGranularity( 1 );
+	headLookJoints.SetNum( num );
+	headLookJointAngles.SetGranularity( 1 );
+	headLookJointAngles.SetNum( num );
+	for( i = 0; i < num; i++ ) {
+		savefile->ReadJoint( headLookJoints[ i ] );
+		savefile->ReadAngles( headLookJointAngles[ i ] );
+	}
+	// HUMANHEAD END
+
+
 	savefile->ReadFloat( shrivel_rate );
 	savefile->ReadInt( shrivel_start );
 
@@ -697,7 +703,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	// Set the AAS if the character has the correct gravity vector
 	idVec3 gravity = spawnArgs.GetVector( "gravityDir", "0 0 -1" );
 	gravity *= g_gravity.GetFloat();
-	if ( gravity == gameLocal.GetGravity() ) {
+	if ( !AI_VEHICLE && gravity == gameLocal.GetGravity() ) {
 		SetAAS();
 	}
 
@@ -713,40 +719,42 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		RestorePhysics( &physicsObj );
 	}
 
-	//Clean up the emitters
-	for (int i = 0; i < funcEmitters.Num(); i++) {
-		funcEmitter_t *emitter = funcEmitters.GetIndex(i);
-
-		if (emitter->particle) {
-			//Destroy the emitters
-			emitter->particle->PostEventMS(&EV_Remove, 0);
+	// HUMANHEAD mdl
+	projectileInfos.Clear();
+	idStr projectileInfoStr;
+	if( spawnArgs.GetString("def_projectileInfo", "", projectileInfoStr) && projectileInfoStr.Length() ) {	//find our def_projectileInfo key (list of projectiles we will use)
+		idList<idStr> parmList;
+		hhUtils::SplitString( projectileInfoStr, parmList, ',' );
+		for( int i = 0; i < parmList.Num(); i++ ) {
+			projectileInfo_t projInfo;
+			projectileDef = gameLocal.FindEntityDefDict( parmList[ i ].c_str() );
+			if( projectileDef ) {
+				//create the projectile so we can extract info about it
+				CreateProjectile( vec3_origin, viewAxis[ 0 ] );
+				projInfo.projectileDef = projectileDef;
+				projInfo.projectileRadius = projectile.GetEntity()->GetPhysics()->GetClipModel()->GetBounds().GetRadius();
+				projInfo.projectileVelocity = idProjectile::GetVelocity( projectileDef );
+				projInfo.projectileGravity = idProjectile::GetGravity( projectileDef );
+				projInfo.projectileSpeed = projInfo.projectileVelocity.Length();
+				projectileInfos.Append( projInfo );
+				delete projectile.GetEntity();
+				projectile = NULL;
+			}
 		}
 	}
 
-	funcEmitters.Clear();
-
-	int emitterCount;
-	savefile->ReadInt(emitterCount);
-
-	for (int i = 0; i < emitterCount; i++) {
-		funcEmitter_t newEmitter;
-		memset(&newEmitter, 0, sizeof(newEmitter));
-
-		idStr name;
-		savefile->ReadString(name);
-
-		strcpy(newEmitter.name, name.c_str());
-
-		savefile->ReadJoint(newEmitter.joint);
-		savefile->ReadObject(reinterpret_cast<idClass * &>(newEmitter.particle));
-
-		funcEmitters.Set(newEmitter.name, newEmitter);
+	savefile->ReadInt( projectileDefaultDefIndex );
+	savefile->ReadFloat( clipModelXYDiameter );
+	savefile->ReadInt( enemyEntityNum );
+	savefile->ReadStaticObject( vehicleInterfaceLocal );
+	SetVehicleInterface( &vehicleInterfaceLocal );
+	hhVehicle *vehicle;
+    savefile->ReadObject( reinterpret_cast<idClass *&> ( vehicle ) );
+	if (vehicle) {
+		vehicle->RestorePilot( &vehicleInterfaceLocal );
 	}
-
-	harvestEnt.Restore(savefile);
-	//if(harvestEnt.GetEntity()) {
-	//	harvestEnt.GetEntity()->SetParent(this);
-	//}
+	savefile->ReadBool( frozen );
+	// HUMANHEAD END
 }
 
 /*
@@ -783,7 +791,7 @@ void idAI::Spawn( void ) {
 
 	spawnArgs.GetFloat( "melee_range",			"64",		melee_range );
 	spawnArgs.GetFloat( "projectile_height_to_distance_ratio",	"1", projectile_height_to_distance_ratio );
-
+	
 	spawnArgs.GetFloat( "turn_rate",			"360",		turnRate );
 
 	spawnArgs.GetBool( "talks",					"0",		talks );
@@ -857,10 +865,35 @@ void idAI::Spawn( void ) {
 	headFocusRate		= spawnArgs.GetFloat( "head_focus_rate", "0.1" );
 	focusAlignTime		= SEC2MS( spawnArgs.GetFloat( "focus_align_time", "1" ) );
 
-	flashJointWorld = animator.GetJointHandle( "flash" );
+	flashJointWorld = animator.GetJointHandle( spawnArgs.GetString( "bone_flash" ) );
 
 	if ( head.GetEntity() ) {
 		idAnimator *headAnimator = head.GetEntity()->GetAnimator();
+
+		// HUMANHEAD pdm: Added support for look joints in head entities
+		headLookJoints.SetGranularity( 1 );
+		headLookJointAngles.SetGranularity( 1 );
+		kv = spawnArgs.MatchPrefix( "headlook_joint", NULL );
+		while( kv ) {
+			jointName = kv->GetKey();
+			jointName.StripLeadingOnce( "headlook_joint " );
+			joint = headAnimator->GetJointHandle( jointName );
+			if ( joint == INVALID_JOINT ) {
+				gameLocal.Warning( "Unknown headlook_joint '%s' on entity %s", jointName.c_str(), name.c_str() );
+			} else {
+				jointScale = spawnArgs.GetAngles( kv->GetKey(), "0 0 0" );
+				jointScale.roll = 0.0f;
+
+				// if no scale on any component, then don't bother adding it.  this may be done to
+				// zero out rotation from an inherited entitydef.
+				if ( jointScale != ang_zero ) {
+					headLookJoints.Append( joint );
+					headLookJointAngles.Append( jointScale );
+				}
+			}
+			kv = spawnArgs.MatchPrefix( "headlook_joint", kv );
+		}
+		// HUMANHEAD END
 
 		jointname = spawnArgs.GetString( "bone_focus" );
 		if ( *jointname ) {
@@ -915,7 +948,7 @@ void idAI::Spawn( void ) {
 
 	// move up to make sure the monster is at least an epsilon above the floor
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + idVec3( 0, 0, CM_CLIP_EPSILON ) );
-
+	
 	if ( num_cinematics ) {
 		physicsObj.SetGravity( vec3_origin );
 	} else {
@@ -931,8 +964,35 @@ void idAI::Spawn( void ) {
 	ideal_yaw		= idMath::AngleNormalize180( current_yaw );
 
 	move.blockTime = 0;
+	move.bEnemyBlocks = false; // HUMANHEAD mdl:  By default, ignore enemy
 
 	SetAAS();
+
+//HUMANHEAD mdc - added to support multiple projectiles
+	projectileInfos.Clear();
+	idStr projectileInfoStr;
+	if( spawnArgs.GetString("def_projectileInfo", "", projectileInfoStr) && projectileInfoStr.Length() ) {	//find our def_projectileInfo key (list of projectiles we will use)
+		idList<idStr> parmList;
+		hhUtils::SplitString( projectileInfoStr, parmList, ',' );
+		for( int i = 0; i < parmList.Num(); i++ ) {
+			projectileInfo_t projInfo;
+			projectileDef = gameLocal.FindEntityDefDict( parmList[ i ].c_str() );
+			if( projectileDef ) {
+				//create the projectile so we can extract info about it
+				CreateProjectile( vec3_origin, viewAxis[ 0 ] );
+				projInfo.projectileDef = projectileDef;
+				projInfo.projectileRadius = projectile.GetEntity()->GetPhysics()->GetClipModel()->GetBounds().GetRadius();
+				projInfo.projectileVelocity = idProjectile::GetVelocity( projectileDef );
+				projInfo.projectileGravity = idProjectile::GetGravity( projectileDef );
+				projInfo.projectileSpeed = projInfo.projectileVelocity.Length();
+				projectileInfos.Append( projInfo );
+				delete projectile.GetEntity();
+				projectile = NULL;
+			}
+		}
+	}
+	projectileDefaultDefIndex = -1;
+//HUMANHEAD END
 
 	projectile		= NULL;
 	projectileDef	= NULL;
@@ -940,13 +1000,23 @@ void idAI::Spawn( void ) {
 	idStr projectileName;
 	if ( spawnArgs.GetString( "def_projectile", "", projectileName ) && projectileName.Length() ) {
 		projectileDef = gameLocal.FindEntityDefDict( projectileName );
-		CreateProjectile( vec3_origin, viewAxis[ 0 ] );
-		projectileRadius	= projectile.GetEntity()->GetPhysics()->GetClipModel()->GetBounds().GetRadius();
-		projectileVelocity	= idProjectile::GetVelocity( projectileDef );
-		projectileGravity	= idProjectile::GetGravity( projectileDef );
-		projectileSpeed		= projectileVelocity.Length();
-		delete projectile.GetEntity();
-		projectile = NULL;
+		//HUMANHEAD mdc - added to support multiple projectiles
+		projectileDefaultDefIndex = FindProjectileInfo( projectileDef );	//try to match up with an existing projectileInfo
+		if( projectileDef && projectileDefaultDefIndex < 0 ) {	//didn't find this, either it isn't listed in our info list, or we don't have any in our info list, so fall back to old-style
+//			projectileDef = gameLocal.FindEntityDefDict( projectileName );
+		//HUMANHEAD END
+			CreateProjectile( vec3_origin, viewAxis[ 0 ] );
+			projectileRadius	= projectile.GetEntity()->GetPhysics()->GetClipModel()->GetBounds().GetRadius();
+			projectileVelocity	= idProjectile::GetVelocity( projectileDef );
+			projectileGravity	= idProjectile::GetGravity( projectileDef );
+			projectileSpeed		= projectileVelocity.Length();
+			delete projectile.GetEntity();
+			projectile = NULL;
+		//HUMANHEAD mdc - added to support multiple projectiles
+		} else {
+			SetCurrentProjectile( projectileDefaultDefIndex );		//set our current projectile to the defaultIndex
+		}
+		//HUMANHEAD END
 	}
 
 	particles.Clear();
@@ -982,17 +1052,9 @@ void idAI::Spawn( void ) {
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
 
-	spawnArgs.GetBool("spawnClearMoveables", "0", spawnClearMoveables);
-}
-
-void idAI::Gib(const idVec3 &dir, const char *damageDefName)
-{
-	if (harvestEnt.GetEntity()) {
-		//Let the harvest ent know that we gibbed
-		harvestEnt.GetEntity()->Gib();
-	}
-
-	idActor::Gib(dir, damageDefName);
+	//HUMANHEAD: aob
+	SetVehicleInterface( &vehicleInterfaceLocal );
+	//HUMANHEAD END
 }
 
 /*
@@ -1006,8 +1068,9 @@ void idAI::InitMuzzleFlash( void ) {
 
 	spawnArgs.GetString( "mtr_flashShader", "muzzleflash", &shader );
 	spawnArgs.GetVector( "flashColor", "0 0 0", flashColor );
-	float flashRadius = spawnArgs.GetFloat( "flashRadius" );
+	idVec3 flashRadius = spawnArgs.GetVector( "flashRadius", "10 10 10" );	
 	flashTime = SEC2MS( spawnArgs.GetFloat( "flashTime", "0.25" ) );
+	idVec3 flashOffset = spawnArgs.GetVector( "flashOffset", "0 0 0" );
 
 	memset( &worldMuzzleFlash, 0, sizeof ( worldMuzzleFlash ) );
 
@@ -1018,9 +1081,9 @@ void idAI::InitMuzzleFlash( void ) {
 	worldMuzzleFlash.shaderParms[ SHADERPARM_BLUE ] = flashColor[2];
 	worldMuzzleFlash.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
 	worldMuzzleFlash.shaderParms[ SHADERPARM_TIMESCALE ] = 1.0f;
-	worldMuzzleFlash.lightRadius[0] = flashRadius;
-	worldMuzzleFlash.lightRadius[1]	= flashRadius;
-	worldMuzzleFlash.lightRadius[2]	= flashRadius;
+	worldMuzzleFlash.lightRadius = flashRadius;
+	worldMuzzleFlash.lightCenter = -flashOffset;
+	worldMuzzleFlash.noShadows = true;
 
 	worldMuzzleFlashHandle = -1;
 }
@@ -1094,7 +1157,7 @@ void idAI::DormantEnd( void ) {
 		// let our enemy know we're back on the trail
 		enemyNode.AddToEnd( enemy.GetEntity()->enemyList );
 	}
-
+	
 	if ( particles.Num() ) {
 		for ( int i = 0; i < particles.Num(); i++ ) {
 			particles[i].time = gameLocal.time;
@@ -1110,10 +1173,15 @@ idAI::Think
 =====================
 */
 void idAI::Think( void ) {
+	PROFILE_SCOPE("AI", PROFMASK_NORMAL|PROFMASK_AI);
+	assert(0);	// I assume this is no longer used, as we have our own version, comment out eventually --pdm
+
+#ifndef HUMANHEAD
 	// if we are completely closed off from the player, don't do anything at all
 	if ( CheckDormant() ) {
 		return;
 	}
+#endif	// HUMANHEAD
 
 	if ( thinkFlags & TH_THINK ) {
 		// clear out the enemy when he dies or is hidden
@@ -1124,10 +1192,14 @@ void idAI::Think( void ) {
 			}
 		}
 
-		current_yaw += deltaViewAngles.yaw;
-		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
-		deltaViewAngles.Zero();
-		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+	    //HUMANHEAD: aob - vehicle updates our viewAxis
+	    if( !InVehicle() ) {
+		    current_yaw += deltaViewAngles.yaw;
+		    ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
+		    deltaViewAngles.Zero();
+		    viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+	    }
+	    //HUMANHEAD END
 
 		if ( num_cinematics ) {
 			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
@@ -1137,12 +1209,20 @@ void idAI::Think( void ) {
 		} else if ( !allowHiddenMovement && IsHidden() ) {
 			// hidden monsters
 			UpdateAIScript();
+		// HUMANHEAD pdm: Vehicle support
+		} else if ( InVehicle() ) {
+			UpdateScript();			
+			//GetVehicleInterface()->UpdateCommands();			
+			UpdateAnimState();
+		// HUMANHEAD END
+
 		} else {
 			// clear the ik before we do anything else so the skeleton doesn't get updated twice
 			walkIK.ClearJointMods();
-			// Koz
-			armIK.ClearJointMods();
 
+		    // HUMANHEAD NLA
+		    physicsObj.ResetNumTouchEnt(0);
+		    // HUMANHEAD END
 			switch( move.moveType ) {
 			case MOVETYPE_DEAD :
 				// dead monsters
@@ -1152,7 +1232,8 @@ void idAI::Think( void ) {
 
 			case MOVETYPE_FLY :
 				// flying monsters
-				UpdateEnemyPosition();
+                                // HUMANHEAD JRM
+				//UpdateEnemyPosition();
 				UpdateAIScript();
 				FlyMove();
 				PlayChatter();
@@ -1161,7 +1242,8 @@ void idAI::Think( void ) {
 
 			case MOVETYPE_STATIC :
 				// static monsters
-				UpdateEnemyPosition();
+                                // HUMANHEAD JRM
+				//UpdateEnemyPosition();
 				UpdateAIScript();
 				StaticMove();
 				PlayChatter();
@@ -1170,7 +1252,8 @@ void idAI::Think( void ) {
 
 			case MOVETYPE_ANIM :
 				// animation based movement
-				UpdateEnemyPosition();
+                                // HUMANHEAD JRM
+				//UpdateEnemyPosition();
 				UpdateAIScript();
 				AnimMove();
 				PlayChatter();
@@ -1179,13 +1262,17 @@ void idAI::Think( void ) {
 
 			case MOVETYPE_SLIDE :
 				// velocity based movement
-				UpdateEnemyPosition();
+                                // HUMANHEAD JRM
+				//UpdateEnemyPosition();
 				UpdateAIScript();
 				SlideMove();
 				PlayChatter();
 				CheckBlink();
 				break;
 			}
+		    // HUMANHEAD NLA
+		    ClientImpacts();
+		    // HUMANHEAD END
 		}
 
 		// clear pain flag so that we recieve any damage between now and the next time we run the script
@@ -1194,6 +1281,11 @@ void idAI::Think( void ) {
 		AI_PUSHED = false;
 	} else if ( thinkFlags & TH_PHYSICS ) {
 		RunPhysics();
+	}
+
+	// HUMANHEAD jrm - need to call ticker function per aaron
+	if (thinkFlags & TH_TICKER) {
+		Ticker();
 	}
 
 	if ( af_push_moveables ) {
@@ -1206,7 +1298,7 @@ void idAI::Think( void ) {
 	}
 /*	this still draws in retail builds.. not sure why.. don't care at this point.
 	if ( !aas && developer.GetBool() && !fl.hidden && !num_cinematics ) {
-		gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+		gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 */
 
@@ -1216,11 +1308,6 @@ void idAI::Think( void ) {
 	Present();
 	UpdateDamageEffects();
 	LinkCombat();
-
-	if (ai_showHealth.GetBool()) {
-		idVec3 aboveHead(0,0,20);
-		gameRenderWorld->DrawText(va("%d", (int)health), this->GetEyePosition()+aboveHead, 0.5f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
-	}
 }
 
 /***********************************************************************
@@ -1248,11 +1335,12 @@ void idAI::LinkScriptVariables( void ) {
 	AI_ACTIVATED.LinkTo(		scriptObject, "AI_ACTIVATED" );
 	AI_FORWARD.LinkTo(			scriptObject, "AI_FORWARD" );
 	AI_JUMP.LinkTo(				scriptObject, "AI_JUMP" );
+	AI_ENEMY_REACHABLE.LinkTo(	scriptObject, "AI_ENEMY_REACHABLE" );
 	AI_BLOCKED.LinkTo(			scriptObject, "AI_BLOCKED" );
 	AI_DEST_UNREACHABLE.LinkTo( scriptObject, "AI_DEST_UNREACHABLE" );
 	AI_HIT_ENEMY.LinkTo(		scriptObject, "AI_HIT_ENEMY" );
 	AI_OBSTACLE_IN_PATH.LinkTo(	scriptObject, "AI_OBSTACLE_IN_PATH" );
-	AI_PUSHED.LinkTo(			scriptObject, "AI_PUSHED" );
+	AI_PUSHED.LinkTo(			scriptObject, "AI_PUSHED" );	
 }
 
 /*
@@ -1382,7 +1470,10 @@ void idAI::SetAAS( void ) {
 			aas = NULL;
 		}
 	}
-	gameLocal.Printf( "WARNING: %s has no AAS file\n", name.c_str() );
+	// HUMANHEAD pdm: Applied our override for creatures that don't use AAS
+	if ( spawnArgs.GetBool("noaas_warning", "1") ) {
+		gameLocal.Printf( "WARNING: %s has no AAS file\n", name.c_str() );
+	}
 }
 
 /*
@@ -1408,7 +1499,7 @@ idAI::ReachedPos
 bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) const {
 	if ( move.moveType == MOVETYPE_SLIDE ) {
 		idBounds bnds( idVec3( -4, -4.0f, -8.0f ), idVec3( 4.0f, 4.0f, 64.0f ) );
-		bnds.TranslateSelf( physicsObj.GetOrigin() );
+		bnds.TranslateSelf( physicsObj.GetOrigin() );	
 		if ( bnds.ContainsPoint( pos ) ) {
 			return true;
 		}
@@ -1419,7 +1510,7 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 			}
 		} else {
 			idBounds bnds( idVec3( -16.0, -16.0f, -8.0f ), idVec3( 16.0, 16.0f, 64.0f ) );
-			bnds.TranslateSelf( physicsObj.GetOrigin() );
+			bnds.TranslateSelf( physicsObj.GetOrigin() );	
 			if ( bnds.ContainsPoint( pos ) ) {
 				return true;
 			}
@@ -1503,6 +1594,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end ) const {
 	int			toArea;
 	float		dist;
 	idVec2		delta;
+	aasPath_t	path;
 
 	if ( !aas ) {
 		// no aas, so just take the straight line distance
@@ -1510,7 +1602,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end ) const {
 		dist = delta.LengthFast();
 
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorBlue, start, end, USERCMD_MSEC, false );
+			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
 
@@ -1531,7 +1623,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end ) const {
 		dist = delta.LengthFast();
 
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorBlue, start, end, USERCMD_MSEC, false );
+			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
 
@@ -1579,6 +1671,7 @@ void idAI::StopMove( moveStatus_t status ) {
 	move.moveDir.Zero();
 	move.lastMoveOrigin.Zero();
 	move.lastMoveTime	= gameLocal.time;
+	move.bEnemyBlocks	= false;  // HUMANHEAD mdl:  Added bEnemyBlocks flag
 }
 
 /*
@@ -1603,7 +1696,8 @@ bool idAI::FaceEnemy( void ) {
 	move.startTime		= gameLocal.time;
 	move.speed			= 0.0f;
 	AI_MOVE_DONE		= true;
-	AI_FORWARD			= false;
+	// HUMANHEAD JRM - removed so we can move/face enemy at same time
+	//AI_FORWARD			= false;
 	AI_DEST_UNREACHABLE = false;
 
 	return true;
@@ -1782,6 +1876,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	}
 
 	pos = ent->GetPhysics()->GetOrigin();
+	
 	if ( ( move.moveType != MOVETYPE_FLY ) && ( ( move.moveCommand != MOVE_TO_ENTITY ) || ( move.goalEntityOrigin != pos ) ) ) {
 		ent->GetFloorPos( 64.0f, pos );
 	}
@@ -1951,7 +2046,7 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 idAI::MoveToPosition
 =====================
 */
-bool idAI::MoveToPosition( const idVec3 &pos ) {
+bool idAI::MoveToPosition( const idVec3 &pos, bool enemyBlocks ) { // HUMANHEAD mdl:  Added enemyBlocks flag
 	idVec3		org;
 	int			areaNum;
 	aasPath_t	path;
@@ -1990,6 +2085,7 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	move.bEnemyBlocks	= enemyBlocks; // HUMANHEAD mdl:  Added enemyBlocks flag
 
 	return true;
 }
@@ -2079,7 +2175,7 @@ idAI::WanderAround
 */
 bool idAI::WanderAround( void ) {
 	StopMove( MOVE_STATUS_DONE );
-
+	
 	move.moveDest = physicsObj.GetOrigin() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
 	if ( !NewWanderDir( move.moveDest ) ) {
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
@@ -2152,7 +2248,7 @@ bool idAI::StepDirection( float dir ) {
 			if ( z <= ceilingPos.z ) {
 				start.x = org.x;
 				start.y = org.y;
-				start.z = z;
+                start.z = z;
 			} else {
 				start = ceilingPos;
 			}
@@ -2216,7 +2312,7 @@ bool idAI::NewWanderDir( const idVec3 &dest ) {
 	}
 
 	// try other directions
-	if ( ( gameLocal.random.RandomInt() & 1 ) || idMath::Fabs( deltay ) > idMath::Fabs( deltax ) ) {
+	if ( ( gameLocal.random.RandomInt() & 1 ) || abs( deltay ) > abs( deltax ) ) {
 		tdir = d[ 1 ];
 		d[ 1 ] = d[ 2 ];
 		d[ 2 ] = tdir;
@@ -2239,7 +2335,7 @@ bool idAI::NewWanderDir( const idVec3 &dest ) {
 	if ( gameLocal.random.RandomInt() & 1 ) {
 		for( tdir = 0; tdir <= 315; tdir += 45 ) {
 			if ( tdir != turnaround && StepDirection( tdir ) ) {
-				return true;
+                return true;
 			}
 		}
 	} else {
@@ -2292,7 +2388,7 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 		}
 		return false;
 		break;
-
+	
 	case MOVE_SLIDE_TO_POSITION :
 		seekPos = org;
 		return false;
@@ -2344,7 +2440,7 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 
 		seekPos = org + move.moveDir * 2048.0f;
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorYellow, org, seekPos, USERCMD_MSEC, true );
+			gameRenderWorld->DebugLine( colorYellow, org, seekPos, gameLocal.msec, true );
 		}
 	} else {
 		AI_DEST_UNREACHABLE = false;
@@ -2468,18 +2564,18 @@ void idAI::Turn( void ) {
 		current_yaw = idMath::AngleNormalize180( anim_turn_yaw + rotateAxis[ 0 ].ToYaw() );
 	} else {
 		diff = idMath::AngleNormalize180( ideal_yaw - current_yaw );
-		turnVel += AI_TURN_SCALE * diff * MS2SEC( USERCMD_MSEC );
+		turnVel += AI_TURN_SCALE * diff * MS2SEC( gameLocal.msec );
 		if ( turnVel > turnRate ) {
 			turnVel = turnRate;
 		} else if ( turnVel < -turnRate ) {
 			turnVel = -turnRate;
 		}
-		turnAmount = turnVel * MS2SEC( USERCMD_MSEC );
+		turnAmount = turnVel * MS2SEC( gameLocal.msec );
 		if ( ( diff >= 0.0f ) && ( turnAmount >= diff ) ) {
-			turnVel = diff / MS2SEC( USERCMD_MSEC );
+			turnVel = diff / MS2SEC( gameLocal.msec );
 			turnAmount = diff;
 		} else if ( ( diff <= 0.0f ) && ( turnAmount <= diff ) ) {
-			turnVel = diff / MS2SEC( USERCMD_MSEC );
+			turnVel = diff / MS2SEC( gameLocal.msec );
 			turnAmount = diff;
 		}
 		current_yaw += turnAmount;
@@ -2490,13 +2586,17 @@ void idAI::Turn( void ) {
 		}
 	}
 
-	viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+	//HUMANHEAD: aob - added vehicle check
+	if( !InVehicle() ) {
+		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+	}
+	// HUMANHEAD END aob
 
 	if ( ai_debugMove.GetBool() ) {
 		const idVec3 &org = physicsObj.GetOrigin();
-		gameRenderWorld->DebugLine( colorRed, org, org + idAngles( 0, ideal_yaw, 0 ).ToForward() * 64, USERCMD_MSEC );
-		gameRenderWorld->DebugLine( colorGreen, org, org + idAngles( 0, current_yaw, 0 ).ToForward() * 48, USERCMD_MSEC );
-		gameRenderWorld->DebugLine( colorYellow, org, org + idAngles( 0, current_yaw + turnVel, 0 ).ToForward() * 32, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorRed, org, org + idAngles( 0, ideal_yaw, 0 ).ToForward() * 64, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorGreen, org, org + idAngles( 0, current_yaw, 0 ).ToForward() * 48, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, org, org + idAngles( 0, current_yaw + turnVel, 0 ).ToForward() * 32, gameLocal.msec );
 	}
 }
 
@@ -2544,7 +2644,11 @@ bool idAI::TurnToward( const idVec3 &pos ) {
 	float lengthSqr;
 
 	dir = pos - physicsObj.GetOrigin();
+#ifdef HUMANHEAD	//jsh wallwalk
+	physicsObj.GetAxis().ProjectVector( dir, local_dir );
+#else
 	physicsObj.GetGravityAxis().ProjectVector( dir, local_dir );
+#endif
 	local_dir.z = 0.0f;
 	lengthSqr = local_dir.LengthSqr();
 	if ( lengthSqr > Square( 2.0f ) || ( lengthSqr > Square( 0.1f ) && enemy.GetEntity() == NULL ) ) {
@@ -2584,7 +2688,7 @@ void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delt
 	idVec3 oldModelOrigin;
 	idVec3 modelOrigin;
 
-	animator.GetDelta( gameLocal.time - USERCMD_MSEC, gameLocal.time, delta );
+	animator.GetDelta( gameLocal.time - gameLocal.msec, gameLocal.time, delta );
 	delta = axis * delta;
 
 	if ( modelOffset != vec3_zero ) {
@@ -2621,10 +2725,10 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 
 	obstacle = NULL;
 	AI_OBSTACLE_IN_PATH = false;
-	foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path );
+	foundPath = FindPathAroundObstacles( &physicsObj, aas, ( move.bEnemyBlocks ? NULL : enemy.GetEntity() ), origin, goalPos, path ); // HUMANHEAD mdl:  Added bEnemyBlocks check
 	if ( ai_showObstacleAvoidance.GetBool() ) {
-		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), USERCMD_MSEC );
-		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), gameLocal.msec );
+		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), gameLocal.msec );
 	}
 
 	if ( !foundPath ) {
@@ -2697,12 +2801,18 @@ idAI::DeadMove
 */
 void idAI::DeadMove( void ) {
 	idVec3				delta;
+	monsterMoveResult_t	moveResult;
+
+	ApplyBasePush();
+
+	idVec3 org = physicsObj.GetOrigin();
 
 	GetMoveDelta( viewAxis, viewAxis, delta );
 	physicsObj.SetDelta( delta );
 
 	RunPhysics();
 
+	moveResult = physicsObj.GetMoveResult();
 	AI_ONGROUND = physicsObj.OnGround();
 }
 
@@ -2716,14 +2826,19 @@ void idAI::AnimMove( void ) {
 	idVec3				delta;
 	idVec3				goalDelta;
 	float				goalDist;
+	monsterMoveResult_t	moveResult;
 	idVec3				newDest;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
+#ifdef HUMANHEAD //jsh wallwalk
+	idMat3 oldaxis = GetGravViewAxis();
+#else
 	idMat3 oldaxis = viewAxis;
+#endif
 
 	AI_BLOCKED = false;
 
-	if ( move.moveCommand < NUM_NONMOVING_COMMANDS ){
+	if ( move.moveCommand < NUM_NONMOVING_COMMANDS ){ 
 		move.lastMoveOrigin.Zero();
 		move.lastMoveTime = gameLocal.time;
 	}
@@ -2743,8 +2858,8 @@ void idAI::AnimMove( void ) {
 			TurnToward( goalPos );
 		}
 	}
-
-	Turn();
+		
+	Turn();	
 
 	if ( move.moveCommand == MOVE_SLIDE_TO_POSITION ) {
 		if ( gameLocal.time < move.startTime + move.duration ) {
@@ -2757,7 +2872,11 @@ void idAI::AnimMove( void ) {
 			StopMove( MOVE_STATUS_DONE );
 		}
 	} else if ( allowMove ) {
+#ifdef HUMANHEAD //jsh wallwalk
+		GetMoveDelta( oldaxis, GetGravViewAxis(), delta );
+#else
 		GetMoveDelta( oldaxis, viewAxis, delta );
+#endif
 	} else {
 		delta.Zero();
 	}
@@ -2769,23 +2888,36 @@ void idAI::AnimMove( void ) {
 			delta = goalDelta;
 		}
 	}
-
-	physicsObj.UseFlyMove(false);
+	
+#ifdef HUMANHEAD //shrink functionality
+	float scale = renderEntity.shaderParms[SHADERPARM_ANY_DEFORM_PARM1];
+	if ( scale > 0.0f && scale < 2.0f ) {
+		delta *= scale;
+	}
+#endif
 	physicsObj.SetDelta( delta );
 	physicsObj.ForceDeltaMove( disableGravity );
 
 	RunPhysics();
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
+		// HUMANHEAD JRM - so we can see if grav is on or off
+		if(disableGravity) {
+			gameRenderWorld->DebugLine( colorRed, oldorigin, physicsObj.GetOrigin(), 5000 );
+		} else {
+			gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
+		}
 	}
 
+	moveResult = physicsObj.GetMoveResult();
 	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {
 		idEntity *blockEnt = physicsObj.GetSlideMoveEntity();
 		if ( blockEnt && blockEnt->IsType( idMoveable::Type ) && blockEnt->GetPhysics()->IsPushable() ) {
-			KickObstacles( viewAxis[ 0 ], kickForce, blockEnt );
+			if ( move.moveCommand != MOVE_NONE ) {	//HUMANHEAD jsh only kick obstacles if moving
+				KickObstacles( viewAxis[ 0 ], kickForce, blockEnt );
+			}
 		}
 	}
 
@@ -2799,9 +2931,9 @@ void idAI::AnimMove( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
 		DrawRoute();
 	}
 }
@@ -2819,7 +2951,7 @@ idVec3 Seek( idVec3 &vel, const idVec3 &org, const idVec3 &goal, float predictio
 	// predict our position
 	predictedPos = org + vel * prediction;
 	goalDelta = goal - predictedPos;
-	seekVel = goalDelta * MS2SEC( USERCMD_MSEC );
+	seekVel = goalDelta * MS2SEC( gameLocal.msec );
 
 	return seekVel;
 }
@@ -2834,13 +2966,15 @@ void idAI::SlideMove( void ) {
 	idVec3				delta;
 	idVec3				goalDelta;
 	float				goalDist;
+	monsterMoveResult_t	moveResult;
 	idVec3				newDest;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
+	idMat3 oldaxis = viewAxis;
 
 	AI_BLOCKED = false;
 
-	if ( move.moveCommand < NUM_NONMOVING_COMMANDS ){
+	if ( move.moveCommand < NUM_NONMOVING_COMMANDS ){ 
 		move.lastMoveOrigin.Zero();
 		move.lastMoveTime = gameLocal.time;
 	}
@@ -2881,8 +3015,8 @@ void idAI::SlideMove( void ) {
 
 	// seek the goal position
 	goalDelta = goalPos - predictedPos;
-	vel -= vel * AI_FLY_DAMPENING * MS2SEC( USERCMD_MSEC );
-	vel += goalDelta * MS2SEC( USERCMD_MSEC );
+	vel -= vel * AI_FLY_DAMPENING * MS2SEC( gameLocal.msec );
+	vel += goalDelta * MS2SEC( gameLocal.msec );
 
 	// cap our speed
 	vel.Truncate( fly_speed );
@@ -2906,6 +3040,7 @@ void idAI::SlideMove( void ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
 	}
 
+	moveResult = physicsObj.GetMoveResult();
 	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {
@@ -2925,9 +3060,9 @@ void idAI::SlideMove( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
 		DrawRoute();
 	}
 }
@@ -2939,9 +3074,9 @@ idAI::AdjustFlyingAngles
 */
 void idAI::AdjustFlyingAngles( void ) {
 	idVec3	vel;
-	float	speed;
-	float	roll;
-	float	pitch;
+	float 	speed;
+	float 	roll;
+	float 	pitch;
 
 	vel = physicsObj.GetLinearVelocity();
 
@@ -2987,7 +3122,7 @@ void idAI::AddFlyBob( idVec3 &vel ) {
 	if ( fly_bob_strength ) {
 		t = MS2SEC( gameLocal.time + entityNumber * 497 );
 		fly_bob_add = ( viewAxis[ 1 ] * idMath::Sin16( t * fly_bob_horz ) + viewAxis[ 2 ] * idMath::Sin16( t * fly_bob_vert ) ) * fly_bob_strength;
-		vel += fly_bob_add * MS2SEC( USERCMD_MSEC );
+		vel += fly_bob_add * MS2SEC( gameLocal.msec );
 		if ( ai_debugMove.GetBool() ) {
 			const idVec3 &origin = physicsObj.GetOrigin();
 			gameRenderWorld->DebugArrow( colorOrange, origin, origin + fly_bob_add, 0 );
@@ -3020,9 +3155,9 @@ void idAI::AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos ) {
 			vel.z += addVel.z;
 			goLower = true;
 		}
-
+        
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugBounds( goLower ? colorRed : colorGreen, physicsObj.GetBounds(), path.endPos, USERCMD_MSEC );
+			gameRenderWorld->DebugBounds( goLower ? colorRed : colorGreen, physicsObj.GetBounds(), path.endPos, gameLocal.msec );
 		}
 	}
 
@@ -3038,8 +3173,19 @@ void idAI::AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos ) {
 			end.z = goalPos.z + DEFAULT_FLY_OFFSET + fly_offset;
 		}
 
+#if HUMANHEAD // jsh do a shorter trace if player is farther than CM_MAX_TRACE_DIST away
+		if ( (end - origin).LengthSqr() < CM_MAX_TRACE_DIST * CM_MAX_TRACE_DIST ) {
+			gameLocal.clip.Translation( trace, origin, end, physicsObj.GetClipModel(), mat3_identity, MASK_MONSTERSOLID, this );
+			vel += Seek( vel, origin, trace.endpos, AI_SEEK_PREDICTION );
+		} else {
+			idVec3 short_end = origin + ( end - origin ).ToNormal() * 4000;
+			gameLocal.clip.Translation( trace, origin, short_end, physicsObj.GetClipModel(), mat3_identity, MASK_MONSTERSOLID, this );
+			vel += Seek( vel, origin, end, AI_SEEK_PREDICTION );
+		}
+#else
 		gameLocal.clip.Translation( trace, origin, end, physicsObj.GetClipModel(), mat3_identity, MASK_MONSTERSOLID, this );
 		vel += Seek( vel, origin, trace.endpos, AI_SEEK_PREDICTION );
+#endif
 	}
 }
 
@@ -3050,7 +3196,7 @@ idAI::FlySeekGoal
 */
 void idAI::FlySeekGoal( idVec3 &vel, idVec3 &goalPos ) {
 	idVec3 seekVel;
-
+	
 	// seek the goal position
 	seekVel = Seek( vel, physicsObj.GetOrigin(), goalPos, AI_SEEK_PREDICTION );
 	seekVel *= fly_seek_scale;
@@ -3066,11 +3212,11 @@ void idAI::AdjustFlySpeed( idVec3 &vel ) {
 	float speed;
 
 	// apply dampening
-	vel -= vel * AI_FLY_DAMPENING * MS2SEC( USERCMD_MSEC );
+	vel -= vel * AI_FLY_DAMPENING * MS2SEC( gameLocal.msec );
 
 	// gradually speed up/slow down to desired speed
 	speed = vel.Normalize();
-	speed += ( move.speed - speed ) * MS2SEC( USERCMD_MSEC );
+	speed += ( move.speed - speed ) * MS2SEC( gameLocal.msec );
 	if ( speed < 0.0f ) {
 		speed = 0.0f;
 	} else if ( move.speed && ( speed > move.speed ) ) {
@@ -3142,7 +3288,7 @@ void idAI::FlyMove( void ) {
 		physicsObj.SetLinearVelocity( vel );
 	}
 
-	// turn
+	// turn	
 	FlyTurn();
 
 	// run the physics for this frame
@@ -3173,11 +3319,11 @@ void idAI::FlyMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 4000 );
-		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
-		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), USERCMD_MSEC, true );
-		gameRenderWorld->DebugLine( colorBlue, org, goalPos, USERCMD_MSEC, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
+		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), gameLocal.msec, true );
+		gameRenderWorld->DebugLine( colorBlue, org, goalPos, gameLocal.msec, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
 		DrawRoute();
 	}
 }
@@ -3214,9 +3360,9 @@ void idAI::StaticMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		const idVec3 &org = physicsObj.GetOrigin();
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
-		gameRenderWorld->DebugLine( colorBlue, org, move.moveDest, USERCMD_MSEC, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorBlue, org, move.moveDest, gameLocal.msec, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
 	}
 }
 
@@ -3232,6 +3378,11 @@ idAI::ReactionTo
 =====================
 */
 int idAI::ReactionTo( const idEntity *ent ) {
+
+	// HUMANHEAD cjr
+	if ( ent->health <= 0 ) {
+		return ATTACK_IGNORE;
+	}
 
 	if ( ent->fl.hidden ) {
 		// ignore hidden entities
@@ -3274,6 +3425,11 @@ idAI::Pain
 */
 bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
 	idActor	*actor;
+	// HUMANHEAD JRM - they are ignoring pain from ourselves but yet still playing the pain sounds - skip pain anim/sounds!
+	if(attacker == this) {		
+		return false;
+	}
+	// HUMANHEAD END
 
 	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location );
 	AI_DAMAGE = true;
@@ -3362,7 +3518,7 @@ const idDeclParticle *idAI::SpawnParticlesOnJoint( particleEmitter_t &pe, const 
 			pe.time = gameLocal.time;
 		}
 		pe.particle = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particleName ) );
-		gameLocal.smokeParticles->EmitSmoke(pe.particle, pe.time, gameLocal.random.CRandomFloat(), origin, axis, timeGroup /*_D3XP*/);
+		gameLocal.smokeParticles->EmitSmoke( pe.particle, pe.time, gameLocal.random.CRandomFloat(), origin, axis );
 	}
 
 	return pe.particle;
@@ -3381,7 +3537,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	EndAttack();
 
 	if ( g_debugDamage.GetBool() ) {
-		gameLocal.Printf( "Damage: joint: '%s', zone '%s'\n", animator.GetJointName( ( jointHandle_t )location ),
+		gameLocal.Printf( "Damage: joint: '%s', zone '%s'\n", animator.GetJointName( ( jointHandle_t )location ), 
 			GetDamageGroup( location ) );
 	}
 
@@ -3429,15 +3585,20 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	AI_DEAD	= true;
 
 	// make monster nonsolid
-	physicsObj.SetContents( 0 );
-	physicsObj.GetClipModel()->Unlink();
+	if ( !spawnArgs.GetBool( "no_ragdoll_on_death", "0" ) ) { // HUMANHEAD mdl:  Added no_ragdoll_on_death
+		physicsObj.SetContents( 0 );
+		physicsObj.GetClipModel()->Unlink();
+	} // HUMANHEAD END
 
 	Unbind();
 
-	if ( StartRagdoll() ) {
+	if ( !spawnArgs.GetBool( "no_ragdoll_on_death", "0" ) && StartRagdoll() ) { // HUMANHEAD mdl:  Added no_ragdoll_on_death
+		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+	// HUMANHEAD JRM - some monsters are removed, but always need to play sound
+	} else if(spawnArgs.GetBool("death_sound_always","0")) { 
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
 	}
-
+	
 	if ( spawnArgs.GetString( "model_death", "", &modelDeath ) ) {
 		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
@@ -3446,8 +3607,6 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		physicsObj.SetLinearVelocity( vec3_zero );
 		physicsObj.PutToRest();
 		physicsObj.DisableImpact();
-		// No grabbing if "model_death"
-		noGrab = true;
 	}
 
 	restartParticles = false;
@@ -3456,35 +3615,21 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	SetState( state );
 	SetWaitState( "" );
 
-	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
-	while( kv ) {
-		idDict args;
+	// HUMANHEAD nla - Commented out as we are doing this in hhAI
+	// const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
+	// while( kv ) {
+	// 	idDict args;
+	// 
+	//	args.Set( "classname", kv->GetValue() );
+	//	args.Set( "origin", physicsObj.GetOrigin().ToString() );
+	//	gameLocal.SpawnEntityDef( args );
+	//	kv = spawnArgs.MatchPrefix( "def_drops", kv );
+	// }
+	// HUMANHEAD END
 
-		args.Set( "classname", kv->GetValue() );
-		args.Set( "origin", physicsObj.GetOrigin().ToString() );
-		gameLocal.SpawnEntityDef( args );
-		kv = spawnArgs.MatchPrefix( "def_drops", kv );
-	}
-
-	if ((attacker && attacker->IsType(idPlayer::Type)) && (inflictor && !inflictor->IsType(idSoulCubeMissile::Type))) {
-		static_cast< idPlayer * >(attacker)->AddAIKill();
-	}
-
-	if (spawnArgs.GetBool("harvest_on_death")) {
-		const idDict *harvestDef = gameLocal.FindEntityDefDict(spawnArgs.GetString("def_harvest_type"), false);
-
-		if (harvestDef) {
-			idEntity *temp;
-			gameLocal.SpawnEntityDef(*harvestDef, &temp, false);
-			harvestEnt = static_cast<idHarvestable *>(temp);
-
-		}
-
-		if (harvestEnt.GetEntity()) {
-			//Let the harvest entity set itself up
-			harvestEnt.GetEntity()->Init(this);
-			harvestEnt.GetEntity()->BecomeActive(TH_THINK);
-		}
+	// HUMANHEAD pdm: removed soulcube missile check
+	if ( attacker && attacker->IsType( idPlayer::Type ) ) {
+		static_cast< idPlayer* >( attacker )->AddAIKill();
 	}
 }
 
@@ -3541,18 +3686,6 @@ void idAI::PlayCinematic( void ) {
 
 	torsoAnim.animBlendFrames = 0;
 	torsoAnim.lastAnimBlendFrames = 0;
-
-	// Koz begin
-	leftHandAnim.animBlendFrames = 0;
-	leftHandAnim.lastAnimBlendFrames = 0;
-
-	rightHandAnim.animBlendFrames = 0;
-	rightHandAnim.lastAnimBlendFrames = 0;
-
-	ProcessEvent( &AI_PlayAnim, ANIMCHANNEL_LEFTHAND, animname );
-	ProcessEvent( &AI_PlayAnim, ANIMCHANNEL_RIGHTHAND, animname );
-	// Koz end
-
 	ProcessEvent( &AI_PlayAnim, ANIMCHANNEL_TORSO, animname );
 
 	// make sure our model gets updated
@@ -3587,7 +3720,9 @@ Notifies the script that a monster has been activated by a trigger or flashlight
 =====================
 */
 void idAI::Activate( idEntity *activator ) {
+#ifndef HUMANHEAD
 	idPlayer *player;
+#endif
 
 	if ( AI_DEAD ) {
 		// ignore it when they're dead
@@ -3601,6 +3736,17 @@ void idAI::Activate( idEntity *activator ) {
 		PlayCinematic();
 	} else {
 		AI_ACTIVATED = true;
+#ifdef HUMANHEAD
+	    // HUMANHEAD PDM: Allow activation by any actor, not just players
+	    if ( activator && activator->IsType( idActor::Type ) ) {
+		    idActor *actor = static_cast<idActor *>( activator );
+		    //HUMANHEAD: jrm - check if we don't have an enemy
+		    if ( !enemy.IsValid() && ReactionTo( actor ) & ATTACK_ON_ACTIVATE ) {
+			    SetEnemy( actor );
+			    SetEnemyPosition();
+		    }
+	    }
+#else
 		if ( !activator || !activator->IsType( idPlayer::Type ) ) {
 			player = gameLocal.GetLocalPlayer();
 		} else {
@@ -3610,10 +3756,11 @@ void idAI::Activate( idEntity *activator ) {
 		if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE ) {
 			SetEnemy( player );
 		}
+#endif
 
 		// update the script in cinematics so that entities don't start anims or show themselves a frame late.
 		if ( cinematic ) {
-			UpdateAIScript();
+            UpdateAIScript();
 
 			// make sure our model gets updated
 			animator.ForceUpdate();
@@ -3651,27 +3798,12 @@ void idAI::EnemyDead( void ) {
 
 /*
 =====================
-idAI::ListenTo
-=====================
-*/
-void idAI::ListenTo( idEntity* ent )
-{
-	Event_LookAtEntity(ent, 1.0f);
-}
-
-/*
-=====================
 idAI::TalkTo
 =====================
 */
 void idAI::TalkTo( idActor *actor ) {
 	if ( talk_state != TALK_OK ) {
 		return;
-	}
-
-	// Wake up monsters that are pretending to be NPC's
-	if (team == 1 && actor->team != team) {
-		ProcessEvent(&EV_Activate, actor);
 	}
 
 	talkTarget = actor;
@@ -3818,6 +3950,7 @@ void idAI::SetEnemyPosition( void ) {
 			pos = lastReachableEnemyPos;
 		}
 		if ( !enemyAreaNum ) {
+			AI_ENEMY_REACHABLE = false;
 			if ( move.moveCommand == MOVE_TO_ENEMY ) {
 				AI_DEST_UNREACHABLE = true;
 			}
@@ -3831,7 +3964,9 @@ void idAI::SetEnemyPosition( void ) {
 				if ( move.moveCommand == MOVE_TO_ENEMY ) {
 					AI_DEST_UNREACHABLE = false;
 				}
+				AI_ENEMY_REACHABLE = true;
 			} else if ( move.moveCommand == MOVE_TO_ENEMY ) {
+				AI_ENEMY_REACHABLE = false;
 				AI_DEST_UNREACHABLE = true;
 			}
 		}
@@ -3867,6 +4002,7 @@ void idAI::UpdateEnemyPosition( void ) {
 	int				enemyAreaNum;
 	int				areaNum;
 	aasPath_t		path;
+	predictedPath_t predictedPath;
 	idVec3			enemyPos;
 	bool			onGround;
 
@@ -3924,8 +4060,8 @@ void idAI::UpdateEnemyPosition( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, gameLocal.msec );
 	}
 }
 
@@ -4038,7 +4174,7 @@ void idAI::CalculateAttackOffsets( void ) {
 		return;
 	}
 	num = modelDef->NumAnims();
-
+	
 	// needs to be off while getting the offsets so that we account for the distance the monster moves in the attack anim
 	animator.RemoveOriginOffset( false );
 
@@ -4054,7 +4190,10 @@ void idAI::CalculateAttackOffsets( void ) {
 		if ( anim ) {
 			frame = anim->FindFrameForFrameCommand( FC_LAUNCHMISSILE, &command );
 			if ( frame >= 0 ) {
-				joint = animator.GetJointHandle( command->string->c_str() );
+				// HUMANHEAD nla - We have extra data in our frame commands, so need to strip that out/get to the joint name
+				const char *jointName = GetJointForFrameCommand( command->string->c_str() );
+				joint = animator.GetJointHandle( jointName );
+				// HUMANHEAD END
 				if ( joint == INVALID_JOINT ) {
 					gameLocal.Error( "Invalid joint '%s' on 'launch_missile' frame command on frame %d of model '%s'", command->string->c_str(), frame, modelDef->GetName() );
 				}
@@ -4076,6 +4215,14 @@ void idAI::CreateProjectileClipModel( void ) const {
 		idBounds projectileBounds( vec3_origin );
 		projectileBounds.ExpandSelf( projectileRadius );
 		projectileClipModel	= new idClipModel( idTraceModel( projectileBounds ) );
+		//HUMANHEAD mdc - added to support multiple projectiles
+		if( projectileDefaultDefIndex >= 0 ) {	//propagate back to our projectileInfos
+			int projIndex = FindProjectileInfo( projectileDef );
+			if( projIndex >= 0 ) {
+				projectileInfos[ projIndex ].projectileClipModel = projectileClipModel;
+			}
+		}
+		//HUMANHEAD END
 	}
 }
 
@@ -4100,21 +4247,16 @@ bool idAI::GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity 
 	if ( projectileClipModel == NULL ) {
 		CreateProjectileClipModel();
 	}
-
+	
 	if ( aimAtEnt == enemy.GetEntity() ) {
-		static_cast<idActor *>( aimAtEnt )->GetAIAimTargets( lastVisibleEnemyPos, targetPos1, targetPos2 );
+		static_cast<idActor *>( aimAtEnt )->GetAIAimTargets( lastVisibleEnemyPos, targetPos1, targetPos2 );		
 	} else if ( aimAtEnt->IsType( idActor::Type ) ) {
-		static_cast<idActor *>( aimAtEnt )->GetAIAimTargets( aimAtEnt->GetPhysics()->GetOrigin(), targetPos1, targetPos2 );
+		static_cast<idActor *>( aimAtEnt )->GetAIAimTargets( aimAtEnt->GetPhysics()->GetOrigin(), targetPos1, targetPos2 );		
 	} else {
 		targetPos1 = aimAtEnt->GetPhysics()->GetAbsBounds().GetCenter();
-		targetPos2 = targetPos1;
+		targetPos2 = targetPos1;	
 	}
-
-	if (this->team == 0 && !idStr::Cmp(aimAtEnt->GetEntityDefName(), "monster_demon_vulgar")) {
-		targetPos1.z -= 28.f;
-		targetPos2.z -= 12.f;
-	}
-
+	
 	// try aiming for chest
 	delta = firePos - targetPos1;
 	max_height = delta.LengthFast() * projectile_height_to_distance_ratio;
@@ -4165,7 +4307,7 @@ idProjectile *idAI::CreateProjectile( const idVec3 &pos, const idVec3 &dir ) {
 			clsname = projectileDef->GetString( "classname" );
 			gameLocal.Error( "Could not spawn entityDef '%s'", clsname );
 		}
-
+		
 		if ( !ent->IsType( idProjectile::Type ) ) {
 			clsname = ent->GetClassname();
 			gameLocal.Error( "'%s' is not an idProjectile", clsname );
@@ -4195,7 +4337,7 @@ void idAI::RemoveProjectile( void ) {
 idAI::LaunchProjectile
 =====================
 */
-idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone ) {
+idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone, const idDict* desiredProjectileDef ) {	//HUMANHEAD mdc - added desiredProjectileDef for supporting multiple projs.
 	idVec3				muzzle;
 	idVec3				dir;
 	idVec3				start;
@@ -4213,10 +4355,18 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	int					num_projectiles;
 	int					i;
 	idMat3				axis;
-	idMat3				proj_axis;
-	bool				forceMuzzle;
 	idVec3				tmp;
 	idProjectile		*lastProjectile;
+
+	//HUMANHEAD mdc - added to support multiple projectiles
+	if( desiredProjectileDef ) {	//try to set our projectile to the desiredProjectile
+		int projIndex = FindProjectileInfo( desiredProjectileDef );
+		if( projIndex >= 0 ) {
+			SetCurrentProjectile( projIndex );
+		}
+	}
+	//HUMANHEAD END
+
 
 	if ( !projectileDef ) {
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
@@ -4227,7 +4377,6 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	attack_cone = spawnArgs.GetFloat( "attack_cone", "70" );
 	projectile_spread = spawnArgs.GetFloat( "projectile_spread", "0" );
 	num_projectiles = spawnArgs.GetInt( "num_projectiles", "1" );
-	forceMuzzle = spawnArgs.GetBool( "forceMuzzle", "0" );
 
 	GetMuzzle( jointname, muzzle, axis );
 
@@ -4250,40 +4399,29 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	axis[2] = axis[0];
 	axis[0] = -tmp;
 
-	proj_axis = axis;
+	// make sure the projectile starts inside the monster bounding box
+	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
+	projClip = lastProjectile->GetPhysics()->GetClipModel();
+	projBounds = projClip->GetBounds().Rotate( axis );
 
-	if( !forceMuzzle )  	// _D3XP
-	{
-		// make sure the projectile starts inside the monster bounding box
-		const idBounds& ownerBounds = physicsObj.GetAbsBounds();
-		projClip = lastProjectile->GetPhysics()->GetClipModel();
-		projBounds = projClip->GetBounds().Rotate( axis );
-
-		// check if the owner bounds is bigger than the projectile bounds
-		if( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
-			( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
-			( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) )
-		{
-			if( ( ownerBounds - projBounds ).RayIntersection( muzzle, viewAxis[ 0 ], distance ) )
-			{
-				start = muzzle + distance * viewAxis[ 0 ];
-			}
-			else
-			{
-				start = ownerBounds.GetCenter();
-			}
-		}
-		else
-		{
-			// projectile bounds bigger than the owner bounds, so just start it from the center
+	// check if the owner bounds is bigger than the projectile bounds
+	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
+		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
+		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
+		if ( (ownerBounds - projBounds).RayIntersection( muzzle, viewAxis[ 0 ], distance ) ) {
+			start = muzzle + distance * viewAxis[ 0 ];
+		} else {
 			start = ownerBounds.GetCenter();
 		}
-
-		gameLocal.clip.Translation( tr, start, muzzle, projClip, axis, MASK_SHOT_RENDERMODEL, this );
-		muzzle = tr.endpos;
+	} else {
+		// projectile bounds bigger than the owner bounds, so just start it from the center
+		start = ownerBounds.GetCenter();
 	}
 
-	// set aiming direction
+	gameLocal.clip.Translation( tr, start, muzzle, projClip, axis, MASK_SHOT_RENDERMODEL, this );
+	muzzle = tr.endpos;
+
+	// set aiming direction	
 	GetAimDir( muzzle, target, this, dir );
 	ang = dir.ToAngles();
 
@@ -4322,9 +4460,14 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 		projectile = NULL;
 	}
 
-	TriggerWeaponEffects( muzzle );
+	TriggerWeaponEffects( muzzle, axis );
 
 	lastAttackTime = gameLocal.time;
+
+//HUMANHEAD mdc - added to support multiple projectiles
+	projectile = NULL;
+	SetCurrentProjectile( projectileDefaultDefIndex );	//set back to our default projectile to be on the safe side
+//HUMANHEAD END
 
 	return lastProjectile;
 }
@@ -4428,7 +4571,7 @@ bool idAI::TestMelee( void ) const {
 	enemyBounds.TranslateSelf( enemyOrg );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, gameLocal.msec );
 	}
 
 	if ( !bounds.IntersectsBounds( enemyBounds ) ) {
@@ -4481,6 +4624,7 @@ bool idAI::AttackMelee( const char *meleeDefName ) {
 	// check for the "saving throw" automatic melee miss on lethal blow
 	// stupid place for this.
 	bool forceMiss = false;
+/*	HUMANHEAD pdm: skill not used
 	if ( enemyEnt->IsType( idPlayer::Type ) && g_skill.GetInteger() < 2 ) {
 		int	damage, armor;
 		idPlayer *player = static_cast<idPlayer*>( enemyEnt );
@@ -4498,6 +4642,7 @@ bool idAI::AttackMelee( const char *meleeDefName ) {
 			}
 		}
 	}
+*/
 
 	// make sure the trace can actually hit the enemy
 	if ( forceMiss || !TestMelee() ) {
@@ -4605,9 +4750,8 @@ void idAI::GetMuzzle( const char *jointname, idVec3 &muzzle, idMat3 &axis ) {
 idAI::TriggerWeaponEffects
 ================
 */
-void idAI::TriggerWeaponEffects( const idVec3 &muzzle ) {
+void idAI::TriggerWeaponEffects( const idVec3 &muzzle, const idMat3 &axis ) {
 	idVec3 org;
-	idMat3 axis;
 
 	if ( !g_muzzleFlash.GetBool() ) {
 		return;
@@ -4618,21 +4762,16 @@ void idAI::TriggerWeaponEffects( const idVec3 &muzzle ) {
 	renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
 	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] = gameLocal.random.CRandomFloat();
 
-	if ( flashJointWorld != INVALID_JOINT ) {
-		GetJointWorldTransform( flashJointWorld, gameLocal.time, org, axis );
-
-		if ( worldMuzzleFlash.lightRadius.x > 0.0f ) {
-			worldMuzzleFlash.axis = axis;
-			worldMuzzleFlash.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
-			if ( worldMuzzleFlashHandle != - 1 ) {
-				gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
-			} else {
-				worldMuzzleFlashHandle = gameRenderWorld->AddLightDef( &worldMuzzleFlash );
-			}
-			muzzleFlashEnd = gameLocal.time + flashTime;
-			UpdateVisuals();
-		}
+	worldMuzzleFlash.origin = muzzle - axis*worldMuzzleFlash.lightCenter;
+	worldMuzzleFlash.axis = axis;
+	worldMuzzleFlash.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+	if ( worldMuzzleFlashHandle != - 1 ) {
+		gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
+	} else {
+		worldMuzzleFlashHandle = gameRenderWorld->AddLightDef( &worldMuzzleFlash );
 	}
+	muzzleFlashEnd = gameLocal.time + flashTime;
+	UpdateVisuals();
 }
 
 /*
@@ -4641,17 +4780,10 @@ idAI::UpdateMuzzleFlash
 ================
 */
 void idAI::UpdateMuzzleFlash( void ) {
-	if ( worldMuzzleFlashHandle != -1 ) {
+	if ( worldMuzzleFlashHandle != -1 ) { 
 		if ( gameLocal.time >= muzzleFlashEnd ) {
 			gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
 			worldMuzzleFlashHandle = -1;
-		} else {
-			idVec3 muzzle;
-			animator.GetJointTransform( flashJointWorld, gameLocal.time, muzzle, worldMuzzleFlash.axis );
-			animator.GetJointTransform( flashJointWorld, gameLocal.time, muzzle, worldMuzzleFlash.axis );
-			muzzle = physicsObj.GetOrigin() + ( muzzle + modelOffset ) * viewAxis * physicsObj.GetGravityAxis();
-			worldMuzzleFlash.origin = muzzle;
-			gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
 		}
 	}
 }
@@ -4782,9 +4914,6 @@ void idAI::UpdateParticles( void ) {
 
 		int particlesAlive = 0;
 		for ( int i = 0; i < particles.Num(); i++ ) {
-			// Smoke particles on AI characters will always be "slow", even when held by grabber
-			SetTimeState ts(TIME_GROUP1);
-
 			if ( particles[i].particle && particles[i].time ) {
 				particlesAlive++;
 				if (af.IsActive()) {
@@ -4796,7 +4925,7 @@ void idAI::UpdateParticles( void ) {
 					realVector = physicsObj.GetOrigin() + ( realVector + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() );
 				}
 
-				if (!gameLocal.smokeParticles->EmitSmoke(particles[i].particle, particles[i].time, gameLocal.random.CRandomFloat(), realVector, realAxis, timeGroup /*_D3XP*/)) {
+				if ( !gameLocal.smokeParticles->EmitSmoke( particles[i].particle, particles[i].time, gameLocal.random.CRandomFloat(), realVector, realAxis )) {
 					if ( restartParticles ) {
 						particles[i].time = gameLocal.time;
 					} else {
@@ -4829,118 +4958,6 @@ void idAI::TriggerParticles( const char *jointName ) {
 	}
 }
 
-void idAI::TriggerFX(const char *joint, const char *fx)
-{
-
-	if (!strcmp(joint, "origin")) {
-		idEntityFx::StartFx(fx, NULL, NULL, this, true);
-	} else {
-		idVec3	joint_origin;
-		idMat3	joint_axis;
-		jointHandle_t jointNum;
-		jointNum = animator.GetJointHandle(joint);
-
-		if (jointNum == INVALID_JOINT) {
-			gameLocal.Warning("Unknown fx joint '%s' on entity %s", joint, name.c_str());
-			return;
-		}
-
-		GetJointWorldTransform(jointNum, gameLocal.time, joint_origin, joint_axis);
-		idEntityFx::StartFx(fx, &joint_origin, &joint_axis, this, true);
-	}
-}
-
-idEntity *idAI::StartEmitter(const char *name, const char *joint, const char *particle)
-{
-
-	idEntity *existing = GetEmitter(name);
-
-	if (existing) {
-		return existing;
-	}
-
-	jointHandle_t jointNum;
-	jointNum = animator.GetJointHandle(joint);
-
-	idVec3 offset;
-	idMat3 axis;
-
-	GetJointWorldTransform(jointNum, gameLocal.time, offset, axis);
-
-	/*animator.GetJointTransform( jointNum, gameLocal.time, offset, axis );
-	offset = GetPhysics()->GetOrigin() + offset * GetPhysics()->GetAxis();
-	axis = axis * GetPhysics()->GetAxis();*/
-
-
-
-	idDict args;
-
-	const idDeclEntityDef *emitterDef = gameLocal.FindEntityDef("func_emitter", false);
-	args = emitterDef->dict;
-	args.Set("model", particle);
-	args.Set("origin", offset.ToString());
-	args.SetBool("start_off", true);
-
-	idEntity *ent;
-	gameLocal.SpawnEntityDef(args, &ent, false);
-
-	ent->GetPhysics()->SetOrigin(offset);
-	//ent->GetPhysics()->SetAxis(axis);
-
-	// align z-axis of model with the direction
-	/*idVec3		tmp;
-	axis = (viewAxis[ 0 ] * physicsObj.GetGravityAxis()).ToMat3();
-	tmp = axis[2];
-	axis[2] = axis[0];
-	axis[0] = -tmp;
-
-	ent->GetPhysics()->SetAxis(axis);*/
-
-	axis = physicsObj.GetGravityAxis();
-	ent->GetPhysics()->SetAxis(axis);
-
-
-	ent->GetPhysics()->GetClipModel()->SetOwner(this);
-
-
-	//Keep a reference to the emitter so we can track it
-	funcEmitter_t newEmitter;
-	strcpy(newEmitter.name, name);
-	newEmitter.particle = (idFuncEmitter *)ent;
-	newEmitter.joint = jointNum;
-	funcEmitters.Set(newEmitter.name, newEmitter);
-
-	//Bind it to the joint and make it active
-	newEmitter.particle->BindToJoint(this, jointNum, true);
-	newEmitter.particle->BecomeActive(TH_THINK);
-	newEmitter.particle->Show();
-	newEmitter.particle->PostEventMS(&EV_Activate, 0, this);
-	return newEmitter.particle;
-}
-
-idEntity *idAI::GetEmitter(const char *name)
-{
-	funcEmitter_t *emitter;
-	funcEmitters.Get(name, &emitter);
-
-	if (emitter) {
-		return emitter->particle;
-	}
-
-	return NULL;
-}
-
-void idAI::StopEmitter(const char *name)
-{
-	funcEmitter_t *emitter;
-	funcEmitters.Get(name, &emitter);
-
-	if (emitter) {
-		emitter->particle->Unbind();
-		emitter->particle->PostEventMS(&EV_Remove, 0);
-		funcEmitters.Remove(name);
-	}
-}
 
 /***********************************************************************
 
@@ -4956,12 +4973,11 @@ idAI::UpdateAnimationControllers
 bool idAI::UpdateAnimationControllers( void ) {
 	idVec3		local;
 	idVec3		focusPos;
-	idQuat		jawQuat;
 	idVec3		left;
-	idVec3		dir;
-	idVec3		orientationJointPos;
-	idVec3		localDir;
-	idAngles	newLookAng;
+	idVec3 		dir;
+	idVec3 		orientationJointPos;
+	idVec3 		localDir;
+	idAngles 	newLookAng;
 	idAngles	diff;
 	idMat3		mat;
 	idMat3		axis;
@@ -4991,11 +5007,12 @@ bool idAI::UpdateAnimationControllers( void ) {
 		if ( headEnt ) {
 			headEnt->GetJointWorldTransform( focusJoint, gameLocal.time, eyepos, axis );
 		} else {
+			// JRMMERGE_GRAVAXIS - What about GetGravAxis() are we still using/needing that?
 			GetJointWorldTransform( focusJoint, gameLocal.time, eyepos, axis );
 		}
 		eyeOffset.z = eyepos.z - physicsObj.GetOrigin().z;
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorRed, eyepos, eyepos + orientationJointAxis[ 0 ] * 32.0f, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( colorRed, eyepos, eyepos + orientationJointAxis[ 0 ] * 32.0f, gameLocal.msec );
 		}
 	} else {
 		eyepos = GetEyePosition();
@@ -5016,7 +5033,7 @@ bool idAI::UpdateAnimationControllers( void ) {
 
 	idEntity *focusEnt = focusEntity.GetEntity();
 	if ( !allowJointMod || !allowEyeFocus || ( gameLocal.time >= focusTime ) ) {
-		focusPos = GetEyePosition() + orientationJointAxis[ 0 ] * 512.0f;
+	    focusPos = GetEyePosition() + orientationJointAxis[ 0 ] * 512.0f;
 	} else if ( focusEnt == NULL ) {
 		// keep looking at last position until focusTime is up
 		focusPos = currentFocusPos;
@@ -5037,20 +5054,28 @@ bool idAI::UpdateAnimationControllers( void ) {
 	newLookAng.pitch = 0.0f;
 
 #if 0
-	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, USERCMD_MSEC );
-	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, USERCMD_MSEC );
-	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, USERCMD_MSEC );
+	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, gameLocal.msec );
+	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, gameLocal.msec );
+	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, gameLocal.msec );
 #endif
 
+//JRMMERGE_GRAVAXIS: This changed to much to merge, see if you can get your monsters on planets changes back in here.  I'll leave both versions
+#if OLD_CODE
+	GetGravViewAxis().ProjectVector( dir, localDir ); // HUMANHEAD JRM: VIEWAXIS_TO_GETGRAVVIEWAXIS
+	lookAng.yaw		= idMath::AngleNormalize180( localDir.ToYaw() );
+	lookAng.pitch	= -idMath::AngleNormalize180( localDir.ToPitch() );
+	lookAng.roll	= 0.0f;
+#else
 	// determine pitch from joint position
 	dir = focusPos - eyepos;
 	dir.NormalizeFast();
 	orientationJointAxis.ProjectVector( dir, localDir );
 	newLookAng.pitch = -idMath::AngleNormalize180( localDir.ToPitch() );
 	newLookAng.roll	= 0.0f;
+#endif
 
 	diff = newLookAng - lookAng;
-
+	
 	if ( eyeAng != diff ) {
 		eyeAng = diff;
 		eyeAng.Clamp( eyeMin, eyeMax );
@@ -5095,13 +5120,22 @@ bool idAI::UpdateAnimationControllers( void ) {
 		animator.SetJointAxis( lookJoints[ i ], JOINTMOD_WORLD, jointAng.ToMat3() );
 	}
 
+
 	if ( move.moveType == MOVETYPE_FLY ) {
 		// lean into turns
 		AdjustFlyingAngles();
 	}
-
+	
 	if ( headEnt ) {
 		idAnimator *headAnimator = headEnt->GetAnimator();
+
+		// HUMANHEAD pdm: Added support for look joints in head entities
+		for( i = 0; i < headLookJoints.Num(); i++ ) {
+			jointAng.pitch	= lookAng.pitch * headLookJointAngles[ i ].pitch;
+			jointAng.yaw	= lookAng.yaw * headLookJointAngles[ i ].yaw;
+			headAnimator->SetJointAxis( headLookJoints[ i ], JOINTMOD_WORLD, jointAng.ToMat3() );
+		}
+		// HUMANHEAD END
 
 		if ( allowEyeFocus ) {
 			idMat3 eyeAxis = ( lookAng + eyeAng ).ToMat3(); idMat3 headTranspose = headEnt->GetPhysics()->GetAxis().Transpose();
@@ -5247,7 +5281,7 @@ void idCombatNode::DrawDebugInfo( void ) {
 	idPlayer		*player = gameLocal.GetLocalPlayer();
 	idVec4			color;
 	idBounds		bounds( idVec3( -16, -16, 0 ), idVec3( 16, 16, 0 ) );
-
+	
 	for( ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 		if ( !ent->IsType( idCombatNode::Type ) ) {
 			continue;
@@ -5280,12 +5314,12 @@ void idCombatNode::DrawDebugInfo( void ) {
 			idVec3 pos3 = org + rightDir * node->min_dist;
 			idVec3 pos4 = org + rightDir * cone_dist;
 
-			gameRenderWorld->DebugLine( color, node->GetPhysics()->GetOrigin(), ( pos1 + pos3 ) * 0.5f, USERCMD_MSEC );
-			gameRenderWorld->DebugLine( color, pos1, pos2, USERCMD_MSEC );
-			gameRenderWorld->DebugLine( color, pos1, pos3, USERCMD_MSEC );
-			gameRenderWorld->DebugLine( color, pos3, pos4, USERCMD_MSEC );
-			gameRenderWorld->DebugLine( color, pos2, pos4, USERCMD_MSEC );
-			gameRenderWorld->DebugBounds( color, bounds, org, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, node->GetPhysics()->GetOrigin(), ( pos1 + pos3 ) * 0.5f, gameLocal.msec );
+			gameRenderWorld->DebugLine( color, pos1, pos2, gameLocal.msec );
+			gameRenderWorld->DebugLine( color, pos1, pos3, gameLocal.msec );
+			gameRenderWorld->DebugLine( color, pos3, pos4, gameLocal.msec );
+			gameRenderWorld->DebugLine( color, pos2, pos4, gameLocal.msec );
+			gameRenderWorld->DebugBounds( color, bounds, org, gameLocal.msec );
 		}
 	}
 }
@@ -5309,7 +5343,7 @@ bool idCombatNode::EntityInView( idActor *actor, const idVec3 &pos ) {
 	const idMat3 &axis = GetPhysics()->GetAxis();
 	idVec3 dir = pos - org;
 	float  dist = dir * axis[ 0 ];
-
+	
 	if ( ( dist < min_dist ) || ( dist > max_dist ) ) {
 		return false;
 	}
@@ -5346,3 +5380,75 @@ void idCombatNode::Event_MarkUsed( void ) {
 		disabled = true;
 	}
 }
+
+
+/*
+==============
+idAI::ClientImpacts
+//HUMANHEAD nla
+==============
+*/
+void idAI::ClientImpacts( void ) {
+	int			entCounter, touchEnt;
+	trace_t		trace;
+	idEntity	*other;
+
+
+	memset(&trace, 0, sizeof(trace));
+
+	for (entCounter = 0; entCounter < physicsObj.GetNumTouchEnts();
+		 entCounter++) {
+		touchEnt = physicsObj.GetTouchEnt(entCounter);
+
+		other = gameLocal.entities[ touchEnt ];
+		assert(other);
+
+		//! Should we signal?, and if so, check if hasSignal?
+		// other->Signal(SIG_TOUCH);
+
+		if (other->RespondsTo( EV_Touch ) ) {
+			other->ProcessEvent( &EV_Touch, this, &trace);
+		}
+	}	//. entCounter loop
+
+
+}		//. idAI::ClientImpacts(void)
+
+
+//HUMANHEAD mdc - added to support multiple projectiles
+/*
+===================
+idAI::SetCurrentProjectile
+===================
+*/
+void idAI::SetCurrentProjectile( int infoIndex ) {
+	if( projectileDefaultDefIndex < 0 ) {	//we aren't using infos, so don't do anything
+		return;
+	}
+	HH_ASSERT( infoIndex >= 0 && infoIndex < projectileInfos.Num() );
+
+	projectileInfo_t* projInfo = &(projectileInfos[ infoIndex ]);
+	if( projInfo ) {
+		projectileDef = projInfo->projectileDef;
+		projectileRadius = projInfo->projectileRadius;
+		projectileVelocity = projInfo->projectileVelocity;
+		projectileGravity = projInfo->projectileGravity;
+		projectileSpeed = projInfo->projectileSpeed;
+		projectileClipModel = projInfo->projectileClipModel;
+	}
+}
+
+/*
+===================
+idAI::FindProjectileInfo
+===================
+*/
+int	idAI::FindProjectileInfo( const idDict* findDef ) const {
+	for( int i = 0; i < projectileInfos.Num(); i++ ) {
+		if( projectileInfos[ i ].projectileDef == findDef ) {
+			return i;
+		}
+	}
+	return -1;
+}
+//HUMANHEAD END

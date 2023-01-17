@@ -1,38 +1,9 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_BRITTLEFRACTURE_H__
 #define __GAME_BRITTLEFRACTURE_H__
 
-#include "physics/Physics_RigidBody.h"
-#include "physics/Physics_StaticMulti.h"
-#include "physics/Clip.h"
-#include "Entity.h"
 
 /*
 ===============================================================================
@@ -53,6 +24,9 @@ typedef struct shard_s {
 	int							droppedTime;
 	bool						atEdge;
 	int							islandNum;
+	//HUMANHEAD rww
+	bool						isCheap;
+	//HUMANHEAD END
 } shard_t;
 
 
@@ -73,7 +47,7 @@ public:
 	virtual void				Think( void );
 	virtual void				ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 	virtual void				AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
-	virtual void				AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
+	virtual void				AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName, bool broadcast = false ); //HUMANHEAD rww - added broadcast
 	virtual void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
 	void						ProjectDecal( const idVec3 &point, const idVec3 &dir, const int time, const char *damageDefName );
@@ -103,14 +77,20 @@ private:
 	float						friction;
 	float						bouncyness;
 	idStr						fxFracture;
-
-	bool						isXraySurface;
+	//HUMANHEAD rww
+	int							cheapShards;
+	int							cheapShardsTime;
+	//HUMANHEAD END
 
 	// state
 	idPhysics_StaticMulti		physicsObj;
 	idList<shard_t *>			shards;
 	idBounds					bounds;
 	bool						disableFracture;
+
+#if _HH_RENDERDEMO_HACKS //HUMANHEAD rww - demos need unique names per fracture entity
+	char						uniqueFractureName[64];
+#endif //HUMANHEAD END
 
 	// for rendering
 	mutable int					lastRenderEntityUpdate;

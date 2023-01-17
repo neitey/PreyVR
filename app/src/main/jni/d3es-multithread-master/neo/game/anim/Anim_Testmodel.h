@@ -1,37 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __ANIM_TESTMODEL_H__
 #define __ANIM_TESTMODEL_H__
-
-#include "physics/Physics_Parametric.h"
-#include "Entity.h"
-#include "Actor.h"
 
 /*
 ==============================================================================================
@@ -62,19 +33,19 @@ public:
 	void					TestAnim( const idCmdArgs &args );
 	void					BlendAnim( const idCmdArgs &args );
 
-	static void				KeepTestModel_f( const idCmdArgs &args );
-	static void				TestModel_f( const idCmdArgs &args );
+	static void 			KeepTestModel_f( const idCmdArgs &args );
+	static void 			TestModel_f( const idCmdArgs &args );
 	static void				ArgCompletion_TestModel( const idCmdArgs &args, void(*callback)( const char *s ) );
-	static void				TestSkin_f( const idCmdArgs &args );
-	static void				TestShaderParm_f( const idCmdArgs &args );
-	static void				TestParticleStopTime_f( const idCmdArgs &args );
-	static void				TestAnim_f( const idCmdArgs &args );
+	static void 			TestSkin_f( const idCmdArgs &args );
+	static void 			TestShaderParm_f( const idCmdArgs &args );
+	static void 			TestParticleStopTime_f( const idCmdArgs &args );
+	static void 			TestAnim_f( const idCmdArgs &args );
 	static void				ArgCompletion_TestAnim( const idCmdArgs &args, void(*callback)( const char *s ) );
-	static void				TestBlend_f( const idCmdArgs &args );
-	static void				TestModelNextAnim_f( const idCmdArgs &args );
-	static void				TestModelPrevAnim_f( const idCmdArgs &args );
-	static void				TestModelNextFrame_f( const idCmdArgs &args );
-	static void				TestModelPrevFrame_f( const idCmdArgs &args );
+	static void 			TestBlend_f( const idCmdArgs &args );
+	static void 			TestModelNextAnim_f( const idCmdArgs &args );
+	static void 			TestModelPrevAnim_f( const idCmdArgs &args );
+	static void 			TestModelNextFrame_f( const idCmdArgs &args );
+	static void 			TestModelPrevFrame_f( const idCmdArgs &args );
 
 private:
 	idEntityPtr<idEntity>	head;

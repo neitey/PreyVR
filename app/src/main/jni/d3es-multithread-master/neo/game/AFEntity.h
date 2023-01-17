@@ -1,38 +1,9 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_AFENTITY_H__
 #define __GAME_AFENTITY_H__
 
-#include "physics/Physics_AF.h"
-#include "physics/Force_Constant.h"
-#include "Entity.h"
-#include "AF.h"
 
 /*
 ===============================================================================
@@ -96,7 +67,8 @@ idAFAttachment
 ===============================================================================
 */
 
-class idAFAttachment : public idAnimatedEntity {
+// HUMANHEAD pdm: Changed to inherit from hhAnimatedEntity
+class idAFAttachment : public hhAnimatedEntity {
 public:
 	CLASS_PROTOTYPE( idAFAttachment );
 
@@ -124,14 +96,12 @@ public:
 	virtual void			AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
 
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
-	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
+	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName, bool broadcast = false ); //HUMANHEAD rww - added broadcast
 
 	void					SetCombatModel( void );
 	idClipModel *			GetCombatModel( void ) const;
 	virtual void			LinkCombat( void );
 	virtual void			UnlinkCombat( void );
-
-	virtual bool			GetPhysicsToVisualTransform( idVec3& origin, idMat3& axis );
 
 protected:
 	idEntity *				body;
@@ -149,7 +119,12 @@ idAFEntity_Base
 ===============================================================================
 */
 
-class idAFEntity_Base : public idAnimatedEntity {
+// HUMANHEAD nla
+extern const idEventDef EV_Dispose;
+// HUMANHEAD
+
+// HUMANHEAD pdm: inherit from hhAnimatedEntity
+class idAFEntity_Base : public hhAnimatedEntity {
 public:
 	CLASS_PROTOTYPE( idAFEntity_Base );
 
@@ -188,11 +163,18 @@ public:
 	void					LoadState( const idDict &args );
 
 	void					AddBindConstraints( void );
+	void					AddBindConstraint( constraintType_t type, int bodyId, jointHandle_t joint );
 	void					RemoveBindConstraints( void );
 
 	virtual void			ShowEditingDialog( void );
 
 	static void				DropAFs( idEntity *ent, const char *type, idList<idEntity *> *list );
+
+	// HUMANHEAD nla
+	virtual bool			CheckImpulse( idEntity *impulseSource );
+	virtual bool			IsImpulseFromSelf( void ) { return( impulseFromSelf ); }
+	void					Event_SetCollision(int on);
+	// HUMANHEAD END
 
 protected:
 	idAF					af;				// articulated figure
@@ -201,6 +183,12 @@ protected:
 	idVec3					spawnOrigin;	// spawn origin
 	idMat3					spawnAxis;		// rotation axis used when spawned
 	int						nextSoundTime;	// next time this can make a sound
+	int						numSplats;		// HUMANHEAD bjk: splat counter
+	idVec3					splats[16];
+
+	// HUMANHEAD nla
+	bool					impulseFromSelf;	// nla Is the impulse from ourselves.  (Used for ragdolls/making sure the ragdolls behave the same regardless if they are made up of 1 body or 100 bodies)
+	// HUMANHEAD END
 
 	void					Event_SetConstraintPosition( const char *name, const idVec3 &pos );
 };
@@ -228,25 +216,26 @@ public:
 	void					Restore( idRestoreGame *savefile );
 	virtual void			Present( void );
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
-	void					SetThrown( bool isThrown );
-    virtual bool			Collide( const trace_t& collision, const idVec3& velocity );
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
-	bool					IsGibbed() {
-		return gibbed;
-	};
+	// HUMANHEAD mdl:  Moved from idAFEntity_Base
+	virtual	bool			CheckRagdollDamage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, int location );
+	// HUMANHEAD END
 
 protected:
 	idRenderModel *			skeletonModel;
 	int						skeletonModelDefHandle;
 	bool					gibbed;
 
-	bool					wasThrown;
-
 	virtual void			Gib( const idVec3 &dir, const char *damageDefName );
 	void					InitSkeletonModel( void );
 
 	void					Event_Gib( const char *damageDefName );
+
+	// HUMANHEAD mdl
+protected:
+	int						gibHealth;		// Health at which you gib
+	// HUMANHEAD END
 };
 
 /*
@@ -313,7 +302,7 @@ public:
 protected:
 	virtual void			Gib( const idVec3 &dir, const char *damageDefName );
 
-public:
+private:
 	idEntityPtr<idAFAttachment>	head;
 
 	void					Event_Gib( const char *damageDefName );
@@ -419,10 +408,6 @@ public:
 	void					Spawn( void );
 	virtual void			Think( void );
 
-	float					force;
-	float					velocity;
-	float					steerAngle;
-
 private:
 	idAFBody *				wheels[6];
 	idAFConstraint_Hinge *	steering[4];
@@ -430,36 +415,6 @@ private:
 	float					wheelAngles[6];
 };
 
-/*
-===============================================================================
-
-idAFEntity_VehicleAutomated
-
-===============================================================================
-*/
-
-class idAFEntity_VehicleAutomated : public idAFEntity_VehicleSixWheels
-{
-public:
-CLASS_PROTOTYPE(idAFEntity_VehicleAutomated);
-
-	void					Spawn(void);
-	void					PostSpawn(void);
-	virtual void			Think(void);
-
-private:
-
-	idEntity	*waypoint;
-	float		steeringSpeed;
-	float		currentSteering;
-	float		idealSteering;
-	float		originHeight;
-
-	void		Event_SetVelocity(float _velocity);
-	void		Event_SetTorque(float _torque);
-	void		Event_SetSteeringSpeed(float _steeringSpeed);
-	void		Event_SetWayPoint(idEntity *_waypoint);
-};
 
 /*
 ===============================================================================
@@ -517,91 +472,6 @@ private:
 
 	void					Event_SetFingerAngle( float angle );
 	void					Event_StopFingers( void );
-};
-
-
-/**
-* idHarvestable contains all of the code required to turn an entity into a harvestable
-* entity. The entity must create an instance of this class and call the appropriate
-* interface methods at the correct time.
-*/
-class idHarvestable : public idEntity
-{
-public:
-CLASS_PROTOTYPE(idHarvestable);
-
-	idHarvestable();
-	~idHarvestable();
-
-	void				Spawn();
-	void				Init(idEntity *parent);
-	void				Save(idSaveGame *savefile) const;
-	void				Restore(idRestoreGame *savefile);
-
-	void				SetParent(idEntity *parent);
-
-	void				Think();
-	void				Gib();
-
-protected:
-	idEntityPtr<idEntity>	parentEnt;
-	float					triggersize;
-	idClipModel 			*trigger;
-	float					giveDelay;
-	float					removeDelay;
-	bool					given;
-
-	idEntityPtr<idPlayer>	player;
-	int						startTime;
-
-	bool					fxFollowPlayer;
-	idEntityPtr<idEntityFx>	fx;
-	idStr					fxOrient;
-
-protected:
-	void					BeginBurn();
-	void					BeginFX();
-	void					CalcTriggerBounds(float size, idBounds &bounds);
-
-	bool					GetFxOrientationAxis(idMat3 &mat);
-
-	void					Event_SpawnHarvestTrigger(void);
-	void					Event_Touch(idEntity *other, trace_t *trace);
-} ;
-
-
-/*
-===============================================================================
-
-idAFEntity_Harvest
-
-===============================================================================
-*/
-
-
-
-class idAFEntity_Harvest : public idAFEntity_WithAttachedHead
-{
-public:
-CLASS_PROTOTYPE(idAFEntity_Harvest);
-
-	idAFEntity_Harvest();
-	~idAFEntity_Harvest();
-
-	void					Spawn(void);
-
-	void					Save(idSaveGame *savefile) const;
-	void					Restore(idRestoreGame *savefile);
-
-	virtual void			Think(void);
-
-	virtual void			Gib(const idVec3 &dir, const char *damageDefName);
-
-protected:
-	idEntityPtr<idHarvestable>	harvestEnt;
-protected:
-	void					Event_SpawnHarvestEntity(void);
-
 };
 
 #endif /* !__GAME_AFENTITY_H__ */

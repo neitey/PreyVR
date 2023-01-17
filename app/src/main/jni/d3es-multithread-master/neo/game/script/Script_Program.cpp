@@ -1,59 +1,39 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "../Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+//#define _HH_GLOBAL_COUNTER //HUMANHEAD rww
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/FileSystem.h"
-
-#include "gamesys/Event.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Compiler.h"
-#include "script/Script_Thread.h"
-#include "Entity.h"
-#include "Game_local.h"
-
-#include "script/Script_Program.h"
+#ifdef _HH_GLOBAL_COUNTER //HUMANHEAD rww
+static idFile *globalOutputFile = NULL;
+static int globalOutputUnique = 0;
+static int globalOutputRunningSize = 0;
+#endif //HUMANHEAD END
 
 // simple types.  function types are dynamically allocated
-idTypeDef	type_void( ev_void, &def_void, "void", 0, NULL );
-idTypeDef	type_scriptevent( ev_scriptevent, &def_scriptevent, "scriptevent", sizeof( intptr_t ), NULL );
-idTypeDef	type_namespace( ev_namespace, &def_namespace, "namespace", sizeof( intptr_t ), NULL );
-idTypeDef	type_string( ev_string, &def_string, "string", MAX_STRING_LEN, NULL );
-idTypeDef	type_float( ev_float, &def_float, "float", sizeof( intptr_t ), NULL );
-idTypeDef	type_vector( ev_vector, &def_vector, "vector", E_EVENT_SIZEOF_VEC, NULL );
-idTypeDef	type_entity( ev_entity, &def_entity, "entity", sizeof( intptr_t ), NULL );					// stored as entity number pointer
-idTypeDef	type_field( ev_field, &def_field, "field", sizeof( intptr_t ), NULL );
-idTypeDef	type_function( ev_function, &def_function, "function", sizeof( intptr_t ), &type_void );
-idTypeDef	type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof( intptr_t ), NULL );
-idTypeDef	type_pointer( ev_pointer, &def_pointer, "pointer", sizeof( intptr_t ), NULL );
-idTypeDef	type_object( ev_object, &def_object, "object", sizeof( intptr_t ), NULL );					// stored as entity number pointer
-idTypeDef	type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof( intptr_t ), NULL );		// only used for jump opcodes
-idTypeDef	type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof( intptr_t ), NULL );				// only used for function call and thread opcodes
-idTypeDef	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof( intptr_t ), NULL );
+idTypeDef		type_void( ev_void, &def_void, "void", 0, NULL );
+idTypeDef	type_scriptevent(ev_scriptevent, &def_scriptevent, "scriptevent", sizeof(intptr_t), NULL);
+idTypeDef	type_namespace(ev_namespace, &def_namespace, "namespace", sizeof(intptr_t), NULL);
+//HUMANHEAD: aob - changed types to inherited types
+idTypeDefString	type_string( ev_string, &def_string, "string", MAX_STRING_LEN, NULL );
+idTypeDefFloat	type_float( ev_float, &def_float, "float", sizeof(intptr_t), NULL );
+idTypeDefVector	type_vector( ev_vector, &def_vector, "vector", E_EVENT_SIZEOF_VEC, NULL );
+idTypeDefEntity	type_entity( ev_entity, &def_entity, "entity", sizeof(intptr_t), NULL );					// stored as entity number pointer
+//HUMANHEAD END
+idTypeDef		type_field( ev_field, &def_field, "field", sizeof(intptr_t), NULL );
+idTypeDef		type_function( ev_function, &def_function, "function", sizeof(intptr_t), &type_void );
+idTypeDef		type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof(intptr_t), NULL );
+idTypeDef		type_pointer( ev_pointer, &def_pointer, "pointer", sizeof(intptr_t), NULL );
+idTypeDef		type_object( ev_object, &def_object, "object", sizeof(intptr_t), NULL );					// stored as entity number pointer
+idTypeDef		type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof(intptr_t), NULL );		// only used for jump opcodes
+idTypeDef		type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof(intptr_t), NULL );				// only used for function call and thread opcodes
+//HUMANHEAD: aob - changed types to inherited types
+idTypeDefBool	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof(intptr_t), NULL );
+//HUMANHEAD END
 
 idVarDef	def_void( &type_void );
 idVarDef	def_scriptevent( &type_scriptevent );
@@ -148,7 +128,7 @@ idTypeDef::idTypeDef( etype_t etype, idVarDef *edef, const char *ename, int esiz
 	def			= edef;
 	size		= esize;
 	auxType		= aux;
-
+	
 	parmTypes.SetGranularity( 1 );
 	parmNames.SetGranularity( 1 );
 	functions.SetGranularity( 1 );
@@ -557,6 +537,102 @@ void idTypeDef::AddFunction( const function_t *func ) {
 	functions.Append( func );
 }
 
+//HUMANHEAD: aob
+idTypeDefString::idTypeDefString( const idTypeDef &other ) : idTypeDef( other ) {}
+idTypeDefString::idTypeDefString( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux ) :
+	idTypeDef( etype, edef, ename, esize, aux ) {}
+
+void idTypeDefString::PushOntoStack( const char* parm, hhThread* thread ) const {
+	thread->PushString( parm );
+}
+	
+const char* idTypeDefString::GetReturnValueAsString( idProgram& program ) const {
+	return program.GetReturnedString();
+}
+
+bool idTypeDefString::VerifyData( const char* data ) const {
+	return true;
+}
+
+idTypeDefVector::idTypeDefVector( const idTypeDef &other ) : idTypeDef( other ) {}
+idTypeDefVector::idTypeDefVector( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux ) :
+	idTypeDef( etype, edef, ename, esize, aux ) {}
+
+void idTypeDefVector::PushOntoStack( const char* parm, hhThread* thread ) const {
+	idVec3 vec;
+	sscanf( parm, "%f %f %f", &vec.x, &vec.y, &vec.z );
+	thread->PushVector( vec );
+}
+
+const char* idTypeDefVector::GetReturnValueAsString( idProgram& program ) const {
+	return program.GetReturnedVector().ToString();
+}
+
+bool idTypeDefVector::VerifyData( const char* data ) const {
+	int strLen = idStr::Length( data );
+	return strLen == 5;//FIXME: Need something better
+}
+
+idTypeDefFloat::idTypeDefFloat( const idTypeDef &other ) : idTypeDef( other ) {}
+idTypeDefFloat::idTypeDefFloat( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux ) :
+	idTypeDef( etype, edef, ename, esize, aux ) {}
+
+void idTypeDefFloat::PushOntoStack( const char* parm, hhThread* thread ) const {
+	float f = 0.0f;
+	sscanf( parm, "%.2f", &f );
+	thread->PushFloat( f );
+}
+	
+const char* idTypeDefFloat::GetReturnValueAsString( idProgram& program ) const {
+	return va( "%.2f", program.GetReturnedFloat() );
+}
+
+bool idTypeDefFloat::VerifyData( const char* data ) const {
+	if( idStr::IsNumeric(data) ) {
+		return false;
+	}
+
+	return true;
+}
+
+idTypeDefEntity::idTypeDefEntity( const idTypeDef &other ) : idTypeDef( other ) {}
+idTypeDefEntity::idTypeDefEntity( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux ) :
+	idTypeDef( etype, edef, ename, esize, aux ) {}
+
+void idTypeDefEntity::PushOntoStack( const char* parm, hhThread* thread ) const {
+	idEntity* ent = gameLocal.FindEntity( parm );
+	thread->PushEntity( ent );
+}
+	
+const char* idTypeDefEntity::GetReturnValueAsString( idProgram& program ) const {
+	return program.GetReturnedString();
+}
+
+bool idTypeDefEntity::VerifyData( const char* data ) const {
+	return gameLocal.FindEntity( data ) != NULL;
+}
+
+idTypeDefBool::idTypeDefBool( const idTypeDef &other ) : idTypeDef( other ) {}
+idTypeDefBool::idTypeDefBool( etype_t etype, idVarDef *edef, const char *ename, int esize, idTypeDef *aux ) :
+	idTypeDef( etype, edef, ename, esize, aux ) {}
+
+void idTypeDefBool::PushOntoStack( const char* parm, hhThread* thread ) const {
+	bool b = false;
+	sscanf( parm, "%d", &b );
+	thread->PushInt( (int)b );
+}
+	
+const char* idTypeDefBool::GetReturnValueAsString( idProgram& program ) const {
+	return va( "%d", program.GetReturnedBool() );
+};
+
+bool idTypeDefBool::VerifyData( const char* data ) const {
+	idStr localData( data );
+
+	return !localData.Icmp("1") || !localData.Icmp("0") || !localData.Icmp("true") || !localData.Icmp("false");
+}
+//HUMANHEAD END
+
 /***********************************************************************
 
   idVarDef
@@ -731,7 +807,7 @@ void idVarDef::SetString( const char *string, bool constant ) {
 	} else {
 		initialized = initializedVariable;
 	}
-
+	
 	assert( typeDef && ( typeDef->Type() == ev_string ) );
 	idStr::Copynz( value.stringPtr, string, MAX_STRING_LEN );
 }
@@ -802,7 +878,7 @@ void idVarDef::PrintInfo( idFile *file, int instructionPointer ) const {
 				break;
 
 			case ev_float :
-				file->Printf( "%f", *value.floatPtr );
+                file->Printf( "%f", *value.floatPtr );
 				break;
 
 			case ev_virtualfunction :
@@ -905,7 +981,7 @@ idScriptObject::Save
 ================
 */
 void idScriptObject::Save( idSaveGame *savefile ) const {
-	int size;
+	int size; //k: 64 size_t
 
 	if ( type == &type_object && data == NULL ) {
 		// Write empty string for uninitialized object
@@ -925,7 +1001,7 @@ idScriptObject::Restore
 */
 void idScriptObject::Restore( idRestoreGame *savefile ) {
 	idStr typeName;
-	int size;
+	int size; //k: 64 size_t
 
 	savefile->ReadString( typeName );
 
@@ -961,7 +1037,7 @@ bool idScriptObject::SetType( const char *typeName ) {
 	newtype = gameLocal.program.FindType( typeName );
 
 	// only allocate memory if the object type changes
-	if ( newtype != type ) {
+	if ( newtype != type ) {	
 		Free();
 		if ( !newtype ) {
 			gameLocal.Warning( "idScriptObject::SetType: Unknown type '%s'", typeName );
@@ -1128,7 +1204,7 @@ idProgram::AllocType
 idTypeDef *idProgram::AllocType( idTypeDef &type ) {
 	idTypeDef *newtype;
 
-	newtype	= new idTypeDef( type );
+	newtype	= new idTypeDef( type ); 
 	types.Append( newtype );
 
 	return newtype;
@@ -1234,44 +1310,6 @@ void idProgram::AddDefToNameList( idVarDef *def, const char *name ) {
 }
 
 /*
-==============
-idProgram::ReserveMem
-
-reserves memory for global variables and returns the starting pointer
-==============
-*/
-byte *idProgram::ReserveMem(int size) {
-	byte *res = &variables[ numVariables ];
-	numVariables += size;
-	if ( numVariables > sizeof( variables ) ) {
-		throw idCompileError( va( "Exceeded global memory size (%zd bytes)", sizeof( variables ) ) );
-	}
-
-	memset( res, 0, size );
-
-	return res;
-}
-
-/*
-============
-idProgram::AllocVarDef
-============
-*/
-idVarDef *idProgram::AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope) {
-	idVarDef	*def;
-
-	def = new idVarDef( type );
-	def->scope		= scope;
-	def->numUsers	= 1;
-	def->num		= varDefs.Append( def );
-
-	// add the def to the list with defs with this name and set the name pointer
-	AddDefToNameList( def, name );
-
-	return def;
-}
-
-/*
 ============
 idProgram::AllocDef
 ============
@@ -1284,7 +1322,13 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 	idVarDef	*def_z;
 
 	// allocate a new def
-	def = AllocVarDef(type, name, scope);
+	def = new idVarDef( type );
+	def->scope		= scope;
+	def->numUsers	= 1;
+	def->num		= varDefs.Append( def );
+
+	// add the def to the list with defs with this name and set the name pointer
+	AddDefToNameList( def, name );
 
 	if ( ( type->Type() == ev_vector ) || ( ( type->Type() == ev_field ) && ( type->FieldType()->Type() == ev_vector ) ) ) {
 		//
@@ -1297,61 +1341,98 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			def->initialized		= idVarDef::stackVariable;
 			scope->value.functionPtr->locals += type->Size();
 		} else if ( scope->TypeDef()->Inherits( &type_object ) ) {
-			idTypeDef	newtype( ev_field, NULL, "float field", 0, &type_float );
-			idTypeDef	*ftype = GetType( newtype, true );
-
-			// set the value to the variable's position in the object
+			idTypeDef	newtype(ev_field, NULL, "float field", 0, &type_float);
+			// RB: changed local type to ftype	
+			idTypeDef* ftype = GetType(newtype, true);
+			// set the value to the variable's position in the object	
 			def->value.ptrOffset = scope->TypeDef()->Size();
-
-			// make automatic defs for the vectors elements
-			// origin can be accessed as origin_x, origin_y, and origin_z
-			sprintf( element, "%s_x", def->Name() );
-			def_x = AllocDef( ftype, element, scope, constant );
-
-			sprintf( element, "%s_y", def->Name() );
-			def_y = AllocDef( ftype, element, scope, constant );
+			// make automatic defs for the vectors elements	
+			// origin can be accessed as origin_x, origin_y, and origin_z	
+			sprintf(element, "%s_x", def->Name());
+			def_x = AllocDef(ftype, element, scope, constant);
+			sprintf(element, "%s_y", def->Name());
+			def_y = AllocDef(ftype, element, scope, constant);
 			def_y->value.ptrOffset = def_x->value.ptrOffset + sizeof(float);
-
-			sprintf( element, "%s_z", def->Name() );
-			def_z = AllocDef( ftype, element, scope, constant );
+			sprintf(element, "%s_z", def->Name());
+			def_z = AllocDef(ftype, element, scope, constant);
 			def_z->value.ptrOffset = def_y->value.ptrOffset + sizeof(float);
+			// RB end
 		} else {
-			idTypeDef	newtype( ev_float, &def_float, "vector float", 0, NULL );
-			idTypeDef	*ftype = GetType( newtype, true );
+#if 1
+#define AllocVarDef(type, name, scope, def) \
+{ \
+	def = new idVarDef(type); \
+	def->scope		= scope; \
+	def->numUsers	= 1; \
+	def->num		= varDefs.Append(def); \
+	AddDefToNameList(def, name); \
+}
+			idTypeDef	newtype(ev_float, &def_float, "float vector", 0, NULL);
+			idTypeDef	*_type = GetType(newtype, true);
 
 			// make automatic defs for the vectors elements
 			// origin can be accessed as origin_x, origin_y, and origin_z
-			sprintf( element, "%s_x", def->Name() );
-			def_x = AllocVarDef( ftype, element, scope );
+			sprintf(element, "%s_x", def->Name());
+			AllocVarDef(_type, element, scope, def_x);
 
-			sprintf( element, "%s_y", def->Name() );
-			def_y = AllocVarDef( ftype, element, scope );
+			sprintf(element, "%s_y", def->Name());
+			AllocVarDef(_type, element, scope, def_y);
 
-			sprintf( element, "%s_z", def->Name() );
-			def_z = AllocVarDef( ftype, element, scope );
+			sprintf(element, "%s_z", def->Name());
+			AllocVarDef(_type, element, scope, def_z);
+#undef AllocVarDef
 
-			// get the memory for the full vector and point the _x, _y and _z
-			// defs at the vector member offsets
-			if ( scope->Type() == ev_function ) {
-				// vector on stack
+			// point the vector def to the coordinates
+			if (scope->Type() == ev_function) {
+				//
+				// stack variable
+				//
 				def->value.stackOffset	= scope->value.functionPtr->locals;
 				def->initialized		= idVarDef::stackVariable;
+
 				scope->value.functionPtr->locals += type->Size();
 
 				def_x->value.stackOffset = def->value.stackOffset;
 				def_y->value.stackOffset = def_x->value.stackOffset + sizeof(float);
 				def_z->value.stackOffset = def_y->value.stackOffset + sizeof(float);
 			} else {
-				// global vector
-				def->value.bytePtr		= ReserveMem(type->Size());
-				def_x->value.bytePtr	= def->value.bytePtr;
-				def_y->value.bytePtr	= def_x->value.bytePtr + sizeof(float);
-				def_z->value.bytePtr	= def_y->value.bytePtr + sizeof(float);
+				//
+				// global variable
+				//
+				//k: call AllocMem in DOOM3
+                def->value.bytePtr = &variables[ numVariables ];
+				numVariables += type->Size();
+
+				if (numVariables > sizeof(variables)) {
+					throw idCompileError(va("Exceeded global memory size (%zd bytes)", sizeof(variables)));
+				}
+
+				memset(def->value.bytePtr, 0, type->Size());
+
+				def_x->value.bytePtr = def->value.bytePtr;
+				def_y->value.bytePtr = def_x->value.bytePtr + sizeof(float);
+				def_z->value.bytePtr = def_y->value.bytePtr + sizeof(float);
 			}
 
 			def_x->initialized = def->initialized;
 			def_y->initialized = def->initialized;
 			def_z->initialized = def->initialized;
+#else
+			// make automatic defs for the vectors elements
+			// origin can be accessed as origin_x, origin_y, and origin_z
+			sprintf( element, "%s_x", def->Name() );
+			def_x = AllocDef( &type_float, element, scope, constant );
+
+			sprintf( element, "%s_y", def->Name() );
+			def_y = AllocDef( &type_float, element, scope, constant );
+
+			sprintf( element, "%s_z", def->Name() );
+			def_z = AllocDef( &type_float, element, scope, constant );
+
+			// point the vector def to the x coordinate
+			def->value			= def_x->value;
+			def->initialized	= def_x->initialized;
+#endif
 		}
 	} else if ( scope->TypeDef()->Inherits( &type_object ) ) {
 		//
@@ -1378,7 +1459,21 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 		//
 		// global variable
 		//
-		def->value.bytePtr = ReserveMem(def->TypeDef()->Size());
+		def->value.bytePtr = &variables[ numVariables ];
+		numVariables += def->TypeDef()->Size();
+		if ( numVariables > sizeof( variables ) ) {
+			throw idCompileError( va( "Exceeded global memory size (%d bytes)", sizeof( variables ) ) );
+		}
+
+#ifdef _HH_GLOBAL_COUNTER //HUMANHEAD rww
+		if (globalOutputFile) {
+			globalOutputFile->Printf("%i. (%ib)		%s\r\n", globalOutputUnique, def->TypeDef()->Size(), def->Name());
+			globalOutputUnique++;
+			globalOutputRunningSize += def->TypeDef()->Size();
+		}
+#endif //HUMANHEAD END
+
+		memset( def->value.bytePtr, 0, def->TypeDef()->Size() );
 	}
 
 	return def;
@@ -1473,7 +1568,7 @@ idProgram::FindFreeResultDef
 */
 idVarDef *idProgram::FindFreeResultDef( idTypeDef *type, const char *name, idVarDef *scope, const idVarDef *a, const idVarDef *b ) {
 	idVarDef *def;
-
+	
 	for( def = GetDefList( name ); def != NULL; def = def->Next() ) {
 		if ( def == a || def == b ) {
 			continue;
@@ -1652,7 +1747,7 @@ void idProgram::BeginCompilation( void ) {
 		// make the first statement a return for a "NULL" function
 		statement = AllocStatement();
 		statement->linenumber	= 0;
-		statement->file			= 0;
+		statement->file 		= 0;
 		statement->op			= OP_RETURN;
 		statement->a			= NULL;
 		statement->b			= NULL;
@@ -1682,29 +1777,29 @@ idProgram::DisassembleStatement
 ==============
 */
 void idProgram::DisassembleStatement( idFile *file, int instructionPointer ) const {
-	const opcode_t		*op;
-	const statement_t	*statement;
+	opcode_t* op;
+	const statement_t* statement;
 
-	statement = &statements[ instructionPointer ];
-	op = &idCompiler::opcodes[ statement->op ];
-	file->Printf( "%20s(%d):\t%6d: %15s\t", fileList[ statement->file ].c_str(), statement->linenumber, instructionPointer, op->opname );
+	statement = &statements[instructionPointer];
+	op = &idCompiler::opcodes[statement->op];
+	file->Printf("%20s(%d):\t%6d: %15s\t", fileList[statement->file].c_str(), statement->linenumber, instructionPointer, op->opname);
 
-	if ( statement->a ) {
-		file->Printf( "\ta: " );
-		statement->a->PrintInfo( file, instructionPointer );
+	if (statement->a) {
+		file->Printf("\ta: ");
+		statement->a->PrintInfo(file, instructionPointer);
 	}
 
-	if ( statement->b ) {
-		file->Printf( "\tb: " );
-		statement->b->PrintInfo( file, instructionPointer );
+	if (statement->b) {
+		file->Printf("\tb: ");
+		statement->b->PrintInfo(file, instructionPointer);
 	}
 
-	if ( statement->c ) {
-		file->Printf( "\tc: " );
-		statement->c->PrintInfo( file, instructionPointer );
+	if (statement->c) {
+		file->Printf("\tc: ");
+		statement->c->PrintInfo(file, instructionPointer);
 	}
 
-	file->Printf( "\n" );
+	file->Printf("\n");
 }
 
 /*
@@ -1732,7 +1827,7 @@ void idProgram::Disassemble( void ) const {
 		for( instructionPointer = 0; instructionPointer < func->numStatements; instructionPointer++ ) {
 			DisassembleStatement( file, func->firstStatement + instructionPointer );
 		}
-
+	
 		file->Printf( "}\n" );
 	}
 
@@ -1773,11 +1868,12 @@ called after all files are compiled to report memory usage.
 void idProgram::CompileStats( void ) {
 	int	memused;
 	int	memallocated;
+	int	numdefs;
 	int	stringspace;
 	int funcMem;
 	int	i;
 
-	gameLocal.Printf( "----- Compile stats -----\n" );
+	gameLocal.Printf( "---------- Compile stats ----------\n" );
 	gameLocal.DPrintf( "Files loaded:\n" );
 
 	stringspace = 0;
@@ -1787,6 +1883,7 @@ void idProgram::CompileStats( void ) {
 	}
 	stringspace += fileList.Size();
 
+	numdefs = varDefs.Num();
 	memused = varDefs.Num() * sizeof( idVarDef );
 	memused += types.Num() * sizeof( idTypeDef );
 	memused += stringspace;
@@ -1806,15 +1903,15 @@ void idProgram::CompileStats( void ) {
 	memused += functions.MemoryUsed();	// name and filename of functions are shared, so no need to include them
 	memused += sizeof( variables );
 
-	gameLocal.Printf( "Memory usage:\n" );
+	gameLocal.Printf( "\nMemory usage:\n" );
 	gameLocal.Printf( "     Strings: %d, %d bytes\n", fileList.Num(), stringspace );
-	gameLocal.Printf( "  Statements: %d, %zd bytes\n", statements.Num(), statements.MemoryUsed() );
+	gameLocal.Printf( "  Statements: %d, %d bytes\n", statements.Num(), statements.MemoryUsed() );
 	gameLocal.Printf( "   Functions: %d, %d bytes\n", functions.Num(), funcMem );
 	gameLocal.Printf( "   Variables: %d bytes\n", numVariables );
 	gameLocal.Printf( "    Mem used: %d bytes\n", memused );
-	gameLocal.Printf( " Static data: %zd bytes\n", sizeof( idProgram ) );
+	gameLocal.Printf( " Static data: %d bytes\n", sizeof( idProgram ) );
 	gameLocal.Printf( "   Allocated: %d bytes\n", memallocated );
-	gameLocal.Printf( " Thread size: %zd bytes\n", sizeof( idThread ) );
+	gameLocal.Printf( " Thread size: %d bytes\n\n", sizeof( idThread ) );
 }
 
 /*
@@ -1845,7 +1942,7 @@ bool idProgram::CompileText( const char *source, const char *text, bool console 
 			}
 		}
 	}
-
+	
 	catch( idCompileError &err ) {
 		if ( console ) {
 			gameLocal.Printf( "%s\n", err.error );
@@ -1896,6 +1993,14 @@ void idProgram::CompileFile( const char *filename ) {
 		gameLocal.Error( "Couldn't load %s\n", filename );
 	}
 
+#ifdef _HH_GLOBAL_COUNTER //HUMANHEAD rww
+	if (globalOutputFile) {
+		globalOutputFile->Printf("========================\r\nScript %s\r\n========================\r\n", filename);
+		globalOutputUnique = 0;
+		globalOutputRunningSize = 0;
+	}
+#endif //HUMANHEAD END
+
 	result = CompileText( filename, src, false );
 
 	fileSystem->FreeFile( src );
@@ -1907,6 +2012,12 @@ void idProgram::CompileFile( const char *filename ) {
 	if ( !result ) {
 		gameLocal.Error( "Compile failed in file %s.", filename );
 	}
+
+#ifdef _HH_GLOBAL_COUNTER //HUMANHEAD rww
+	if (globalOutputFile) {
+		globalOutputFile->Printf("========================\r\n%s\r\nUnique variables: %i\r\nVariable size: %i\r\n========================\r\n", filename, globalOutputUnique, globalOutputRunningSize);
+	}
+#endif //HUMANHEAD END
 }
 
 /*
@@ -1964,6 +2075,12 @@ void idProgram::Startup( const char *defaultScript ) {
 	// make sure all data is freed up
 	idThread::Restart();
 
+#ifdef _HH_GLOBAL_COUNTER //HUMANHEAD rww
+	globalOutputFile = fileSystem->OpenFileByMode("scriptglobals.txt", FS_WRITE);
+	globalOutputUnique = 0;
+	globalOutputRunningSize = 0;
+#endif //HUMANHEAD END
+
 	// get ready for loading scripts
 	BeginCompilation();
 
@@ -1973,6 +2090,13 @@ void idProgram::Startup( const char *defaultScript ) {
 	}
 
 	FinishCompilation();
+
+#ifdef _HH_GLOBAL_COUNTER //HUMANHEAD rww
+	if (globalOutputFile) {
+		fileSystem->CloseFile(globalOutputFile);
+		globalOutputFile = NULL;
+	}
+#endif //HUMANHEAD END
 }
 
 /*
@@ -2134,7 +2258,7 @@ void idProgram::Restart( void ) {
 	statements.SetNum( top_statements );
 	fileList.SetNum( top_files, false );
 	filename.Clear();
-
+	
 	// reset the variables to their default values
 	numVariables = variableDefaults.Num();
 	for( i = 0; i < numVariables; i++ ) {
@@ -2192,6 +2316,7 @@ idProgram::ReturnEntity
 */
 void idProgram::ReturnEntity( idEntity *ent ) {
 	if ( ent ) {
+		assert(ent->entityNumber + 1 <= MAX_GENTITIES);
 		*returnDef->value.entityNumberPtr = ent->entityNumber + 1;
 	} else {
 		*returnDef->value.entityNumberPtr = 0;

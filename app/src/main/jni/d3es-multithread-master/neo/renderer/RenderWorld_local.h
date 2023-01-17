@@ -106,7 +106,7 @@ public:
 	virtual void			RemoveDecals( qhandle_t entityHandle );
 
 	virtual void			SetRenderView( const renderView_t *renderView );
-	virtual	void			RenderScene( const renderView_t *renderView );
+	virtual	void			RenderScene(renderView_t *renderView );
 
 	virtual	int				NumAreas( void ) const;
 	virtual int				PointInArea( const idVec3 &point ) const;
@@ -278,6 +278,11 @@ public:
 	//-------------------------------
 	// tr_light.c
 	void					CreateLightDefInteractions( idRenderLightLocal *ldef );
+#ifdef _HUMANHEAD
+#if DEATHWALK_AUTOLOAD
+		int numAppendPortalAreas;
+#endif
+#endif
 };
 
 #endif /* !__RENDERWORLDLOCAL_H__ */

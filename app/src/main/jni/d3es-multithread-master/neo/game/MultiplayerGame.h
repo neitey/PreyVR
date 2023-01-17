@@ -1,39 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __MULTIPLAYERGAME_H__
 #define	__MULTIPLAYERGAME_H__
-
-#include "idlib/BitMsg.h"
-#include "idlib/Str.h"
-#include "ui/UserInterface.h"
-
-#include "GameBase.h"
 
 /*
 ===============================================================================
@@ -44,25 +13,14 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 class idPlayer;
-class idItemTeam;
 
 typedef enum {
 	GAME_SP,
 	GAME_DM,
 	GAME_TOURNEY,
 	GAME_TDM,
-	GAME_LASTMAN,
-	GAME_CTF,
-	GAME_COUNT
+	GAME_LASTMAN
 } gameType_t;
-
-// Used by the UI
-typedef enum {
-	FLAGSTATUS_INBASE = 0,
-	FLAGSTATUS_TAKEN  = 1,
-	FLAGSTATUS_STRAY  = 2,
-	FLAGSTATUS_NONE   = 3
-} flagStatus_t;
 
 typedef enum {
 		PLAYER_VOTE_NONE,
@@ -81,21 +39,25 @@ typedef struct mpPlayerState_s {
 	bool			ingame;
 } mpPlayerState_t;
 
-const int NUM_CHAT_NOTIFY	= 5;
-const int CHAT_FADE_TIME	= 400;
-const int FRAGLIMIT_DELAY	= 2000;
+// HUMANHEAD pdm: Reworked for our chat system
+const int NUM_CHAT_HISTORY_LINES	= 10;
+const int NUM_CHAT_DISPLAY_LINES	= 10;
+const int CHAT_MAX_LIFE_TIME		= 8000;
+const int MAX_HISTORY_LIST			= 50;		//fixme: bump up once we fix the wrap around case
+// HUMANHEAD END
+const int FRAGLIMIT_DELAY			= -1; //HUMANHEAD rww - was 2000, doing away with sudden death
 
 const int MP_PLAYER_MINFRAGS = -100;
-const int MP_PLAYER_MAXFRAGS = 400;	// in CTF frags are player points
+const int MP_PLAYER_MAXFRAGS = 100;
 const int MP_PLAYER_MAXWINS	= 100;
 const int MP_PLAYER_MAXPING	= 999;
 
-const int MP_CTF_MAXPOINTS = 25;
-
+// HUMANHEAD pdm: Reworked for our chat system
 typedef struct mpChatLine_s {
 	idStr			line;
-	short			fade;			// starts high and decreases, line is removed once reached 0
+	int				startTime;
 } mpChatLine_t;
+// HUMANHEAD END
 
 typedef enum {
 	SND_YOUWIN = 0,
@@ -108,15 +70,17 @@ typedef enum {
 	SND_TWO,
 	SND_ONE,
 	SND_SUDDENDEATH,
-	SND_FLAG_CAPTURED_YOURS,
-	SND_FLAG_CAPTURED_THEIRS,
-	SND_FLAG_RETURN,
-	SND_FLAG_TAKEN_YOURS,
-	SND_FLAG_TAKEN_THEIRS,
-	SND_FLAG_DROPPED_YOURS,
-	SND_FLAG_DROPPED_THEIRS,
+	//HUMANHEAD rww
+	SND_LEADTAKEN,
+	SND_LEADLOST,
+	SND_LEADTIED,
+	//HUMANHEAD END
 	SND_COUNT
 } snd_evt_t;
+
+//HUMANHEAD PCF rww 05/17/06 - terrible lastminute hackjob for localized vote text
+#define _HH_LOCALIZE_VOTESTRINGS 1
+//HUMANHEAD END
 
 class idMultiplayerGame {
 public:
@@ -134,21 +98,23 @@ public:
 	// checks rules and updates state of the mp game
 	void			Run( void );
 
-	// draws mp hud, scoredboard, etc..
+	// draws mp hud, scoredboard, etc.. 
 	bool			Draw( int clientNum );
 
 	// updates a player vote
 	void			PlayerVote( int clientNum, playerVote_t vote );
 
 	// updates frag counts and potentially ends the match in sudden death
-	void			PlayerDeath( idPlayer *dead, idPlayer *killer, bool telefrag );
+	void			PlayerDeath( idPlayer *dead, idPlayer *killer, idEntity *inflictor, bool telefrag ); //HUMANHEAD rww - pass inflictor
 
 	void			AddChatLine( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 
 	void			UpdateMainGui( void );
 	idUserInterface*StartMenu( void );
 	const char*		HandleGuiCommands( const char *menuCommand );
-	void			SetMenuSkin( void );
+//	void			SetMenuSkin( void );	// HUMANHEAD pdm: removed
+
+	void			CheckScoreChange(int clientNum, int oldScore, int newScore, bool leavingGame); //HUMANHEAD rww
 
 	void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void			ReadFromSnapshot( const idBitMsgDelta &msg );
@@ -169,7 +135,6 @@ public:
 
 	static const char *GlobalSoundStrings[ SND_COUNT ];
 	void			PlayGlobalSound( int to, snd_evt_t evt, const char *shader = NULL );
-	void			PlayTeamSound(int toTeam, snd_evt_t evt, const char *shader = NULL);	// sound that's sent only to member of toTeam team
 
 	// more compact than a chat line
 	typedef enum {
@@ -178,6 +143,7 @@ public:
 		MSG_KILLEDTEAM,
 		MSG_DIED,
 		MSG_VOTE,
+		MSG_PLAYERVOTED,	// HUMANHEAD pdm
 		MSG_VOTEPASSED,
 		MSG_VOTEFAILED,
 		MSG_SUDDENDEATH,
@@ -188,15 +154,12 @@ public:
 		MSG_TELEFRAGGED,
 		MSG_JOINTEAM,
 		MSG_HOLYSHIT,
-		MSG_POINTLIMIT,
-
-		MSG_FLAGTAKEN,
-		MSG_FLAGDROP,
-		MSG_FLAGRETURN,
-		MSG_FLAGCAPTURE,
-		MSG_SCOREUPDATE,
 		MSG_COUNT
 	} msg_evt_t;
+	//HUMANHEAD rww
+	const char		*DeathStringForProjectile(int projectileDefNum);
+	void			PrintDeathMessageEvent( int to, msg_evt_t evt, int parm1, int parm2, int inflictorDef );
+	//HUMANHEAD END
 	void			PrintMessageEvent( int to, msg_evt_t evt, int parm1 = -1, int parm2 = -1 );
 
 	void			DisconnectClient( int clientNum );
@@ -231,7 +194,19 @@ public:
 	static void		CallVote_f( const idCmdArgs &args );
 	void			ClientCallVote( vote_flags_t voteIndex, const char *voteValue );
 	void			ServerCallVote( int clientNum, const idBitMsg &msg );
+#if _HH_LOCALIZE_VOTESTRINGS
+	typedef enum {
+		VOTESTR_JUSTONE,
+		VOTESTR_TIMELIMIT,
+		VOTESTR_FRAGLIMIT,
+		VOTESTR_VALUE,
+		VOTESTR_CLNUMNAME,
+		VOTESTR_NAMEVAL
+	} voteStringType_e;
+	void			ClientStartVote( int clientNum, voteStringType_e strType, const int numStrings, const char **strings );
+#else
 	void			ClientStartVote( int clientNum, const char *voteString );
+#endif
 	void			ServerStartVote( int clientNum, vote_flags_t voteIndex, const char *voteValue );
 	void			ClientUpdateVote( vote_result_t result, int yesCount, int noCount );
 	void			CastVote( int clientNum, bool vote );
@@ -248,7 +223,7 @@ public:
 	void			ProcessVoiceChat( int clientNum, bool team, int index );
 
 	void			Precache( void );
-
+	
 	// throttle UI switch rates
 	void			ThrottleUserInfo( void );
 	void			ToggleSpectate( void );
@@ -267,15 +242,6 @@ public:
 	void			ClientReadWarmupTime( const idBitMsg &msg );
 
 	void			ServerClientConnect( int clientNum );
-
-	void            ClearHUDStatus(void);
-	int             GetFlagPoints(int team);	// Team points in CTF
-	void			SetFlagMsg(bool b);		// allow flag event messages to be sent
-	bool			IsFlagMsgOn(void);		// should flag event messages go through?
-	void			ClearGuis(void);
-
-	int             player_red_flag;            // Ent num of red flag carrier for HUD
-	int             player_blue_flag;           // Ent num of blue flag carrier for HUD
 
 	void			PlayerStats( int clientNum, char *data, const int len );
 
@@ -323,18 +289,25 @@ private:
 	idUserInterface *spectateGui;			// spectate info
 	idUserInterface *guiChat;				// chat text
 	idUserInterface *mainGui;				// ready / nick / votes etc.
+#ifdef _GUITEST_SERVERWAIT
+	idUserInterface *serverWaitGui;			//HUMANHEAD rww
+#endif
 	idListGUI		*mapList;
 	idUserInterface *msgmodeGui;			// message mode
 	int				currentMenu;			// 0 - none, 1 - mainGui, 2 - msgmodeGui
 	int				nextMenu;				// if 0, will do mainGui
 	bool			bCurrentMenuMsg;		// send menu state updates to server
 
+	//HUMANHEAD rww - persistent player data dict, to store wins (and potentially other things) between map changes and player disconnects
+	idDict			persistentPlayerDict;
+	//HUMANHEAD END
+
 	// chat data
-	mpChatLine_t	chatHistory[ NUM_CHAT_NOTIFY ];
+// HUMANHEAD pdm: Reworked for our chat system
+	mpChatLine_t	chatHistory[ NUM_CHAT_HISTORY_LINES ];
 	int				chatHistoryIndex;
-	int				chatHistorySize;		// 0 <= x < NUM_CHAT_NOTIFY
-	bool			chatDataUpdated;
-	int				lastChatLineTime;
+	idListGUI		*chatHistoryList;
+// HUMANHEAD END
 
 	// rankings are used by UpdateScoreboard and UpdateHud
 	int				numRankedPlayers;		// ranked players, others may be empty slots or spectators
@@ -349,32 +322,29 @@ private:
 	gameType_t		lastGameType;			// for restarts
 	int				startFragLimit;			// synchronize to clients in initial state, set on -> GAMEON
 
-	idItemTeam 	*teamFlags[ 2 ];
-	int				teamPoints[ 2 ];
-
-	bool			flagMsgOn;
-
-	const char 	*gameTypeVoteMap[ GAME_COUNT ];
+	bool			bTeamsTied;				//HUMANHEAD rww - needs to be set in TDM before any calls to UpdateWinsLosses with removal of suddendeath concept
 
 private:
 	void			UpdatePlayerRanks();
 
 	// updates the passed gui with current score information
-	void			UpdateRankColor( idUserInterface *gui, const char *mask, int i, const idVec3 &vec );
 	void			UpdateScoreboard( idUserInterface *scoreBoard, idPlayer *player );
-	void			UpdateCTFScoreboard(idUserInterface *scoreBoard, idPlayer *player);
+	void			UpdateDMScoreboard( idUserInterface *scoreBoard, idPlayer *player );
+	void			UpdateTeamScoreboard( idUserInterface *scoreBoard, idPlayer *player );
 
+	void			ClearGuis( void );
 	void			DrawScoreBoard( idPlayer *player );
 	void			UpdateHud( idPlayer *player, idUserInterface *hud );
 	bool			Warmup( void );
 	void			CheckVote( void );
+	//HUMANHEAD rww
+	void			DisconnectVotingPlayer(int clientNum);
+	//HUMANHEAD END
 	bool			AllPlayersReady( void );
 	idPlayer *		FragLimitHit( void );
 	idPlayer *		FragLeader( void );
 	bool			TimeLimitHit( void );
-	bool			PointLimitHit(void);
-	// return team with most points
-	int				WinningTeam(void);
+	bool			CheckTeamsTied(void); //HUMANHEAD rww
 	void			NewState( gameState_t news, idPlayer *player = NULL );
 	void			UpdateWinsLosses( idPlayer *winner );
 	// fill any empty tourney slots based on the current tourney ranks
@@ -383,6 +353,7 @@ private:
 	// walk through the tourneyRank to build a wait list for the clients
 	void			UpdateTourneyLine( void );
 	const char *	GameTime( void );
+	const char *	GameFrags( idPlayer *localPlayer );
 	void			Clear( void );
 	bool			EnoughClientsToPlay( void );
 	void			ClearChatData( void );
@@ -398,30 +369,11 @@ private:
 	void			DisableMenu( void );
 	void			SetMapShot( void );
 	// scores in TDM
+	int				GetTeamScore(int team);
 	void			TeamScore( int entityNumber, int team, int delta );
 	void			VoiceChat( const idCmdArgs &args, bool team );
 	void			DumpTourneyLine( void );
 	void			SuddenRespawn( void );
-	void			FindTeamFlags(void);
-
-public:
-	idItemTeam 	*GetTeamFlag(int team);
-	flagStatus_t    GetFlagStatus(int team);
-	void			TeamScoreCTF(int team, int delta);
-	void			PlayerScoreCTF(int playerIdx, int delta);
-	// returns entityNum to team flag carrier, -1 if no flag carrier
-	int				GetFlagCarrier(int team);
-	void            UpdateScoreboardFlagStatus(void);
-
-	void			SetBestGametype(const char *map);
-	void			ReloadScoreboard();
-
-	idStr			GetBestGametype(const char *map, const char *gametype);
-
-	/* #ifdef CTF ... merge the below IsGametypeFlagBased */
-	bool            IsGametypeFlagBased(void);
-	bool            IsGametypeTeamBased(void);
-	/* #endif CTF */
 };
 
 ID_INLINE idMultiplayerGame::gameState_t idMultiplayerGame::GetGameState( void ) const {
@@ -432,12 +384,11 @@ ID_INLINE bool idMultiplayerGame::IsPureReady( void ) const {
 	return pureReady;
 }
 
-ID_INLINE void idMultiplayerGame::ClearFrags( int clientNum ) {
-	playerState[ clientNum ].fragCount = 0;
-}
+//ID_INLINE void idMultiplayerGame::ClearFrags( int clientNum ) //HUMANHEAD rww - no longer inlined
 
 ID_INLINE bool idMultiplayerGame::IsInGame( int clientNum ) {
 	return playerState[ clientNum ].ingame;
 }
 
 #endif	/* !__MULTIPLAYERGAME_H__ */
+

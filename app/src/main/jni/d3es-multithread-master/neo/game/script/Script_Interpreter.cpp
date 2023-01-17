@@ -1,37 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Compiler.h"
-#include "script/Script_Thread.h"
-
-#include "script/Script_Interpreter.h"
+#include "../Game_local.h"
 
 /*
 ================
@@ -172,7 +145,7 @@ void idInterpreter::Reset( void ) {
 	currentFunction = 0;
 	NextInstruction( 0 );
 
-	threadDying	=	false;
+	threadDying 	= false;
 	doneProcessing	= true;
 }
 
@@ -180,7 +153,7 @@ void idInterpreter::Reset( void ) {
 ================
 idInterpreter::GetRegisterValue
 
-Returns a string representation of the value of the register.  This is
+Returns a string representation of the value of the register.  This is 
 used primarily for the debugger and debugging
 
 //FIXME:  This is pretty much wrong.  won't access data in most situations.
@@ -197,11 +170,11 @@ bool idInterpreter::GetRegisterValue( const char *name, idStr &out, int scopeDep
 	const function_t *func;
 
 	out.Empty();
-
+	
 	if ( scopeDepth == -1 ) {
 		scopeDepth = callStackDepth;
-	}
-
+	}	
+	
 	if ( scopeDepth == callStackDepth ) {
 		func = currentFunction;
 	} else {
@@ -227,14 +200,14 @@ bool idInterpreter::GetRegisterValue( const char *name, idStr &out, int scopeDep
 	if ( !d ) {
 		return false;
 	}
-
+	
 	// Get the variable itself and check various namespaces
 	d = gameLocal.program.GetDef( NULL, name, d );
 	if ( !d ) {
 		if ( scope == &def_namespace ) {
 			return false;
 		}
-
+		
 		d = gameLocal.program.GetDef( NULL, name, scope );
 		if ( !d ) {
 			d = gameLocal.program.GetDef( NULL, name, &def_namespace );
@@ -243,7 +216,7 @@ bool idInterpreter::GetRegisterValue( const char *name, idStr &out, int scopeDep
 			}
 		}
 	}
-
+		
 	reg = GetVariable( d );
 	switch( d->Type() ) {
 	case ev_float:
@@ -256,7 +229,7 @@ bool idInterpreter::GetRegisterValue( const char *name, idStr &out, int scopeDep
 		break;
 
 	case ev_vector:
-		if ( reg.vectorPtr ) {
+		if ( reg.vectorPtr ) {				
 			out = va( "%g,%g,%g", reg.vectorPtr->x, reg.vectorPtr->y, reg.vectorPtr->z );
 		} else {
 			out = "0,0,0";
@@ -284,7 +257,7 @@ bool idInterpreter::GetRegisterValue( const char *name, idStr &out, int scopeDep
 		if ( !field || !obj ) {
 			return false;
 		}
-
+								
 		switch ( field->Type() ) {
 		case ev_boolean:
 			out = va( "%d", *( reinterpret_cast<int *>( &obj->data[ reg.ptrOffset ] ) ) );
@@ -391,7 +364,7 @@ idInterpreter::StackTrace
 */
 void idInterpreter::StackTrace( void ) const {
 	const function_t	*f;
-	int					i;
+	int 				i;
 	int					top;
 
 	if ( callStackDepth == 0 ) {
@@ -403,7 +376,7 @@ void idInterpreter::StackTrace( void ) const {
 	if ( top >= MAX_STACK_DEPTH ) {
 		top = MAX_STACK_DEPTH - 1;
 	}
-
+	
 	if ( !currentFunction ) {
 		gameLocal.Printf( "<NO FUNCTION>\n" );
 	} else {
@@ -415,7 +388,18 @@ void idInterpreter::StackTrace( void ) const {
 		if ( !f ) {
 			gameLocal.Printf( "<NO FUNCTION>\n" );
 		} else {
-			gameLocal.Printf( "%12s : %s\n", gameLocal.program.GetFilename( f->filenum ), f->Name() );
+			//HUMANHEAD rww
+			if ( ( callStack[i].s >= 0 ) && ( callStack[i].s < gameLocal.program.NumStatements() ) ) {
+				statement_t &line = gameLocal.program.GetStatement( callStack[i].s );
+				if (f->filenum != line.file) {
+					gameLocal.Printf("stack function does not match instruction location: %s\n", gameLocal.program.GetFilename( line.file ));
+				}
+				gameLocal.Printf( "%12s : %s, line %d\n", gameLocal.program.GetFilename( f->filenum ), f->Name(), line.linenumber );
+			}
+			//HUMANHEAD END
+			else {
+				gameLocal.Printf( "%12s : %s\n", gameLocal.program.GetFilename( f->filenum ), f->Name() );
+			}
 		}
 	}
 }
@@ -427,7 +411,7 @@ idInterpreter::Error
 Aborts the currently executing function
 ============
 */
-void idInterpreter::Error( const char *fmt, ... ) const {
+void idInterpreter::Error( char *fmt, ... ) const {
 	va_list argptr;
 	char	text[ 1024 ];
 
@@ -452,7 +436,7 @@ idInterpreter::Warning
 Prints file and line number information with warning.
 ============
 */
-void idInterpreter::Warning( const char *fmt, ... ) const {
+void idInterpreter::Warning( char *fmt, ... ) const {
 	va_list argptr;
 	char	text[ 1024 ];
 
@@ -554,7 +538,7 @@ NOTE: If this is called from within a event called by this interpreter, the func
 ====================
 */
 void idInterpreter::EnterFunction( const function_t *func, bool clearStack ) {
-	int			c;
+	int 		c;
 	prstack_t	*stack;
 
 	if ( clearStack ) {
@@ -586,10 +570,10 @@ void idInterpreter::EnterFunction( const function_t *func, bool clearStack ) {
 
 	if ( debug ) {
 		if ( currentFunction ) {
-			gameLocal.Printf( "%d: call '%s' from '%s'(line %d)%s\n", gameLocal.time, func->Name(), currentFunction->Name(),
+			gameLocal.Printf( "%d: call '%s' from '%s'(line %d)%s\n", gameLocal.time, func->Name(), currentFunction->Name(), 
 				gameLocal.program.GetStatement( instructionPointer ).linenumber, clearStack ? " clear stack" : "" );
 		} else {
-			gameLocal.Printf( "%d: call '%s'%s\n", gameLocal.time, func->Name(), clearStack ? " clear stack" : "" );
+            gameLocal.Printf( "%d: call '%s'%s\n", gameLocal.time, func->Name(), clearStack ? " clear stack" : "" );
 		}
 	}
 
@@ -625,7 +609,7 @@ idInterpreter::LeaveFunction
 void idInterpreter::LeaveFunction( idVarDef *returnDef ) {
 	prstack_t *stack;
 	varEval_t ret;
-
+	
 	if ( callStackDepth <= 0 ) {
 		Error( "prog stack underflow" );
 	}
@@ -664,7 +648,7 @@ void idInterpreter::LeaveFunction( idVarDef *returnDef ) {
 
 	// up stack
 	callStackDepth--;
-	stack = &callStack[ callStackDepth ];
+	stack = &callStack[ callStackDepth ]; 
 	currentFunction = stack->f;
 	localstackBase = stack->stackbase;
 	NextInstruction( stack->s );
@@ -683,12 +667,14 @@ idInterpreter::CallEvent
 ================
 */
 void idInterpreter::CallEvent( const function_t *func, int argsize ) {
-	int					i;
+	int 				i;
 	int					j;
 	varEval_t			var;
-	int					pos;
-	int					start;
-	intptr_t			data[ D_EVENT_MAXARGS ];
+	int 				pos;
+	int 				start;
+	// RB: 64 bit fixes, changed int to intptr_t
+	intptr_t			data[D_EVENT_MAXARGS];
+	// RB end
 	const idEventDef	*evdef;
 	const char			*format;
 
@@ -702,17 +688,27 @@ void idInterpreter::CallEvent( const function_t *func, int argsize ) {
 	start = localstackUsed - argsize;
 	var.intPtr = ( int * )&localstack[ start ];
 	eventEntity = GetEntity( *var.entityNumberPtr );
-
+	
 	if ( !eventEntity || !eventEntity->RespondsTo( *evdef ) ) {
 		if ( eventEntity && developer.GetBool() ) {
 			// give a warning in developer mode
 			Warning( "Function '%s' not supported on entity '%s'", evdef->GetName(), eventEntity->name.c_str() );
 		}
+
+		//HUMANHEAD rww - if thread owner is removed, destroy the thread
+		if (!eventEntity && thread && thread->threadOwnerCheck && (!thread->threadOwner.IsValid() || !thread->threadOwner.GetEntity())) {
+			gameLocal.Printf("WARNING: Thread '%s' was still running after threadOwner was removed.\n", thread->GetThreadName());
+			threadDying = true;
+			return;
+		}
+		//HUMANHEAD END
+
 		// always return a safe value when an object doesn't exist
 		switch( evdef->GetReturnType() ) {
-		case D_EVENT_INTEGER :
-			gameLocal.program.ReturnInteger( 0 );
+		case D_EVENT_INTEGER:
+			gameLocal.program.ReturnInteger(0);
 			break;
+
 
 		case D_EVENT_FLOAT :
 			gameLocal.program.ReturnFloat( 0 );
@@ -746,8 +742,11 @@ void idInterpreter::CallEvent( const function_t *func, int argsize ) {
 	for( j = 0, i = 0, pos = type_object.Size(); ( pos < argsize ) || ( format[ i ] != 0 ); i++ ) {
 		switch( format[ i ] ) {
 		case D_EVENT_INTEGER :
-			var.intPtr = ( int * )&localstack[ start + pos ];
-			( *( int * )&data[ i ] ) = int( *var.floatPtr );
+			var.intPtr = (int*)&localstack[start + pos];
+			// RB: fixed data alignment	
+			//data[ i ] = int( *var.floatPtr );	
+			(*(int*)&data[i]) = int(*var.floatPtr);
+			// RB end
 			break;
 
 		case D_EVENT_FLOAT :
@@ -811,7 +810,7 @@ void idInterpreter::CallEvent( const function_t *func, int argsize ) {
 idInterpreter::BeginMultiFrameEvent
 ================
 */
-bool idInterpreter::BeginMultiFrameEvent( idEntity *ent, const idEventDef *event ) {
+bool idInterpreter::BeginMultiFrameEvent( idEntity *ent, const idEventDef *event ) { 
 	if ( eventEntity != ent ) {
 		Error( "idInterpreter::BeginMultiFrameEvent called with wrong entity" );
 	}
@@ -839,6 +838,23 @@ void idInterpreter::EndMultiFrameEvent( idEntity *ent, const idEventDef *event )
 	multiFrameEvent = NULL;
 }
 
+
+/*
+================
+idInterpreter::EventInProgress
+================
+// HUMANHEAD nla - Needed to check what the current event is
+*/
+bool idInterpreter::RunningEvent( idEntity *ent, const idEventDef *event ) { 
+	if ( eventEntity != ent ) {
+		Error( "idInterpreter::RunningEvent called with wrong entity" );
+	}
+
+	return multiFrameEvent == event; 
+};
+// HUMANHEAD END
+
+
 /*
 ================
 idInterpreter::MultiFrameEventInProgress
@@ -854,12 +870,14 @@ idInterpreter::CallSysEvent
 ================
 */
 void idInterpreter::CallSysEvent( const function_t *func, int argsize ) {
-	int					i;
+	int 				i;
 	int					j;
 	varEval_t			source;
-	int					pos;
-	int					start;
-	intptr_t			data[ D_EVENT_MAXARGS ];
+	int 				pos;
+	int 				start;
+	// RB: 64 bit fixes, changed int to intptr_t
+	intptr_t			data[D_EVENT_MAXARGS];
+	// RB end
 	const idEventDef	*evdef;
 	const char			*format;
 
@@ -899,6 +917,8 @@ void idInterpreter::CallSysEvent( const function_t *func, int argsize ) {
 			*( idEntity ** )&data[ i ] = GetEntity( *source.entityNumberPtr );
 			if ( !*( idEntity ** )&data[ i ] ) {
 				Warning( "Entity not found for event '%s'. Terminating thread.", evdef->GetName() );
+				// HUMANHEAD pdm: Do we want let the thread run here for safety?  That way a missing / removed entity
+				// getting a sys function called on it (eg sys.trigger) won't end the whole thread.  Currently, no change made.
 				threadDying = true;
 				PopParms( argsize );
 				return;
@@ -930,6 +950,10 @@ void idInterpreter::CallSysEvent( const function_t *func, int argsize ) {
 	popParms = 0;
 }
 
+//HUMANHEAD rww - disabled currently because this happens a lot it seems. sometimes it's ok, sometimes it's not.
+//#define _ASSERT_ON_INTERPRETER_NANS
+//HUMANHEAD END
+
 /*
 ====================
 idInterpreter::Execute
@@ -941,11 +965,13 @@ bool idInterpreter::Execute( void ) {
 	varEval_t	var_c;
 	varEval_t	var;
 	statement_t	*st;
-	int			runaway;
+	int 		runaway;
 	idThread	*newThread;
 	float		floatVal;
 	idScriptObject *obj;
 	const function_t *func;
+
+	PROFILE_SCOPE("Scripting", PROFMASK_NORMAL);		// HUMANHEAD pdm
 
 	if ( threadDying || !currentFunction ) {
 		return true;
@@ -1009,7 +1035,7 @@ bool idInterpreter::Execute( void ) {
 			CallEvent( st->a->value.functionPtr, st->b->value.argSize );
 			break;
 
-		case OP_OBJECTCALL:
+		case OP_OBJECTCALL:	
 			var_a = GetVariable( st->a );
 			obj = GetScriptObject( *var_a.entityNumberPtr );
 			if ( obj ) {
@@ -1050,6 +1076,13 @@ bool idInterpreter::Execute( void ) {
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = *var_a.floatPtr + *var_b.floatPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_c.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_ADD_V:
@@ -1057,6 +1090,19 @@ bool idInterpreter::Execute( void ) {
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
 			*var_c.vectorPtr = *var_a.vectorPtr + *var_b.vectorPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->z));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->z));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->z));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_ADD_S:
@@ -1093,6 +1139,13 @@ bool idInterpreter::Execute( void ) {
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = *var_a.floatPtr - *var_b.floatPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_c.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_SUB_V:
@@ -1100,6 +1153,19 @@ bool idInterpreter::Execute( void ) {
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
 			*var_c.vectorPtr = *var_a.vectorPtr - *var_b.vectorPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->z));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->z));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->z));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_MUL_F:
@@ -1107,6 +1173,13 @@ bool idInterpreter::Execute( void ) {
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = *var_a.floatPtr * *var_b.floatPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_c.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_MUL_V:
@@ -1114,6 +1187,19 @@ bool idInterpreter::Execute( void ) {
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = *var_a.vectorPtr * *var_b.vectorPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_a.vectorPtr->z));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_b.vectorPtr->z));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->x));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->y));
+			assert(!FLOAT_IS_INVALID(var_c.vectorPtr->z));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_MUL_FV:
@@ -1226,7 +1312,7 @@ bool idInterpreter::Execute( void ) {
 			*var_c.floatPtr = ( *var_a.intPtr != 0 ) && ( *var_b.intPtr != 0 );
 			break;
 
-		case OP_OR:
+		case OP_OR:	
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
@@ -1246,14 +1332,14 @@ bool idInterpreter::Execute( void ) {
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = ( *var_a.floatPtr != 0.0f ) || ( *var_b.intPtr != 0 );
 			break;
-
+			
 		case OP_OR_BOOLBOOL:
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = ( *var_a.intPtr != 0 ) || ( *var_b.intPtr != 0 );
 			break;
-
+			
 		case OP_NOT_BOOL:
 			var_a = GetVariable( st->a );
 			var_c = GetVariable( st->c );
@@ -1264,6 +1350,12 @@ bool idInterpreter::Execute( void ) {
 			var_a = GetVariable( st->a );
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = ( *var_a.floatPtr == 0.0f );
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_c.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_NOT_V:
@@ -1287,6 +1379,12 @@ bool idInterpreter::Execute( void ) {
 			var_a = GetVariable( st->a );
 			var_c = GetVariable( st->c );
 			*var_c.floatPtr = -*var_a.floatPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_c.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_NEG_V:
@@ -1365,6 +1463,12 @@ bool idInterpreter::Execute( void ) {
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			*var_b.floatPtr += *var_a.floatPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_UADD_V:
@@ -1377,6 +1481,12 @@ bool idInterpreter::Execute( void ) {
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			*var_b.floatPtr -= *var_a.floatPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_USUB_V:
@@ -1389,6 +1499,12 @@ bool idInterpreter::Execute( void ) {
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			*var_b.floatPtr *= *var_a.floatPtr;
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_UMUL_V:
@@ -1407,6 +1523,13 @@ bool idInterpreter::Execute( void ) {
 			} else {
 				*var_b.floatPtr = *var_b.floatPtr / *var_a.floatPtr;
 			}
+
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_UDIV_V:
@@ -1431,22 +1554,50 @@ bool idInterpreter::Execute( void ) {
 			} else {
 				*var_b.floatPtr = static_cast<int>( *var_b.floatPtr ) % static_cast<int>( *var_a.floatPtr );
 			}
+
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_UOR_F:
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			*var_b.floatPtr = static_cast<int>( *var_b.floatPtr ) | static_cast<int>( *var_a.floatPtr );
+
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_UAND_F:
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			*var_b.floatPtr = static_cast<int>( *var_b.floatPtr ) & static_cast<int>( *var_a.floatPtr );
+
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			break;
 
 		case OP_UINC_F:
 			var_a = GetVariable( st->a );
+
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+#endif
+			//HUMANHEAD END
+
 			( *var_a.floatPtr )++;
 			break;
 
@@ -1455,12 +1606,24 @@ bool idInterpreter::Execute( void ) {
 			obj = GetScriptObject( *var_a.entityNumberPtr );
 			if ( obj ) {
 				var.bytePtr = &obj->data[ st->b->value.ptrOffset ];
+
+				//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+				assert(!FLOAT_IS_INVALID(*var.floatPtr));
+#endif
+				//HUMANHEAD END
+
 				( *var.floatPtr )++;
 			}
 			break;
 
 		case OP_UDEC_F:
 			var_a = GetVariable( st->a );
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+#endif
+			//HUMANHEAD END
 			( *var_a.floatPtr )--;
 			break;
 
@@ -1469,6 +1632,11 @@ bool idInterpreter::Execute( void ) {
 			obj = GetScriptObject( *var_a.entityNumberPtr );
 			if ( obj ) {
 				var.bytePtr = &obj->data[ st->b->value.ptrOffset ];
+				//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+				assert(!FLOAT_IS_INVALID(*var.floatPtr));
+#endif
+				//HUMANHEAD END
 				( *var.floatPtr )--;
 			}
 			break;
@@ -1476,12 +1644,24 @@ bool idInterpreter::Execute( void ) {
 		case OP_COMP_F:
 			var_a = GetVariable( st->a );
 			var_c = GetVariable( st->c );
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_c.floatPtr));
+#endif
+			//HUMANHEAD END
 			*var_c.floatPtr = ~static_cast<int>( *var_a.floatPtr );
 			break;
 
 		case OP_STORE_F:
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
+			//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+			assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+			assert(!FLOAT_IS_INVALID(*var_b.floatPtr));
+#endif
+			//HUMANHEAD END
 			*var_b.floatPtr = *var_a.floatPtr;
 			break;
 
@@ -1491,7 +1671,7 @@ bool idInterpreter::Execute( void ) {
 			*var_b.entityNumberPtr = *var_a.entityNumberPtr;
 			break;
 
-		case OP_STORE_BOOL:
+		case OP_STORE_BOOL:	
 			var_a = GetVariable( st->a );
 			var_b = GetVariable( st->b );
 			*var_b.intPtr = *var_a.intPtr;
@@ -1563,6 +1743,13 @@ bool idInterpreter::Execute( void ) {
 			var_b = GetVariable( st->b );
 			if ( var_b.evalPtr && var_b.evalPtr->floatPtr ) {
 				var_a = GetVariable( st->a );
+
+				//HUMANHEAD rww - float debugging
+#ifdef _ASSERT_ON_INTERPRETER_NANS
+				assert(!FLOAT_IS_INVALID(*var_a.floatPtr));
+#endif
+				//HUMANHEAD END
+
 				*var_b.evalPtr->floatPtr = *var_a.floatPtr;
 			}
 			break;
@@ -1605,7 +1792,7 @@ bool idInterpreter::Execute( void ) {
 				*var_b.evalPtr->vectorPtr = *var_a.vectorPtr;
 			}
 			break;
-
+		
 		case OP_STOREP_FTOS:
 			var_b = GetVariable( st->b );
 			if ( var_b.evalPtr && var_b.evalPtr->stringPtr ) {
@@ -1809,8 +1996,15 @@ bool idInterpreter::Execute( void ) {
 			break;
 
 		case OP_PUSH_V:
-			var_a = GetVariable( st->a );
+			var_a = GetVariable(st->a);
+			// RB: 64 bit fix, changed individual pushes with PushVector
+			/*
+			Push( *reinterpret_cast<int *>( &var_a.vectorPtr->x ) );
+			Push( *reinterpret_cast<int *>( &var_a.vectorPtr->y ) );
+			Push( *reinterpret_cast<int *>( &var_a.vectorPtr->z ) );
+			*/
 			PushVector(*var_a.vectorPtr);
+			// RB end
 			break;
 
 		case OP_PUSH_OBJ:
@@ -1833,3 +2027,4 @@ bool idInterpreter::Execute( void ) {
 
 	return threadDying;
 }
+

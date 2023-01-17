@@ -1,40 +1,11 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "../Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-
-#include "idlib/precompiled.h"
-#include "physics/Physics_Actor.h"
-#include "Entity.h"
-#include "Player.h"
-#include "Moveable.h"
-#include "Game_local.h"
-
-#include "physics/Push.h"
 
 /*
 ============
@@ -641,6 +612,11 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 		for ( i = 1; i < pushedGroupSize; i++ ) {
 			// if the entity is using actor physics
 			if ( pushedGroup[i].ent->GetPhysics()->IsType( idPhysics_Actor::Type ) ) {
+				//HUMANHEAD: aob - needed while using mover during wallwalking and in gravity zones
+				if( !static_cast<idActor*>(pushedGroup[i].ent)->ShouldRemainAlignedToAxial() ) {
+					continue;
+				}
+				//HUMANHEAD END
 
 				// rotate the collision model back to axial
 				if ( !RotateEntityToAxial( pushedGroup[i].ent, pushedGroup[i].ent->GetPhysics()->GetOrigin() ) ) {
@@ -650,6 +626,18 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 					results.endAxis = pusher->GetPhysics()->GetAxis();
 				}
 			}
+
+			// HUMANHEAD pdm: Also rotate vehicles back to axial
+			if ( pushedGroup[i].ent->GetPhysics()->IsType( hhPhysics_Vehicle::Type ) ) {
+				// rotate the collision model back to axial
+				if ( !RotateEntityToAxial( pushedGroup[i].ent, pushedGroup[i].ent->GetPhysics()->GetOrigin() ) ) {
+					// don't allow rotation if the bbox is no longer axial
+					results.fraction = 0.0f;
+					results.endpos = pusher->GetPhysics()->GetOrigin();
+					results.endAxis = pusher->GetPhysics()->GetAxis();
+				}
+			}
+			// HUMANHEAD END
 		}
 	}
 
@@ -804,6 +792,9 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 	SaveEntityPosition( check );
 
 	newRotation.Set( rotation.GetOrigin(), rotation.GetVec(), checkAngle );
+	// NOTE:	this code prevents msvc 6.0 & 7.0 from screwing up the above code in
+	//			release builds moving less floats than it should
+	static float shit = checkAngle;
 
 	newRotation.RotatePoint( rotationPoint );
 
@@ -823,13 +814,25 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 
 	// if the entity uses actor physics
 	if ( physics->IsType( idPhysics_Actor::Type ) ) {
-
-		// rotate the collision model back to axial
-		if ( !RotateEntityToAxial( check, rotationPoint ) ) {
-			// don't allow rotation if the bbox is no longer axial
-			return PUSH_BLOCKED;
+		idActor* actor = static_cast<idActor*>( check );
+		if(actor && actor->ShouldRemainAlignedToAxial()) {//HUMANHEAD
+            // rotate the collision model back to axial
+            if ( !RotateEntityToAxial( check, rotationPoint ) ) {
+	            // don't allow rotation if the bbox is no longer axial
+	            return PUSH_BLOCKED;
+            }
 		}
 	}
+
+	// HUMANHEAD pdm: Also rotate vehicles back to axial
+	if ( physics->IsType( hhPhysics_Vehicle::Type ) ) {
+        // rotate the collision model back to axial
+        if ( !RotateEntityToAxial( check, rotationPoint ) ) {
+	        // don't allow rotation if the bbox is no longer axial
+	        return PUSH_BLOCKED;
+        }
+	}
+	// HUMANHEAD END
 
 #ifdef ROTATIONAL_PUSH_DEBUG
 	if ( physics->ClipContents( clipModel ) ) {
@@ -965,6 +968,13 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 			if ( trace.fraction < 1.0f ) {
 				return PUSH_BLOCKED;
 			}
+
+			//HUMANHEAD: aob - Needed to fix clipping into moveables.  Do a final check to make sure we can move to our final position
+			ClipEntityTranslation( trace, check, clipModel, NULL, checkMove );
+			if ( trace.fraction < 1.0f ) {
+				return PUSH_BLOCKED;
+			}
+			//HUMANHEAD END
 		}
 	}
 
@@ -1015,7 +1025,9 @@ int idPush::DiscardEntities( idEntity *entityList[], int numEntities, int flags,
 		}
 
 		// if we should only push idMoveable entities
-		if ( ( flags & PUSHFL_ONLYMOVEABLE ) && !check->IsType( idMoveable::Type ) ) {
+		//HUMANHEAD: aob - added hhProjectileMine so harvesters can push it
+		if ( ( flags & PUSHFL_ONLYMOVEABLE ) && !check->IsType( idMoveable::Type )
+											 && !check->IsType( hhHarvesterMine::Type ) ) {
 			continue;
 		}
 
@@ -1142,7 +1154,9 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		physics->EnableClip();
 
 		// if the entity is pushed
-		if ( res == PUSH_OK ) {
+		// HUMANHEAD nla - added unblockable logic
+		if ( res == PUSH_OK || ( flags & PUSHFL_UNBLOCKABLE )) {
+		// HUMANHEAD END
 			// set the pusher in the translated position
 			clipModel->Link( gameLocal.clip, clipModel->GetEntity(), clipModel->GetId(), newOrigin, clipModel->GetAxis() );
 			// the entity might be pushed off the ground
@@ -1157,6 +1171,13 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 				impulse.Zero();
 			}
 			check->ApplyImpulse( clipModel->GetEntity(), clipModel->GetId(), clipModel->GetOrigin(), impulse );
+
+			//HUMANHEAD rww - make sure we update visuals after the next physics update, for attached entities
+			if (physics->IsType(hhPhysics_Player::Type)) {
+				hhPhysics_Player *plPhys = static_cast<hhPhysics_Player *>(physics);
+				plPhys->ForceMovedFrame(true);
+			}
+			//HUMANHEAD END
 
 			// add mass of pushed entity
 			totalMass += physics->GetMass();
@@ -1178,6 +1199,12 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 			check->Damage( clipModel->GetEntity(), clipModel->GetEntity(), vec3_origin, "damage_crush", 1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE( pushResults.c.id ) );
 			continue;
 		}
+
+		// HUMANHEAD nla - Can't be stopped if unblockable
+		if ( flags & PUSHFL_UNBLOCKABLE ) {
+			continue;
+		}
+		// HUMANHEAD END
 
 		// if the entity is an active articulated figure and gibs
 		if ( check->IsType( idAFEntity_Base::Type ) && check->spawnArgs.GetBool( "gib" ) ) {
@@ -1317,7 +1344,9 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 		physics->EnableClip();
 
 		// if the entity is pushed
-		if ( res == PUSH_OK ) {
+		// HUMANHEAD nla - added unblockable logic
+		if ( res == PUSH_OK || ( flags & PUSHFL_UNBLOCKABLE )) {
+		// HUMANHEAD END
 			// set the pusher in the rotated position
 			clipModel->Link( gameLocal.clip, clipModel->GetEntity(), clipModel->GetId(), clipModel->GetOrigin(), newAxis );
 			// the entity might be pushed off the ground
@@ -1348,6 +1377,12 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 			check->Damage( clipModel->GetEntity(), clipModel->GetEntity(), vec3_origin, "damage_crush", 1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE( pushResults.c.id ) );
 			continue;
 		}
+
+		// HUMANHEAD nla - Can't be stopped if unblockable
+		if ( flags & PUSHFL_UNBLOCKABLE ) {
+			continue;
+		}
+		// HUMANHEAD END
 
 		// if the entity is an active articulated figure and gibs
 		if ( check->IsType( idAFEntity_Base::Type ) && check->spawnArgs.GetBool( "gib" ) ) {
@@ -1395,7 +1430,7 @@ float idPush::ClipPush( trace_t &results, idEntity *pusher, const int flags,
 	idRotation rotation;
 	float mass;
 
-	mass = 0.0f;
+    mass = 0.0f;
 
 	results.fraction = 1.0f;
 	results.endpos = newOrigin;

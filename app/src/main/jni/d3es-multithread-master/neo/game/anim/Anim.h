@@ -1,44 +1,12 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 #ifndef __ANIM_H__
 #define __ANIM_H__
-
-#include "idlib/containers/StrList.h"
-#include "idlib/containers/HashTable.h"
-#include "idlib/Dict.h"
-#include "renderer/Model.h"
-
-#include "../physics/Clip.h"
 
 //
 // animation channels
 // these can be changed by modmakers and licensees to be whatever they need.
-const int ANIM_NumAnimChannels		= 7;
+const int ANIM_NumAnimChannels		= 5;
 const int ANIM_MaxAnimsPerChannel	= 3;
 const int ANIM_MaxSyncedAnims		= 3;
 
@@ -50,10 +18,6 @@ const int ANIMCHANNEL_TORSO			= 1;
 const int ANIMCHANNEL_LEGS			= 2;
 const int ANIMCHANNEL_HEAD			= 3;
 const int ANIMCHANNEL_EYELIDS		= 4;
-// Koz add channels for right and left hand;
-const int ANIMCHANNEL_RIGHTHAND		= 5;
-const int ANIMCHANNEL_LEFTHAND		= 6;
-// Koz end
 
 // for converting from 24 frames per second to milliseconds
 ID_INLINE int FRAME2MS( int framenum ) {
@@ -67,6 +31,8 @@ class function_t;
 class idEntity;
 class idSaveGame;
 class idRestoreGame;
+class idEventDef; // HUMANHEAD JRM
+class hhAnimator; // HUMANHEAD nla
 
 typedef struct {
 	int		cycleCount;	// how many times the anim has wrapped to the begining (0 for clamped anims)
@@ -132,6 +98,26 @@ typedef enum {
 	FC_SKIN,
 	FC_TRIGGER,
 	FC_TRIGGER_SMOKE_PARTICLE,
+	//HUMANHEAD
+	FC_STOPSND,
+	FC_STOPSND_VOICE,	
+	FC_STOPSND_VOICE2,
+	FC_STOPSND_BODY,
+	FC_STOPSND_BODY2,
+	FC_STOPSND_BODY3,
+	FC_STOPSND_WEAPON,
+	FC_STOPSND_ITEM,
+	FC_EVENT_ARGS,				// nla
+	FC_MOOD,					// JRM
+	FC_LAUNCHALTMISSILE,		// aob		
+	FC_LAUNCHMISSILE_BONEDIR,
+	FC_RIGHTFOOTPRINT,
+	FC_LEFTFOOTPRINT,
+	FC_KICK_OBSTACLE,
+	FC_TRIGGER_ANIM_ENT,
+	FC_HIDE,
+	FC_SETKEY,					// mdc
+	//HUMANHEAD END
 	FC_MELEE,
 	FC_DIRECTDAMAGE,
 	FC_BEGINATTACK,
@@ -156,11 +142,7 @@ typedef enum {
 	FC_ENABLE_LEG_IK,
 	FC_DISABLE_LEG_IK,
 	FC_RECORDDEMO,
-	FC_AVIGAME,
-	FC_LAUNCH_PROJECTILE,
-	FC_TRIGGER_FX,
-	FC_START_EMITTER,
-	FC_STOP_EMITTER,
+	FC_AVIGAME
 } frameCommandType_t;
 
 typedef struct {
@@ -171,6 +153,10 @@ typedef struct {
 typedef struct {
 	frameCommandType_t		type;
 	idStr					*string;
+
+	//HUMANHEAD: aob - cache for event_arg parms
+	idList<idStr>			*parmList;
+	//HUMANHEAD END
 
 	union {
 		const idSoundShader	*soundShader;
@@ -234,6 +220,9 @@ public:
 
 class idMD5Anim {
 private:
+// HUMANHEAD nla - Needed for access in hhBaseAnim
+protected:
+// HUMANHEAD END
 	int						numFrames;
 	int						frameRate;
 	int						animLength;
@@ -260,10 +249,11 @@ public:
 	void					IncreaseRefs( void ) const;
 	void					DecreaseRefs( void ) const;
 	int						NumRefs( void ) const;
-
+	
 	void					CheckModelHierarchy( const idRenderModel *model ) const;
 	void					GetInterpolatedFrame( frameBlend_t &frame, idJointQuat *joints, const int *index, int numIndexes ) const;
 	void					GetSingleFrame( int framenum, idJointQuat *joints, const int *index, int numIndexes ) const;
+	virtual // HUMANHEAD nla - virtual for hhBaseAnim
 	int						Length( void ) const;
 	int						NumFrames( void ) const;
 	int						NumJoints( void ) const;
@@ -271,7 +261,12 @@ public:
 	const char				*Name( void ) const;
 
 	void					GetFrameBlend( int framenum, frameBlend_t &frame ) const;	// frame 1 is first frame
+	virtual // HUMANHEAD nla - virtual to be overriden
 	void					ConvertTimeToFrame( int time, int cyclecount, frameBlend_t &frame ) const;
+
+	// HUMANHEAD nla - Added to allow partial anims.  Overridden in hhMD5Anim
+	virtual void			SetLimits( float start, float end ) const {};
+	// HUMANHEAD END
 
 	void					GetOrigin( idVec3 &offset, int currentTime, int cyclecount ) const;
 	void					GetOriginRotation( idQuat &rotation, int time, int cyclecount ) const;
@@ -287,7 +282,7 @@ public:
 */
 
 class idAnim {
-private:
+protected:		// HUMANHEAD nla - needed to override class
 	const class idDeclModelDef	*modelDef;
 	const idMD5Anim				*anims[ ANIM_MaxSyncedAnims ];
 	int							numAnims;
@@ -298,6 +293,12 @@ private:
 	animFlags_t					flags;
 
 public:
+	// HUMANHEAD nla 
+	// To allowed extra frame commands is derived classes.  Returns true if other commands found
+	virtual bool			AddFrameCommandExtra( idToken &token, frameCommand_t &fc, idLexer &src, idStr &errorText ) { return( false ); };
+	virtual bool			CallFrameCommandsExtra( const frameCommand_t &command, idEntity *ent ) const { return( false ); };	
+	// HUMANHEAD END
+
 								idAnim();
 								idAnim( const idDeclModelDef *modelDef, const idAnim *anim );
 								~idAnim();
@@ -368,6 +369,10 @@ public:
 
 	const idVec3 &				GetVisualOffset( void ) const;
 
+	// HUMANHEAD nla
+	idDict						channelDict;
+	// HUMANHEAD END
+
 private:
 	void						CopyDecl( const idDeclModelDef *decl );
 	bool						ParseAnim( idLexer &src, int numDefaultAnims );
@@ -391,9 +396,11 @@ private:
 */
 
 class idAnimBlend {
-private:
+protected:		// HUMANHEAD nla - Used to access vars in hhAnimBlend
 	const class idDeclModelDef	*modelDef;
+	mutable		// HUMANHEAD nla - Hack to get around const for calls to UpdateFreezeTime
 	int							starttime;
+	mutable		// HUMANHEAD nla - Hack to get around const for calls to UpdateFreezeTime
 	int							endtime;
 	int							timeOffset;
 	float						rate;
@@ -409,18 +416,34 @@ private:
 	short						animNum;
 	bool						allowMove;
 	bool						allowFrameCommands;
+	// HUMANHEAD nla - All data members need to be in idAnimBlend, due to the pointer math done.  (See idAnimator::GetBounds)
+	bool				frozen;		
+	int					freezeStart;
+	mutable		// HUMANHEAD nla - Hack to get around const for calls to UpdateFreezeTime
+	int					freezeCurrent;
+	int					freezeEnd;
+	int					rotateTime;
+	const idEventDef *	rotateEvent;
+
+	friend class				hhAnimator;
+	// HUMANHEAD END
 
 	friend class				idAnimator;
 
 	void						Reset( const idDeclModelDef *_modelDef );
+	virtual		// HUMANHEAD nla
 	void						CallFrameCommands( idEntity *ent, int fromtime, int totime ) const;
 	void						SetFrame( const idDeclModelDef *modelDef, int animnum, int frame, int currenttime, int blendtime );
 	void						CycleAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime );
 	void						PlayAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime );
+	virtual		// HUMANHEAD nla
 	bool						BlendAnim( int currentTime, int channel, int numJoints, idJointQuat *blendFrame, float &blendWeight, bool removeOrigin, bool overrideBlend, bool printInfo ) const;
+	virtual		// HUMANHEAD nla
 	void						BlendOrigin( int currentTime, idVec3 &blendPos, float &blendWeight, bool removeOriginOffset ) const;
+	virtual		// HUMANHEAD nla
 	void						BlendDelta( int fromtime, int totime, idVec3 &blendDelta, float &blendWeight ) const;
 	void						BlendDeltaRotation( int fromtime, int totime, idQuat &blendDelta, float &blendWeight ) const;
+	virtual		// HUMANHEAD nla
 	bool						AddBounds( int currentTime, idBounds &bounds, bool removeOriginOffset ) const;
 
 public:
@@ -436,6 +459,7 @@ public:
 	bool						SetSyncedAnimWeight( int num, float weight );
 	void						Clear( int currentTime, int clearTime );
 	bool						IsDone( int currentTime ) const;
+	virtual		// HUMANHEAD nla
 	bool						FrameHasChanged( int currentTime ) const;
 	int							GetCycleCount( void ) const;
 	void						SetCycleCount( int count );
@@ -444,7 +468,9 @@ public:
 	void						SetStartTime( int startTime );
 	int							GetStartTime( void ) const;
 	int							GetEndTime( void ) const;
+	virtual		// HUMANHEAD nla
 	int							GetFrameNumber( int currenttime ) const;
+	virtual		// HUMANHEAD nla
 	int							AnimTime( int currenttime ) const;
 	int							NumFrames( void ) const;
 	int							Length( void ) const;
@@ -454,6 +480,41 @@ public:
 	const idAnim				*Anim( void ) const;
 	int							AnimNum( void ) const;
 };
+
+// HUMANHEAD nla - Stupid C++ forces me to put this here!  Else I can't use it below in idAnimator due to it not being defined
+class hhAnimBlend : public idAnimBlend {
+ public:
+						hhAnimBlend();
+
+	friend class		hhAnimator;
+	friend class		idAnimator;
+
+	// Overridden Methods					
+	bool				FrameHasChanged( int currentTime ) const;
+	int					AnimTime( int currenttime ) const;
+	int					GetFrameNumber( int currenttime ) const;
+
+
+ protected:	
+
+	// Overridden Methods
+	void				CallFrameCommands( idEntity *ent, int fromtime, int totime ) const;
+	bool				BlendAnim( int currentTime, int channel, int numJoints, idJointQuat *blendFrame, float &blendWeight, bool removeOrigin, bool overrideBlend, bool printInfo ) const;
+	void				BlendOrigin( int currentTime, idVec3 &blendPos, float &blendWeight, bool removeOriginOffset ) const;
+	void				BlendDelta( int fromtime, int totime, idVec3 &blendDelta, float &blendWeight ) const;
+	bool				AddBounds( int currentTime, idBounds &bounds, bool removeOriginOffset ) const;
+						
+	// Original Methods
+	void				UpdateFreezeTime( int currentTime ) const;
+	bool				Freeze( int currentTime, idEntity *owner );
+	bool				Freeze( int currentTime, idEntity *owner, int durationMS );
+	bool				Thaw( int currentTime );
+	bool				ThawIfTime( int currentTime );
+	bool				IsFrozen() const { return( frozen ); };
+
+};
+
+// HUMANHEAD END
 
 /*
 ==============================================================================================
@@ -515,7 +576,13 @@ public:
 	int							GetAnim( const char *name ) const;
 	bool						HasAnim( const char *name ) const;
 
+	// HUMANHEAD nla - Convenience
+	bool						GetJointTransform( const char* name, int currenttime, idVec3 &offset, idMat3 &axis ) { return GetJointTransform( GetJointHandle(name), currenttime, offset, axis ); }
+	bool						GetJointLocalTransform( const char* name, int currenttime, idVec3 &offset, idMat3 &axis ) { return GetJointLocalTransform( GetJointHandle(name), currenttime, offset, axis ); }
+	// HUMANHEAD END
+
 	void						ServiceAnims( int fromtime, int totime );
+	virtual		// HUMANHEAD nla
 	bool						IsAnimating( int currentTime ) const;
 
 	void						GetJoints( int *numJoints, idJointMat **jointsPtr );
@@ -530,6 +597,7 @@ public:
 	void						ForceUpdate( void );
 	void						ClearForceUpdate( void );
 	bool						CreateFrame( int animtime, bool force );
+	virtual		// HUMANHEAD nla
 	bool						FrameHasChanged( int animtime ) const;
 	void						GetDelta( int fromtime, int totime, idVec3 &delta ) const;
 	bool						GetDeltaRotation( int fromtime, int totime, idMat3 &delta ) const;
@@ -578,11 +646,15 @@ private:
 	void						FreeData( void );
 	void						PushAnims( int channel, int currentTime, int blendTime );
 
-private:
+protected:		// HUMANEAD nla - For access in hhAnimator
 	const idDeclModelDef *		modelDef;
 	idEntity *					entity;
 
+#ifdef HUMANHEAD
+	hhAnimBlend					channels[ ANIM_NumAnimChannels ][ ANIM_MaxAnimsPerChannel ];
+#else
 	idAnimBlend					channels[ ANIM_NumAnimChannels ][ ANIM_MaxAnimsPerChannel ];
+#endif
 	idList<jointMod_t *>		jointMods;
 	int							numJoints;
 	idJointMat *				joints;
@@ -626,6 +698,7 @@ public:
 
 	void						ClearAnimsInUse( void );
 	void						FlushUnusedAnims( void );
+	void						PrintMemInfo( MemInfo_t *mi );	// HUMANHEAD pdm
 
 private:
 	idHashTable<idMD5Anim *>	animations;

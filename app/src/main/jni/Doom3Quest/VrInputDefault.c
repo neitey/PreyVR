@@ -253,6 +253,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                         ALOGV("**WEAPON EVENT** velocity triggered %s",
                               velocityTriggeredAttack ? "+attack" : "-attack");
                         Android_ButtonChange(UB_ATTACK, velocityTriggeredAttack ? 1 : 0);
+                        Android_ButtonChange(UB_ATTACK_ALT, velocityTriggeredAttack ? 1 : 0);//Lubos
                         fired = velocityTriggeredAttack;
                     }
                 }
@@ -263,6 +264,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                 velocityTriggeredAttack = false;
                 ALOGV("**WEAPON EVENT**  velocity triggered -attack");
                 Android_ButtonChange(UB_ATTACK, velocityTriggeredAttack ? 1 : 0);
+                Android_ButtonChange(UB_ATTACK_ALT, velocityTriggeredAttack ? 1 : 0);//Lubos
             }
 
             static bool velocityTriggeredAttackOffHand = false;
@@ -379,6 +381,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                 ALOGV("**WEAPON EVENT**  Not Grip Pushed %sattack", (pDominantTrackedRemoteNew->Buttons & ovrButton_Trigger) ? "+" : "-");
 
                 handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_ATTACK);
+                handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_ATTACK_ALT);//Lubos
             }
 
             //Duck
@@ -523,7 +526,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
             handleTrackedControllerButton_AsButton(pOffTrackedRemoteNew->Buttons, pOffTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_SPEED);
 
             int vr_turn_mode = Android_GetCVarInteger("vr_turnmode");
-            float vr_turn_angle = Android_GetCVarInteger("vr_turnangle");
+            float vr_turn_angle = 45;//Lubos Android_GetCVarInteger("vr_turnangle");
 
             //This fixes a problem with older thumbsticks misreporting the X value
             static float joyx[4] = {0};
@@ -534,7 +537,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
 
 
             //No snap turn when using mounted gun
-            snapTurn = 0;
+            //Lubos BEGIN
             static int increaseSnap = true;
             {
                 if (joystickX > 0.7f) {
@@ -549,8 +552,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                         if (snapTurn < -180.0f) {
                             snapTurn += 360.f;
                         }
-                    } else {
-                        snapTurn = 0;
                     }
                 } else if (joystickX < 0.2f) {
                     increaseSnap = true;
@@ -572,13 +573,12 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                             snapTurn -= 360.f;
                         }
 
-                    } else {
-                        snapTurn = 0;
                     }
                 } else if (joystickX > -0.2f) {
                     decreaseSnap = true;
                 }
             }
+            //Lubos END
         }
     }
 

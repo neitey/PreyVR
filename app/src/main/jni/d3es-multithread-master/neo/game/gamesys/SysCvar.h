@@ -1,35 +1,67 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __SYS_CVAR_H__
 #define __SYS_CVAR_H__
 
-#include "framework/CVarSystem.h"
+// HUMANHEAD
+extern idCVar	g_tips;
+extern idCVar	g_jawflap;
+extern idCVar	g_wicked;
+extern idCVar	g_casino;
+extern idCVar	g_roadhouseCompleted;
+extern idCVar	g_precache;
+extern idCVar	g_debugProjections;
+extern idCVar	g_showProjectileLaunchPoint;
+extern idCVar	p_tripwireDebug;
+extern idCVar	p_playerPhysicsDebug;
+extern idCVar	p_camRotRateScale;
+extern idCVar	p_camInterpDebug;
+extern idCVar	p_iterRotMoveNumIterations;
+extern idCVar	p_iterRotMoveTransDist;
+extern idCVar	p_disableCamInterp;
+extern idCVar	p_mountedGunDebug;
+extern idCVar	g_mbNumBlurs;
+extern idCVar	g_mbFrameSpan;
+extern idCVar	g_postEventsDebug;
+extern idCVar	g_debugger;
+extern idCVar	g_nodormant;
+extern idCVar	g_robustDormantAll;
+extern idCVar	g_dormanttests;
+extern idCVar	pm_wallwalkstepsize;
+extern idCVar	g_vehicleDebug;
+extern idCVar	sys_SavedPosition;
+extern idCVar	g_crosshair;
+extern idCVar	g_springConstant;
+extern idCVar	g_debugAFs;
+extern idCVar	g_debugFX;
+extern idCVar	ai_debugActions;
+extern idCVar	ai_debugBrain;
+extern idCVar	ai_printSpeech;
+extern idCVar	ai_talonAttack;
+extern idCVar	ai_debugPath;
+extern idCVar	ai_hideSkipThink;
+extern idCVar	g_showDormant;
+extern idCVar	ai_showNoAAS;
+extern idCVar	ai_skipSpeech;
+extern idCVar	ai_skipThink;
+extern idCVar	g_useDDA;
+extern idCVar	g_printDDA;
+extern idCVar	g_trackDDA;
+extern idCVar	g_dumpDDA;
+extern idCVar	g_debugMatter;
+extern idCVar	g_debugImpulse;
+extern idCVar	sys_forceCache;		//mdc - added for forcing caching even if developer is set
+extern idCVar	g_showGamePortals;
+extern idCVar	g_showValidSoundAreas;
+extern idCVar	g_testModelPitch;
+extern idCVar	g_maxEntitiesWarning;
+extern idCVar	g_showEntityCount;
+extern idCVar	g_expensiveMS;
+extern idCVar	g_nogore;
+extern idCVar	g_runMapCycle;
+extern idCVar	g_forceSingleSmokeView;
+//HUMANHEAD END
 
 extern idCVar	developer;
 
@@ -41,15 +73,15 @@ extern idCVar	r_aspectRatio;
 extern idCVar	g_monsters;
 extern idCVar	g_decals;
 extern idCVar	g_knockback;
-extern idCVar	g_skill;
+//extern idCVar	g_skill;				// HUMANHEAD pdm: not used
 extern idCVar	g_gravity;
 extern idCVar	g_skipFX;
 extern idCVar	g_skipParticles;
 extern idCVar	g_bloodEffects;
 extern idCVar	g_projectileLights;
 extern idCVar	g_doubleVision;
-extern idCVar	g_hitEffect;
 extern idCVar	g_muzzleFlash;
+extern idCVar	g_ragdollDecals;
 
 extern idCVar	g_disasm;
 extern idCVar	g_debugBounds;
@@ -62,13 +94,13 @@ extern idCVar	g_debugMover;
 extern idCVar	g_debugTriggers;
 extern idCVar	g_debugCinematic;
 extern idCVar	g_stopTime;
-extern idCVar	g_armorProtection;
-extern idCVar	g_armorProtectionMP;
-extern idCVar	g_damageScale;
-extern idCVar	g_useDynamicProtection;
-extern idCVar	g_healthTakeTime;
-extern idCVar	g_healthTakeAmt;
-extern idCVar	g_healthTakeLimit;
+//extern idCVar	g_armorProtection;			// HUMANHEAD pdm: not used
+//extern idCVar	g_armorProtectionMP;		// HUMANHEAD pdm: not used
+//extern idCVar	g_damageScale;				// HUMANHEAD pdm: not used
+//extern idCVar	g_useDynamicProtection;		// HUMANHEAD pdm: not used
+//extern idCVar	g_healthTakeTime;			// HUMANHEAD pdm: not used
+//extern idCVar	g_healthTakeAmt;			// HUMANHEAD pdm: not used
+//extern idCVar	g_healthTakeLimit;			// HUMANHEAD pdm: not used
 
 extern idCVar	g_showPVS;
 extern idCVar	g_showTargets;
@@ -84,14 +116,10 @@ extern idCVar	g_showTestModelFrame;
 extern idCVar	g_showActiveEntities;
 extern idCVar	g_showEnemies;
 
+extern idCVar	g_artificialPlayerCount; //HUMANHEAD rww
+
 extern idCVar	g_frametime;
 extern idCVar	g_timeentities;
-
-extern idCVar   g_testFullscreenFX;
-extern idCVar   g_testHelltimeFX;
-extern idCVar   g_testMultiplayerFX;
-extern idCVar   g_testBloomIntensity;
-extern idCVar   g_testBloomNumPasses;
 
 extern idCVar	ai_debugScript;
 extern idCVar	ai_debugMove;
@@ -101,7 +129,6 @@ extern idCVar	ai_showCombatNodes;
 extern idCVar	ai_showPaths;
 extern idCVar	ai_showObstacleAvoidance;
 extern idCVar	ai_blockedFailSafe;
-extern idCVar	ai_showHealth;
 
 extern idCVar	g_dvTime;
 extern idCVar	g_dvAmplitude;
@@ -126,10 +153,6 @@ extern idCVar	g_vehicleSuspensionDown;
 extern idCVar	g_vehicleSuspensionKCompress;
 extern idCVar	g_vehicleSuspensionDamping;
 extern idCVar	g_vehicleTireFriction;
-
-extern idCVar	g_vehicleDebug;
-extern idCVar	g_debugShockwave;
-extern idCVar	g_enablePortalSky;
 
 extern idCVar	ik_enable;
 extern idCVar	ik_debug;
@@ -208,9 +231,11 @@ extern idCVar	pm_thirdPersonAngle;
 extern idCVar	pm_thirdPersonClip;
 extern idCVar	pm_thirdPerson;
 extern idCVar	pm_thirdPersonDeath;
+extern idCVar	pm_thirdPersonDeathMP; //HUMANHEAD rww
 extern idCVar	pm_modelView;
 extern idCVar	pm_airTics;
 
+extern idCVar	g_showAimHealth; //HUMANHEAD rww
 extern idCVar	g_showPlayerShadow;
 extern idCVar	g_showHud;
 extern idCVar	g_showProjectilePct;
@@ -220,6 +245,7 @@ extern idCVar	g_gun_y;
 extern idCVar	g_gun_z;
 extern idCVar	g_viewNodalX;
 extern idCVar	g_viewNodalZ;
+extern idCVar	g_fov;
 extern idCVar	g_testDeath;
 extern idCVar	g_skipViewEffects;
 extern idCVar   g_mpWeaponAngleScale;
@@ -234,25 +260,6 @@ extern idCVar	g_testModelAnimate;
 extern idCVar	g_testModelBlend;
 extern idCVar	g_exportMask;
 extern idCVar	g_flushSave;
-
-extern idCVar	g_enableSlowmo;
-extern idCVar	g_slowmoStepRate;
-extern idCVar	g_testFullscreenFX;
-extern idCVar	g_testHelltimeFX;
-extern idCVar	g_testMultiplayerFX;
-extern idCVar	g_lowresFullscreenFX;
-extern idCVar	g_moveableDamageScale;
-extern idCVar	g_testBloomSpeed;
-extern idCVar	g_testBloomIntensity;
-extern idCVar	g_testBloomNumPasses;
-
-extern idCVar	g_grabberHoldSeconds;
-extern idCVar	g_grabberEnableShake;
-extern idCVar	g_grabberRandomMotion;
-extern idCVar	g_grabberHardStop;
-extern idCVar	g_grabberDamping;
-
-extern idCVar	g_xp_bind_run_once;
 
 extern idCVar	aas_test;
 extern idCVar	aas_showAreas;
@@ -277,50 +284,11 @@ extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
 
-extern idCVar si_flagDropTimeLimit;
-extern idCVar si_midnight;
-
-extern idCVar g_flagAttachJoint;
-extern idCVar g_flagAttachOffsetX;
-extern idCVar g_flagAttachOffsetY;
-extern idCVar g_flagAttachOffsetZ;
-extern idCVar g_flagAttachAngleX;
-extern idCVar g_flagAttachAngleY;
-extern idCVar g_flagAttachAngleZ;
-
-extern idCVar g_CTFArrows;
-
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
 
-extern idCVar	g_grabberHoldSeconds;
-extern idCVar	g_grabberEnableShake;
-extern idCVar	g_grabberRandomMotion;
-extern idCVar	g_grabberHardStop;
-extern idCVar	g_grabberDamping;
-
-extern idCVar	g_xp_bind_run_once;
-
-//VR CVARS
-extern idCVar vr_weaponHand;
-extern idCVar vr_ipd;
-extern idCVar vr_heightoffset;
-extern idCVar vr_controlscheme;
-extern idCVar	vr_shakeamplitude;
-extern idCVar	vr_knockback;
-extern idCVar vr_throwables;
-extern idCVar vr_turnmode;
-extern idCVar vr_turnangle;
-extern idCVar vr_hudmode;
-extern idCVar g_infiniteAmmo;
-extern idCVar g_useWeaponDepthHack;
-extern idCVar g_weaponShadows;
-extern idCVar timescale;
-
-
-
 extern const char *si_gameTypeArgs[];
 
-extern const char *ui_skinArgs[];
+//extern const char *ui_skinArgs[];	// HUMANHEAD pdm: removed
 
 #endif /* !__SYS_CVAR_H__ */

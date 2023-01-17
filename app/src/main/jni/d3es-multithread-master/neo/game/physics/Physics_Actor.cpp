@@ -1,38 +1,16 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "Entity.h"
-
-#include "physics/Physics_Actor.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Actor )
 END_CLASS
+
+//HUMANHEAD PCF mdl 04/30/06 - Added this in case last minute change below causes chaos
+#define LAST_MINUTE_HACK
 
 /*
 ================
@@ -47,6 +25,13 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 	masterEntity = NULL;
 	masterYaw = 0.0f;
 	masterDeltaYaw = 0.0f;
+
+	// HUMANHEAD nla
+	numTouch = 0;
+	memset( &groundTrace, 0, sizeof(trace_t) );
+	hadGroundContacts = false;
+	// HUMANHEAD END
+
 	groundEntityPtr = NULL;
 }
 
@@ -80,6 +65,19 @@ void idPhysics_Actor::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( masterDeltaYaw );
 
 	groundEntityPtr.Save( savefile );
+
+	// HUMANHEAD mdl
+	int i;
+	savefile->WriteTrace( groundTrace );
+	savefile->WriteInt( numTouch );
+	for( i = 0; i < MAXTOUCH; i++ ) {
+		savefile->WriteInt( touchEnts[i] );
+	}
+	savefile->WriteBool( hadGroundContacts );
+	for( i = 0; i < c_iNumRotationTraces; i++ ) {
+		savefile->WriteVec3( rotationTraceDirectionTable[i] );
+	}
+	// HUMANHEAD END
 }
 
 /*
@@ -100,6 +98,19 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( masterDeltaYaw );
 
 	groundEntityPtr.Restore( savefile );
+
+	// HUMANHEAD mdl
+	int i;
+	savefile->ReadTrace( groundTrace );
+	savefile->ReadInt( numTouch );
+	for( i = 0; i < MAXTOUCH; i++ ) {
+		savefile->ReadInt( touchEnts[i] );
+	}
+	savefile->ReadBool( hadGroundContacts );
+	for( i = 0; i < c_iNumRotationTraces; i++ ) {
+		savefile->ReadVec3( rotationTraceDirectionTable[i] );
+	}
+	// HUMANHEAD END
 }
 
 /*
@@ -108,15 +119,33 @@ idPhysics_Actor::SetClipModelAxis
 ================
 */
 void idPhysics_Actor::SetClipModelAxis( void ) {
+
+	idMat3 prevClipModelAxis = clipModelAxis; // HUMANHEAD JRM
+
 	// align clip model to gravity direction
 	if ( ( gravityNormal[2] == -1.0f ) || ( gravityNormal == vec3_zero ) ) {
 		clipModelAxis.Identity();
 	}
 	else {
+
+		// HUMANHEAD JRM/PDM/NLA - To get the right clipmodel axis in gravity zones
+		idVec3 newx;		
+		newx = prevClipModelAxis[0] - (prevClipModelAxis[0] * -gravityNormal)*-gravityNormal;
+		if(newx.LengthSqr() < VECTOR_EPSILON) {
+			gameLocal.Warning("idPhysics_Actor::SetClipModelAxis invalid newx");
+			if(prevClipModelAxis[0] * -gravityNormal > 0.0f) {
+				newx = -prevClipModelAxis[2];
+			}
+			else {
+				newx = prevClipModelAxis[2];
+			}
+		}
+		newx.Normalize();
+		clipModelAxis[0] = newx;
 		clipModelAxis[2] = -gravityNormal;
-		clipModelAxis[2].NormalVectors( clipModelAxis[0], clipModelAxis[1] );
-		clipModelAxis[1] = -clipModelAxis[1];
-	}
+		clipModelAxis[1] = clipModelAxis[2].Cross(clipModelAxis[0]);
+		// HUMANHEAD END
+	}		
 
 	if ( clipModel ) {
 		clipModel->Link( gameLocal.clip, self, 0, clipModel->GetOrigin(), clipModelAxis );
@@ -277,7 +306,9 @@ idPhysics_Actor::SetGravity
 void idPhysics_Actor::SetGravity( const idVec3 &newGravity ) {
 	if ( newGravity != gravityVector ) {
 		idPhysics_Base::SetGravity( newGravity );
+		/* HUMANHEAD: aob - removed because InterativeRotateMove updates bbox
 		SetClipModelAxis();
+		HUMANHEAD END*/
 	}
 }
 
@@ -380,3 +411,261 @@ bool idPhysics_Actor::EvaluateContacts( void ) {
 
 	return ( contacts.Num() != 0 );
 }
+
+
+// HUMANHEAD functions
+
+/*
+===============
+idPhysics_Actor::AddTouchEnt
+HUMANHEAD nla
+===============
+*/
+void idPhysics_Actor::AddTouchEnt( int entityNum ) {
+	int i;
+
+	if ( entityNum == ENTITYNUM_WORLD ) {
+		return;
+	}
+	if ( numTouch == MAXTOUCH ) {
+		return;
+	}
+
+	// see if it is already added
+	for ( i = 0; i < numTouch; i++ ) {
+		if ( touchEnts[ i ] == entityNum ) {
+			return;
+		}
+	}
+
+	// add it
+	touchEnts[numTouch] = entityNum;
+	numTouch++;
+}
+
+
+/*
+===============
+idPhysics_Actor::AddTouchEntList
+HUMANHEAD nla
+===============
+*/
+void idPhysics_Actor::AddTouchEntList( idList<int> &list ) {
+	int i;
+
+	
+	for ( i = 0; i < list.Num(); i++ ) {
+		AddTouchEnt(list[i]);
+	}
+}
+
+
+/*
+================
+idPhysics_Actor::GetNumTouchEnts
+HUMANHEAD nla
+================
+*/
+int idPhysics_Actor::GetNumTouchEnts( void ) const {
+	return numTouch;
+}
+
+/*
+================
+idPhysics_Actor::GetTouchEnt
+HUMANHEAD nla
+================
+*/
+int idPhysics_Actor::GetTouchEnt( int i ) const {
+	if ( i < 0 || i >= numTouch ) {
+		return ENTITYNUM_NONE;
+	}
+	return touchEnts[i];
+}
+
+/*
+===============
+idPhysics_Actor::ResetNumTouchEnt
+HUMANHEAD nla
+===============
+*/
+void idPhysics_Actor::ResetNumTouchEnt( int i ) {
+
+	numTouch = i;
+
+}
+
+/*
+================
+hhPhysics_Player::HadGroundContacts
+
+HUMANHEAD: aob
+================
+*/
+bool idPhysics_Actor::HadGroundContacts() const {
+	return hadGroundContacts;
+}
+
+/*
+================
+idPhysics_Actor::HadGroundContacts
+
+HUMANHEAD: aob
+================
+*/
+void idPhysics_Actor::HadGroundContacts( const bool hadGroundContacts ) {
+	this->hadGroundContacts = hadGroundContacts;
+}
+
+/*
+================
+idPhysics_Actor::InterativeRotateMove
+
+HUMANHEAD: aob
+================
+*/
+bool idPhysics_Actor::IterativeRotateMove( const idVec3& upVector, const idVec3& idealUpVector, const idVec3& rotationOrigin, const idVec3& rotationCheckOrigin, int numIterations) {
+	trace_t rotationTraceInfo;
+	trace_t translationTraceInfo;
+	idRotation rotator;
+	idVec3 rotationVector;
+	const idVec3 origPos( rotationOrigin );
+	idVec3 currentOrigin( rotationOrigin );
+	idMat3 currentAxis( GetAxis() );
+	idVec3 averageTranslationVector( vec3_origin );
+	float numTranslationVectors = 0.0f;
+
+	if( idealUpVector.Compare(vec3_origin, VECTOR_EPSILON) ) {// For Zero G
+		return false;
+	}
+
+	if( upVector.Compare(idealUpVector, VECTOR_EPSILON) ) {
+		return false;
+	}
+	
+	rotator.SetVec( DetermineRotationVector(upVector, idealUpVector, rotationCheckOrigin) );
+	rotator.SetAngle( RAD2DEG(idMath::ACos(upVector * idealUpVector)) );
+	rotator.ToMat3();
+	
+	do {
+		rotator.SetOrigin( currentOrigin );
+		gameLocal.clip.Rotation( rotationTraceInfo, currentOrigin, rotator, clipModel, currentAxis, clipMask, self );
+		currentAxis = rotationTraceInfo.endAxis;
+
+		if( rotationTraceInfo.fraction < 1.0f ) {
+			gameLocal.clip.Translation( translationTraceInfo, currentOrigin, currentOrigin + rotationTraceInfo.c.normal * p_iterRotMoveTransDist.GetFloat(), clipModel, currentAxis, clipMask, self );
+			currentOrigin = translationTraceInfo.endpos;
+			averageTranslationVector += rotationTraceInfo.c.normal;
+			numTranslationVectors += 1.0f;
+		}
+	} while( --numIterations && rotationTraceInfo.fraction < 1.0f );
+
+	if( numTranslationVectors > 0.0f ) {
+		averageTranslationVector /= numTranslationVectors;
+		averageTranslationVector.Normalize();
+		gameLocal.clip.Translation( translationTraceInfo, currentOrigin, currentOrigin + -averageTranslationVector * p_iterRotMoveTransDist.GetFloat(), clipModel, currentAxis, clipMask, self );
+		currentOrigin = translationTraceInfo.endpos;
+	}
+	
+	//HUMANHEAD rww - do a translation test before using this origin/axis
+	if (!gameLocal.clip.Translation( translationTraceInfo, currentOrigin, currentOrigin, clipModel, currentAxis, clipMask, self )) {
+		SetOrigin( currentOrigin );
+		SetAxis( currentAxis );
+	}
+	else { //HUMANHEAD rww - if we fail, try instantly rotating to the desired orientation
+		//HUMANHEAD PCF mdl 04/30/06 - Added LAST_MINUTE_HACK in case we want to revert this
+#ifndef LAST_MINUTE_HACK
+		if (groundTrace.fraction < 1.0f && fabsf(DotProduct(idealUpVector, groundTrace.c.normal)) > 0.8f) { //hitting ground
+			const float fudge = 1.0f;
+			currentOrigin = rotationCheckOrigin + (groundTrace.c.normal*(fabsf(GetBounds()[0].z)+fudge));
+
+			idMat3 m = idealUpVector.ToMat3();
+			currentAxis[0] = m[2];
+			currentAxis[2] = m[0];
+			currentAxis[1] = m[0].Cross(m[2]);
+			if (!gameLocal.clip.Translation( translationTraceInfo, currentOrigin, currentOrigin, clipModel, currentAxis, clipMask, self )) {
+				SetOrigin( currentOrigin );
+				SetAxis( currentAxis );
+			}
+		}
+#else
+		if (groundTrace.fraction < 1.0f && fabsf(DotProduct(idealUpVector, groundTrace.c.normal)) > 0.8f) { //hitting ground
+			const float fudge = 1.0f;
+			float safeD = (fabsf(GetBounds()[0].z)+fudge);
+			currentOrigin = rotationCheckOrigin + (groundTrace.c.normal*safeD);
+			idMat3 m = idealUpVector.ToMat3();
+			currentAxis[0] = m[2];
+			currentAxis[2] = m[0];
+			currentAxis[1] = m[0].Cross(m[2]);
+			if (!gameLocal.clip.Translation( translationTraceInfo, currentOrigin, currentOrigin, clipModel, currentAxis, clipMask, self )) {
+				//HUMANHEAD PCF rww 04/30/06 - trace back down on the normal once we have made sure we have a safe spot.
+				const float downFudge = 16.0f;
+				safeD = (fabsf(GetBounds()[1].z)+downFudge);
+				idVec3 backDown = currentOrigin - (groundTrace.c.normal*safeD);
+				gameLocal.clip.Translation( translationTraceInfo, currentOrigin, backDown, clipModel, currentAxis, clipMask, self );
+
+				SetOrigin( translationTraceInfo.endpos );
+				SetAxis( translationTraceInfo.endAxis );
+			}
+		}
+#endif // LAST_MINUTE_HACK
+	}
+
+	return true;
+}
+
+/*
+=============
+idPhysics_Actor::DetermineRotationVector
+
+HUMANHEAD: aob
+=============
+*/
+idVec3 idPhysics_Actor::DetermineRotationVector( const idVec3& upVector, const idVec3& idealUpVector, const idVec3& checkOrigin ) {
+	idVec3 rotationVector = idealUpVector.Cross( upVector );
+	if( rotationVector.LengthSqr() <= VECTOR_EPSILON ) {
+		BuildRotationTraceDirectionTable( self->GetAxis() );//Actors return viewAxis and plain entities return physics axis
+
+		for( int iIndex = 0; iIndex < c_iNumRotationTraces; ++iIndex ) {
+			if( DirectionIsClear(checkOrigin, rotationTraceDirectionTable[iIndex]) ) {
+				rotationVector = rotationTraceDirectionTable[iIndex];
+				break;
+			}
+		}
+	}
+
+	rotationVector.Normalize();
+
+	return rotationVector;
+}
+
+/*
+=============
+idPhysics_Actor::DirectionIsClear
+
+HUMANHEAD: aob
+=============
+*/
+#define ROTATION_TRACE_DISTANCE ((pm_bboxwidth.GetFloat() * 0.5f) + 10.0f)
+bool idPhysics_Actor::DirectionIsClear( const idVec3& checkOrigin, const idVec3& direction ) {
+	trace_t traceInfo;
+
+	gameLocal.clip.TracePoint( traceInfo, checkOrigin, checkOrigin + direction * ROTATION_TRACE_DISTANCE, clipMask, self );
+
+	return (traceInfo.fraction == 1.0f);
+}
+
+/*
+=============
+idPhysics_Actor::BuildRotationTraceDirectionTable
+
+HUMANHEAD: aob
+=============
+*/
+void idPhysics_Actor::BuildRotationTraceDirectionTable( const idMat3& Axis ) {
+	rotationTraceDirectionTable[0] = Axis[0];
+	rotationTraceDirectionTable[1] = -Axis[0];
+	rotationTraceDirectionTable[2] = Axis[1];
+	rotationTraceDirectionTable[3] = -Axis[1];
+}
+

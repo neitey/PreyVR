@@ -161,6 +161,12 @@ class idSessionLocal : public idSession
 
 		const char			*GetAuthMsg(void);
 
+#ifdef _HUMANHEAD
+	virtual bool ShouldAppendLevel(void) const;
+	virtual const char * GetDeathwalkMapName(void) const;
+	const char * GetDeathwalkMapName(const char *mapName) const;
+#endif
+
 		//=====================================
 
 		static idCVar		com_showAngles;

@@ -195,7 +195,7 @@ class ThreadedAlloc;		// class that is only used to expand the AutoCrit template
 #include "../framework/DeclAF.h"
 #include "../framework/DeclPDA.h"
 #ifdef _HUMANHEAD
-#include "../humanhead/framework/declPreyBeam.h" // HUMANHEAD CJR
+#include "../framework/declPreyBeam.h" // HUMANHEAD CJR
 #endif
 
 // We have expression parsing and evaluation code in multiple places:
@@ -260,8 +260,6 @@ const float MAX_BOUND_SIZE = 65536.0f;
 	#include "../quake4/Game.h"
 	#elif defined _RAVEN
 	#include "../quake4/Game.h"
-	#elif defined _HUMANHEAD
-	#include "../prey/Game.h"
 	#else
 	#include "../game/Game.h"
 	#endif
@@ -284,8 +282,6 @@ const float MAX_BOUND_SIZE = 65536.0f;
 	#include "../quake4/Game_local.h"
 	#elif defined _RAVEN
 	#include "../quake4/Game_local.h"
-	#elif defined _HUMANHEAD
-	#include "../prey/Game_local.h"
 	#else
 	#include "../game/Game_local.h"
 	#endif
@@ -313,7 +309,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
 // stubbed out on non-windows platforms.
 #include "../tools/edit_public.h"
 
-// Compilers for map, model, video etc. processing.
+// Compilers for map, model, video ehhMathtc. processing.
 #include "../tools/compilers/compiler_public.h"
 
 #endif /* !GAME_DLL */
@@ -321,5 +317,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
 //-----------------------------------------------------
 
 #endif	/* __cplusplus */
+
+#include "idlib/math/prey_math.h"
 
 #endif /* !__PRECOMPILED_H__ */

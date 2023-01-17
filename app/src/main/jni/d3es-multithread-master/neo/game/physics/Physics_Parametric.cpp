@@ -1,35 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "Entity.h"
-
-#include "physics/Physics_Parametric.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Parametric )
 END_CLASS
@@ -114,6 +89,11 @@ idPhysics_Parametric::idPhysics_Parametric( void ) {
 	current.angularInterpolation.Init( 0, 0, 0, 0, ang_zero, ang_zero );
 	current.spline = NULL;
 	current.splineInterpolate.Init( 0, 1, 1, 2, 0, 0 );
+	// HUMANHEAD mdl
+	current.lastSplineAngles = NULL;
+	current.deltaSplineAngles = NULL;
+	current.deltaSplineAnglesInverse = NULL;
+	// HUMANHEAD END
 
 	saved = current;
 
@@ -141,6 +121,20 @@ idPhysics_Parametric::~idPhysics_Parametric( void ) {
 		delete current.spline;
 		current.spline = NULL;
 	}
+	// HUMANHEAD mdl
+	if ( current.lastSplineAngles ) {
+		delete current.lastSplineAngles;
+		current.lastSplineAngles = NULL;
+	}
+	if ( current.deltaSplineAngles ) {
+		delete current.deltaSplineAngles;
+		current.deltaSplineAngles = NULL;
+	}
+	if ( current.deltaSplineAnglesInverse ) {
+		delete current.deltaSplineAnglesInverse;
+		current.deltaSplineAngles = NULL;
+	}
+	// HUMANHEAD END
 }
 
 /*
@@ -194,6 +188,22 @@ void idPhysics_Parametric_SavePState( idSaveGame *savefile, const parametricPSta
 	savefile->WriteFloat( state.splineInterpolate.GetDeceleration() );
 	savefile->WriteFloat( state.splineInterpolate.GetStartValue() );
 	savefile->WriteFloat( state.splineInterpolate.GetEndValue() );
+
+	// HUMANHEAD mdl:  For spline angles accumulator
+	if ( state.lastSplineAngles ) {
+		savefile->WriteBool( true );
+		savefile->WriteAngles( *state.lastSplineAngles );
+	} else {
+		savefile->WriteBool( false );
+	}
+
+	if ( state.deltaSplineAngles ) {
+		savefile->WriteBool( true );
+		savefile->WriteMat3( *state.deltaSplineAngles );
+	} else {
+		savefile->WriteBool( false );
+	}
+	// HUMANHEAD END 
 }
 
 /*
@@ -262,6 +272,24 @@ void idPhysics_Parametric_RestorePState( idRestoreGame *savefile, parametricPSta
 	savefile->ReadFloat( endValue );
 
 	state.splineInterpolate.Init( startTime, accelTime, decelTime, duration, startValue, endValue );
+
+	// HUMANHEAD mdl:  For spline angles accumulator
+	bool bTmp;
+	savefile->ReadBool( bTmp );
+	if ( bTmp ) {
+		state.lastSplineAngles = new idAngles;
+		savefile->ReadAngles( *state.lastSplineAngles );
+	}
+
+	savefile->ReadBool( bTmp );
+	if ( bTmp ) {
+		state.deltaSplineAngles = new idMat3;
+		savefile->ReadMat3( *state.deltaSplineAngles );
+
+		state.deltaSplineAnglesInverse = new idMat3;
+		*state.deltaSplineAnglesInverse = state.deltaSplineAngles->Inverse();
+	}
+	// HUMANHEAD END 
 }
 
 /*
@@ -401,6 +429,19 @@ void idPhysics_Parametric::SetSpline( idCurve_Spline<idVec3> *spline, int accelT
 	if ( current.spline != NULL ) {
 		delete current.spline;
 		current.spline = NULL;
+		// HUMANHEAD mdl:  Clean up
+		SetOrigin( current.origin ); // This is necessary to keep the object from snapping back to where it was before the spline began
+		if ( current.useSplineAngles && !useSplineAngles ) {
+			delete current.lastSplineAngles;
+			current.lastSplineAngles = NULL;
+
+			delete current.deltaSplineAngles;
+			current.deltaSplineAngles = NULL;
+
+			delete current.deltaSplineAnglesInverse;
+			current.deltaSplineAnglesInverse = NULL;
+		}
+		// HUMANHEAD END
 	}
 	current.spline = spline;
 	if ( current.spline != NULL ) {
@@ -408,6 +449,27 @@ void idPhysics_Parametric::SetSpline( idCurve_Spline<idVec3> *spline, int accelT
 		float endTime = current.spline->GetTime( current.spline->GetNumValues() - 1 );
 		float length = current.spline->GetLengthForTime( endTime );
 		current.splineInterpolate.Init( startTime, accelTime, decelTime, endTime - startTime, 0.0f, length );
+		// HUMANHEAD mdl:  Set up spline angle accumulator
+		if ( useSplineAngles ) {
+			if ( !current.lastSplineAngles ) {
+				current.lastSplineAngles = new idAngles;
+			}
+			*current.lastSplineAngles = spline->GetCurrentFirstDerivative( 0.0f ).ToAngles();
+
+			if ( !current.deltaSplineAngles ) {
+				current.deltaSplineAngles = new idMat3;
+			}
+			idAngles tmp = current.angles - *current.lastSplineAngles; // The difference between our original angles and the first angles of the spline
+			tmp.Normalize360();
+			*current.deltaSplineAngles = tmp.ToMat3();
+
+			if ( !current.deltaSplineAnglesInverse ) {
+				current.deltaSplineAnglesInverse = new idMat3;
+			}
+			*current.deltaSplineAnglesInverse = current.deltaSplineAngles->Inverse();
+
+		}
+		// HUMANHEAD END
 	}
 	current.useSplineAngles = useSplineAngles;
 	Activate();
@@ -475,13 +537,17 @@ idPhysics_Parametric::SetClipModel
 void idPhysics_Parametric::SetClipModel( idClipModel *model, float density, int id, bool freeOld ) {
 
 	assert( self );
+	/* HUMANHEAD pdm: allow passing NULL for model to delete the clipmodel (like idPhysics_Static does)
 	assert( model );
+	*/
 
 	if ( clipModel && clipModel != model && freeOld ) {
 		delete clipModel;
 	}
 	clipModel = model;
-	clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
+	if (clipModel) {	//  HUMANHEAD pdm: wrapped this to accomplish above
+		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
+	}	// HUMANHEAD END
 }
 
 /*
@@ -572,6 +638,7 @@ idPhysics_Parametric::Evaluate
 ================
 */
 bool idPhysics_Parametric::Evaluate( int timeStepMSec, int endTimeMSec ) {
+	PROFILE_SCOPE("Parametric", PROFMASK_PHYSICS);
 	idVec3 oldLocalOrigin, oldOrigin, masterOrigin;
 	idAngles oldLocalAngles, oldAngles;
 	idMat3 oldAxis, masterAxis;
@@ -584,14 +651,31 @@ bool idPhysics_Parametric::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	oldAxis = current.axis;
 
 	current.localOrigin.Zero();
-	current.localAngles.Zero();
+	//current.localAngles.Zero(); // HUMANHEAD mdl:  This are now set below, instead of being added to
 
 	if ( current.spline != NULL ) {
 		float length = current.splineInterpolate.GetCurrentValue( endTimeMSec );
 		float t = current.spline->GetTimeForLength( length, 0.01f );
 		current.localOrigin = current.spline->GetCurrentValue( t );
 		if ( current.useSplineAngles ) {
-			current.localAngles = current.spline->GetCurrentFirstDerivative( t ).ToAngles();
+			// HUMANHEAD mdl:  Calculated delta spline angles and store old one for next iteration.
+			idAngles newAngles = current.spline->GetCurrentFirstDerivative( t ).ToAngles();
+			idMat3 delta = (newAngles - *current.lastSplineAngles).ToMat3();
+			*current.lastSplineAngles = newAngles;
+
+			idMat3 tmp;
+			if ( current.angularInterpolation.GetDuration() != 0 ) {
+				tmp = *current.deltaSplineAnglesInverse * current.angularInterpolation.GetCurrentValue( endTimeMSec ).ToMat3();  // Take the current angle and snap it to the initial spline angles
+				tmp = delta * tmp; // Apply the spline delta angle
+				tmp = *current.deltaSplineAngles * tmp; // Remove the initial spline angles to put the mover back to it's original orientation + the spline delta
+				current.angularInterpolation.SetStartValue( tmp.ToAngles() );
+			} else {
+				tmp = *current.deltaSplineAnglesInverse * current.angularExtrapolation.GetCurrentValue( endTimeMSec ).ToMat3(); // Take the current angle and snap it to the initial spline angles
+				tmp = delta * tmp; // Apply the spline delta angle
+				tmp = *current.deltaSplineAngles * tmp; // Remove the initial spline angles to put the mover back to it's original orientation + the spline delta
+				current.angularExtrapolation.SetStartValue( tmp.ToAngles() );
+			}
+			// HUMANHEAD END
 		}
 	} else if ( current.linearInterpolation.GetDuration() != 0 ) {
 		current.localOrigin += current.linearInterpolation.GetCurrentValue( endTimeMSec );
@@ -600,9 +684,9 @@ bool idPhysics_Parametric::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	}
 
 	if ( current.angularInterpolation.GetDuration() != 0 ) {
-		current.localAngles += current.angularInterpolation.GetCurrentValue( endTimeMSec );
+		current.localAngles = current.angularInterpolation.GetCurrentValue( endTimeMSec ); // HUMANHEAD mdl:  Changed += to = since we don't set localAngles to splineAngles anymore
 	} else {
-		current.localAngles += current.angularExtrapolation.GetCurrentValue( endTimeMSec );
+		current.localAngles = current.angularExtrapolation.GetCurrentValue( endTimeMSec ); // HUMANHEAD mdl:  Changed += to = since we don't set localAngles to splineAngles anymore
 	}
 
 	current.localAngles.Normalize360();
@@ -650,6 +734,16 @@ bool idPhysics_Parametric::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	if ( TestIfAtRest() ) {
 		Rest();
 	}
+
+	// HUMANHEAD nla - Fixes issue of bound movers saying they are at
+	//   rest when bound to something rotating them.  Caused probs with 
+	//   movables not moving down, as they think what they are resting on is
+	//   at rest.
+	if ( ( current.atRest >= 0 ) && 
+		 ( current.origin != oldOrigin || current.axis != oldAxis ) ) {
+		Activate(); 
+	}
+	// HUMANHEAD END
 
 	return ( current.origin != oldOrigin || current.axis != oldAxis );
 }
@@ -1023,6 +1117,22 @@ int idPhysics_Parametric::GetAngularEndTime( void ) const {
 	} else {
 		return current.angularExtrapolation.GetEndTime();
 	}
+}
+
+
+/*
+================
+idPhysics_Parametric::GetCurrentAngularSpeed
+
+HUMANHEAD: aob
+================
+*/
+const idAngles &idPhysics_Parametric::GetCurrentAngularSpeed( int id ) const {
+	static idAngles currentSpeed;
+
+	currentSpeed = current.angularExtrapolation.GetCurrentSpeed( gameLocal.GetTime() );
+
+	return currentSpeed;
 }
 
 /*

@@ -1,51 +1,20 @@
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
-===========================================================================
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Invisible entities that affect other entities or the world when activated.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-#include "Light.h"
-#include "Player.h"
-#include "Mover.h"
-#include "Misc.h"
-#include "WorldSpawn.h"
-#include "Sound.h"
-
-#include "Target.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
 
 idTarget
-
-Invisible entities that affect other entities or the world when activated.
 
 ===============================================================================
 */
@@ -79,39 +48,6 @@ void idTarget_Remove::Event_Activate( idEntity *activator ) {
 		ent = targets[ i ].GetEntity();
 		if ( ent ) {
 			ent->PostEventMS( &EV_Remove, 0 );
-		}
-	}
-
-	// delete our self when done
-	PostEventMS( &EV_Remove, 0 );
-}
-
-
-/*
-===============================================================================
-
-idTarget_Show
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_Show )
-	EVENT( EV_Activate, idTarget_Show::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_Show::Event_Activate
-================
-*/
-void idTarget_Show::Event_Activate( idEntity *activator ) {
-	int			i;
-	idEntity	*ent;
-
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( ent ) {
-			ent->Show();
 		}
 	}
 
@@ -195,12 +131,22 @@ idTarget_EndLevel::Event_Activate
 void idTarget_EndLevel::Event_Activate( idEntity *activator ) {
 	idStr nextMap;
 
-	if ( spawnArgs.GetBool( "endOfGame" ) ) {
+#ifdef ID_DEMO_BUILD
+	//HUMANHEAD jsh - if the next map is DEMO_END_LEVEL, demo is over
+	//this check is done to avoid having to change map assets
+	//if ( spawnArgs.GetBool( "endOfGame" ) ) {
+	if ( idStr::Icmp( spawnArgs.GetString( "nextMap" ), DEMO_END_LEVEL ) == 0 ) {
 		cvarSystem->SetCVarBool( "g_nightmare", true );
-		gameLocal.sessionCommand = "disconnect";
+		gameLocal.sessionCommand = "endofDemo";
 		return;
 	}
-
+#else
+	if ( spawnArgs.GetBool( "endOfGame" ) ) {
+		cvarSystem->SetCVarBool( "g_nightmare", true );
+		gameLocal.sessionCommand = "disconnect";	// HUMANHEAD pdm: changed from disconnect
+		return;
+	}
+#endif
 	if ( !spawnArgs.GetString( "nextMap", "", nextMap ) ) {
 		gameLocal.Printf( "idTarget_SessionCommand::Event_Activate: no nextMap key\n" );
 		return;
@@ -253,7 +199,7 @@ void idTarget_WaitForButton::Think( void ) {
 
 	if ( thinkFlags & TH_THINK ) {
 		player = gameLocal.GetLocalPlayer();
-		if ( player && !( player->oldButtons & BUTTON_ATTACK ) && ( player->usercmd.buttons & BUTTON_ATTACK ) ) {
+		if ( player && ( !player->oldButtons & BUTTON_ATTACK ) && ( player->usercmd.buttons & BUTTON_ATTACK ) ) {
 			player->usercmd.buttons &= ~BUTTON_ATTACK;
 			BecomeInactive( TH_THINK );
 			ActivateTargets( player );
@@ -601,7 +547,7 @@ idTarget_Give::Event_Activate
 ================
 */
 void idTarget_Give::Event_Activate( idEntity *activator ) {
-
+	
 	if ( spawnArgs.GetBool( "development" ) && developer.GetInteger() == 0 ) {
 		return;
 	}
@@ -626,42 +572,6 @@ void idTarget_Give::Event_Activate( idEntity *activator ) {
 		}
 	}
 }
-
-/*
-===============================================================================
-
-idTarget_GiveEmail
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_GiveEmail )
-EVENT( EV_Activate,				idTarget_GiveEmail::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_GiveEmail::Spawn
-================
-*/
-void idTarget_GiveEmail::Spawn( void ) {
-}
-
-/*
-================
-idTarget_GiveEmail::Event_Activate
-================
-*/
-void idTarget_GiveEmail::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	const idDeclPDA *pda = player->GetPDA();
-	if ( pda ) {
-		player->GiveEmail( spawnArgs.GetString( "email" ) );
-	} else {
-		player->ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_PDANeeded" ), true );
-	}
-}
-
 
 /*
 ===============================================================================
@@ -706,545 +616,6 @@ void idTarget_SetModel::Event_Activate( idEntity *activator ) {
 	}
 }
 
-
-/*
-===============================================================================
-
-idTarget_SetInfluence
-
-===============================================================================
-*/
-
-const idEventDef EV_RestoreInfluence( "<RestoreInfluece>" );
-const idEventDef EV_GatherEntities( "<GatherEntities>" );
-const idEventDef EV_Flash( "<Flash>", "fd" );
-const idEventDef EV_ClearFlash( "<ClearFlash>", "f" );
-
-CLASS_DECLARATION( idTarget, idTarget_SetInfluence )
-	EVENT( EV_Activate,	idTarget_SetInfluence::Event_Activate )
-	EVENT( EV_RestoreInfluence,	idTarget_SetInfluence::Event_RestoreInfluence )
-	EVENT( EV_GatherEntities, idTarget_SetInfluence::Event_GatherEntities )
-	EVENT( EV_Flash, idTarget_SetInfluence::Event_Flash )
-	EVENT( EV_ClearFlash, idTarget_SetInfluence::Event_ClearFlash )
-END_CLASS
-
-/*
-================
-idTarget_SetInfluence::idTarget_SetInfluence
-================
-*/
-idTarget_SetInfluence::idTarget_SetInfluence( void ) {
-	flashIn = 0.0f;
-	flashOut = 0.0f;
-	delay = 0.0f;
-	switchToCamera = NULL;
-	soundFaded = false;
-	restoreOnTrigger = false;
-}
-
-/*
-================
-idTarget_SetInfluence::Save
-================
-*/
-void idTarget_SetInfluence::Save( idSaveGame *savefile ) const {
-	int i;
-
-	savefile->WriteInt( lightList.Num() );
-	for( i = 0; i < lightList.Num(); i++ ) {
-		savefile->WriteInt( lightList[ i ] );
-	}
-
-	savefile->WriteInt( guiList.Num() );
-	for( i = 0; i < guiList.Num(); i++ ) {
-		savefile->WriteInt( guiList[ i ] );
-	}
-
-	savefile->WriteInt( soundList.Num() );
-	for( i = 0; i < soundList.Num(); i++ ) {
-		savefile->WriteInt( soundList[ i ] );
-	}
-
-	savefile->WriteInt( genericList.Num() );
-	for( i = 0; i < genericList.Num(); i++ ) {
-		savefile->WriteInt( genericList[ i ] );
-	}
-
-	savefile->WriteFloat( flashIn );
-	savefile->WriteFloat( flashOut );
-
-	savefile->WriteFloat( delay );
-
-	savefile->WriteString( flashInSound );
-	savefile->WriteString( flashOutSound );
-
-	savefile->WriteObject( switchToCamera );
-
-	savefile->WriteFloat( fovSetting.GetStartTime() );
-	savefile->WriteFloat( fovSetting.GetDuration() );
-	savefile->WriteFloat( fovSetting.GetStartValue() );
-	savefile->WriteFloat( fovSetting.GetEndValue() );
-
-	savefile->WriteBool( soundFaded );
-	savefile->WriteBool( restoreOnTrigger );
-
-	savefile->WriteInt(savedGuiList.Num());
-
-	for (i = 0; i < savedGuiList.Num(); i++) {
-		for (int j = 0; j < MAX_RENDERENTITY_GUI; j++) {
-			savefile->WriteUserInterface(savedGuiList[i].gui[j], savedGuiList[i].gui[j] ? savedGuiList[i].gui[j]->IsUniqued() : false);
-		}
-	}
-}
-
-/*
-================
-idTarget_SetInfluence::Restore
-================
-*/
-void idTarget_SetInfluence::Restore( idRestoreGame *savefile ) {
-	int i, num;
-	int itemNum;
-	float set;
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		savefile->ReadInt( itemNum );
-		lightList.Append( itemNum );
-	}
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		savefile->ReadInt( itemNum );
-		guiList.Append( itemNum );
-	}
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		savefile->ReadInt( itemNum );
-		soundList.Append( itemNum );
-	}
-
-	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) {
-		savefile->ReadInt( itemNum );
-		genericList.Append( itemNum );
-	}
-
-	savefile->ReadFloat( flashIn );
-	savefile->ReadFloat( flashOut );
-
-	savefile->ReadFloat( delay );
-
-	savefile->ReadString( flashInSound );
-	savefile->ReadString( flashOutSound );
-
-	savefile->ReadObject( reinterpret_cast<idClass *&>( switchToCamera ) );
-
-	savefile->ReadFloat( set );
-	fovSetting.SetStartTime( set );
-	savefile->ReadFloat( set );
-	fovSetting.SetDuration( set );
-	savefile->ReadFloat( set );
-	fovSetting.SetStartValue( set );
-	savefile->ReadFloat( set );
-	fovSetting.SetEndValue( set );
-
-	savefile->ReadBool( soundFaded );
-	savefile->ReadBool( restoreOnTrigger );
-
-	savefile->ReadInt(num);
-
-	for (i = 0; i < num; i++) {
-		SavedGui_t temp;
-
-		for (int j = 0; j < MAX_RENDERENTITY_GUI; j++) {
-			savefile->ReadUserInterface(temp.gui[j]);
-		}
-
-		savedGuiList.Append(temp);
-	}
-}
-
-/*
-================
-idTarget_SetInfluence::Spawn
-================
-*/
-void idTarget_SetInfluence::Spawn() {
-	PostEventMS( &EV_GatherEntities, 0 );
-	flashIn = spawnArgs.GetFloat( "flashIn", "0" );
-	flashOut = spawnArgs.GetFloat( "flashOut", "0" );
-	flashInSound = spawnArgs.GetString( "snd_flashin" );
-	flashOutSound = spawnArgs.GetString( "snd_flashout" );
-	delay = spawnArgs.GetFloat( "delay" );
-	soundFaded = false;
-	restoreOnTrigger = false;
-
-	// always allow during cinematics
-	cinematic = true;
-}
-
-/*
-================
-idTarget_SetInfluence::Event_Flash
-================
-*/
-void idTarget_SetInfluence::Event_Flash( float flash, int out ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	player->playerView.Fade( idVec4( 1, 1, 1, 1 ), flash );
-	const idSoundShader *shader = NULL;
-	if ( !out && flashInSound.Length() ){
-		shader = declManager->FindSound( flashInSound );
-		player->StartSoundShader( shader, SND_CHANNEL_VOICE, 0, false, NULL );
-	} else if ( out && ( flashOutSound.Length() || flashInSound.Length() ) ) {
-		shader = declManager->FindSound( flashOutSound.Length() ? flashOutSound : flashInSound );
-		player->StartSoundShader( shader, SND_CHANNEL_VOICE, 0, false, NULL );
-	}
-	PostEventSec( &EV_ClearFlash, flash, flash );
-}
-
-
-/*
-================
-idTarget_SetInfluence::Event_ClearFlash
-================
-*/
-void idTarget_SetInfluence::Event_ClearFlash( float flash ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	player->playerView.Fade( vec4_zero , flash );
-}
-/*
-================
-idTarget_SetInfluence::Event_GatherEntities
-================
-*/
-void idTarget_SetInfluence::Event_GatherEntities() {
-	int i, listedEntities;
-	idEntity *entityList[ MAX_GENTITIES ];
-
-	bool lights = spawnArgs.GetBool( "effect_lights" );
-	bool sounds = spawnArgs.GetBool( "effect_sounds" );
-	bool guis = spawnArgs.GetBool( "effect_guis" );
-	bool models = spawnArgs.GetBool( "effect_models" );
-	bool vision = spawnArgs.GetBool( "effect_vision" );
-	bool targetsOnly = spawnArgs.GetBool( "targetsOnly" );
-
-	lightList.Clear();
-	guiList.Clear();
-	soundList.Clear();
-	savedGuiList.Clear();
-
-	if ( spawnArgs.GetBool( "effect_all" ) ) {
-		lights = sounds = guis = models = vision = true;
-	}
-
-	if ( targetsOnly ) {
-		listedEntities = targets.Num();
-		for ( i = 0; i < listedEntities; i++ ) {
-			entityList[i] = targets[i].GetEntity();
-		}
-	} else {
-		float radius = spawnArgs.GetFloat( "radius" );
-		listedEntities = gameLocal.EntitiesWithinRadius( GetPhysics()->GetOrigin(), radius, entityList, MAX_GENTITIES );
-	}
-
-	for( i = 0; i < listedEntities; i++ ) {
-		idEntity *ent = entityList[ i ];
-		if ( ent ) {
-			if ( lights && ent->IsType( idLight::Type ) && ent->spawnArgs.FindKey( "color_demonic" ) ) {
-				lightList.Append( ent->entityNumber );
-				continue;
-			}
-			if ( sounds && ent->IsType( idSound::Type ) && ent->spawnArgs.FindKey( "snd_demonic" ) ) {
-				soundList.Append( ent->entityNumber );
-				continue;
-			}
-			if ( guis && ent->GetRenderEntity() && ent->GetRenderEntity()->gui[ 0 ] && ent->spawnArgs.FindKey( "gui_demonic" ) ) {
-				guiList.Append( ent->entityNumber );
-				SavedGui_t temp;
-				savedGuiList.Append(temp);
-				continue;
-			}
-			if ( ent->IsType( idStaticEntity::Type ) && ent->spawnArgs.FindKey( "color_demonic" ) ) {
-				genericList.Append( ent->entityNumber );
-				continue;
-			}
-		}
-	}
-	idStr temp;
-	temp = spawnArgs.GetString( "switchToView" );
-	switchToCamera = ( temp.Length() ) ? gameLocal.FindEntity( temp ) : NULL;
-
-}
-
-/*
-================
-idTarget_SetInfluence::Event_Activate
-================
-*/
-void idTarget_SetInfluence::Event_Activate( idEntity *activator ) {
-	int i, j;
-	idEntity *ent;
-	idLight *light;
-	idSound *sound;
-	idStaticEntity *generic;
-	const char *parm;
-	const char *skin;
-	bool update;
-	idVec3 color;
-	idVec4 colorTo;
-	idPlayer *player;
-
-	player = gameLocal.GetLocalPlayer();
-
-	if ( spawnArgs.GetBool( "triggerActivate" ) ) {
-		if ( restoreOnTrigger ) {
-			ProcessEvent( &EV_RestoreInfluence );
-			restoreOnTrigger = false;
-			return;
-		}
-		restoreOnTrigger = true;
-	}
-
-	float fadeTime = spawnArgs.GetFloat( "fadeWorldSounds" );
-
-	if ( delay > 0.0f ) {
-		PostEventSec( &EV_Activate, delay, activator );
-		delay = 0.0f;
-		// start any sound fading now
-		if ( fadeTime ) {
-			gameSoundWorld->FadeSoundClasses( 0, -40.0f, fadeTime );
-			soundFaded = true;
-		}
-		return;
-	} else if ( fadeTime && !soundFaded ) {
-		gameSoundWorld->FadeSoundClasses( 0, -40.0f, fadeTime );
-		soundFaded = true;
-	}
-
-	if ( spawnArgs.GetBool( "triggerTargets" ) ) {
-		ActivateTargets( activator );
-	}
-
-	if ( flashIn ) {
-		PostEventSec( &EV_Flash, 0.0f, flashIn, 0 );
-	}
-
-	parm = spawnArgs.GetString( "snd_influence" );
-	if ( parm && *parm ) {
-		PostEventSec( &EV_StartSoundShader, flashIn, parm, SND_CHANNEL_ANY );
-	}
-
-	if ( switchToCamera ) {
-		switchToCamera->PostEventSec( &EV_Activate, flashIn + 0.05f, this );
-	}
-
-	int fov = spawnArgs.GetInt( "fov" );
-	if ( fov ) {
-		fovSetting.Init( gameLocal.time, SEC2MS( spawnArgs.GetFloat( "fovTime" ) ), player->DefaultFov(), fov );
-		BecomeActive( TH_THINK );
-	}
-
-	for ( i = 0; i < genericList.Num(); i++ ) {
-		ent = gameLocal.entities[genericList[i]];
-		if ( ent == NULL ) {
-			continue;
-		}
-		generic = static_cast<idStaticEntity*>( ent );
-		color = generic->spawnArgs.GetVector( "color_demonic" );
-		colorTo.Set( color.x, color.y, color.z, 1.0f );
-		generic->Fade( colorTo, spawnArgs.GetFloat( "fade_time", "0.25" ) );
-	}
-
-	for ( i = 0; i < lightList.Num(); i++ ) {
-		ent = gameLocal.entities[lightList[i]];
-		if ( ent == NULL || !ent->IsType( idLight::Type ) ) {
-			continue;
-		}
-		light = static_cast<idLight *>(ent);
-		parm = light->spawnArgs.GetString( "mat_demonic" );
-		if ( parm && *parm ) {
-			light->SetShader( parm );
-		}
-
-		color = light->spawnArgs.GetVector( "_color" );
-		color = light->spawnArgs.GetVector( "color_demonic", color.ToString() );
-		colorTo.Set( color.x, color.y, color.z, 1.0f );
-		light->Fade( colorTo, spawnArgs.GetFloat( "fade_time", "0.25" ) );
-	}
-
-	for ( i = 0; i < soundList.Num(); i++ ) {
-		ent = gameLocal.entities[soundList[i]];
-		if ( ent == NULL || !ent->IsType( idSound::Type ) ) {
-			continue;
-		}
-		sound = static_cast<idSound *>(ent);
-		parm = sound->spawnArgs.GetString( "snd_demonic" );
-		if ( parm && *parm ) {
-			if ( sound->spawnArgs.GetBool( "overlayDemonic" ) ) {
-				sound->StartSound( "snd_demonic", SND_CHANNEL_DEMONIC, 0, false, NULL );
-			} else {
-				sound->StopSound( SND_CHANNEL_ANY, false );
-				sound->SetSound( parm );
-			}
-		}
-	}
-
-	for ( i = 0; i < guiList.Num(); i++ ) {
-		ent = gameLocal.entities[guiList[i]];
-		if ( ent == NULL || ent->GetRenderEntity() == NULL ) {
-			continue;
-		}
-		update = false;
-		for ( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
-			if ( ent->GetRenderEntity()->gui[ j ] && ent->spawnArgs.FindKey( j == 0 ? "gui_demonic" : va( "gui_demonic%d", j+1 ) ) ) {
-				//Backup the old one
-				savedGuiList[i].gui[j] = ent->GetRenderEntity()->gui[ j ];
-				ent->GetRenderEntity()->gui[ j ] = uiManager->FindGui( ent->spawnArgs.GetString( j == 0 ? "gui_demonic" : va( "gui_demonic%d", j+1 ) ), true );
-				update = true;
-			}
-		}
-
-		if ( update ) {
-			ent->UpdateVisuals();
-			ent->Present();
-		}
-	}
-
-	player->SetInfluenceLevel( spawnArgs.GetInt( "influenceLevel" ) );
-
-	int snapAngle = spawnArgs.GetInt( "snapAngle" );
-	if ( snapAngle ) {
-		idAngles ang( 0, snapAngle, 0 );
-		player->SetViewAngles( ang );
-		player->SetAngles( ang );
-	}
-
-	if ( spawnArgs.GetBool( "effect_vision" ) ) {
-		parm = spawnArgs.GetString( "mtrVision" );
-		skin = spawnArgs.GetString( "skinVision" );
-		player->SetInfluenceView( parm, skin, spawnArgs.GetInt( "visionRadius" ), this );
-	}
-
-	parm = spawnArgs.GetString( "mtrWorld" );
-	if ( parm && *parm ) {
-		gameLocal.SetGlobalMaterial( declManager->FindMaterial( parm ) );
-	}
-
-	if ( !restoreOnTrigger ) {
-		PostEventMS( &EV_RestoreInfluence, SEC2MS( spawnArgs.GetFloat( "time" ) ) );
-	}
-}
-
-/*
-================
-idTarget_SetInfluence::Think
-================
-*/
-void idTarget_SetInfluence::Think( void ) {
-	if ( thinkFlags & TH_THINK ) {
-		idPlayer *player = gameLocal.GetLocalPlayer();
-		player->SetInfluenceFov( fovSetting.GetCurrentValue( gameLocal.time ) );
-		if ( fovSetting.IsDone( gameLocal.time ) ) {
-			if ( !spawnArgs.GetBool( "leaveFOV" ) ) {
-				player->SetInfluenceFov( 0 );
-			}
-			BecomeInactive( TH_THINK );
-		}
-	} else {
-		BecomeInactive( TH_ALL );
-	}
-}
-
-
-/*
-================
-idTarget_SetInfluence::Event_RestoreInfluence
-================
-*/
-void idTarget_SetInfluence::Event_RestoreInfluence() {
-	int i, j;
-	idEntity *ent;
-	idLight *light;
-	idSound *sound;
-	idStaticEntity *generic;
-	bool update;
-	idVec3 color;
-	idVec4 colorTo;
-
-	if ( flashOut ) {
-		PostEventSec( &EV_Flash, 0.0f, flashOut, 1 );
-	}
-
-	if ( switchToCamera ) {
-		switchToCamera->PostEventMS( &EV_Activate, 0.0f, this );
-	}
-
-	for ( i = 0; i < genericList.Num(); i++ ) {
-		ent = gameLocal.entities[genericList[i]];
-		if ( ent == NULL ) {
-			continue;
-		}
-		generic = static_cast<idStaticEntity*>( ent );
-		colorTo.Set( 1.0f, 1.0f, 1.0f, 1.0f );
-		generic->Fade( colorTo, spawnArgs.GetFloat( "fade_time", "0.25" ) );
-	}
-
-	for ( i = 0; i < lightList.Num(); i++ ) {
-		ent = gameLocal.entities[lightList[i]];
-		if ( ent == NULL || !ent->IsType( idLight::Type ) ) {
-			continue;
-		}
-		light = static_cast<idLight *>(ent);
-		if ( !light->spawnArgs.GetBool( "leave_demonic_mat" ) ) {
-			const char *texture = light->spawnArgs.GetString( "texture", "lights/squarelight1" );
-			light->SetShader( texture );
-		}
-		color = light->spawnArgs.GetVector( "_color" );
-		colorTo.Set( color.x, color.y, color.z, 1.0f );
-		light->Fade( colorTo, spawnArgs.GetFloat( "fade_time", "0.25" ) );
-	}
-
-	for ( i = 0; i < soundList.Num(); i++ ) {
-		ent = gameLocal.entities[soundList[i]];
-		if ( ent == NULL || !ent->IsType( idSound::Type ) ) {
-			continue;
-		}
-		sound = static_cast<idSound *>(ent);
-		sound->StopSound( SND_CHANNEL_ANY, false );
-		sound->SetSound( sound->spawnArgs.GetString( "s_shader" ) );
-	}
-
-	for ( i = 0; i < guiList.Num(); i++ ) {
-		ent = gameLocal.entities[guiList[i]];
-		if ( ent == NULL || GetRenderEntity() == NULL ) {
-			continue;
-		}
-		update = false;
-		for( j = 0; j < MAX_RENDERENTITY_GUI; j++ ) {
-			if ( ent->GetRenderEntity()->gui[ j ] ) {
-				ent->GetRenderEntity()->gui[ j ] = savedGuiList[i].gui[j];
-				update = true;
-			}
-		}
-		if ( update ) {
-			ent->UpdateVisuals();
-			ent->Present();
-		}
-	}
-
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	player->SetInfluenceLevel( 0 );
-	player->SetInfluenceView( NULL, NULL, 0.0f, NULL );
-	player->SetInfluenceFov( 0 );
-	gameLocal.SetGlobalMaterial( NULL );
-	float fadeTime = spawnArgs.GetFloat( "fadeWorldSounds" );
-	if ( fadeTime ) {
-		gameSoundWorld->FadeSoundClasses( 0, 0.0f, fadeTime / 2.0f );
-	}
-
-}
 
 /*
 ===============================================================================
@@ -1354,86 +725,7 @@ void idTarget_SetFov::Event_Activate( idEntity *activator ) {
 	cinematic = true;
 
 	idPlayer *player = gameLocal.GetLocalPlayer();
-	fovSetting.Init( gameLocal.time, SEC2MS( spawnArgs.GetFloat( "time" ) ), player ? player->DefaultFov() : renderSystem->GetFOV(), spawnArgs.GetFloat( "fov" ) );
-	BecomeActive( TH_THINK );
-}
-
-/*
-================
-idTarget_SetFov::Think
-================
-*/
-void idTarget_SetFov::Think( void ) {
-	if ( thinkFlags & TH_THINK ) {
-		idPlayer *player = gameLocal.GetLocalPlayer();
-		player->SetInfluenceFov( fovSetting.GetCurrentValue( gameLocal.time ) );
-		if ( fovSetting.IsDone( gameLocal.time ) ) {
-			player->SetInfluenceFov( 0.0f );
-			BecomeInactive( TH_THINK );
-		}
-	} else {
-		BecomeInactive( TH_ALL );
-	}
-}
-
-
-/*
-===============================================================================
-
-idTarget_SetPrimaryObjective
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_SetPrimaryObjective )
-	EVENT( EV_Activate,	idTarget_SetPrimaryObjective::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_SetPrimaryObjective::Event_Activate
-================
-*/
-void idTarget_SetPrimaryObjective::Event_Activate( idEntity *activator ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player && player->objectiveSystem ) {
-		player->objectiveSystem->SetStateString( "missionobjective", spawnArgs.GetString( "text", common->GetLanguageDict()->GetString( "#str_04253" ) ) );
-	}
-}
-
-/*
-===============================================================================
-
-idTarget_LockDoor
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_LockDoor )
-	EVENT( EV_Activate,	idTarget_LockDoor::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_LockDoor::Event_Activate
-================
-*/
-void idTarget_LockDoor::Event_Activate( idEntity *activator ) {
-	int i;
-	idEntity *ent;
-	int lock;
-
-	lock = spawnArgs.GetInt( "locked", "1" );
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( ent && ent->IsType( idDoor::Type ) ) {
-			if ( static_cast<idDoor *>( ent )->IsLocked() ) {
-				static_cast<idDoor *>( ent )->Lock( 0 );
-			} else {
-				static_cast<idDoor *>( ent )->Lock( lock );
-			}
-		}
-	}
+	fovSetting.Init( gameLocal.time, SEC2MS( spawnArgs.GetFloat( "time" ) ), player ? player->DefaultFov() : g_fov.GetFloat(), spawnArgs.GetFloat( "fov" ) );
 }
 
 /*
@@ -1529,124 +821,93 @@ void idTarget_EnableLevelWeapons::Event_Activate( idEntity *activator ) {
 ===============================================================================
 
 idTarget_Tip
-
+	HUMANHEAD pdm: rewritten
 ===============================================================================
 */
 
-const idEventDef EV_TipOff( "<TipOff>" );
-extern const idEventDef EV_GetPlayerPos( "<getplayerpos>" );
+const idEventDef EV_CheckPos( "<checkplayerpos>" );
 
 CLASS_DECLARATION( idTarget, idTarget_Tip )
 	EVENT( EV_Activate,		idTarget_Tip::Event_Activate )
-	EVENT( EV_TipOff,		idTarget_Tip::Event_TipOff )
-	EVENT( EV_GetPlayerPos,	idTarget_Tip::Event_GetPlayerPos )
+	EVENT( EV_CheckPos,		idTarget_Tip::Event_CheckPlayerPos )
 END_CLASS
 
-
-/*
-================
-idTarget_Tip::idTarget_Tip
-================
-*/
-idTarget_Tip::idTarget_Tip( void ) {
-	playerPos.Zero();
+idTarget_Tip::idTarget_Tip() {
+	bDisabled = false;
 }
 
-/*
-================
-idTarget_Tip::Spawn
-================
-*/
 void idTarget_Tip::Spawn( void ) {
 }
 
-/*
-================
-idTarget_Tip::Save
-================
-*/
 void idTarget_Tip::Save( idSaveGame *savefile ) const {
-	savefile->WriteVec3( playerPos );
+	savefile->WriteBool(bDisabled);
 }
 
-/*
-================
-idTarget_Tip::Restore
-================
-*/
 void idTarget_Tip::Restore( idRestoreGame *savefile ) {
-	savefile->ReadVec3( playerPos );
+	savefile->ReadBool(bDisabled);
 }
 
-/*
-================
-idTarget_Tip::Event_Activate
-================
-*/
-void idTarget_Tip::Event_GetPlayerPos( void ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		playerPos = player->GetPhysics()->GetOrigin();
-		PostEventMS( &EV_TipOff, 100 );
+void idTarget_Tip::Disable() {
+	CancelEvents( &EV_CheckPos);
+	if (!spawnArgs.GetBool("tip_repeatable")) {
+		bDisabled = true;
 	}
 }
 
-/*
-================
-idTarget_Tip::Event_Activate
-================
-*/
 void idTarget_Tip::Event_Activate( idEntity *activator ) {
+
 	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		if ( player->IsTipVisible() ) {
-			PostEventSec( &EV_Activate, 5.1f, activator );
+	if( player ) {
+
+		if (!g_tips.GetBool()) {
+			player->HideTip();
 			return;
 		}
-		player->ShowTip( spawnArgs.GetString( "text_title" ), spawnArgs.GetString( "text_tip" ), false );
-		PostEventMS( &EV_GetPlayerPos, 2000 );
-	}
-}
 
-/*
-================
-idTarget_Tip::Event_TipOff
-================
-*/
-void idTarget_Tip::Event_TipOff( void ) {
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		idVec3 v = player->GetPhysics()->GetOrigin() - playerPos;
-		if ( v.Length() > 96.0f ) {
+		if( spawnArgs.GetBool( "tip_remove" ) ) {
+			// Disable all targets
+			for( int i = 0; i < targets.Num(); i++ ) {
+				idEntity *target = targets[ i ].GetEntity();
+				if ( target && target->IsType(idTarget_Tip::Type) ) {
+					static_cast<idTarget_Tip*>(target)->Disable();
+				}
+			}
 			player->HideTip();
-		} else {
-			PostEventMS( &EV_TipOff, 100 );
+			return;
+		}
+
+		if( bDisabled || player->IsTipVisible() ) {
+			return;
+		}
+
+		// Determine key material to display
+		idStr keyMaterial, key;
+		bool keyWide = false;
+		if ( !spawnArgs.GetString("mtr_override", "", keyMaterial) ) {
+			const char *keyBinding = spawnArgs.GetString("tip_key", NULL);
+			if (keyBinding) {
+				gameLocal.GetTip(keyBinding, keyMaterial, key, keyWide);
+			}
+		}
+
+		if (keyMaterial.Length()) {
+			int xOffset = spawnArgs.GetInt("tipOffsetX");
+			int yOffset = spawnArgs.GetInt("tipOffsetY");
+			player->ShowTip( keyMaterial.c_str(), spawnArgs.GetString("text_tip"), key.c_str(), spawnArgs.GetString("mtr_top", NULL), keyWide, xOffset, yOffset );
+			PostEventMS( &EV_CheckPos, 1000 );
 		}
 	}
 }
 
-
-/*
-===============================================================================
-
-idTarget_GiveSecurity
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_GiveSecurity )
-EVENT( EV_Activate,	idTarget_GiveSecurity::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_GiveEmail::Event_Activate
-================
-*/
-void idTarget_GiveSecurity::Event_Activate( idEntity *activator ) {
+void idTarget_Tip::Event_CheckPlayerPos( void ) {
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player ) {
-		player->GiveSecurity( spawnArgs.GetString( "text_security" ) );
+		idVec3 v = player->GetOrigin() - GetOrigin();
+		if ( v.Length() > spawnArgs.GetFloat( "tip_distance" ) || !g_tips.GetBool() ) {
+			player->HideTip();
+		} else {
+			PostEventMS( &EV_CheckPos, 1000 );
+		}
 	}
 }
 
@@ -1672,13 +933,11 @@ void idTarget_RemoveWeapons::Event_Activate( idEntity *activator ) {
 	for( int i = 0; i < gameLocal.numClients; i++ ) {
 		if ( gameLocal.entities[ i ] ) {
 			idPlayer *player = static_cast< idPlayer* >( gameLocal.entities[i] );
-
-			int wIndex[10] = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10};
-			int index = 0;
-			for ( index = 0; index < 10; index++ ) {
-				player->RemoveWeapon( va( "def_weapon%d", wIndex[index] ) );
+			const idKeyValue *kv = spawnArgs.MatchPrefix( "weapon", NULL );
+			while ( kv ) {
+				player->RemoveWeapon( kv->GetValue() );
+				kv = spawnArgs.MatchPrefix( "weapon", kv );
 			}
-
 			player->SelectWeapon( player->weapon_fists, true );
 		}
 	}
@@ -1752,8 +1011,8 @@ idTarget_FadeSoundClass
 
 const idEventDef EV_RestoreVolume( "<RestoreVolume>" );
 CLASS_DECLARATION( idTarget, idTarget_FadeSoundClass )
-EVENT( EV_Activate,	idTarget_FadeSoundClass::Event_Activate )
-EVENT( EV_RestoreVolume, idTarget_FadeSoundClass::Event_RestoreVolume )
+	EVENT( EV_Activate,			idTarget_FadeSoundClass::Event_Activate )
+	EVENT( EV_RestoreVolume,	idTarget_FadeSoundClass::Event_RestoreVolume )
 END_CLASS
 
 /*
@@ -1767,7 +1026,7 @@ void idTarget_FadeSoundClass::Event_Activate( idEntity *activator ) {
 	float fadeDuration = spawnArgs.GetFloat( "fadeDuration" );
 	int fadeClass = spawnArgs.GetInt( "fadeClass" );
 	// start any sound fading now
-	if ( fadeTime ) {
+	if ( fadeTime >= 0 ) { // HUMANHEAD rdr - was if ( fadeTime ), changed to allow 0 for instant fade
 		gameSoundWorld->FadeSoundClasses( fadeClass, spawnArgs.GetBool( "fadeIn" ) ? fadeDB : 0.0f - fadeDB, fadeTime );
 		if ( fadeDuration ) {
 			PostEventSec( &EV_RestoreVolume, fadeDuration );
@@ -1781,8 +1040,9 @@ idTarget_FadeSoundClass::Event_RestoreVolume
 ================
 */
 void idTarget_FadeSoundClass::Event_RestoreVolume() {
-	float fadeTime = spawnArgs.GetFloat( "fadeTime" );
-	float fadeDB = spawnArgs.GetFloat( "fadeDB" );
+	float restoreTime = spawnArgs.GetFloat( "restoreTime" ); // HUMANHEAD rdr - added to allow different restoreTime
+	int fadeClass = spawnArgs.GetInt( "fadeClass" );
 	// restore volume
-	gameSoundWorld->FadeSoundClasses( 0, fadeDB, fadeTime );
+	gameSoundWorld->FadeSoundClasses( fadeClass, 0, restoreTime ); // HUMANHEAD rdr - changed from ->FadeSoundClasses( 0, fadeDB, fadeTime );
 }
+

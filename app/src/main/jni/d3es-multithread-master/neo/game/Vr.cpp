@@ -4,7 +4,6 @@
 
 #include "idlib/precompiled.h"
 #include "../framework/CVarSystem.h"
-#include "GameBase.h"
 #include "MultiplayerGame.h"
 #include "Vr.h"
 //#include "Voice.h"
@@ -202,6 +201,9 @@ idCVar vr_dualWield( "vr_dualWield", "2", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIV
 
 idCVar vr_debugHands( "vr_debugHands", "0", CVAR_BOOL | CVAR_GAME, "Enable hand/weapon/dual wielding debugging" );
 idCVar vr_rumbleChainsaw( "vr_rumbleChainsaw", "1", CVAR_BOOL | CVAR_GAME | CVAR_ARCHIVE, "Enable weapon (currently chainsaw only) constant haptic feedback in VR. Not recommended for wireless VR controllers." );
+
+//Lubos
+idCVar vr_weaponHand( "vr_weaponHand", "0", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_GAME, "Which hand holds weapon.\n 0 = Right hand\n 1 = Left Hand\n", 0, 1 );
 
 //===================================================================
 

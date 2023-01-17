@@ -1,42 +1,11 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "physics/Physics_Monster.h"
-#include "ai/AI.h"
-#include "Player.h"
-#include "Light.h"
-#include "WorldSpawn.h"
-#include "Sound.h"
-#include "Misc.h"
-
-#include "GameEdit.h"
 
 /*
 ===============================================================================
@@ -182,7 +151,7 @@ void idDragEntity::Update( idPlayer *player ) {
 	player->GetViewPos( viewPoint, viewAxis );
 
 	// if no entity selected for dragging
-	if ( !dragEnt.GetEntity() ) {
+    if ( !dragEnt.GetEntity() ) {
 
 		if ( player->usercmd.buttons & BUTTON_ATTACK ) {
 
@@ -476,7 +445,7 @@ idEditEntities::RemoveSelectedEntity
 ==============
 */
 void idEditEntities::RemoveSelectedEntity( idEntity *ent ) {
-	if ( selectedEntities.Find( ent ) ) {
+    if ( selectedEntities.Find( ent ) ) {
 		selectedEntities.Remove( ent );
 	}
 }
@@ -504,7 +473,8 @@ idEditEntities::EntityIsSelectable
 */
 bool idEditEntities::EntityIsSelectable( idEntity *ent, idVec4 *color, idStr *text ) {
 	for ( int i = 0; i < selectableEntityClasses.Num(); i++ ) {
-		if ( ent->GetType() == selectableEntityClasses[i].typeInfo ) {
+		//HUMANHEAD: aob - changed to inheritance check.  Hopefully no breakage.  :)
+		if ( ent->IsType(*selectableEntityClasses[i].typeInfo) ) {
 			if ( text ) {
 				*text = selectableEntityClasses[i].textKey;
 			}
@@ -611,7 +581,7 @@ void idEditEntities::DisplayEntities( void ) {
 			if ( !static_cast<idAFEntity_Base *>(ent)->IsActiveAF() ) {
 				continue;
 			}
-		} else if ( ent->GetType() == &idSound::Type ) {
+		} else if ( ent->IsType( hhSound::Type ) ) {	// HUMANHEAD pdm: Changed to proper hhSound check
 			if ( ent->fl.selected ) {
 				drawArrows = true;
 			}
@@ -757,7 +727,7 @@ idGameEdit::FindEntity
 ================
 */
 idEntity *idGameEdit::FindEntity( const char *name ) const {
-	return gameLocal.FindEntity( name );
+	return gameLocal.FindEntity( name ); 
 }
 
 /*
@@ -882,7 +852,7 @@ void idGameEdit::EntityChangeSpawnArgs( idEntity *ent, const idDict *newArgs ) {
 	if ( ent ) {
 		for ( int i = 0 ; i < newArgs->GetNumKeyVals () ; i ++ ) {
 			const idKeyValue *kv = newArgs->GetKeyVal( i );
-
+	        
 			if ( kv->GetValue().Length() > 0 ) {
 				ent->spawnArgs.Set ( kv->GetKey() ,kv->GetValue() );
 			} else {
@@ -1113,7 +1083,7 @@ int idGameEdit::MapGetEntitiesMatchingClassWithString( const char *classname, co
 			if (ent) {
 				idStr work = ent->epairs.GetString("classname");
 				if ( work.Icmp( classname ) == 0 ) {
-					if ( match && *match ) {
+					if ( match && *match ) { 
 						work = ent->epairs.GetString( "soundgroup" );
 						if ( count < max && work.Icmp( match ) == 0 ) {
 							list[count++] = ent->epairs.GetString( "name" );

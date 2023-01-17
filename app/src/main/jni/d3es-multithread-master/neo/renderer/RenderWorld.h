@@ -56,6 +56,8 @@ class idRenderModel;
 #define	PROC_FILE_ID				"mapProcFile003"
 #endif
 
+#define MAX_BEAM_NODES                         32
+
 // shader parms
 #ifdef _HUMANHEAD
 const int MAX_GLOBAL_SHADER_PARMS	= 13;	// HUMANHEAD pdm: increased from 12 (see also: MAX_ENTITY_SHADER_PARMS)
@@ -614,7 +616,7 @@ public:
 	// rendering a scene may actually render multiple subviews for mirrors and portals, and
 	// may render composite textures for gui console screens and light projections
 	// It would also be acceptable to render a scene multiple times, for "rear view mirrors", etc
-	virtual void			RenderScene( const renderView_t *renderView ) = 0;
+	virtual void			RenderScene( renderView_t *renderView ) = 0;
 
 	//-------------- Portal Area Information -----------------
 

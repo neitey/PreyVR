@@ -1,37 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_MONSTER_H__
 #define __PHYSICS_MONSTER_H__
-
-#include "idlib/math/Vector.h"
-
-#include "physics/Physics_Actor.h"
 
 /*
 ===================================================================================
@@ -78,6 +49,7 @@ public:
 	void					SetMinFloorCosine( const float newMinFloorCosine );
 							// set delta for next move
 	void					SetDelta( const idVec3 &d );
+	idVec3					GetDelta(void) const {return delta;} // HUMANHEAD JRM
 							// returns true if monster is standing on the ground
 	bool					OnGround( void ) const;
 							// returns the movement result
@@ -127,7 +99,7 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
-private:
+protected://HUMANHEAD: aob
 	// monster physics state
 	monsterPState_t			current;
 	monsterPState_t			saved;
@@ -146,9 +118,10 @@ private:
 	monsterMoveResult_t		moveResult;
 	idEntity *				blockingEntity;
 
-private:
+protected://HUMANHEAD: aob
 	void					CheckGround( monsterPState_t &state );
-	monsterMoveResult_t		SlideMove( idVec3 &start, idVec3 &velocity, const idVec3 &delta );
+	virtual//HUMANHEAD: aob
+	monsterMoveResult_t		SlideMove( idVec3 &start, idVec3 &velocity, const idVec3 &delta, idList<int> *touched = NULL );
 	monsterMoveResult_t		StepMove( idVec3 &start, idVec3 &velocity, const idVec3 &delta );
 	void					Rest( void );
 };

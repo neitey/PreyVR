@@ -1,37 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __GAME_ACTOR_H__
 #define __GAME_ACTOR_H__
-
-#include "AFEntity.h"
-#include "IK.h"
-#include "PlayerView.h"
 
 /*
 ===============================================================================
@@ -56,9 +27,15 @@ extern const idEventDef AI_PlayCycle;
 extern const idEventDef AI_AnimDone;
 extern const idEventDef AI_SetBlendFrames;
 extern const idEventDef AI_GetBlendFrames;
-extern const idEventDef AI_SetState;
+extern const idEventDef EV_FootprintLeft;	// HUMANHEAD JRM
+extern const idEventDef EV_FootprintRight;	// HUMANHEAD JRM	
+extern const idEventDef AI_DisablePain;		// HUMANHEAD JRM
+extern const idEventDef AI_EnablePain;		// HUMANHEAD JRM
 
 class idDeclParticle;
+class hhVehicle;		// HUMANHEAD pdm
+class hhBindController;	// HUMANHEAD pdm
+
 
 class idAnimState {
 public:
@@ -89,6 +66,10 @@ public:
 	bool					IsIdle( void ) const;
 	animFlags_t				GetAnimFlags( void ) const;
 
+	bool	   		 		InGravityZone(void); // HUMANHEAD mdl:  Returns true if the player is inside an hhGravityZoneBase entity
+#ifdef HUMANHEAD //jsh
+	void					PlayAnimSkip( int anim, int delay );
+#endif
 private:
 	idActor *				self;
 	idAnimator *			animator;
@@ -120,6 +101,10 @@ public:
 	idLinkList<idActor>		enemyNode;			// node linked into an entity's enemy list for quick lookups of who is attacking him
 	idLinkList<idActor>		enemyList;			// list of characters that have targeted the player as their enemy
 
+	// HUMANHEAD nla	
+	idScriptBool			AI_BOUND;			// HUMANHEAD pdm
+	idScriptBool			AI_VEHICLE;			// HUMANHEAD pdm
+	// HUMANHEAD END
 public:
 							idActor( void );
 	virtual					~idActor( void );
@@ -129,6 +114,13 @@ public:
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
+
+	//HUMANHEAD rww - general network handling of all actors
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual void			ClientPredictionThink( void );
+	virtual void			SetSkin( const idDeclSkin *skin );
+	//HUMANHEAD END
 
 	virtual void			Hide( void );
 	virtual void			Show( void );
@@ -153,21 +145,76 @@ public:
 	void					SetState( const char *statename );
 
 							// vision testing
+	virtual // HUMANHEAD aob: made virtual
 	void					SetEyeHeight( float height );
+	virtual	// HUMANHEAD aob: made virtual and made const
 	float					EyeHeight( void ) const;
+	virtual	// HUMANHEAD aob: made virtual and made const
 	idVec3					EyeOffset( void ) const;
+	virtual	// HUMANHEAD aob: made virtual
 	idVec3					GetEyePosition( void ) const;
-	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const;
+	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis );		//HUMANHEAD
 	void					SetFOV( float fov );
+	virtual // HUMANHEAD jrm - made virtual
 	bool					CheckFOV( const idVec3 &pos ) const;
+	// HUMANHEAD JRM - made virtual
+	virtual 
+#ifdef HUMANHEAD
+	bool					CanSee( idEntity *ent, bool useFOV );
+#else
 	bool					CanSee( idEntity *ent, bool useFOV ) const;
+#endif
 	bool					PointVisible( const idVec3 &point ) const;
 	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
+
+	// HUMANHEAD
+	void					SetAnimPrefix( const char *prefix );
+	const char *			GetAnimPrefix( void );
+	idMat3					GetGravViewAxis(void)	const;	// HUMANHEAD JRM - returns clipmodel axis * viewAxis
+	virtual float			EyeHeightIdeal( void ) const;
+	virtual bool			ShouldRemainAlignedToAxial() const;
+	virtual bool			IsWallWalking() const { return(false); }
+	virtual bool			Give(const char *statname, const char *value);
+	virtual void			Possess( idEntity *possessor ); // HUMANHEAD aob
+	virtual void			Unpossess(); // HUMANHEAD aob
+	virtual bool			CanBePossessed( void ); // HUMANHEAD cjr
+
+	virtual void			UpdateOrientation( const idAngles& _untransformedViewAngles ) {}
+	virtual void			DetermineOwnerPosition( idVec3 &ownerOrigin, idMat3 &ownerAxis );//aob
+	virtual idVec3			ApplyLandDeflect( const idVec3& pos, float scale ) { return pos; }
+	virtual const idMat3&	GetAxis( int id = 0 ) const { return viewAxis; }
+	virtual void			PlayFootstepSound();
+	virtual void			PlayFootstepSoundMatter( const trace_t& trace );
+	virtual void			Event_AnimSyncLegs();			// nla
+	virtual idVec3 			GetAimPosition() const;
+
+	virtual void			EnterVehicle( hhVehicle* vehicle );
+	virtual void			ExitVehicle( hhVehicle* vehicle );
+	virtual void			GetPilotInput( usercmd_t& pilotCmds, idAngles& pilotViewAngles ) {}
+	virtual void			ResetClipModel();
+	class hhPilotVehicleInterface*	GetVehicleInterface();
+	const hhPilotVehicleInterface*	GetVehicleInterface() const;
+	void					SetVehicleInterface( hhPilotVehicleInterface* newVehicleInterface );
+	bool					InVehicle() const;
+	void					DisableIK()							{	walkIK.DisableAll();	}
+	void					EnableIK()							{	walkIK.EnableAll();		}
+	virtual void			BecameBound(hhBindController *b)	{}
+	virtual void			BecameUnbound(hhBindController *b)	{}
+	bool					PlayCrashLandSound( const trace_t& trace, const float volumeScale );
+	idVec3					DetermineDeltaCollisionVelocity( const idVec3& currentVel, const trace_t& trace );
+	virtual void			PlayPainSound();
+	idAnimState*			GetLegsAnim(void)	{return &legsAnim;}
+	idAnimState*			GetTorsoAnim(void)	{return &torsoAnim;}
+	idAnimState*			GetHeadAnim(void)	{return &headAnim;}
+	virtual void			SetAxis( const idMat3& axis ) { viewAxis = axis; UpdateVisuals(); }
+	virtual void			SetShaderParm( int parmnum, float value );
+	idEntity *				GetHead();
+	// HUMANHEAD END
 
 							// damage
 	void					SetupDamageGroups( void );
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
-	int						GetDamageForLocation( int damage, int location, bool headMultiplier = false );
+	int						GetDamageForLocation( int damage, int location );
 	const char *			GetDamageGroup( int location );
 	void					ClearPain( void );
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
@@ -197,10 +244,9 @@ public:
 
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
 
-	virtual	renderView_t *	GetRenderView();
-
+	virtual	renderView_t *	GetRenderView();	
+	
 							// animation state control
-	int						PlayAnim( int channel, const char* name );
 	int						GetAnim( int channel, const char *name );
 	void					UpdateAnimState( void );
 	void					SetAnimState( int channel, const char *name, int blendFrames );
@@ -211,19 +257,11 @@ public:
 	bool					AnimDone( int channel, int blendFrames ) const;
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
-	idEntity*				GetHeadEntity()
-	{
-		return head.GetEntity();
-	};
-
-	void					PlayFootStepSound( void );
+	bool					InGravityZone( void ); // HUMANHEAD mdl
+	virtual void			Portalled(idEntity *portal); // HUMANHEAD mdl
 
 protected:
 	friend class			idAnimState;
-
-	// Carl: navigation (originally in AI.h)
-	idAAS* 					aas;
-	int						travelFlags;
 
 	float					fovDot;				// cos( fovDegrees )
 	idVec3					eyeOffset;			// offset of eye relative to physics origin
@@ -252,9 +290,6 @@ protected:
 	jointHandle_t			soundJoint;
 
 	idIK_Walk				walkIK;
-    // Koz
-    idIK_Reach				armIK;
-    // Koz
 
 	idStr					animPrefix;
 	idStr					painAnim;
@@ -265,16 +300,16 @@ protected:
 	int						blink_min;
 	int						blink_max;
 
+	//HUMANHEAD: aob
+	hhPilotVehicleInterface*	vehicleInterface;
+	//HUMANHEAD END
+
 	// script variables
 	idThread *				scriptThread;
 	idStr					waitState;
 	idAnimState				headAnim;
 	idAnimState				torsoAnim;
 	idAnimState				legsAnim;
-    // Koz
-    idAnimState				leftHandAnim;
-    idAnimState				rightHandAnim;
-    // Koz end
 
 	bool					allowPain;
 	bool					allowEyeFocus;
@@ -284,9 +319,17 @@ protected:
 
 	idList<idAttachInfo>	attachments;
 
-	int						damageCap;
+	int						solidTest; // HUMANHEAD mdl
+
+	//HUMANHEAD bjk
+	int						basePushTime;
+	idVec3					basePush;
+	int						basePushJoint;
+	//HUMANHEAD END
 
 	virtual void			Gib( const idVec3 &dir, const char *damageDefName );
+	void					AddBasePush( const idVec3& dir, int location, const idDict* damageDict );	//HUMANHEAD bjk
+	void					ApplyBasePush();	//HUMANHEAD bjk
 
 							// removes attachments with "remove" set for when character dies
 	void					RemoveAttachments( void );
@@ -294,12 +337,11 @@ protected:
 							// copies animation from body to head joints
 	void					CopyJointsFromBodyToHead( void );
 
-
 private:
+protected:			// nla - Added so we can access.
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
 	void					FinishSetup( void );
 	void					SetupHead( void );
-
 
 	void					Event_EnableEyeFocus( void );
 	void					Event_DisableEyeFocus( void );
@@ -341,12 +383,60 @@ private:
 	void					Event_SetState( const char *name );
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
-	void					Event_SetDamageGroupScale(const char *groupName, float scale);
-	void					Event_SetDamageGroupScaleAll(float scale);
-	void					Event_GetDamageGroupScale(const char *groupName);
-	void					Event_SetDamageCap(float _damageCap);
-	void					Event_SetWaitState(const char *waitState);
-	void					Event_GetWaitState();
+
+// HUMANHEAD START JRM	
+	virtual void			Event_Footprint_Left( void );
+	virtual void			Event_Footprint_Right( void );	
+#ifdef HUMANHEAD //jsh
+	virtual void			Event_PlayAnimSkip( int channel, const char *name, float skip );	
+#endif
+	void					Event_AFTestSolid(void); // mdl
+// HUMANHEAD END
 };
+
+// HUMANHEAD
+/*
+=====================
+idActor::EyeHeightIdeal
+=====================
+*/
+ID_INLINE float idActor::EyeHeightIdeal( void ) const {
+	return eyeOffset.z;
+}
+
+/*
+=====================
+idActor::ShouldRemainAlignedToAxial
+=====================
+*/
+ID_INLINE bool idActor::ShouldRemainAlignedToAxial() const {
+	return false;//true;
+}
+
+/*
+=====================
+idActor::Give
+	HUMANHEAD aob
+AOBFIXME: Why is this function inline?  Move to cpp file and get rid of inline. --pdm
+=====================
+*/
+#define DETERMINE_AMOUNT_GIVEN( current, delta, max ) ( (((current) + (delta)) > (max)) ? (max) - (current) : (delta) )
+ID_INLINE bool idActor::Give( const char *statname, const char *value) {
+	float	deltaAmount = 0.0f;
+	int		localMaxHealth = GetMaxHealth();
+	int		localHealth = GetHealth();
+	bool	processed = false;
+	float	localAmountGiven = 0.0f;
+
+	if ( !idStr::Icmp( statname, "health" ) ) {
+		deltaAmount = atoi( value ); 
+		localAmountGiven = DETERMINE_AMOUNT_GIVEN( localHealth, deltaAmount, localMaxHealth );
+		SetHealth( localHealth + localAmountGiven );
+		processed = true;
+	}
+	
+	return processed;
+}
+// HUMANHEAD END
 
 #endif /* !__GAME_ACTOR_H__ */

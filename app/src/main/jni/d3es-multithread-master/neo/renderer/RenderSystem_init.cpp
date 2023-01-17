@@ -861,7 +861,7 @@ static float R_RenderingFPS( const renderView_t *renderView ) {
 	while( 1 ) {
 		// render
 		renderSystem->BeginFrame( glConfig.vidWidth, glConfig.vidHeight );
-		tr.primaryWorld->RenderScene( renderView );
+		tr.primaryWorld->RenderScene(const_cast<renderView_t *>(renderView));
 		renderSystem->EndFrame( NULL, NULL );
 		qglFinish();
 		count++;

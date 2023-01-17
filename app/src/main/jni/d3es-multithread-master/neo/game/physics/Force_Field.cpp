@@ -1,37 +1,10 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "physics/Physics_Player.h"
-#include "physics/Physics_Monster.h"
-#include "WorldSpawn.h"
-
-#include "physics/Force_Field.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idForce, idForce_Field )
 END_CLASS
@@ -157,13 +130,13 @@ void idForce_Field::Evaluate( int time ) {
 	idBounds bounds;
 	idVec3 force, torque, angularVelocity;
 	idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+	//HUMANHEAD: aob
+	idVec3 linearVelocity;
 
 	assert( clipModel );
 
 	bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
 	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
-
-	torque.Zero();
 
 	for ( i = 0; i < numClipModels; i++ ) {
 		cm = clipModelList[ i ];
@@ -177,7 +150,7 @@ void idForce_Field::Evaluate( int time ) {
 		if ( !entity ) {
 			continue;
 		}
-
+		
 		idPhysics *physics = entity->GetPhysics();
 
 		if ( playerOnly ) {
@@ -189,6 +162,15 @@ void idForce_Field::Evaluate( int time ) {
 				continue;
 			}
 		}
+
+		//HUMANHEAD: aob - should ignore players that noclip
+		if ( !monsterOnly ) {
+			idEntity* entity = cm->GetEntity();
+			if ( entity->IsType( idPlayer::Type ) && static_cast<idPlayer *>(entity)->noclip ) {
+				continue;
+			}
+		}
+		//HUMANHEAD END
 
 		if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1,
 									clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) {
@@ -212,7 +194,7 @@ void idForce_Field::Evaluate( int time ) {
 			}
 			default: {
 				gameLocal.Error( "idForce_Field: invalid type" );
-				return;
+				break;
 			}
 		}
 
@@ -254,7 +236,7 @@ void idForce_Field::Evaluate( int time ) {
 			}
 			default: {
 				gameLocal.Error( "idForce_Field: invalid apply type" );
-				return;
+				break;
 			}
 		}
 	}

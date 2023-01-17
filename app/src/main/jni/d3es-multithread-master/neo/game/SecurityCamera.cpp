@@ -1,47 +1,23 @@
+// Copyright (C) 2004 Id Software, Inc.
+//
 /*
-===========================================================================
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+  SecurityCamera.cpp
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+  Security camera that triggers targets when player is in view
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "physics/Physics_RigidBody.h"
-#include "Entity.h"
-#include "Light.h"
-#include "Player.h"
-#include "Fx.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "SecurityCamera.h"
+#include "Game_local.h"
+
 
 /***********************************************************************
 
   idSecurityCamera
-
-  Security camera that triggers targets when player is in view
-
+	
 ***********************************************************************/
 
 const idEventDef EV_SecurityCam_ReverseSweep( "<reverseSweep>" );
@@ -70,7 +46,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( flipAxis );
 	savefile->WriteFloat( scanDist );
 	savefile->WriteFloat( scanFov );
-
+							
 	savefile->WriteFloat( sweepStart );
 	savefile->WriteFloat( sweepEnd );
 	savefile->WriteBool( negativeSweep );
@@ -80,7 +56,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( scanFovCos );
 
 	savefile->WriteVec3( viewOffset );
-
+							
 	savefile->WriteInt( pvsArea );
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteTraceModel( trm );
@@ -98,7 +74,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( flipAxis );
 	savefile->ReadFloat( scanDist );
 	savefile->ReadFloat( scanFov );
-
+							
 	savefile->ReadFloat( sweepStart );
 	savefile->ReadFloat( sweepEnd );
 	savefile->ReadBool( negativeSweep );
@@ -108,7 +84,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( scanFovCos );
 
 	savefile->ReadVec3( viewOffset );
-
+							
 	savefile->ReadInt( pvsArea );
 	savefile->ReadStaticObject( physicsObj );
 	savefile->ReadTraceModel( trm );
@@ -140,7 +116,7 @@ void idSecurityCamera::Spawn( void ) {
 	}
 
 	negativeSweep = ( sweepAngle < 0 ) ? true : false;
-	sweepAngle = idMath::Fabs( sweepAngle );
+	sweepAngle = abs( sweepAngle );
 
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
 
@@ -189,24 +165,24 @@ void idSecurityCamera::Event_AddLight( void ) {
 	float	radius;
 	idVec3	lightOffset;
 	idLight	*spotLight;
-
+	
 	dir = GetAxis();
 	dir.NormalVectors( right, up );
 	target = GetPhysics()->GetOrigin() + dir * scanDist;
-
+		
 	radius = tan( scanFov * idMath::PI / 360.0f );
 	up = dir + up * radius;
 	up.Normalize();
 	up = GetPhysics()->GetOrigin() + up * scanDist;
 	up -= target;
-
+	
 	right = dir + right * radius;
 	right.Normalize();
 	right = GetPhysics()->GetOrigin() + right * scanDist;
 	right -= target;
 
 	spawnArgs.GetVector( "lightOffset", "0 0 0", lightOffset );
-
+	
 	args.Set( "origin", ( GetPhysics()->GetOrigin() + lightOffset ).ToString() );
 	args.Set( "light_target", target.ToString() );
 	args.Set( "light_right", right.ToString() );
@@ -392,7 +368,7 @@ void idSecurityCamera::Think( void ) {
 
 				SetAlertMode(LOSINGINTEREST);
 				CancelEvents( &EV_SecurityCam_Alert );
-
+				
 				sightResume = spawnArgs.GetFloat( "sightResume", "1.5" );
 				PostEventSec( &EV_SecurityCam_ContinueSweep, sightResume );
 			}
@@ -445,7 +421,7 @@ void idSecurityCamera::StartSweep( void ) {
 	sweepStart = gameLocal.time;
 	speed = SEC2MS( SweepSpeed() );
 	sweepEnd = sweepStart + speed;
-	PostEventMS( &EV_SecurityCam_Pause, speed );
+   	PostEventMS( &EV_SecurityCam_Pause, speed );
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 }
 
@@ -462,7 +438,7 @@ void idSecurityCamera::Event_ContinueSweep( void ) {
 	sweepStart = f;
 	speed = MS2SEC( SweepSpeed() );
 	sweepEnd = sweepStart + speed;
-	PostEventMS( &EV_SecurityCam_Pause, speed * (1.0 - pct));
+   	PostEventMS( &EV_SecurityCam_Pause, speed * (1.0 - pct));
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	SetAlertMode(SCANNING);
 	sweeping = true;
@@ -509,7 +485,7 @@ void idSecurityCamera::Event_Pause( void ) {
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
 	StartSound( "snd_stop", SND_CHANNEL_BODY, 0, false, NULL );
-	PostEventSec( &EV_SecurityCam_ReverseSweep, sweepWait );
+   	PostEventSec( &EV_SecurityCam_ReverseSweep, sweepWait );
 }
 
 /*
@@ -549,6 +525,7 @@ bool idSecurityCamera::Pain( idEntity *inflictor, idEntity *attacker, int damage
 	if ( fx[0] != '\0' ) {
 		idEntityFx::StartFx( fx, NULL, NULL, this, true );
 	}
+
 	return true;
 }
 

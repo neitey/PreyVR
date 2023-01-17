@@ -1,45 +1,18 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+#include "../Game_local.h"
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
-#include "framework/DeclSkin.h"
-#include "renderer/ModelManager.h"
-
-#include "physics/Clip.h"
-#include "Entity.h"
-#include "Game_local.h"
-
-#include "SaveGame.h"
+#include "TypeInfo.h"
+//k: #include "../../framework/BuildVersion.h" // HUMANHEAD mdl
 
 /*
 Save game related helper classes.
 
-Save games are implemented in two classes, idSaveGame and idRestoreGame, that implement write/read functions for
+Save games are implemented in two classes, idSaveGame and idRestoreGame, that implement write/read functions for 
 common types.  They're passed in to each entity and object for them to archive themselves.  Each class
 implements save/restore functions for it's own data.  When restoring, all the objects are instantiated,
 then the restore function is called on each, superclass first, then subclasses.
@@ -103,6 +76,7 @@ void idSaveGame::Close( void ) {
 
 	for( i = 1; i < objects.Num(); i++ ) {
 		CallSave_r( objects[ i ]->GetType(), objects[ i ] );
+		WRITE_SAVEDEBUG_MARKER( this, 0xD00F00AA ); // HUMANHEAD mdl
 	}
 
 	objects.Clear();
@@ -141,8 +115,10 @@ void idSaveGame::CallSave_r( const idTypeInfo *cls, const idClass *obj ) {
 			return;
 		}
 	}
-
+	
+	WRITE_SAVEDEBUG_MARKER( this, 0xD00F00BB ); // HUMANHEAD mdl
 	( obj->*cls->Save )( this );
+	WRITE_SAVEDEBUG_MARKER( this, 0xD00F00CC ); // HUMANHEAD mdl
 }
 
 /*
@@ -230,13 +206,13 @@ void idSaveGame::WriteBool( const bool value ) {
 ================
 idSaveGame::WriteString
 ================
-*/
+*/  
 void idSaveGame::WriteString( const char *string ) {
 	int len;
 
 	len = strlen( string );
 	WriteInt( len );
-	file->Write( string, len );
+    file->Write( string, len );
 }
 
 /*
@@ -542,10 +518,30 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 	WriteBool( renderEntity.noDynamicInteractions );
 	WriteBool( renderEntity.weaponDepthHack );
 
-	WriteInt( renderEntity.forceUpdate );
+	WriteBool( renderEntity.forceUpdate );
 
-	WriteInt(renderEntity.timeGroup);
-	WriteInt(renderEntity.xrayIndex);
+	// HUMANHEAD mdl
+	if( renderEntity.declBeam ) {
+		WriteBool( true );
+		WriteString( renderEntity.declBeam->GetName() );
+	} else {
+		WriteBool( false );
+	}
+
+	if( renderEntity.beamNodes ) {
+		WriteBool( true );
+		for( i = 0; i < MAX_BEAM_NODES; i++ ) {
+			WriteVec3( renderEntity.beamNodes->nodes[i] );
+		}
+	} else {
+		WriteBool( false );
+	}
+
+	WriteBool( renderEntity.onlyVisibleInSpirit );
+	WriteBool( renderEntity.onlyInvisibleInSpirit );
+	WriteBool( renderEntity.lowSkippable );		//HUMANHEAD bjk
+	WriteFloat( renderEntity.eyeDistance );
+	// HUMANHEAD END
 }
 
 /*
@@ -563,6 +559,7 @@ void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 	WriteInt( renderLight.allowLightInViewID );
 	WriteBool( renderLight.noShadows );
 	WriteBool( renderLight.noSpecular );
+	WriteBool( renderLight.lowSkippable );		//HUMANHEAD bjk
 	WriteBool( renderLight.pointLight );
 	WriteBool( renderLight.parallel );
 
@@ -616,6 +613,10 @@ void idSaveGame::WriteRefSound( const refSound_t &refSound ) {
 	WriteFloat( refSound.parms.shakes );
 	WriteInt( refSound.parms.soundShaderFlags );
 	WriteInt( refSound.parms.soundClass );
+	WriteInt( refSound.parms.subIndex );
+	WriteInt( refSound.parms.profanityIndex );
+	WriteFloat( refSound.parms.profanityDelay );
+	WriteFloat( refSound.parms.profanityDuration );
 }
 
 /*
@@ -638,6 +639,10 @@ void idSaveGame::WriteRenderView( const renderView_t &view ) {
 	WriteMat3( view.viewaxis );
 
 	WriteBool( view.cramZNear );
+	// HUMANHEAD mdl
+	WriteBool( view.forceUpdate );
+	WriteBool( view.viewSpiritEntities );
+	// HUMANHEAD END
 
 	WriteInt( view.time );
 
@@ -706,7 +711,7 @@ void idSaveGame::WriteTrace( const trace_t &trace ) {
  */
 void idSaveGame::WriteTraceModel( const idTraceModel &trace ) {
 	int j, k;
-
+	
 	WriteInt( (int&)trace.type );
 	WriteInt( trace.numVerts );
 	for ( j = 0; j < MAX_TRACEMODEL_VERTS; j++ ) {
@@ -772,7 +777,7 @@ void idSaveGame::WriteBuildNumber( const int value ) {
 /***********************************************************************
 
 	idRestoreGame
-
+	
 ***********************************************************************/
 
 /*
@@ -838,24 +843,15 @@ void idRestoreGame::RestoreObjects( void ) {
 	// restore all the objects
 	for( i = 1; i < objects.Num(); i++ ) {
 		CallRestore_r( objects[ i ]->GetType(), objects[ i ] );
-        /*if ( objects[ i ]->IsType( idEntity::Type ) ) {
-            idEntity *ent = static_cast<idEntity *>( objects[i] );
-            if (ent->name.Icmp("player1_weapon_left2") == 0 ||
-                ent->name.Icmp( "player1_weapon_left_worldmodel2" ) == 0 ||
-                ent->name.Icmp("player1_weapon_right2") == 0 ||
-                ent->name.Icmp( "player1_weapon_right_worldmodel2" ) == 0) {
-                delete(ent);
-                //gameLocal.UnregisterEntity(ent);
-            }
-        }*/
+		READ_SAVEDEBUG_MARKER( this, 0xD00F00AA ); // HUMANHEAD mdl
 	}
 
 	// regenerate render entities and render lights because are not saved
 	for( i = 1; i < objects.Num(); i++ ) {
 		if ( objects[ i ]->IsType( idEntity::Type ) ) {
 			idEntity *ent = static_cast<idEntity *>( objects[ i ] );
-            ent->UpdateVisuals();
-            ent->Present();
+			ent->UpdateVisuals();
+			ent->Present();
 		}
 	}
 
@@ -912,8 +908,12 @@ void idRestoreGame::CallRestore_r( const idTypeInfo *cls, idClass *obj ) {
 			return;
 		}
 	}
+	
+	READ_SAVEDEBUG_MARKER( this, 0xD00F00BB ); // HUMANHEAD mdl
 
 	( obj->*cls->Restore )( this );
+
+	READ_SAVEDEBUG_MARKER( this, 0xD00F00CC ); // HUMANHEAD mdl
 }
 
 /*
@@ -1328,10 +1328,43 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadBool( renderEntity.noDynamicInteractions );
 	ReadBool( renderEntity.weaponDepthHack );
 
-	ReadInt( renderEntity.forceUpdate );
+	bool b = false;
+	ReadBool( b );
+	renderEntity.forceUpdate = b;
 
-	ReadInt(renderEntity.timeGroup);
-	ReadInt(renderEntity.xrayIndex);
+	// HUMANHEAD mdl
+	bool bTmp;
+	idStr strTmp;
+	ReadBool( bTmp );
+	if( bTmp ) {
+		ReadString( strTmp );
+		renderEntity.declBeam = declManager->FindBeam( strTmp );
+	} else {
+		renderEntity.declBeam = NULL;
+	}
+
+	ReadBool( bTmp );
+	if( bTmp ) {
+		renderEntity.beamNodes = (hhBeamNodes_t *)Mem_ClearedAlloc(sizeof(hhBeamNodes_t) * renderEntity.declBeam->numBeams);
+	
+		for( i = 0; i < MAX_BEAM_NODES; i++ ) {
+			ReadVec3( renderEntity.beamNodes->nodes[i] );
+		}
+	} else {
+		renderEntity.beamNodes = NULL;
+	}
+
+	ReadBool( renderEntity.onlyVisibleInSpirit );
+	ReadBool( renderEntity.onlyInvisibleInSpirit );
+	ReadBool( renderEntity.lowSkippable );	//HUMANHEAD bjk
+	ReadFloat( renderEntity.eyeDistance );
+
+#if _HH_RENDERDEMO_HACKS
+	renderEntity.notInRenderDemos = 0;
+#endif
+	renderEntity.timeGroup = 0;
+//	renderEntity.xrayIndex = 0;
+	// HUMANHEAD END
 }
 
 /*
@@ -1350,6 +1383,7 @@ void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 	ReadInt( renderLight.allowLightInViewID );
 	ReadBool( renderLight.noShadows );
 	ReadBool( renderLight.noSpecular );
+	ReadBool( renderLight.lowSkippable );	//HUMANHEAD bjk
 	ReadBool( renderLight.pointLight );
 	ReadBool( renderLight.parallel );
 
@@ -1400,6 +1434,10 @@ void idRestoreGame::ReadRefSound( refSound_t &refSound ) {
 	ReadFloat( refSound.parms.shakes );
 	ReadInt( refSound.parms.soundShaderFlags );
 	ReadInt( refSound.parms.soundClass );
+	ReadInt( refSound.parms.subIndex );
+	ReadInt( refSound.parms.profanityIndex );
+	ReadFloat( refSound.parms.profanityDelay );
+	ReadFloat( refSound.parms.profanityDuration );
 }
 
 /*
@@ -1422,6 +1460,10 @@ void idRestoreGame::ReadRenderView( renderView_t &view ) {
 	ReadMat3( view.viewaxis );
 
 	ReadBool( view.cramZNear );
+	// HUMANHEAD mdl
+	ReadBool( view.forceUpdate );
+	ReadBool( view.viewSpiritEntities );
+	// HUMANHEAD END
 
 	ReadInt( view.time );
 
@@ -1490,7 +1532,7 @@ void idRestoreGame::ReadTrace( trace_t &trace ) {
  */
 void idRestoreGame::ReadTraceModel( idTraceModel &trace ) {
 	int j, k;
-
+	
 	ReadInt( (int&)trace.type );
 	ReadInt( trace.numVerts );
 	for ( j = 0; j < MAX_TRACEMODEL_VERTS; j++ ) {
@@ -1564,3 +1606,60 @@ idRestoreGame::GetBuildNumber
 int idRestoreGame::GetBuildNumber( void ) {
 	return buildNumber;
 }
+
+
+
+// HUMANHEAD ADDITIONS
+
+void idSaveGame::WriteEventDef( const idEventDef *event ) {
+	int value = -1;
+	if (event != NULL) {
+		value = event->GetEventNum();
+	}
+	file->Write( &value, sizeof( value ) );
+}
+
+void idRestoreGame::ReadEventDef( const idEventDef *&event ) {
+	int value;
+	file->Read( &value, sizeof( value ) );
+	if (value == -1) {
+		event = NULL;
+	}
+	else {
+		event = idEventDef::FindEvent(value);
+	}
+}
+
+void idSaveGame::WriteQuat( const idQuat &quat ) {
+	WriteFloat( quat.x );
+	WriteFloat( quat.y );
+	WriteFloat( quat.z );
+	WriteFloat( quat.w );
+}
+
+void idRestoreGame::ReadQuat( idQuat &quat ) {
+	ReadFloat( quat.x );
+	ReadFloat( quat.y );
+	ReadFloat( quat.z );
+	ReadFloat( quat.w );
+}
+
+void idSaveGame::WriteStringList( const idList<idStr> &list ) {
+	int num = list.Num();
+	WriteInt( num );
+	for( int i = 0; i < num; i++ ) {
+		WriteString( list[i] );
+	}
+}
+
+void idRestoreGame::ReadStringList( idList<idStr> &list ) {
+	int num;
+	idStr tmp;
+	ReadInt( num );
+	list.Clear();
+	for( int i = 0; i < num; i++ ) {
+		ReadString( tmp );
+		list.Append( tmp );
+	}
+}
+

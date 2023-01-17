@@ -1,38 +1,26 @@
-/*
-===========================================================================
+// Copyright (C) 2004 Id Software, Inc.
+//
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "idlib/precompiled.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "Game_local.h"
 
-#include "Pvs.h"
-
 #define MAX_BOUNDS_AREAS	16
+
+//HUMANHEAD rww
+#if !GOLD
+	#define DEBUG_PASSAGE_OVERFLOW
+#endif
+
+#ifdef DEBUG_PASSAGE_OVERFLOW
+int debugFloodPassageOverflow = 0;
+#endif
+
+#define PORTAL_PLANE_CULLING	1
+
+#define GAMEPORTAL_CONNECTIVITY_DISABLE (cvarSystem->GetCVarBool("debug_disableGamePortalConnections"))
+//HUMANHEAD END
 
 typedef struct pvsPassage_s {
 	byte *				canSee;		// bit set for all portals that can be seen through this passage
@@ -48,6 +36,9 @@ typedef struct pvsPortal_s {
 	bool				done;		// true if pvs is calculated for this portal
 	byte *				vis;		// PVS for this portal
 	byte *				mightSee;	// used during construction
+	bool				gamePortal;	//HUMANHEAD rww - if true, this is a game portal
+	bool				mightSeeGamePortal; //HUMANHEAD rww - if true, this portal is connected somewhere to a gamePortal (potentially)
+	pvsPortal_s			*recursionSource; //HUMANHEAD rww - do not flood through a portal multiple times with the same source
 } pvsPortal_t;
 
 
@@ -149,6 +140,11 @@ void idPVS::CreatePVSData( void ) {
 			portal = gameRenderWorld->GetPortal( i, j );
 
 			p = &pvsPortals[cp++];
+			
+			//HUMANHEAD rww - check to see if this is a game portal
+			p->gamePortal = false; // gameRenderWorld->IsGamePortal(portal.portalHandle); // jmarshall
+			p->mightSeeGamePortal = p->gamePortal;
+
 			// the winding goes counter clockwise seen from this area
 			p->w = portal.w->Copy();
 			p->areaNum = portal.areas[1];	// area[1] is always the area the portal leads to
@@ -203,6 +199,82 @@ void idPVS::DestroyPVSData( void ) {
 	pvsPortals = NULL;
 }
 
+//HUMANHEAD rww
+/*
+================
+idPVS::MightSeeLinkedGamePortal
+================
+*/
+//check if two portals should be seen from each other because of gameportal linking
+bool idPVS::MightSeeLinkedGamePortal(const pvsPortal_t *p1, const pvsPortal_t *p2) const {
+	int pind1 = p1-pvsPortals;
+	int pind2 = p2-pvsPortals;
+	for (int i = 0; i < numPortals; i++) {
+		//if this portal (i) is a gamePortal, and can be seen by either portal in question, let us evaluate
+		if (pvsPortals[i].gamePortal) {
+			const pvsPortal_t *notConnected = NULL;
+
+			if (pind1 == i || (p1->mightSee[i>>3] & (1<<(i&7))) || (pvsPortals[i].mightSee[pind1>>3] & (1<<(pind1&7)))) {
+				notConnected = p2;
+			}
+			if (pind2 == i || (p2->mightSee[i>>3] & (1<<(i&7))) || (pvsPortals[i].mightSee[pind2>>3] & (1<<(pind2&7)))) {
+				if (notConnected) { //if we can both see this particular game portal, then we already know the answer
+					return true;
+				}
+				notConnected = p1;
+			}
+
+			if (notConnected) { //alright then, let's check the area the gamePortal leads to for connections
+				pvsArea_t *area = &pvsAreas[pvsPortals[i].areaNum]; //the area the game portal leads to
+				for (int j = 0; j < area->numPortals; j++) {
+					pvsPortal_t *areaPortal = area->portals[j];
+					if (!areaPortal->gamePortal) { //only evaluate gamePortals in the immediate area
+						continue;
+					}
+
+					int portalLocIdx = areaPortal-pvsPortals;
+					//we must now evaluate the portals in the same area as that which is not connected, to determine the possibility
+					pvsArea_t *disconArea = &pvsAreas[notConnected->areaNum];
+					for (int k = 0; k < disconArea->numPortals; k++) {
+						if (disconArea->portals[k]->mightSee[portalLocIdx>>3] & (1<<(portalLocIdx&7))) {
+							return true; //we have a winner
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+/*
+================
+idPVS::MightSeeGamePortals
+================
+*/
+//go through all of our portals and modify the mightSees based on gameportal linking
+void idPVS::MightSeeGamePortals(void) const {
+	for (int i = 0; i < numPortals; i++) {
+		pvsPortal_t *p1 = &pvsPortals[i];
+		for (int j = 0; j < numPortals; j++) {
+			if (i == j) {
+				continue;
+			}
+			pvsPortal_t *p2 = &pvsPortals[j];
+			if (!(p1->mightSee[j>>3] & (1<<(j&7))) || !(p2->mightSee[i>>3] & (1<<(i&7)))) { //if they're already visible, don't care
+				if (p1->mightSeeGamePortal || p2->mightSeeGamePortal) { //do not bother unless at least one of these portals may be connected to a gamePortal
+					if (MightSeeLinkedGamePortal(p1, p2)) { //if there was a possible link, modify the mightSee on both portals to connect them
+						p1->mightSee[j>>3] |= (1<<(j&7));
+						p2->mightSee[i>>3] |= (1<<(i&7));
+					}
+				}
+			}
+		}
+	}
+}
+//HUMANHEAD END
+
 /*
 ================
 idPVS::FloodFrontPortalPVS_r
@@ -239,7 +311,10 @@ idPVS::FrontPortalPVS
 ================
 */
 void idPVS::FrontPortalPVS( void ) const {
-	int i, j, k, n, p, side1, side2, areaSide;
+	int i, j, n, p;
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
+	int k, side1, side2, areaSide;
+#endif //HUMANHEAD END
 	pvsPortal_t *p1, *p2;
 	pvsArea_t *area;
 
@@ -250,17 +325,18 @@ void idPVS::FrontPortalPVS( void ) const {
 
 			area = &pvsAreas[j];
 
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
 			areaSide = side1 = area->bounds.PlaneSide( p1->plane );
 
 			// if the whole area is at the back side of the portal
 			if ( areaSide == PLANESIDE_BACK ) {
 				continue;
 			}
+#endif //HUMANHEAD END
 
 			for ( p = 0; p < area->numPortals; p++ ) {
-
 				p2 = area->portals[p];
-
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
 				// if we the whole area is not at the front we need to check
 				if ( areaSide != PLANESIDE_FRONT ) {
 					// if the second portal is completely at the back side of the first portal
@@ -303,10 +379,17 @@ void idPVS::FrontPortalPVS( void ) const {
 						continue;	// first portal is at the front of the second portal
 					}
 				}
+#endif //HUMANHEAD END
 
 				// the portal might be visible at the front
 				n = p2 - pvsPortals;
 				p1->mightSee[ n >> 3 ] |= 1 << (n&7);
+
+				//HUMANHEAD rww - if a portal has passed plane checks for a gamePortal, then let that portal be marked that it may see a gamePortal.
+				if (p2->gamePortal && !GAMEPORTAL_CONNECTIVITY_DISABLE) {
+					p1->mightSeeGamePortal = true;
+				}
+				//HUMANHEAD END
 			}
 		}
 	}
@@ -324,12 +407,22 @@ idPVS::FloodPassagePVS_r
 ===============
 */
 pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *portal, pvsStack_t *prevStack ) const {
+#ifdef DEBUG_PASSAGE_OVERFLOW //HUMANHEAD rww
+	__asm {
+		cmp		debugFloodPassageOverflow,esp
+		jle		cont
+		int		0x03
+	}
+	gameLocal.Error("Preempted stack overflow in idPVS::FloodPassagePVS_r.");
+cont:
+#endif //HUMANHEAD END
+
 	int i, j, n, m;
 	pvsPortal_t *p;
 	pvsArea_t *area;
 	pvsStack_t *stack;
 	pvsPassage_t *passage;
-	int *sourceVis, *passageVis, *portalVis, *mightSee, *prevMightSee, more;
+	/*long*/int *sourceVis, *passageVis, *portalVis, *mightSee, *prevMightSee, more;
 
 	area = &pvsAreas[portal->areaNum];
 
@@ -364,16 +457,16 @@ pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *po
 		source->vis[n >> 3] |= (1 << (n & 7));
 
 		// get pointers to vis data
-		prevMightSee = reinterpret_cast<int *>(prevStack->mightSee);
-		passageVis = reinterpret_cast<int *>(passage->canSee);
-		sourceVis = reinterpret_cast<int *>(source->vis);
-		mightSee = reinterpret_cast<int *>(stack->mightSee);
+		prevMightSee = reinterpret_cast</*long*/int *>(prevStack->mightSee);
+		passageVis = reinterpret_cast</*long*/int *>(passage->canSee);
+		sourceVis = reinterpret_cast</*long*/int *>(source->vis);
+		mightSee = reinterpret_cast</*long*/int *>(stack->mightSee);
 
 		more = 0;
 		// use the portal PVS if it has been calculated
 		if ( p->done ) {
-			portalVis = reinterpret_cast<int *>(p->vis);
-			for ( j = 0; j < portalVisInts; j++ ) {
+			portalVis = reinterpret_cast</*long*/int *>(p->vis);
+			for ( j = 0; j < portalVisLongs; j++ ) {
 				// get new PVS which is decreased by going through this passage
 				m = *prevMightSee++ & *passageVis++ & *portalVis++;
 				// check if anything might be visible through this passage that wasn't yet visible
@@ -384,7 +477,7 @@ pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *po
 		}
 		else {
 			// the p->mightSee is implicitely stored in the passageVis
-			for ( j = 0; j < portalVisInts; j++ ) {
+			for ( j = 0; j < portalVisLongs; j++ ) {
 				// get new PVS which is decreased by going through this passage
 				m = *prevMightSee++ & *passageVis++;
 				// check if anything might be visible through this passage that wasn't yet visible
@@ -400,7 +493,10 @@ pvsStack_t *idPVS::FloodPassagePVS_r( pvsPortal_t *source, const pvsPortal_t *po
 		}
 
 		// go through the portal
-		stack->next = FloodPassagePVS_r( source, p, stack );
+		if (p->recursionSource != source) { //HUMANHEAD rww
+			p->recursionSource = source;
+			stack->next = FloodPassagePVS_r( source, p, stack );
+		}
 	}
 
 	return stack;
@@ -429,6 +525,10 @@ void idPVS::PassagePVS( void ) const {
 		source = &pvsPortals[i];
 		memset( source->vis, 0, portalVisBytes );
 		memcpy( stack->mightSee, source->mightSee, portalVisBytes );
+#ifdef DEBUG_PASSAGE_OVERFLOW //HUMANHEAD rww
+		__asm mov debugFloodPassageOverflow,esp
+		debugFloodPassageOverflow -= 3900000; //close to 4mb, because our stack size is 4mb.
+#endif //HUMANHEAD END
 		FloodPassagePVS_r( source, source, stack );
 		source->done = true;
 	}
@@ -456,7 +556,7 @@ void idPVS::AddPassageBoundaries( const idWinding &source, const idWinding &pass
 	idPlane		plane;
 
 
-	// check all combinations
+	// check all combinations	
 	for ( i = 0; i < source.GetNumPoints(); i++ ) {
 
 		l = (i + 1) % source.GetNumPoints();
@@ -569,8 +669,11 @@ idPVS::CreatePassages
 #define MAX_PASSAGE_BOUNDS		128
 
 void idPVS::CreatePassages( void ) const {
-	int i, j, l, n, numBounds, front, passageMemory, byteNum, bitNum;
+	int i, j, n, numBounds, passageMemory, byteNum, bitNum;
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
+	int l, front;
 	int sides[MAX_PASSAGE_BOUNDS];
+#endif //HUMANHEAD END
 	idPlane passageBounds[MAX_PASSAGE_BOUNDS];
 	pvsPortal_t *source, *target, *p;
 	pvsArea_t *area;
@@ -617,55 +720,59 @@ void idPVS::CreatePassages( void ) const {
 				for ( bitNum = 0; bitNum < 8; bitNum++ ) {
 
 					bit = 1 << bitNum;
-
 					if ( !( mightSee & bit ) ) {
 						continue;
 					}
 
-					p = &pvsPortals[(byteNum << 3) + bitNum];
-
+					int portalIndex = (byteNum << 3) + bitNum;
+					p = &pvsPortals[portalIndex];
+	
 					if ( p->areaNum == source->areaNum ) {
 						continue;
 					}
 
-					for ( front = 0, l = 0; l < numBounds; l++ ) {
-						sides[l] = p->bounds.PlaneSide( passageBounds[l] );
-						// if completely at the back of the passage bounding plane
-						if ( sides[l] == PLANESIDE_BACK ) {
-							break;
-						}
-						// if completely at the front
-						if ( sides[l] == PLANESIDE_FRONT ) {
-							front++;
-						}
-					}
-					// if completely outside the passage
-					if ( l < numBounds ) {
-						continue;
-					}
-
-					// if not at the front of all bounding planes and thus not completely inside the passage
-					if ( front != numBounds ) {
-
-						winding = *p->w;
-
-						for ( l = 0; l < numBounds; l++ ) {
-							// only clip if the winding possibly crosses this plane
-							if ( sides[l] != PLANESIDE_CROSS ) {
-								continue;
-							}
-							// clip away the part at the back of the bounding plane
-							winding.ClipInPlace( passageBounds[l] );
-							// if completely clipped away
-							if ( !winding.GetNumPoints() ) {
+#if PORTAL_PLANE_CULLING //HUMANHEAD rww
+					if (!source->mightSeeGamePortal && !target->mightSeeGamePortal && !p->mightSeeGamePortal) { //HUMANHEAD rww - do not do this for those portals which may see a gamePortal
+						for ( front = 0, l = 0; l < numBounds; l++ ) {
+							sides[l] = p->bounds.PlaneSide( passageBounds[l] );
+							// if completely at the back of the passage bounding plane
+							if ( sides[l] == PLANESIDE_BACK ) {
 								break;
+							}
+							// if completely at the front
+							if ( sides[l] == PLANESIDE_FRONT ) {
+								front++;
 							}
 						}
 						// if completely outside the passage
 						if ( l < numBounds ) {
 							continue;
 						}
+
+						// if not at the front of all bounding planes and thus not completely inside the passage
+						if ( front != numBounds ) {
+
+							winding = *p->w;
+
+							for ( l = 0; l < numBounds; l++ ) {
+								// only clip if the winding possibly crosses this plane
+								if ( sides[l] != PLANESIDE_CROSS ) {
+									continue;
+								}
+								// clip away the part at the back of the bounding plane
+								winding.ClipInPlace( passageBounds[l] );
+								// if completely clipped away
+								if ( !winding.GetNumPoints() ) {
+									break;
+								}
+							}
+							// if completely outside the passage
+							if ( l < numBounds ) {
+								continue;
+							}
+						}
 					}
+#endif
 
 					canSee |= bit;
 				}
@@ -730,7 +837,7 @@ idPVS::AreaPVSFromPortalPVS
 */
 int idPVS::AreaPVSFromPortalPVS( void ) const {
 	int i, j, k, areaNum, totalVisibleAreas;
-	int *p1, *p2;
+	/*long*/int *p1, *p2;
 	byte *pvs, *portalPVS;
 	pvsArea_t *area;
 
@@ -755,9 +862,9 @@ int idPVS::AreaPVSFromPortalPVS( void ) const {
 
 		// store the PVS of all portals in this area at the first portal
 		for ( j = 1; j < area->numPortals; j++ ) {
-			p1 = reinterpret_cast<int *>(area->portals[0]->vis);
-			p2 = reinterpret_cast<int *>(area->portals[j]->vis);
-			for ( k = 0; k < portalVisInts; k++ ) {
+			p1 = reinterpret_cast</*long*/int *>(area->portals[0]->vis);
+			p2 = reinterpret_cast</*long*/int *>(area->portals[j]->vis);
+			for ( k = 0; k < portalVisLongs; k++ ) {
 				*p1++ |= *p2++;
 			}
 		}
@@ -807,7 +914,7 @@ void idPVS::Init( void ) {
 	areaQueue = new int[numAreas];
 
 	areaVisBytes = ( ((numAreas+31)&~31) >> 3);
-	areaVisInts = areaVisBytes/sizeof(int);
+	areaVisLongs = areaVisBytes/sizeof(/*long*/int);
 
 	areaPVS = new byte[numAreas * areaVisBytes];
 	memset( areaPVS, 0xFF, numAreas * areaVisBytes );
@@ -815,7 +922,7 @@ void idPVS::Init( void ) {
 	numPortals = GetPortalCount();
 
 	portalVisBytes = ( ((numPortals+31)&~31) >> 3);
-	portalVisInts = portalVisBytes/sizeof(int);
+	portalVisLongs = portalVisBytes/sizeof(/*long*/int);
 
 	for ( int i = 0; i < MAX_CURRENT_PVS; i++ ) {
 		currentPVS[i].handle.i = -1;
@@ -833,6 +940,12 @@ void idPVS::Init( void ) {
 
 	CopyPortalPVSToMightSee();
 
+	//HUMANHEAD rww - go through now and add exceptions for mightSee involving gamePortals
+	if (!GAMEPORTAL_CONNECTIVITY_DISABLE) {
+		MightSeeGamePortals();
+	}
+	//HUMANHEAD END
+
 	PassagePVS();
 
 	totalVisibleAreas = AreaPVSFromPortalPVS();
@@ -841,7 +954,7 @@ void idPVS::Init( void ) {
 
 	timer.Stop();
 
-	gameLocal.Printf( "%5u msec to calculate PVS\n", timer.Milliseconds() );
+	gameLocal.Printf( "%5.0f msec to calculate PVS\n", timer.Milliseconds() );
 	gameLocal.Printf( "%5d areas\n", numAreas );
 	gameLocal.Printf( "%5d portals\n", numPortals );
 	gameLocal.Printf( "%5d areas visible on average\n", totalVisibleAreas / numAreas );
@@ -860,20 +973,20 @@ idPVS::Shutdown
 */
 void idPVS::Shutdown( void ) {
 	if ( connectedAreas ) {
-		delete[] connectedAreas;
+		delete connectedAreas;
 		connectedAreas = NULL;
 	}
 	if ( areaQueue ) {
-		delete[] areaQueue;
+		delete areaQueue;
 		areaQueue = NULL;
 	}
 	if ( areaPVS ) {
-		delete[] areaPVS;
+		delete areaPVS;
 		areaPVS = NULL;
 	}
 	if ( currentPVS ) {
 		for ( int i = 0; i < MAX_CURRENT_PVS; i++ ) {
-			delete[] currentPVS[i].pvs;
+			delete currentPVS[i].pvs;
 			currentPVS[i].pvs = NULL;
 		}
 	}
@@ -1013,7 +1126,7 @@ idPVS::SetupCurrentPVS
 pvsHandle_t idPVS::SetupCurrentPVS( const int *sourceAreas, const int numSourceAreas, const pvsType_t type ) const {
 	int i, j;
 	unsigned int h;
-	int *vis, *pvs;
+	/*long*/int *vis, *pvs;
 	pvsHandle_t handle;
 
 	h = 0;
@@ -1034,9 +1147,9 @@ pvsHandle_t idPVS::SetupCurrentPVS( const int *sourceAreas, const int numSourceA
 
 			assert( sourceAreas[i] >= 0 && sourceAreas[i] < numAreas );
 
-			vis = reinterpret_cast<int *>(areaPVS + sourceAreas[i] * areaVisBytes);
-			pvs = reinterpret_cast<int *>(currentPVS[handle.i].pvs);
-			for ( j = 0; j < areaVisInts; j++ ) {
+			vis = reinterpret_cast</*long*/int*>(areaPVS + sourceAreas[i] * areaVisBytes);
+			pvs = reinterpret_cast</*long*/int*>(currentPVS[handle.i].pvs);
+			for ( j = 0; j < areaVisLongs; j++ ) {
 				*pvs++ |= *vis++;
 			}
 		}
@@ -1074,7 +1187,7 @@ idPVS::MergeCurrentPVS
 */
 pvsHandle_t idPVS::MergeCurrentPVS( pvsHandle_t pvs1, pvsHandle_t pvs2 ) const {
 	int i;
-	int *pvs1Ptr, *pvs2Ptr, *ptr;
+	/*long*/int *pvs1Ptr, *pvs2Ptr, *ptr;
 	pvsHandle_t handle;
 
 	if ( pvs1.i < 0 || pvs1.i >= MAX_CURRENT_PVS || pvs1.h != currentPVS[pvs1.i].handle.h ||
@@ -1084,11 +1197,11 @@ pvsHandle_t idPVS::MergeCurrentPVS( pvsHandle_t pvs1, pvsHandle_t pvs2 ) const {
 
 	handle = AllocCurrentPVS( pvs1.h ^ pvs2.h );
 
-	ptr = reinterpret_cast<int *>(currentPVS[handle.i].pvs);
-	pvs1Ptr = reinterpret_cast<int *>(currentPVS[pvs1.i].pvs);
-	pvs2Ptr = reinterpret_cast<int *>(currentPVS[pvs2.i].pvs);
+	ptr = reinterpret_cast</*long*/int*>(currentPVS[handle.i].pvs);
+	pvs1Ptr = reinterpret_cast</*long*/int*>(currentPVS[pvs1.i].pvs);
+	pvs2Ptr = reinterpret_cast</*long*/int*>(currentPVS[pvs2.i].pvs);
 
-	for ( i = 0; i < areaVisInts; i++ ) {
+	for ( i = 0; i < areaVisLongs; i++ ) {
 		*ptr++ = *pvs1Ptr++ | *pvs2Ptr++;
 	}
 
@@ -1240,6 +1353,9 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 
 	handle = SetupCurrentPVS( source, type );
 
+#if GAMEPORTAL_PVS
+gameLocal.Printf("%d areas: (source area = %d)\n", numAreas, sourceArea);
+#endif
 	for ( j = 0; j < numAreas; j++ ) {
 
 		if ( !( currentPVS[handle.i].pvs[j>>3] & (1 << (j&7)) ) ) {
@@ -1255,6 +1371,9 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 
 		n = gameRenderWorld->NumPortalsInArea( j );
 
+#if GAMEPORTAL_PVS
+gameLocal.Printf("  area %d visible: (%d portals) 0x%04x\n", j, n, currentPVS[handle.i].pvs[j>>3]);
+#endif
 		// draw all the portals of the area
 		for ( i = 0; i < n; i++ ) {
 			portal = gameRenderWorld->GetPortal( j, i );
@@ -1264,8 +1383,18 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 			portal.w->GetPlane( plane );
 			offset = plane.Normal() * 4.0f;
 			for ( k = 0; k < numPoints; k++ ) {
+#if GAMEPORTAL_PVS
+				gameRenderWorld->DebugArrow( *color, (*portal.w)[k].ToVec3() + offset, (*portal.w)[(k+1)%numPoints].ToVec3() + offset, 5 );
+#else
 				gameRenderWorld->DebugLine( *color, (*portal.w)[k].ToVec3() + offset, (*portal.w)[(k+1)%numPoints].ToVec3() + offset );
+#endif
 			}
+
+#if GAMEPORTAL_PVS
+			// HUMANHEAD pdm
+			gameRenderWorld->DebugArrow( *color, (*portal.w)[0].ToVec3() + offset, (*portal.w)[0].ToVec3() + offset*8, 5, 0);
+			// HUMANHEAD END
+#endif
 		}
 	}
 
@@ -1420,35 +1549,3 @@ void idPVS::ReadPVS( const pvsHandle_t handle, const idBitMsg &msg ) {
 
 #endif
 
-/*
-================
-idPVS::CheckAreasForPortalSky
-================
-*/
-bool idPVS::CheckAreasForPortalSky(const pvsHandle_t handle, const idVec3 &origin)
-{
-	int j, sourceArea;
-
-	if (handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h) {
-		return false;
-	}
-
-	sourceArea = gameRenderWorld->PointInArea(origin);
-
-	if (sourceArea == -1) {
-		return false;
-	}
-
-	for (j = 0; j < numAreas; j++) {
-
-		if (!(currentPVS[handle.i].pvs[j>>3] & (1 << (j&7)))) {
-			continue;
-		}
-
-		if (gameRenderWorld->CheckAreaForPortalSky(j)) {
-			return true;
-		}
-	}
-
-	return false;
-}

@@ -1,37 +1,8 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+// Copyright (C) 2004 Id Software, Inc.
+//
 
 #ifndef __PHYSICS_AF_H__
 #define __PHYSICS_AF_H__
-
-#include "idlib/math/Lcp.h"
-
-#include "physics/Physics_Base.h"
 
 /*
 ===================================================================================
@@ -710,6 +681,8 @@ public:
 	void					Save( idSaveGame *saveFile );
 	void					Restore( idRestoreGame *saveFile );
 
+	const idVecX &			GetTotalForce(void) const { return totalForce; } // HUMANHEAD mdl
+
 private:
 							// properties
 	idStr					name;						// name of body
@@ -954,6 +927,13 @@ public:	// common physics interface
 	const idVec3 &			GetPushedLinearVelocity( const int id = 0 ) const;
 	const idVec3 &			GetPushedAngularVelocity( const int id = 0 ) const;
 
+	// HUMANHEAD nla - Added to allow bound ragdols to be teleported w/out any problem
+	void					Freeze() { frozen = true; };
+	void					Thaw() { frozen = false; };
+	bool					IsFrozen() const { return frozen; }
+	float					GetInvMass() { if ( invMass == 1.0 && totalMass != 0.0f ) { invMass = 1 / totalMass; } return invMass; };
+	// HUMANHEAD END
+
 	void					SetMaster( idEntity *master, const bool orientated = true );
 
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
@@ -1019,6 +999,11 @@ private:
 
 	idAFBody *				masterBody;						// master body
 	idLCP *					lcp;							// linear complementarity problem solver
+
+	// HUMANHEAD nla - Added to allow bound ragdols to be teleported w/out any problem
+	bool					frozen;
+	float					invMass;	// The inv mass of the body
+	// HUMANHEAD END
 
 private:
 	void					BuildTrees( void );
