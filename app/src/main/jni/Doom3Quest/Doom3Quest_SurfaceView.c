@@ -1620,12 +1620,12 @@ void * AppThreadFunction(void * parm ) {
 		questType = 2;
 		if (SS_MULTIPLIER == -1.0f)
 		{
-			SS_MULTIPLIER = 1.1f;
+			SS_MULTIPLIER = 1.0f;//Lubos
 		}
 
 		if (NUM_MULTI_SAMPLES == -1)
 		{
-			NUM_MULTI_SAMPLES = 2;
+			NUM_MULTI_SAMPLES = 1;//Lubos
 		}
 	} else {
 	    //Don't know what headset this is!? abort
