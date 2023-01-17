@@ -18,9 +18,9 @@ Logo created by madrapper: https://www.deviantart.com/madrapper/art/Prey-Icon-12
 The work is based on DrBeef's Doom3Quest and this project: https://github.com/glKarin/com.n0n3m4.diii4a
 (last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/93f17683981e92586fc2ad7b733879e52d1772e1).
 
-As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I merge them together.
+As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I merged them together.
 
-Current status (in `Doom3Quest/app/src/main/jni/d3es-multithread-master/neo/`):
+Current status (in `app/src/main/jni/d3es-multithread-master/neo/`):
 
 * cm - merged
 * framework - merged
