@@ -1002,10 +1002,11 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
     *hmd_forward = positional_movementForward;
     *hmd_side = positional_movementSideways;
     *up = remote_movementUp;
-    //*yaw = vr.hmdorientation[YAW] + snapTurn;
-    *yaw = snapTurn;
-    //*pitch = vr.hmdorientation[PITCH];
-    //*roll = vr.hmdorientation[ROLL];}
+    //Lubos BEGIN
+    *yaw = vr.hmdorientation_temp[YAW] + snapTurn;
+    *pitch = vr.hmdorientation_temp[PITCH];
+    *roll = vr.hmdorientation_temp[ROLL];
+    //Lubos END
 }
 
 /*

@@ -106,7 +106,7 @@ public:
 	virtual void			RemoveDecals( qhandle_t entityHandle );
 
 	virtual void			SetRenderView( const renderView_t *renderView );
-	virtual	void			RenderScene( const renderView_t *renderView );
+	virtual	void			RenderScene(renderView_t *renderView );
 
 	virtual	int				NumAreas( void ) const;
 	virtual int				PointInArea( const idVec3 &point ) const;

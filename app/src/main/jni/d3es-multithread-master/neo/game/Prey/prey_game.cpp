@@ -2,6 +2,7 @@
 #pragma hdrstop
 
 #include "prey_local.h"
+#include "Vr.h"
 //#include "../prey/win32/fxdlg.h"
 
 extern idCVar com_forceGenericSIMD;
@@ -1450,7 +1451,15 @@ void hhGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
 }
 
 void hhGameLocal::CheckRenderCvars() {
-	//TODO:implement
+	// Koz
+	if ( vr_useFloorHeight.IsModified() || ( vr_normalViewHeight.IsModified() && vr_useFloorHeight.GetInteger() == 0 ) || vr_scale.IsModified() || commonVr->shouldRecenter )
+	{
+		commonVr->HMDResetTrackingOriginOffset();
+		vr_useFloorHeight.ClearModified();
+		vr_normalViewHeight.ClearModified();
+		vr_scale.ClearModified();
+		commonVr->shouldRecenter = false;
+	}
 }
 
 
@@ -1459,18 +1468,27 @@ void hhGameLocal::EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int but
 }
 
 bool hhGameLocal::CMDButtonsAttackCall(int &teleportCanceled) {
-	//TODO:implement
+	if ( commonVr->teleportButtonCount != 0 && vr_teleportMode.GetInteger() == 0 )// dont cancel teleport
+	{
+		commonVr->teleportButtonCount = 0;
+		teleportCanceled = 1;
+		return false;
+	}
+	else if ( teleportCanceled == 0 )
+	{
+		return true;
+	}
 	return false;
 }
 
 bool hhGameLocal::CMDButtonsPhysicalCrouch() {
-	//TODO:implement
+	// Koz begin crouch trigger
+	if ( commonVr->userDuckingAmount > vr_crouchTriggerDist.GetFloat() / vr_scale.GetFloat() && vr_crouchMode.GetInteger() == 1 ) return true;
 	return false;
 }
 
 bool hhGameLocal::InCinematic() {
-	//TODO:implmenet vr_cinematics
-	return inCinematic;
+	return inCinematic && (vr_cinematics.GetInteger() != 0);
 }
 
 bool hhGameLocal::IsPDAOpen() const {
@@ -1482,12 +1500,13 @@ bool hhGameLocal::AnimatorGetJointTransform(idAnimator* animator, jointHandle_t 
 }
 
 bool hhGameLocal::InGameGuiActive() {
-	//TODO:implement
-	return true;
+	if( GetLocalPlayer() && GetLocalPlayer()->GuiActive())
+		return true;
+	else
+		return false;
 }
 
 bool hhGameLocal::ObjectiveSystemActive() {
-	//TODO:implement
 	return false;
 }
 

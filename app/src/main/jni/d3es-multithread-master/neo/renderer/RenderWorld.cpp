@@ -685,7 +685,7 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 ====================
 */
-void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
+void idRenderWorldLocal::RenderScene(renderView_t *renderView ) {
 	renderView_t	copy;
 
 	if ( !glConfig.isInitialized ) {
@@ -699,6 +699,13 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 	if ( r_skipFrontEnd.GetBool() ) {
 		return;
 	}
+
+	//Lubos BEGIN
+	if (game->isVR) {
+		renderView->fov_x = renderSystem->GetFOV();
+		renderView->fov_y = renderSystem->GetFOV();
+	}
+	//Lubos END
 
 	if ( renderView->fov_x <= 0 || renderView->fov_y <= 0 ) {
 		common->Error( "idRenderWorld::RenderScene: bad FOVs: %f, %f", renderView->fov_x, renderView->fov_y );

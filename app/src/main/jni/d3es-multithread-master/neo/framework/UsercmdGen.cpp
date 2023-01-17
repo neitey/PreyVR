@@ -860,13 +860,18 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		float yaw = 0;
 		float pitch = 0;
 		float roll = 0;
+
+		//Lubos BEGIN
 		VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 
-		//Maybe this is right as long as I don't include HMD
-		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe );
-		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward);
+		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward );
+		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe);
 
-		game->EvaluateVRMoveMode(viewangles, cmd, buttonCurrentlyClicked, yaw);
+		game->EvaluateVRMoveMode(viewangles, cmd, buttonCurrentlyClicked, 0);
+		viewangles[PITCH] = pitch;
+		viewangles[YAW] = yaw;
+		viewangles[ROLL] = roll;
+		//Lubos END
 
 		// check to make sure the angles haven't wrapped
 		if( viewangles[PITCH] - oldAngles[PITCH] > 90 )
