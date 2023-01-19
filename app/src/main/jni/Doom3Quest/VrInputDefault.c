@@ -526,7 +526,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
             handleTrackedControllerButton_AsButton(pOffTrackedRemoteNew->Buttons, pOffTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_SPEED);
 
             int vr_turn_mode = Android_GetCVarInteger("vr_turnmode");
-            float vr_turn_angle = 45;//Lubos Android_GetCVarInteger("vr_turnangle");
+            float vr_turn_angle = Android_GetCVarInteger("vr_turnangle");
 
             //This fixes a problem with older thumbsticks misreporting the X value
             static float joyx[4] = {0};
