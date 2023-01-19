@@ -1488,7 +1488,10 @@ bool hhGameLocal::CMDButtonsPhysicalCrouch() {
 }
 
 bool hhGameLocal::InCinematic() {
-	return inCinematic && (vr_cinematics.GetInteger() != 0);
+	if( GetLocalPlayer() && GetLocalPlayer()->GetPrivateCameraView() )
+		return true;
+	else
+		return false;
 }
 
 bool hhGameLocal::IsPDAOpen() const {
