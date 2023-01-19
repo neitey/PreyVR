@@ -401,3 +401,21 @@ idCVar g_mapCycle(					"g_mapCycle",				"mapcycle",		CVAR_GAME | CVAR_ARCHIVE, "
 idCVar net_serverDownload(			"net_serverDownload",		"0",			CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "enable server download redirects. 0: off 1: redirect to si_serverURL 2: use builtin download. see net_serverDl cvars for configuration" );
 idCVar net_serverDlBaseURL(			"net_serverDlBaseURL",		"",				CVAR_GAME | CVAR_ARCHIVE, "base URL for the download redirection" );
 idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIVE, "pak names for which download is provided, seperated by ;" );
+
+//Lubos BEGIN
+idCVar vr_weaponHand( "vr_weaponHand", "0", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_GAME, "Which hand holds weapon.\n 0 = Right hand\n 1 = Left Hand\n", 0, 1 );
+idCVar vr_switchSticks( "vr_switchSticks", "0", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_GAME, "Switch joysticks.\n 0 = No\n 1 = Yes\n", 0, 1 );
+idCVar vr_ipd(						"vr_ipd",					"0.065",		CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "VR IPD" );
+idCVar vr_heightoffset(				"vr_heightoffset",			"0.0",			CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "VR Height Offset" );
+idCVar vr_controlscheme(			"vr_controlscheme",		"0",			CVAR_GAME | CVAR_INTEGER, "VR Control Scheme: 0 = right handed, 10 = left handed" );
+idCVar vr_shakeamplitude(           "vr_shakeamplitude",        "0.8", CVAR_FLOAT | CVAR_ARCHIVE, "Screen shake amplitude 0.0 = disabled to 1.0 = full\n", 0.0f, 1.0f );
+idCVar vr_knockback(                "vr_knockback",         "0", CVAR_BOOL | CVAR_ARCHIVE | CVAR_GAME, "Enable damage knockback in VR. 0 = Disabled, 1 = Enabled" );
+idCVar vr_throwables( 					"vr_throwables", "1", CVAR_BOOL | CVAR_ARCHIVE, "Throwable Grenades.\n 0 = Disable\n 1 = Throw and release with trigger" );
+idCVar vr_turnmode( 					"vr_turnmode", "0", CVAR_BOOL | CVAR_ARCHIVE, "Turn Mode.\n 0 = Snap Turn\n 1 = Smooth Turn" );
+idCVar vr_turnangle( 					"vr_turnangle", "45", CVAR_INTEGER | CVAR_ARCHIVE, "Turn Angle. angle for snap, or velocity for smooth" );
+idCVar vr_hudmode( 					"vr_hudmode", "1", CVAR_BOOL | CVAR_ARCHIVE, "HUD Mode.\n 1 = Attached to off-hand controller\n 0 = Fixed" );
+idCVar g_infiniteAmmo( "g_infiniteAmmo", "0", CVAR_GAME | CVAR_BOOL, "infinite ammo" );
+idCVar g_useWeaponDepthHack( "g_useWeaponDepthHack", "0", CVAR_BOOL | CVAR_GAME |  CVAR_ARCHIVE, "Crunch z depth on weapons" );// Koz
+idCVar g_weaponShadows( "g_weaponShadows", "1", CVAR_BOOL | CVAR_GAME | CVAR_ARCHIVE, "Cast shadows from weapons" ); // Koz
+idCVar timescale( "timescale", "1", CVAR_SYSTEM | CVAR_FLOAT, "Number of game frames to run per render frame", 0.001f, 100.0f );
+//Lubos END
