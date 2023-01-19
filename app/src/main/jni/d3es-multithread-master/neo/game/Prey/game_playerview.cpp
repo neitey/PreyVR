@@ -699,6 +699,12 @@ void hhPlayerView::ApplyLetterBox(const renderView_t *view) {
 //	HUMANHEAD pdm
 //------------------------------------------------------
 void hhPlayerView::MotionBlur(int mbTime, float severity, idVec3 &direction) {
+//Lubos BEGIN
+	if ( game->isVR ) {
+		return;
+	}
+//Lubos END
+
 	mbTotalTime = mbTime;
 	mbFinishTime = gameLocal.time + mbTotalTime;
 	mbAmplitude = severity;
