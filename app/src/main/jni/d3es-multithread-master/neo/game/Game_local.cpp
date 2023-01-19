@@ -1578,7 +1578,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadInt( num );
 	if ( num ) {
 		if ( num != gameRenderWorld->NumAreas() ) {
-			savegame.Error( "idGameLocal::InitFromSaveGame: number of areas in map differs from save game." );
+			//Lubos: Feels unsafe but let's give it a try it instead of a crash
+			//savegame.Error( "idGameLocal::InitFromSaveGame: number of areas in map differs from save game." );
 		}
 
 		locationEntities = new idLocationEntity *[ num ];
