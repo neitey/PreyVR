@@ -516,8 +516,8 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                      (offhandButtonsOld & ovrButton_Joystick)) &&
                     (offhandButtonsNew & ovrButton_Joystick)) {
 
-                    //Turn on Flashlight
-                    Android_SetImpulse(UB_IMPULSE16);
+                    //Lubos: Turn on deathwalk
+                    Android_SetImpulse(UB_IMPULSE54);
                 }
             }
 
