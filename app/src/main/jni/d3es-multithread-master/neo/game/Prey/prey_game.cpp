@@ -1452,13 +1452,11 @@ void hhGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
 
 void hhGameLocal::CheckRenderCvars() {
 	// Koz
-	if ( vr_useFloorHeight.IsModified() || ( vr_normalViewHeight.IsModified() && vr_useFloorHeight.GetInteger() == 0 ) || vr_scale.IsModified() || commonVr->shouldRecenter )
+	if ( vr_useFloorHeight.IsModified() || ( vr_normalViewHeight.IsModified() && vr_useFloorHeight.GetInteger() == 0 ) || vr_scale.IsModified() )
 	{
-		commonVr->HMDResetTrackingOriginOffset();
 		vr_useFloorHeight.ClearModified();
 		vr_normalViewHeight.ClearModified();
 		vr_scale.ClearModified();
-		commonVr->shouldRecenter = false;
 	}
 }
 
@@ -1468,22 +1466,12 @@ void hhGameLocal::EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int but
 }
 
 bool hhGameLocal::CMDButtonsAttackCall(int &teleportCanceled) {
-	if ( commonVr->teleportButtonCount != 0 && vr_teleportMode.GetInteger() == 0 )// dont cancel teleport
-	{
-		commonVr->teleportButtonCount = 0;
-		teleportCanceled = 1;
-		return false;
-	}
-	else if ( teleportCanceled == 0 )
-	{
-		return true;
-	}
+	//TODO:implement
 	return false;
 }
 
 bool hhGameLocal::CMDButtonsPhysicalCrouch() {
-	// Koz begin crouch trigger
-	if ( commonVr->userDuckingAmount > vr_crouchTriggerDist.GetFloat() / vr_scale.GetFloat() && vr_crouchMode.GetInteger() == 1 ) return true;
+	//TODO:implement
 	return false;
 }
 

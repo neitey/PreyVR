@@ -552,43 +552,4 @@ extern idCVar vr_rumbleChainsaw;
 
 extern idCVar vr_comfortRepeat;
 
-extern iVr* commonVr;
-//extern iVoice* commonVoice;
-
-typedef enum
-{
-    VR_GRIP_CONTEXT_TOGGLE = 0,
-    VR_GRIP_CONTEXT_TOGGLE_NO_SURFACE = 1,
-    VR_GRIP_TOGGLE_WEAPONS_HOLD_PHYSICS = 2,
-    VR_GRIP_TOGGLE_WEAPONS_HOLD_ITEMS = 3,
-    VR_GRIP_TOGGLE_WITH_DROP = 4,
-    VR_GRIP_DEAD_AND_BURIED = 5,
-    VR_GRIP_HOLD = 6,
-    VR_GRIP_HOLD_AND_SQUEEZE = 7,
-} vr_gripMode_t;
-
-//Carl: Can you use two weapons at once?
-typedef enum
-{
-    VR_DUALWIELD_NOT_EVEN_FISTS = 0,
-    VR_DUALWIELD_NOTHING = 1,
-    VR_DUALWIELD_ONLY_FLASHLIGHT = 2,
-    VR_DUALWIELD_ONLY_GRENADES = 3,
-    VR_DUALWIELD_ONLY_GRENADES_FLASHLIGHT = 4,
-    VR_DUALWIELD_ONLY_PISTOLS = 5,
-    VR_DUALWIELD_ONLY_PISTOLS_FLASHLIGHT = 6,
-    VR_DUALWIELD_ONLY_PISTOLS_GRENADES_FLASHLIGHT = 7,
-    VR_DUALWIELD_YES = 8
-} vr_dualwield_t;
-
-//Carl: Can you use two weapons at once?
-typedef enum
-{
-    VR_WEAPONCYCLE_SKIP_HOLSTERED = 0,
-    VR_WEAPONCYCLE_INCLUDE_HOLSTERED = 1,
-    VR_WEAPONCYCLE_INCLUDE_FLASHLIGHT = 2,
-    VR_WEAPONCYCLE_HOLSTERED_AND_FLASHLIGHT = 3,
-    VR_WEAPONCYCLE_HOLSTERED_AND_FLASHLIGHT_AND_PDA = 4
-} vr_weaponcycle_t;
-
 #endif
