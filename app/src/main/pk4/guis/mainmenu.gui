@@ -1,0 +1,870 @@
+// Main Menu
+
+
+/*
+
+ 1) everything invisible except screenshot.
+ 2)	portal fades in small in center of screen and grows progressively larger
+
+variables:
+	gui::inGame				Whether the game is in the background or not (0=no game, 1=sp game, 2=mp game)
+	gui::com_machineSpec	current quality setting
+	
+events:
+	playIntro		Happens at startup when an intro is expected
+	noIntro			Happens during other menu starts (like during gameplay)
+	
+notes:
+	static meshes seem to ignore the near clip plane nicely
+	animated meshes blink out before they're even close, (bug)
+	having multiple renderDefs causes lights to be shared between them, washing things out
+
+*/
+
+#include "guis/mainmenu/menucolors.guifragment"
+
+
+windowDef desktop {
+	text			""
+	rect			0, 0, 640, 480
+	backcolor		0, 0, 0, 1
+	forecolor		1, 1, 1, 1
+	menugui			1
+	float inSubmenu	0
+	float inModal	0
+
+	onTime 0 {
+/*
+		set "gui::server_name"			"The SchoolYard"
+		set "gui::server_IP"			"127.0.0.1";
+		set "gui::server_map"			"dm_shuttle";
+		set "gui::server_gametype"		"PreyMatch";
+		set "gui::server_passworded"	"Yes";
+		set "gui::player1"				"Name";
+		set "gui::player2"				"Long Player Name";
+		set "gui::player3"				"Teacher";
+		set "gui::player4"				"Really Long Player Name";
+		set "gui::player5"				"Name";
+		set "gui::player6"				"Player Name";
+		set "gui::player7"				"Player Name";
+		set "gui::player8"				"Really Long Player Name";
+*/
+	}
+
+	onActivate {
+	}
+
+/*	onAction {
+		set "ScreenShotBackground::visible" "1" ;
+		resetTime "AnimPortalIn" "0" ;
+	}*/
+	
+	onDeactivate {
+	}
+
+	onNamedEvent playIntro {
+		set "desktop::mapexists" "0" ;
+		resetTime "Anim_ResetMainMenuButtons" "0";
+		resetTime "AnimPortalIn" "0" ;
+	}
+	
+	onNamedEvent noIntro {
+		set "ScreenShotBackground::visible" "1" ;
+		resetTime "Anim_ResetMainMenuButtons" "0";
+		resetTime "AnimPortalIn" "0" ;
+	}
+	
+	onESC {
+		if ("desktop::inModal" != 0) {
+			// Do nothing
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_NONE) {
+			set "cmd" "close" ;
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_NEWGAME) {
+			resetTime "Newgame_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_LOADGAME) {
+			resetTime "Loadgame_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_SAVEGAME) {
+			resetTime "Savegame_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_MULTIPLAYER) {
+			resetTime "Multiplayer_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_OPTIONS) {
+			resetTime "Options_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_EXIT) {
+			resetTime "Exit_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_QUITGAME) {
+			resetTime "QuitGame_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_MODS) {
+			resetTime "Mods_AnimOut" "0";
+		} else if ("desktop::inSubmenu" == SUBMENU_INDEX_CREDITS) {
+			resetTime "Credits_AnimOut" "0";
+		}
+	}
+
+	onNamedEvent saveGameOverwrite {
+		resetTime "AnimOverwriteSaveGame_Up" "0" ;
+	}
+
+	onNamedEvent saveGameOk {
+		set "cmd" "close" ;
+	}
+
+	onNamedEvent SaveGameDeleted {
+		// Tell loadgame screen buttons to check again whether they should be grayed out
+		resetTime "LGCBtn1" "0" ;
+		resetTime "LGCBtn2" "0" ;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Opening sequence
+	// ---------------------------------------------------------------------------
+	
+	windowDef AnimPortalIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			set "desktop::inSubmenu" "0" ;
+			
+			set "Main_Portal::visible" "1" ;
+			set "Main_Logo::visible" "0" ;
+			set "Main_Menu::visible" "0" ;
+
+			set "QuitGame_Menu::visible" "0" ;
+			set "Newgame_Menu::visible" "0" ;
+			set "Loadgame_Menu::visible" "0" ;
+			set "Savegame_Menu::visible" "0" ;
+			set "Multiplayer_Menu::visible" "0" ;
+			set "Options_Menu::visible" "0" ;
+			set "Exit_Menu::visible" "0" ;
+			set "Credits_Menu::visible" "0" ;
+			set "Mods_Menu::visible" "0" ;
+
+			set "Overlay_ResetDefaults::visible" "0" ;
+			set "Overlay_LoadGameConfirmation::visible" "0" ;
+			set "Overlay_DeleteSaveGame::visible" "0" ;
+			set "Overlay_OverwriteSaveGame::visible" "0" ;
+			set "Overlay_MustRestart::visible" "0" ;
+			
+			set "Background::visible" "0" ;
+			set "PortalModelFront::visible" "0" ;
+			set "PortalModel::visible" "1" ;
+			set "PortalModel::viewOffset" "-120 0 0 0" ;
+			set "PortalModelFront::viewOffset" "-43 7 0 0" ;
+			set "PortalModel::rect" "320 240 0 0" ;
+
+			// Adding these transitions clears any other transitions hanging around
+			transition "PortalModel::rect" "320 240 0 0" "320 240 0 0" "1";
+			transition "PortalModel::viewOffset" "-120 0 0 0" "-120 0 0 0" "1" ;
+		}
+		onTime 100 {
+			transition "PortalModel::rect" "320 240 0 0" "0 0 640 480" "200";
+		}
+		onTime 300 {
+			transition "PortalModel::viewOffset" "-120 0 0 0" "-43 7 0 0" "200" ;
+		}
+		onTime 500 {
+			set "ScreenShotBackground::visible" "0" ;
+			set "Main_Logo::visible" "1" ;
+			set "Main_Menu::visible" "1" ;
+			set "PortalModel::visible" "0" ;
+			set "PortalModelFront::visible" "1" ;
+			set "Background::visible" "1";
+			set "Background::matcolor" "0 0 0 0" ;
+			transition "Background::matcolor" "0 0 0 0" "1 1 1 1" "100";
+			resetTime "Anim_MenuMusic" "0";				// Start the music
+		}
+	}
+
+	windowDef Anim_MenuMusic {
+		rect		0,0,0,0
+		visible		0
+		notime		1
+		
+		onTime 0 {
+			set "cmd" "checkKeys" ;
+		}
+		onTime 320000 {		// Music is 318 seconds long
+			resetTime "0" ;
+		}
+	}
+
+	windowDef Anim_ResetMainMenuButtons {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			set "MainOG_Title2_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainOG_Bar_2::rect" "65 235 140 19.5" "65 235 140 19.5" "1";
+			transition "MainOG_Bar_2::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainOG_Title2_text::rect" "82 227 300 25" "82 227 300 25" "1";
+													
+			set "MainOG_Title3_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainOG_Bar_3::rect" "70 262 146 19.5" "70 262 146 19.5" "1";
+			transition "MainOG_Bar_3::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainOG_Title3_text::rect" "87 254 300 25" "87 254 300 25" "1";
+
+			set "MainOG_Title4_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainOG_Bar_4::rect" "78 289 146 19.5" "78 289 146 19.5" "1";
+			transition "MainOG_Bar_4::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainOG_Title4_text::rect" "94 281 300 25" "94 281 300 25" "1";
+
+			set "MainOG_Title5_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainOG_Bar_5::rect" "89 316 115 19.5" "89 316 115 19.5" "1";
+			transition "MainOG_Bar_5::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainOG_Title5_text::rect" "105 308 300 25" "105 308 300 25" "1";
+
+			set "MainOG_Title6_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainOG_Bar_6::rect" "105 343 80 19.5" "105 343 80 19.5" "1";
+			transition "MainOG_Bar_6::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainOG_Title6_text::rect" "123 335 300 25" "123 335 300 25" "1";
+
+			set "MainIG_Title1_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainIG_Bar_1::rect" "62 208 178 19.5" "62 208 178 19.5" "1";
+			transition "MainIG_Bar_1::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainIG_Title1_text::rect" "76 200 300 25" "76 200 300 25" "1";
+
+			set "MainIG_Title2_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainIG_Bar_2::rect" "65 235 140 19.5" "65 235 140 19.5" "1";
+			transition "MainIG_Bar_2::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainIG_Title2_text::rect" "82 227 300 25" "82 227 300 25" "1";
+
+			set "MainIG_Title3_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainIG_Bar_3::rect" "70 262 146 19.5" "70 262 146 19.5" "1";
+			transition "MainIG_Bar_3::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainIG_Title3_text::rect" "87 254 300 25" "87 254 300 25" "1";
+
+			set "MainIG_Title4_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainIG_Bar_4::rect" "78 289 146 19.5" "78 289 146 19.5" "1";
+			transition "MainIG_Bar_4::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainIG_Title4_text::rect" "94 281 300 25" "94 281 300 25" "1";
+
+			set "MainIG_Title5_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainIG_Bar_5::rect" "89 316 115 19.5" "89 316 115 19.5" "1";
+			transition "MainIG_Bar_5::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainIG_Title5_text::rect" "105 308 300 25" "105 308 300 25" "1";
+
+			set "MainIG_Title6_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainIG_Bar_6::rect" "105 343 80 19.5" "105 343 80 19.5" "1";
+			transition "MainIG_Bar_6::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainIG_Title6_text::rect" "123 335 300 25" "123 335 300 25" "1";
+
+			// disable getting mouseexit events on last button pressed
+			resetCapture "Main_Menu_OutOfGame" ;
+			resetCapture "Main_Menu_InGame" ;
+		}
+	}
+
+	windowDef ScreenShotBackground {
+		rect		0, 0, 640, 480
+		backcolor	0, 0, 0, 0
+		matcolor	1, 1, 1, 1
+		background	"guis/assets/menu/menuscreenshot"
+		visible		0
+		noEvents	1
+		
+		windowDef ScreenShotBackgroundDarken {
+			rect		0, 0, 640, 480
+			backcolor	0, 0, 0, 0.3
+			noEvents	1
+			visible	0		// Use this if there are any anomalies that need to be hidden
+		}
+	}
+
+	windowDef Main_Portal {
+		rect		0, 0, 640, 480
+
+		renderDef PortalModel {
+			rect		0, 0, 640, 480
+			backcolor 	0, 0, 0, 0
+			model		"models/sfx/menu/portal.lwo"
+			modelRotate 0, 180, 0, 0
+			modelOrigin 0, 0, 0, 0
+			viewOffset 	-43, 7, 0, 0
+			lightOrigin 100000, 0, 0, 0
+			lightColor 	0, 0, 0, 0		// No light
+			notime 		1
+			visible		0
+		}
+		windowDef Background {
+			rect		0, 0, 640, 480
+			backcolor	0, 0, 0, 0
+			matcolor	1, 1, 1, 1
+#if 0
+			background	"guis/assets/menu/background"
+#else
+
+			windowDef Stars {
+				rect		0, -80, 640, 640
+				background	"guis/assets/menu/preymenu/stars"
+			}
+			windowDef SphereBack {
+				rect		165, 30, 384, 388
+				background	"guis/assets/menu/preymenu/sphereback"
+			}
+			windowDef SphereSun {
+				rect		325, 192, 64, 64
+				background	"guis/assets/menu/preymenu/sol"
+			}
+			windowDef SphereFront {
+				rect		165, 30, 384, 388
+				background	"guis/assets/menu/preymenu/spherefront"
+			}
+			windowDef Earth {
+				rect		0, 330, 640, 150
+				background	"guis/assets/menu/preymenu/earth"
+			}
+#endif
+		}
+		
+		renderDef PortalModelFront {
+			rect		0, 0, 640, 480
+			backcolor 	0, 0, 0, 0
+			model		"models/sfx/menu/portal2.lwo"
+			modelRotate 0, 180, 0, 0
+			modelOrigin 0, 0, 0, 0
+			viewOffset 	-43, 7, 0, 0
+			lightOrigin 100000, 0, 0, 0
+			lightColor 	0, 0, 0, 0		// No light
+		}
+	}
+
+	//------------------------------------------------------
+	//
+	//		Main Menu
+	//
+	//------------------------------------------------------
+
+	windowDef Main_Logo {
+		//rect		63, 55, 450, 35
+		rect		100, 55, 476, 37
+		backcolor	0, 0, 0, 0
+		matcolor	1, 1, 1, 1
+		background  "guis/assets/menu/prey"
+	}
+
+	windowDef Main_Menu {
+		rect		0, 0, 640, 480
+		visible		1
+
+		//TODO: Place for each button and hook up to mouseovers
+		windowDef Main_FeedbackDot_newgame {
+			rect		57, 248, 5, 5
+			backcolor	0, 0, 1, 0
+			background	"guis/assets/hud/feedback_dot"
+			matcolor	1, 1, 1, 0.45
+			visible		0
+		}
+
+		// Menu used when starting fresh or out of game
+		windowDef Main_Menu_OutOfGame {
+			rect		0, 0, 640, 480
+			visible		("gui::ingame" == 0)
+
+			windowDef MainOG_BarCurve {
+				rect		50, 102, 150, 362
+				backcolor	0, 0, 0, 0
+				forecolor	1, 1, 1, 1
+				background  "guis/assets/menu/curve_ig.tga"
+			}
+
+			windowDef MainOG_Bar_1 {
+				rect		62, 208, 178, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar.tga"
+				visible		"gui::hasrecentsave"
+			}
+
+			windowDef MainOG_Bar_2 {
+				rect		65, 235, 140, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar.tga"
+			}
+			windowDef MainOG_Bar_3 {
+				rect		70, 262, 146, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar.tga"
+			}
+			windowDef MainOG_Bar_4 {
+				rect		78, 289, 146, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar.tga"
+			}
+			windowDef MainOG_Bar_5 {
+				rect		89, 316, 115, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar2.tga"
+			}
+			windowDef MainOG_Bar_6 {
+				rect		105, 343, 80, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar3.tga"
+			}
+
+			windowDef MainOG_Title1_text {
+				rect		76, 200, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20555"
+				visible		"gui::hasrecentsave"
+			}
+			windowDef MainOG_Title2_text {
+				rect		82, 227, 300, 25 
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20553"
+			}
+			windowDef MainOG_Title3_text {
+				rect		87, 254, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20127"
+			}
+			windowDef MainOG_Title4_text {
+				rect		94, 281, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20135"	// MultiPrey
+			}
+			windowDef MainOG_Title5_text {
+				rect		105, 308, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20208"
+			}
+			windowDef MainOG_Title6_text {
+				rect		123, 335, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.4
+				font		"fonts/menu"
+				text		"#str_20554"
+			}
+
+			windowDef MainOG_Title1 {
+				rect		60, 205, 220, 20
+				backcolor	0, 0, 0, 0
+				visible		"gui::hasrecentsave"
+
+				onMouseEnter {
+					set "MainOG_Title1_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainOG_Bar_1::rect" "62 208 178 19.5" "57 208 178 19.5" "150";
+					transition "MainOG_Bar_1::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainOG_Title1_text::rect" "76 200 300 25" "70 200 300 25" "150";
+				}
+				onMouseExit {
+					set "MainOG_Title1_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainOG_Bar_1::rect" "57 208 178 19.5" "62 208 178 19.5" "200";
+					transition "MainOG_Bar_1::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainOG_Title1_text::rect" "70 200 300 25" "76 200 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+				}
+				onActionRelease {
+					set "cmd" "resumegame" ;
+				}
+			}
+			windowDef MainOG_Title2 {
+				rect		65, 230, 200, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainOG_Title2_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainOG_Bar_2::rect" "65 235 140 19.5" "60 235 140 19.5" "150";
+					transition "MainOG_Bar_2::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainOG_Title2_text::rect" "82 227 300 25" "73 227 300 25" "150";
+				}
+				onMouseExit {
+					set "MainOG_Title2_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainOG_Bar_2::rect" "60 235 140 19.5" "65 235 140 19.5" "200";
+					transition "MainOG_Bar_2::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainOG_Title2_text::rect" "73 227 300 25" "82 227 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Newgame_AnimIn" "0" ;
+				}
+			}
+			windowDef MainOG_Title3 {
+				rect		70, 258, 200, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainOG_Bar_3::rect" "70 262 146 19.5" "65 262 146 19.5" "150";
+					transition "MainOG_Bar_3::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainOG_Title3_text::rect" "87 254 300 25" "78 254 300 25" "150";
+				}
+				onMouseExit {
+					set "MainOG_Title3_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainOG_Bar_3::rect" "65 262 146 19.5" "70 262 146 19.5" "200";
+					transition "MainOG_Bar_3::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainOG_Title3_text::rect" "78 254 300 25" "87 254 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Loadgame_AnimIn" "0" ;
+				}
+			}
+			windowDef MainOG_Title4 {
+				rect		78, 287, 200, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainOG_Title4_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainOG_Bar_4::rect" "78 289 146 19.5" "72 289 146 19.5" "150";
+					transition "MainOG_Bar_4::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainOG_Title4_text::rect" "94 281 300 25" "85 281 300 25" "150";
+				}
+				onMouseExit {
+					set "MainOG_Title4_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainOG_Bar_4::rect" "72 289 146 19.5" "78 289 146 19.5" "200";
+					transition "MainOG_Bar_4::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainOG_Title4_text::rect" "85 281 300 25" "94 281 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Multiplayer_AnimIn" "0" ;
+				}
+			}
+			windowDef MainOG_Title5 {
+				rect		89, 315, 200, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainOG_Title5_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainOG_Bar_5::rect" "89 316 115 19.5" "84 316 115 19.5" "150";
+					transition "MainOG_Bar_5::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainOG_Title5_text::rect" "105 308 300 25" "96 308 300 25" "150";
+				}
+				onMouseExit {
+					set "MainOG_Title5_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainOG_Bar_5::rect" "84 316 115 19.5" "89 316 115 19.5" "200";
+					transition "MainOG_Bar_5::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainOG_Title5_text::rect" "96 308 300 25" "105 308 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Options_AnimIn" "0" ;
+				}
+			}
+			windowDef MainOG_Title6 {
+				rect		105, 340, 200, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainOG_Title6_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainOG_Bar_6::rect" "105 343 80 19.5" "100 343 80 19.5" "150";
+					transition "MainOG_Bar_6::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainOG_Title6_text::rect" "123 335 300 25" "114 335 300 25" "150";
+				}
+				onMouseExit {
+					set "MainOG_Title6_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainOG_Bar_6::rect" "100 343 80 19.5" "105 343 80 19.5" "200";
+					transition "MainOG_Bar_6::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainOG_Title6_text::rect" "114 335 300 25" "123 335 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Exit_AnimIn" "0" ;
+				}
+			}
+		}
+
+
+		// Menu used when already in a game
+		windowDef Main_Menu_InGame {
+			rect		0, 0, 640, 480
+			visible		("gui::ingame" != 0)
+
+			windowDef MainIG_BarCurve {
+				rect		50, 102, 150, 362
+				backcolor	0, 0, 0, 0
+				forecolor	1, 1, 1, 1
+				background  "guis/assets/menu/curve_ig.tga"
+			}
+
+			windowDef MainIG_Bar_1 {
+				rect		62, 208, 178, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar4.tga"
+			}
+			windowDef MainIG_Bar_2 {
+				rect		65, 235, 140, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar.tga"
+			}
+			windowDef MainIG_Bar_3 {
+				rect		70, 262, 146, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar.tga"
+			}
+			windowDef MainIG_Bar_4 {
+				rect		78, 289, 146, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar.tga"
+			}
+			windowDef MainIG_Bar_5 {
+				rect		89, 316, 115, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar2.tga"
+			}
+			windowDef MainIG_Bar_6 {
+				rect		105, 343, 80, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar3.tga"
+			}
+
+			windowDef MainIG_Title1 {
+				rect		60, 205, 220, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainIG_Title1_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainIG_Bar_1::rect" "62 208 178 19.5" "57 208 178 19.5" "150";
+					transition "MainIG_Bar_1::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainIG_Title1_text::rect" "76 200 300 25" "70 200 300 25" "150";
+				}
+				onMouseExit {
+					set "MainIG_Title1_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainIG_Bar_1::rect" "57 208 178 19.5" "62 208 178 19.5" "200";
+					transition "MainIG_Bar_1::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainIG_Title1_text::rect" "70 200 300 25" "76 200 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+				}
+				onActionRelease {
+					set "cmd" "close" ;
+				}
+			}
+			windowDef MainIG_Title1_text {
+				rect		76, 200, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20555"
+			}
+
+			windowDef MainIG_Title2 {
+				rect		65, 233, 220, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainIG_Title2_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainIG_Bar_2::rect" "65 235 140 19.5" "60 235 140 19.5" "150";
+					transition "MainIG_Bar_2::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainIG_Title2_text::rect" "82 227 300 25" "73 227 300 25" "150";
+				}
+				onMouseExit {
+					set "MainIG_Title2_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainIG_Bar_2::rect" "60 235 140 19.5" "65 235 140 19.5" "200";
+					transition "MainIG_Bar_2::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainIG_Title2_text::rect" "73 227 300 25" "82 227 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "QuitGame_AnimIn" "0" ;
+				}
+			}
+			windowDef MainIG_Title2_text {
+				rect		82, 227, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20556"
+			}
+
+			windowDef MainIG_Title3 {
+				rect		70, 260, 220, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainIG_Title3_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainIG_Bar_3::rect" "70 262 146 19.5" "65 262 146 19.5" "150";
+					transition "MainIG_Bar_3::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainIG_Title3_text::rect" "87 254 300 25" "78 254 300 25" "150";
+				}
+				onMouseExit {
+					set "MainIG_Title3_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainIG_Bar_3::rect" "65 262 146 19.5" "70 262 146 19.5" "200";
+					transition "MainIG_Bar_3::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainIG_Title3_text::rect" "78 254 300 25" "87 254 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Savegame_AnimIn" "0" ;
+				}
+			}
+			windowDef MainIG_Title3_text {
+				rect		87, 254, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20333"
+			}
+			
+			windowDef MainIG_Title4 {
+				rect		80, 288, 220, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainIG_Title4_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainIG_Bar_4::rect" "78 289 146 19.5" "72 289 146 19.5" "150";
+					transition "MainIG_Bar_4::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainIG_Title4_text::rect" "94 281 300 25" "85 281 300 25" "150";
+				}
+				onMouseExit {
+					set "MainIG_Title4_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainIG_Bar_4::rect" "72 289 146 19.5" "78 289 146 19.5" "200";
+					transition "MainIG_Bar_4::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainIG_Title4_text::rect" "85 281 300 25" "94 281 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Loadgame_AnimIn" "0" ;
+				}
+			}
+			windowDef MainIG_Title4_text {
+				rect		94, 281, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20127"
+			}
+			windowDef MainIG_Title5 {
+				rect		90, 315, 220, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainIG_Title5_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainIG_Bar_5::rect" "89 316 115 19.5" "84 316 115 19.5" "150";
+					transition "MainIG_Bar_5::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainIG_Title5_text::rect" "105 308 300 25" "96 308 300 25" "150";
+				}
+				onMouseExit {
+					set "MainIG_Title5_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainIG_Bar_5::rect" "84 316 115 19.5" "89 316 115 19.5" "200";
+					transition "MainIG_Bar_5::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainIG_Title5_text::rect" "96 308 300 25" "105 308 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Options_AnimIn" "0" ;
+				}
+			}
+			windowDef MainIG_Title5_text {
+				rect		105, 308, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20208"
+			}
+			windowDef MainIG_Title6 {
+				rect		100, 343, 220, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainIG_Title6_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainIG_Bar_6::rect" "105 343 80 19.5" "100 343 80 19.5" "150";
+					transition "MainIG_Bar_6::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainIG_Title6_text::rect" "123 335 300 25" "114 335 300 25" "150";
+				}
+				onMouseExit {
+					set "MainIG_Title6_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainIG_Bar_6::rect" "100 343 80 19.5" "105 343 80 19.5" "200";
+					transition "MainIG_Bar_6::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainIG_Title6_text::rect" "114 335 300 25" "123 335 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Exit_AnimIn" "0" ;
+				}
+			}
+			windowDef MainIG_Title6_text {
+				rect		123, 335, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.4
+				font		"fonts/menu"
+				text		"#str_20554"
+			}
+		}
+
+		superWindowDef Main_Bottom {
+			rect		180, 438, 450, 32
+			matcolor	1, 1, 1, 0.5
+			backcolor	0, 0, 0, 0
+			cornerMat	"guis/assets/menu/window_cornerUL"
+			topMat		"guis/assets/menu/window_top"
+			background	"_black"
+			margins		25, 25, 7, 0	// left, right, top, bottom
+			cornerSize	38, 32
+			edgeSize	4, 4
+
+			buttonDef Main_Bottom_ButtonCredits {
+				rect		170, 4, 140, 25
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.35
+				textalign	1
+				shadow		1
+				font		"fonts/menu"
+				text		"#str_20017"
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Credits_AnimIn" "0" ;
+				}
+			}
+
+			buttonDef Main_Bottom_ButtonMods {
+				rect		310, 4, 100, 25
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.35
+				textalign	1
+				shadow		1
+				font		"fonts/menu"
+				text		"#str_20133"
+				visible		("gui::inGame" == 0)
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Mods_AnimIn" "0" ;
+				}
+			}
+		}
+	}
+	
+	// Include the submenus
+	#include "guis/mainmenu/mainmenu_newgame.guifragment"
+	#include "guis/mainmenu/mainmenu_quitgame.guifragment"
+	#include "guis/mainmenu/mainmenu_savegame.guifragment"
+	#include "guis/mainmenu/mainmenu_loadgame.guifragment"
+	#include "guis/mainmenu/mainmenu_multiplayer.guifragment"
+	#include "guis/mainmenu/mainmenu_options.guifragment"
+	#include "guis/mainmenu/mainmenu_exit.guifragment"
+	#include "guis/mainmenu/mainmenu_mods.guifragment"
+	#include "guis/mainmenu/mainmenu_credits.guifragment"
+
+	#include "guis/mainmenu/mainmenu_overlays.guifragment"
+
+//	#include "guis/mainmenu/mainmenu_testing.guifragment"
+}

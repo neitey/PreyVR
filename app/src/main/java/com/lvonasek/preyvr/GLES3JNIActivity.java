@@ -219,6 +219,7 @@ import java.util.Vector;
 
 		//Base game
 		base.mkdirs();
+		copy_asset(base.getAbsolutePath(), "pak399.pk4", true);
 		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 
