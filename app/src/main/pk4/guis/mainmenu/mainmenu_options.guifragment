@@ -1,0 +1,591 @@
+
+	//------------------------------------------------------
+	//
+	//	Options Menu
+	//
+	//------------------------------------------------------
+	windowDef Options_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "cmd" "loadBinds" ;
+			
+			set "cmd" "sound init";		// Have sound system update the state variables and call 'UpdateOptions'
+			
+			set "Main_Logo::visible" "0" ;
+			set "Main_Menu::visible" "0" ;
+			set "Options_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "Options_Menu::visible" "1" ;
+			transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "Options_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
+			set "Options_Titlebar::visible" "0" ;
+
+			set "cmd" "play2 guisounds_menu_slidein";
+		}
+		onTime 200 {
+			transition "Options_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_FINAL_RECT_TEXT "500" "500" "500";
+			set "Options_Titlebar::visible" "1" ;
+		}
+	}
+	
+
+	windowDef Options_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "MainOG_Title5::noEvents" "1" ;				// Disable the button until anim is done
+			set "MainIG_Title5::noEvents" "1" ;				// Disable the button until anim is done
+			set "Main_Portal::visible" "1" ;
+			set "Main_Logo::visible" "1" ;
+			transition "Options_Menu::rect" MENU_FINAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "500" "500" "500";
+			set "cmd" "play2 guisounds_menu_slideout";
+			
+			// Leaving menu, apply video changes if needed
+			if ("Options_Video::needsVidRestart" != 0) {
+				namedEvent "VidRestart";
+			}
+		}
+		onTime 300 {
+			transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "400" ;
+		}
+		onTime 500 {
+			transition "Options_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_INITIAL_RECT_TEXT "200" ;
+			set "Options_Titlebar::visible" "0" ;
+		}
+		onTime 700 {
+			set "Options_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+		onTime 800 {
+			set "MainOG_Title5::noEvents" "0" ;				// Enable the button again
+			set "MainIG_Title5::noEvents" "0" ;				// Enable the button again
+		}
+	}
+
+	superWindowDef Options_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.5
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 7, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef Options_Titlebar {
+			rect		32, 8, 556, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.55
+			textalign	1
+			textaligny	-8
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20208"
+			noevents	1
+		}
+		
+		buttonDef Options_TitlebarBottom {
+			rect		32, 432, 556, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+
+			buttonDef Options_BottomButton_Cancel {
+				rect		8, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.36
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "Options_AnimOut" "0";
+				}
+			}
+			
+			buttonDef Options_BottomButton_Reset {
+				rect		270, 0, 280, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.36
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20209"
+				shadow		1
+				onAction {
+					set	"cmd" "play guisounds_menu_clickin" ; 
+					resetTime "AnimResetDefaults_Up" "0" ;
+				}
+			}
+		}
+		tabContainerDef Options_TabContainer {
+			rect		25, 35, 570, 390
+			backcolor	0, 0, 0, 0
+			sepcolor	0.74, 0.81, 0.88, 1
+			activetab	0
+			tabMargins	100, 0
+
+			tabDef Options_Controls {
+				rect			0, 20, 570, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20210"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+			}
+
+			tabDef Options_GameOptions {
+				rect			0, 20, 570, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20262"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+			}
+
+			tabDef Options_Video {
+				rect			0, 20, 570, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20280"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+				float			needsVidRestart 0
+
+				onNamedEvent NeedVidRestart {
+					set "needsVidRestart" 1;
+				}
+
+				onNamedEvent VidRestart {
+					set "needsVidRestart" 0;
+					set	"cmd" "video restart" ;
+				}
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+
+				tabContainerDef Options_Video_Container {
+					rect		0, 0, 570, 370
+					activetab	0
+					horizontal	1
+					tabHeight	100
+					tabMargins	40,0
+					sepcolor	0.74, 0.81, 0.88, 1
+
+					tabDef Options_Video_Advanced {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_41146"
+						textaligny				30
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+							resetTime "OVA_ShaderDetail" "0";	// Recheck
+						}
+
+						windowDef OVA_Page {
+							rect		25, 18, 420, 350
+
+							buttonDef OVA_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								font		"fonts/menu"
+								text		"#str_20295"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+							}
+
+							buttonDef OVA_VertexFragment {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_VertexFragment {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20296"
+								}
+								choiceDef OVA_Choice_VertexFragment {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20297"
+									cvar		"r_skipNewAmbient"
+									choiceType	0
+									onAction {
+										namedEvent "NeedVidRestart";
+										resetTime "OVA_ShaderDetail" "0";
+									}
+								}
+							}
+
+							buttonDef OVA_ShaderDetail {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+								notime			1
+								onTime 100 {
+									if ("gui::r_skipNewAmbient" != 0) {
+										set "OVA_Choice_ShaderDetail::noevents" "1" ;
+										set "OVA_Choice_ShaderDetail::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+									}
+									else {
+										set "OVA_Choice_ShaderDetail::noevents" "0" ;
+										set "OVA_Choice_ShaderDetail::forecolor" EDITABLE_FORECOLOR_STRING ;
+									}
+								}
+
+								windowDef OVA_Title_ShaderDetail {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20298"
+								}
+								choiceDef OVA_Choice_ShaderDetail {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20299"
+									values		"0;1;2;3"
+									cvar		"r_shaderlevel"
+									choiceType	1
+									onAction {
+										// Could also set a var to make the next applychanges display the message but I think this is clearer
+										resetTime "AnimMustRestart_Up" "0" ;
+										//namedEvent "NeedVidRestart";
+									}
+								}
+							}
+
+							buttonDef OVA_Shadows {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_Shadows {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20300"
+								}
+								choiceDef OVA_Choice_Shadows {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"r_shadows"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVA_Specular {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_Specular {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20301"
+								}
+								choiceDef OVA_Choice_Specular {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20297"
+									cvar		"r_skipSpecular"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVA_BumpMaps {
+								rect			10, 160, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_BumpMaps {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20302"
+								}
+								choiceDef OVA_Choice_BumpMaps {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20297"
+									cvar		"r_skipBump"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVA_VerticalSync {
+								rect			10, 190, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_VerticalSync {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20303"
+								}
+								choiceDef OVA_Choice_VerticalSync {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"r_swapInterval"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVA_Antialiasing {
+								rect			10, 220, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_Antialiasing {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20304"
+								}
+								choiceDef OVA_Choice_Antialiasing {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_42061"
+									values		"0;2;4"
+									cvar		"r_multisamples"
+									choiceType	1
+									onAction {
+										namedEvent "NeedVidRestart";
+									}
+								}
+							}
+
+							buttonDef OVA_HighQualitySpecular {
+								rect			10, 250, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_HighQualitySpecular {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20306"
+								}
+								choiceDef OVA_Choice_HighQualitySpecular {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"r_correctspecular"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVA_NormalizeBumpmap {
+								rect			10, 280, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVA_Title_NormalizeBumpmap {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20307"
+								}
+								choiceDef OVA_Choice_NormalizeBumpmap {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"r_normalizebumpmap"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVA_ApplyChanges {
+								rect			280, 315, 115, 28
+								text			"#str_20294"
+								textalign		1
+								textaligny		-1
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+								noEvents		1
+								
+								onNamedEvent NeedVidRestart {
+									set "noevents" "0";
+									set "forecolor" BUTTON_FORECOLOR_STRING;
+									set "hovercolor" BUTTON_HOVERCOLOR_STRING;
+								}
+
+								onNamedEvent VidRestart {
+									set "noevents" "1";
+									set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
+									set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
+								}
+
+								onAction {
+									set	"cmd"	"play guisounds_menu_clickin" ;
+									namedEvent "VidRestart";
+								}
+							}
+						}	// END OF PAGE
+					}
+				}
+			}
+
+			tabDef Options_Audio {
+				rect			0, 20, 570, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20310"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+			}
+		}
+	}
