@@ -22,6 +22,23 @@
 			transition "Options_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
 			set "Options_Titlebar::visible" "0" ;
 
+			set "Options_Controls_Container::visible" "1" ;
+			set "Options_GameOptions_Container::visible" "0" ;
+			set "Options_Video_Container::visible" "0" ;
+			set "OA_Options::visible" "0" ;
+			set "Options_Controls_Movement::visible" "1" ;
+			set "Options_Controls_Combat::visible" "0" ;
+			set "Options_Controls_Weapons::visible" "0" ;
+			set "Options_Controls_Look::visible" "0" ;
+			set "Options_Controls_Other::visible" "0" ;
+			set "Options_Controls_Multiplayer::visible" "0" ;
+			set "Options_Controls_Profiles::visible" "0" ;
+			set "Options_GameOptionsLook::visible" "1" ;
+			set "Options_GameOptionsFeel::visible" "0" ;
+			set "Options_Video_Normal::visible" "1" ;
+			set "Options_Video_Advanced::visible" "0" ;
+			set "Options_Video_Advanced2::visible" "0" ;
+
 			resetTime "OVN_QualityLevels" "0";
 			resetTime "OVA_ShaderDetail" "0";
 			set "cmd" "play2 guisounds_menu_slidein";
@@ -143,9 +160,9 @@
 			sepcolor	0.74, 0.81, 0.88, 1
 			activetab	0
 			tabMargins	100, 0
-
-			tabDef Options_Controls {
-				rect			0, 20, 570, 370
+			
+			buttonDef Button_Options_Controls {
+				rect			0, 20, 100, 370
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -155,18 +172,236 @@
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	0
 
+				onAction {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controls_Container::visible" "1" ;
+					set "Options_GameOptions_Container::visible" "0" ;
+					set "Options_Video_Container::visible" "0" ;
+					set "OA_Options::visible" "0" ;
+				}
+			}
+			
+			buttonDef Button_Options_Game {
+				rect			0, 40, 100, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20262"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onAction {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controls_Container::visible" "0" ;
+					set "Options_GameOptions_Container::visible" "1" ;
+					set "Options_Video_Container::visible" "0" ;
+					set "OA_Options::visible" "0" ;
+				}
+			}
+			
+			buttonDef Button_Options_Video {
+				rect			0, 60, 100, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20280"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onAction {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controls_Container::visible" "0" ;
+					set "Options_GameOptions_Container::visible" "0" ;
+					set "Options_Video_Container::visible" "1" ;
+					set "OA_Options::visible" "0" ;
+				}
+			}
+			
+			buttonDef Button_Options_Audio {
+				rect			0, 80, 100, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20310"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onAction {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controls_Container::visible" "0" ;
+					set "Options_GameOptions_Container::visible" "0" ;
+					set "Options_Video_Container::visible" "0" ;
+					set "OA_Options::visible" "1" ;
+				}
+			}
+
+			tabContainerDef Options_Controls_Container {
+				rect			0, 0, 570, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			""
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
 				onTabActivate {
 					set "cmd" "play guisounds_menu_tabflip" ;
 				}
+			
+				buttonDef Button_Options_Controls_Movement {
+					rect			100, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20211"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
 
-				tabContainerDef Options_Controls_Container {
-					rect		0, 0, 570, 370
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Controls_Movement::visible" "1" ;
+						set "Options_Controls_Combat::visible" "0" ;
+						set "Options_Controls_Weapons::visible" "0" ;
+						set "Options_Controls_Look::visible" "0" ;
+						set "Options_Controls_Other::visible" "0" ;
+						set "Options_Controls_Multiplayer::visible" "0" ;
+						set "Options_Controls_Profiles::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_Controls_Combat {
+					rect			180, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20229"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Controls_Movement::visible" "0" ;
+						set "Options_Controls_Combat::visible" "1" ;
+						set "Options_Controls_Weapons::visible" "0" ;
+						set "Options_Controls_Look::visible" "0" ;
+						set "Options_Controls_Other::visible" "0" ;
+						set "Options_Controls_Multiplayer::visible" "0" ;
+						set "Options_Controls_Profiles::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_Controls_Weapons {
+					rect			240, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20221"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Controls_Movement::visible" "0" ;
+						set "Options_Controls_Combat::visible" "0" ;
+						set "Options_Controls_Weapons::visible" "1" ;
+						set "Options_Controls_Look::visible" "0" ;
+						set "Options_Controls_Other::visible" "0" ;
+						set "Options_Controls_Multiplayer::visible" "0" ;
+						set "Options_Controls_Profiles::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_Controls_Look {
+					rect			310, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20236"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Controls_Movement::visible" "0" ;
+						set "Options_Controls_Combat::visible" "0" ;
+						set "Options_Controls_Weapons::visible" "0" ;
+						set "Options_Controls_Look::visible" "1" ;
+						set "Options_Controls_Other::visible" "0" ;
+						set "Options_Controls_Multiplayer::visible" "0" ;
+						set "Options_Controls_Profiles::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_Controls_Other {
+					rect			360, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20244"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Controls_Movement::visible" "0" ;
+						set "Options_Controls_Combat::visible" "0" ;
+						set "Options_Controls_Weapons::visible" "0" ;
+						set "Options_Controls_Look::visible" "0" ;
+						set "Options_Controls_Other::visible" "1" ;
+						set "Options_Controls_Multiplayer::visible" "0" ;
+						set "Options_Controls_Profiles::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_Controls_Multiplayer {
+					rect			420, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20135"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Controls_Movement::visible" "0" ;
+						set "Options_Controls_Combat::visible" "0" ;
+						set "Options_Controls_Weapons::visible" "0" ;
+						set "Options_Controls_Look::visible" "0" ;
+						set "Options_Controls_Other::visible" "0" ;
+						set "Options_Controls_Multiplayer::visible" "1" ;
+						set "Options_Controls_Profiles::visible" "0" ;
+					}
+				}
+
+				tabDef Options_Controls {
+					rect		0, 20, 570, 370
 					activetab	0
 					horizontal	1
 					tabHeight	100
 					tabMargins	40, 0
 					sepcolor	0.74, 0.81, 0.88, 1
-
+					
 					tabDef Options_Controls_Movement {
 						rect					100, 0, 470, 370
 						background				"guis/assets/menu/fadebg.tga"
@@ -182,7 +417,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20211"
+						text					""
 						textaligny				15
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -445,7 +680,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20229"
+						text					""
 						textaligny				15
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -702,7 +937,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20221"
+						text					""
 						textaligny				15
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -959,7 +1194,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20236"
+						text					""
 						textaligny				15
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -1217,7 +1452,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20244"
+						text					""
 						textaligny				15
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -1393,7 +1628,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20135"
+						text					""
 						textaligny				15
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -1677,7 +1912,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20258"
+						text					""
 						textaligny				15
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -1907,23 +2142,59 @@
 				}
 			}
 
-			tabDef Options_GameOptions {
-				rect			0, 20, 570, 370
+			tabContainerDef Options_GameOptions_Container {
+				rect			0, 00, 570, 370
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
 				activeColor		TABTOP_ACTIVECOLOR_COMMA
 				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-				text			"#str_20262"
+				text			""
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	0
 
 				onTabActivate {
 					set "cmd" "play guisounds_menu_tabflip" ;
 				}
+				
+				buttonDef Button_Options_GameOptionsLook {
+					rect			100, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_00623"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
 
-				tabContainerDef Options_GameOptions_Container {
-					rect		0, 0, 570, 370
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_GameOptionsLook::visible" "1" ;
+						set "Options_GameOptionsFeel::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_GameOptionsFeel {
+					rect			150, 0, 470, 70
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20271"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_GameOptionsLook::visible" "0" ;
+						set "Options_GameOptionsFeel::visible" "1" ;
+					}
+				}
+
+				tabDef Options_GameOptions {
+					rect		0, 20, 570, 370
 					activetab	0
 					horizontal	1
 					tabHeight	100
@@ -1945,7 +2216,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_00623"
+						text					""
 						textaligny				30
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -2229,7 +2500,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20271"
+						text					""
 						textaligny				30
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -2440,14 +2711,14 @@
 				}
 			}
 
-			tabDef Options_Video {
-				rect			0, 20, 570, 370
+			tabContainerDef Options_Video_Container {
+				rect			0, 0, 570, 370
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
 				activeColor		TABTOP_ACTIVECOLOR_COMMA
 				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-				text			"#str_20280"
+				text			""
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	0
 				float			needsVidRestart 0
@@ -2464,9 +2735,66 @@
 				onTabActivate {
 					set "cmd" "play guisounds_menu_tabflip" ;
 				}
+				
+				buttonDef Button_Options_Video_Normal {
+					rect			100, 0, 70, 370
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_20280"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
 
-				tabContainerDef Options_Video_Container {
-					rect		0, 0, 570, 370
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Video_Normal::visible" "1" ;
+						set "Options_Video_Advanced::visible" "0" ;
+						set "Options_Video_Advanced2::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_Video_Advanced {
+					rect			155, 0, 70, 370
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_41146"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Video_Normal::visible" "0" ;
+						set "Options_Video_Advanced::visible" "1" ;
+						set "Options_Video_Advanced2::visible" "0" ;
+					}
+				}
+
+				buttonDef Button_Options_Video_Advanced2 {
+					rect			240, 0, 70, 370
+					backcolor		0, 0, 0, 0
+					forecolor		TABTOP_FORECOLOR_COMMA
+					hovercolor		TABTOP_HOVERCOLOR_COMMA
+					activeColor		TABTOP_ACTIVECOLOR_COMMA
+					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+					text			"#str_41147"
+					seperatorLines	1, 1, 1, 1
+					seperatorMargin	0
+
+					onAction {
+						set "cmd" "play guisounds_menu_tabflip" ;
+						set "Options_Video_Normal::visible" "0" ;
+						set "Options_Video_Advanced::visible" "0" ;
+						set "Options_Video_Advanced2::visible" "1" ;
+					}
+				}
+
+				tabDef Options_Video {
+					rect		0, 20, 570, 370
 					activetab	0
 					horizontal	1
 					tabHeight	100
@@ -2488,7 +2816,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_20280"
+						text					""
 						textaligny				30
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -2900,7 +3228,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_41146"
+						text					""
 						textaligny				30
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -3266,7 +3594,7 @@
 						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
 						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
 						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					"#str_41147"
+						text					""
 						textaligny				30
 						buttonEdgeWidth			16
 						seperatorLines			1, 1, 1, 1
@@ -3506,7 +3834,7 @@
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
 				activeColor		TABTOP_ACTIVECOLOR_COMMA
 				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-				text			"#str_20310"
+				text			""
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	0
 
