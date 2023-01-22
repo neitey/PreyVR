@@ -22,11 +22,16 @@
 			transition "Options_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
 			set "Options_Titlebar::visible" "0" ;
 
+			resetTime "OVN_QualityLevels" "0";
+			resetTime "OVA_ShaderDetail" "0";
 			set "cmd" "play2 guisounds_menu_slidein";
 		}
 		onTime 200 {
 			transition "Options_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_FINAL_RECT_TEXT "500" "500" "500";
 			set "Options_Titlebar::visible" "1" ;
+		}
+		onTime 700 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_OPTIONS;
 		}
 	}
 	
@@ -153,6 +158,1753 @@
 				onTabActivate {
 					set "cmd" "play guisounds_menu_tabflip" ;
 				}
+
+				tabContainerDef Options_Controls_Container {
+					rect		0, 0, 570, 370
+					activetab	0
+					horizontal	1
+					tabHeight	100
+					tabMargins	40, 0
+					sepcolor	0.74, 0.81, 0.88, 1
+
+					tabDef Options_Controls_Movement {
+						rect					100, 0, 470, 370
+						background				"guis/assets/menu/fadebg.tga"
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20211"
+						textaligny				15
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OCM_Page {
+							rect		25, 18, 420, 350
+						
+							
+							buttonDef OCM_Headings { 			//action key assignment
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								
+								windowDef OCM_Action_Heading {
+									rect		5, 3, 190, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20212"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+								windowDef OCM_Key1_Heading {
+									rect		200, 3, 195, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20213"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+							}
+							
+							buttonDef OCM_BindingForward {
+								rect			10, 40, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCMA_Forward {
+									rect		5, 5, 190, 20
+									text		"#str_20214"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCMK_Forward {
+									rect		200, 5, 195, 20
+									bind		"_forward"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCM_BindingBackpedal {
+								rect			10, 70, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+								
+
+								windowDef OCMA_Backpedal {
+									rect		5, 5, 190, 20
+									text		"#str_20215"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCMK_Backpedal {
+									rect		200, 5, 195, 20
+									bind		"_back"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCM_BindingMoveleft {
+								rect			10, 100, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+								
+
+								windowDef OCMA_Moveleft {
+									rect		5, 5, 190, 20
+									text		"#str_20216"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCMK_Moveleft {
+									rect		200, 5, 195, 20
+									bind		"_moveLeft"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCM_BindingMoveright {
+								rect			10, 130, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+
+								windowDef OCMA_Moveright {
+									rect		5, 5, 190, 20
+									text		"#str_20217"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCMK_Moveright {
+									rect		200, 5, 195, 20
+									bind		"_moveRight"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCM_BindingJump {
+								rect			10, 160, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+
+								windowDef OCMA_Jump {
+									rect		5, 5, 190, 20
+									text		"#str_20218"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCMK_Jump {
+									rect		200, 5, 195, 20
+									bind		"_moveUp"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCM_BindingCrouch {
+								rect			10, 190, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+
+								windowDef OCMA_Crouch {
+									rect		5, 5, 190, 20
+									text		"#str_20219"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCMK_Crouch {
+									rect		200, 5, 195, 20
+									bind		"_moveDown"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCM_BindingStrafe {
+								rect			10, 220, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCMA_Strafe {
+									rect		5, 5, 190, 20
+									text		"#str_20220"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCMK_Strafe {
+									rect		200, 5, 195, 20
+									bind		"_strafe"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+						}
+						
+						windowDef OCM_HelpScreen {
+							rect		25, 305, 420, 40
+							forecolor	STATIC_FORECOLOR_COMMA
+							text		"#str_41160"
+							textscale	0.33
+							textalign	1
+							textaligny	-3
+							shadow		1
+						}
+					}
+					
+					tabDef Options_Controls_Combat {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20229"
+						textaligny				15
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OCC_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OCC_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+
+								windowDef OCC_Action_Heading {
+									rect		5, 3, 190, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20212"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+								windowDef OCC_Key1_Heading {
+									rect		200, 3, 195, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20213"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+							}
+
+							buttonDef OCC_BindingAttack {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCCA_Attack {
+									rect		5, 5, 190, 20
+									text		"#str_20230"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCCK_Attack {
+									rect		200, 5, 195, 20
+									bind		"_attack"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCC_BindingAltattack {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCCA_Altattack {
+									rect		5, 5, 190, 20
+									text		"#str_20231"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCCK_Altattack {
+									rect		200, 5, 195, 20
+									bind		"_attackAlt"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCC_BindingPrevweapon {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCCA_Prevweapon {
+									rect		5, 5, 190, 20
+									text		"#str_20232"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCCK_Prevweapon {
+									rect		200, 5, 195, 20
+									bind		"_impulse15"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCC_BindingNextweapon {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCCA_Nextweapon {
+									rect		5, 5, 190, 20
+									text		"#str_20233"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCCK_Nextweapon {
+									rect		200, 5, 195, 20
+									bind		"_impulse14"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingLight {
+								rect			10, 160, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Light {
+									rect		5, 5, 190, 20
+									text		"#str_20234"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Light {
+									rect		200, 5, 195, 20
+									bind		"_impulse16"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingSpiritwalk {
+								rect			10, 190, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Spiritwalk {
+									rect		5, 5, 190, 20
+									text		"#str_20235"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Spiritwalk {
+									rect		200, 5, 195, 20
+									bind		"_impulse54"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingThrowGrenade {
+								rect			10, 220, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_ThrowGrenade {
+									rect		5, 5, 190, 20
+									text		"#str_41185"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_ThrowGrenade {
+									rect		200, 5, 195, 20
+									bind		"_impulse25"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+						}
+
+						windowDef OCC_HelpScreen {
+							rect		25, 305, 420, 40
+							forecolor	STATIC_FORECOLOR_COMMA
+							text		"#str_41160"
+							textscale	0.33
+							textalign	1
+							textaligny	-3
+							shadow		1
+						}
+					}
+
+					tabDef Options_Controls_Weapons {
+						rect					100, 0, 470, 370
+						background				"guis/assets/menu/fadebg.tga"
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20221"
+						textaligny				15
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OCW_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OCW_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+
+								windowDef OCW_Action_Heading {
+									rect		5, 3, 190, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20212"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+								windowDef OCW_Key1_Heading {
+									rect		200, 3, 195, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20213"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+							}
+							
+							buttonDef OCW_BindingWeapon1 {
+								rect			10, 40, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Weapon1 {
+									rect		5, 5, 190, 20
+									text		"#str_20222"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Weapon1 {
+									rect		200, 5, 195, 20
+									bind		"_impulse1"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingWeapon2 {
+								rect			10, 70, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Weapon2 {
+									rect		5, 5, 190, 20
+									text		"#str_20223"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Weapon2 {
+									rect		200, 5, 195, 20
+									bind		"_impulse2"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingWeapon3 {
+								rect			10, 100, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Weapon3 {
+									rect		5, 5, 190, 20
+									text		"#str_20224"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Weapon3 {
+									rect		200, 5, 195, 20
+									bind		"_impulse3"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingWeapon4 {
+								rect			10, 130, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Weapon4 {
+									rect		5, 5, 190, 20
+									text		"#str_20228"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Weapon4 {
+									rect		200, 5, 195, 20
+									bind		"_impulse4"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingWeapon5 {
+								rect			10, 160, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Weapon5 {
+									rect		5, 5, 190, 20
+									text		"#str_20225"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Weapon5 {
+									rect		200, 5, 195, 20
+									bind		"_impulse5"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingWeapon6 {
+								rect			10, 190, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Weapon6 {
+									rect		5, 5, 190, 20
+									text		"#str_20226"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Weapon6 {
+									rect		200, 5, 195, 20
+									bind		"_impulse6"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCW_BindingWeapon7 {
+								rect			10, 220, 400, 25
+								leftMat		"guis/assets/menu/textbar_corner.tga"
+								middleMat	"guis/assets/menu/textbarstrip.tga"
+								rightMat	"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCWA_Weapon7 {
+									rect		5, 5, 190, 20
+									text		"#str_20227"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCWK_Weapon7 {
+									rect		200, 5, 195, 20
+									bind		"_impulse7"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+						}
+
+						windowDef OCW_HelpScreen {
+							rect		25, 305, 420, 40
+							forecolor	STATIC_FORECOLOR_COMMA
+							text		"#str_41160"
+							textscale	0.33
+							textalign	1
+							textaligny	-3
+							shadow		1
+						}
+					}
+
+					tabDef Options_Controls_Look {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20236"
+						textaligny				15
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OCL_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OCL_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+
+								windowDef OCL_Action_Heading {
+									rect		5, 3, 190, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20212"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+								windowDef OCL_Key1_Heading {
+									rect		200, 3, 195, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20213"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+							}
+
+							buttonDef OCL_BindingTurnleft {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCLA_Turnleft {
+									rect		5, 5, 190, 20
+									text		"#str_20237"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCLK_Turnleft {
+									rect		200, 5, 195, 20
+									bind		"_left"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCL_BindingTurnright {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCLA_Turnright {
+									rect		5, 5, 190, 20
+									text		"#str_20238"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCLK_Turnright {
+									rect		200, 5, 195, 20
+									bind		"_right"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCL_BindingLookup {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCLA_Lookup {
+									rect		5, 5, 190, 20
+									text		"#str_20239"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCLK_Lookup {
+									rect		200, 5, 195, 20
+									bind		"_lookUp"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCL_BindingLookdown {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCLA_Lookdown {
+									rect		5, 5, 190, 20
+									text		"#str_20240"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCLK_Lookdown {
+									rect		200, 5, 195, 20
+									bind		"_lookDown"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCL_BindingMouselook {
+								rect			10, 160, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCLA_Mouselook {
+									rect		5, 5, 190, 20
+									text		"#str_20241"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCLK_Mouselook {
+									rect		200, 5, 195, 20
+									bind		"_mlook"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCL_BindingCenterview {
+								rect			10, 190, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCLA_Centerview {
+									rect		5, 5, 190, 20
+									text		"#str_20242"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCLK_Centerview {
+									rect		200, 5, 195, 20
+									bind		"_impulse18"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+/*							buttonDef OCL_BindingZoomview {
+								rect			10, 220, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCLA_Zoomview {
+									rect		5, 5, 190, 20
+									text		"#str_20243"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCLK_Zoomview {
+									rect		200, 5, 195, 20
+									bind		"_zoom"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+*/
+						}
+
+						windowDef OCL_HelpScreen {
+							rect		25, 305, 420, 40
+							forecolor	STATIC_FORECOLOR_COMMA
+							text		"#str_41160"
+							textscale	0.33
+							textalign	1
+							textaligny	-3
+							shadow		1
+						}
+					}
+
+					tabDef Options_Controls_Other {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20244"
+						textaligny				15
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OCO_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OCO_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+
+								windowDef OCO_Action_Heading {
+									rect		5, 3, 190, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20212"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+								windowDef OCO_Key1_Heading {
+									rect		200, 3, 195, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20213"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+							}
+							
+							buttonDef OCO_BindingQuicksave {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCOA_Quicksave {
+									rect		5, 5, 190, 20
+									text		"#str_20245"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCOK_Quicksave {
+									rect		200, 5, 195, 20
+									bind		"savegame quick"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCO_BindingQuickload {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCOA_Quickload {
+									rect		5, 5, 190, 20
+									text		"#str_20246"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCOK_Quickload {
+									rect		200, 5, 195, 20
+									bind		"loadgame quick"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCO_BindingScreenshot {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCOA_Screenshot {
+									rect		5, 5, 190, 20
+									text		"#str_20247"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCOK_Screenshot {
+									rect		200, 5, 195, 20
+									bind		"screenshot"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCO_BindingHelp {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCOA_Help {
+									rect		5, 5, 190, 20
+									text		"#str_20248"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCOK_Help {
+									rect		200, 5, 195, 20
+									bind		"togglehelp"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+						}
+
+						windowDef OCO_HelpScreen {
+							rect		25, 305, 420, 40
+							forecolor	STATIC_FORECOLOR_COMMA
+							text		"#str_41160"
+							textscale	0.33
+							textalign	1
+							textaligny	-3
+							shadow		1
+						}
+					}
+
+					tabDef Options_Controls_Multiplayer {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20135"
+						textaligny				15
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OCD_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OCD_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+
+								windowDef OCD_Action_Heading {
+									rect		5, 3, 190, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20212"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+								windowDef OCD_Key1_Heading {
+									rect		200, 3, 195, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20213"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+							}
+							
+							buttonDef OCD_BindingChat {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_Chat {
+									rect		5, 5, 190, 20
+									text		"#str_20249"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_Chat {
+									rect		200, 5, 195, 20
+									bind		"clientMessageMode"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCD_BindingTeamchat {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_Teamchat {
+									rect		5, 5, 190, 20
+									text		"#str_20250"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_Teamchat {
+									rect		200, 5, 195, 20
+									bind		"clientMessageMode 1"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCD_BindingToggleTeam {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_ToggleTeam {
+									rect		5, 5, 190, 20
+									text		"#str_20251"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_ToggleTeam {
+									rect		200, 5, 195, 20
+									bind		"_impulse20"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCD_BindingSpectate {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_Spectate {
+									rect		5, 5, 190, 20
+									text		"#str_20252"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_Spectate {
+									rect		200, 5, 195, 20
+									bind		"_impulse22"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCD_BindingReady {
+								rect			10, 160, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_Ready {
+									rect		5, 5, 190, 20
+									text		"#str_20253"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_Ready {
+									rect		200, 5, 195, 20
+									bind		"_impulse17"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCD_BindingVoteyes {
+								rect			10, 190, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_Voteyes {
+									rect		5, 5, 190, 20
+									text		"#str_20254"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_Voteyes {
+									rect		200, 5, 195, 20
+									bind		"_impulse28"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCD_BindingVoteno {
+								rect			10, 220, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_Voteno {
+									rect		5, 5, 190, 20
+									text		"#str_20255"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_Voteno {
+									rect		200, 5, 195, 20
+									bind		"_impulse29"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+
+							buttonDef OCD_BindingScoreboard {
+								rect			10, 250, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OCDA_Scoreboard {
+									rect		5, 5, 190, 20
+									text		"#str_20256"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								bindDef OCDK_Scoreboard {
+									rect		200, 5, 195, 20
+									bind		"_impulse19"
+									textscale	0.33
+									textalign	1
+									textaligny	-6
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								}
+							}
+						}
+
+						windowDef OCD_HelpScreen {
+							rect		25, 305, 420, 40
+							forecolor	STATIC_FORECOLOR_COMMA
+							text		"#str_41160"
+							textscale	0.33
+							textalign	1
+							textaligny	-3
+							shadow		1
+						}
+					}
+					
+					tabDef Options_Controls_Profiles {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20258"
+						textaligny				15
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+							set "cmd" "scanforprofiles";
+						}
+
+						windowDef OCP_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OCP_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								
+								windowDef OCP_Heading {
+									rect		5, 3, 415, 25
+									forecolor	HEADING_FORECOLOR_DARK_COMMA
+									font		"fonts/menu"
+									text		"#str_20259"
+									textalign	1
+									textaligny	-6
+									textscale	0.45
+									shadow		1
+								}
+							}
+
+							windowDef OCP_ProfilesDescription {
+								rect		0, 40, 420, 40
+								forecolor	BUTTON_FORECOLOR_COMMA
+								text		"#str_41165"
+								textalign	1
+								textaligny	-5
+								textscale	0.33
+								shadow		1
+							}
+
+							windowDef OCP_ExistingProfiles {
+								rect		10, 80, 250, 20
+								forecolor	STATIC_FORECOLOR_COMMA
+								text		"#str_41166"
+								textalign	0
+								textaligny	-5
+								textscale	0.33
+								shadow		1
+							}
+
+							windowDef OCP_ProfileListBG {
+								rect		10, 100, 250, 180
+								backcolor	0, 0, 0, 0.5
+
+								superWindowDef OCP_ProfileList_bg {
+									rect		0, 0, 250, 180
+									cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+									leftMat		"guis/assets/menu/pictureframe_left.tga"
+									topMat		"guis/assets/menu/pictureframe_strip.tga"
+									margins		0, 0, 0, 0	// left, right, top, bottom
+									cornerSize	4, 4
+									edgeSize	4, 4
+									noevents	1
+								}
+								windowDef OCP_ProfileListCap_Top {
+									rect		233, 1, 16, 4
+									background	"guis/assets/scrollbarv_cap.tga"
+								}
+								windowDef OCP_ProfileListCap_Bottom {
+									rect		233, 175, 16, -4
+									background	"guis/assets/scrollbarv_cap.tga"
+								}
+
+								listDef OCP_ProfileList {
+									rect		2, 4, 247, 171
+									forecolor 	LISTCONTENT_FORECOLOR_COMMA
+									bordercolor	LISTCONTENT_SELECTION_COLOR
+									focuscolor	LISTCONTENT_SELECTION_OUTLINE
+									textscale 	0.30
+									shadow		1
+									listName	"profileList"
+									onAction {
+										resetTime "OCP_Load" "0" ;
+										resetTime "OCP_Delete" "0" ;
+										set	"cmd" "updateProfileInfo" ;
+										resetTime "OCP_Save" "0" ;
+									}
+									onEnter {
+										set "cmd" "play guisounds_menu_tick" ;
+										set "cmd" "loadProfile" ;
+									}
+								}
+							}
+
+							windowDef OCP_ProfileNameEdit_text {
+								rect		10, 285, 250, 20
+								text		"#str_41167"
+								forecolor	STATIC_FORECOLOR_COMMA
+								textscale	0.3
+								textaligny	-3
+							}
+
+							superWindowDef OCP_ProfileName_bg {
+									rect		10, 305, 250, 25
+									cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+									leftMat		"guis/assets/menu/pictureframe_left.tga"
+									topMat		"guis/assets/menu/pictureframe_strip.tga"
+									margins		0, 0, 0, 0	// left, right, top, bottom
+									cornerSize	4, 4
+									edgeSize	4, 4
+									noevents	1
+								}
+								
+							editDef OCP_ProfileNameEdit {
+								rect			10, 305, 250, 25
+								backcolor		LISTCONTENT_BACKGROUND
+								forecolor		EDITABLE_FORECOLOR_COMMA
+								hovercolor		EDITABLE_HOVERCOLOR_COMMA
+								forecolor		1, 1, 1, 1
+								text			"gui::saveProfileName"
+								textscale		0.33
+								shadow			1
+								maxchars		32
+								invalidKeys		"."
+
+								onEnter {
+									set "cmd" "play guisounds_menu_clickin; saveProfile" ; 
+									set "cmd" "scanforprofiles";
+								}
+								onAction {
+									resetTime "OCP_Save" "0" ;
+								}
+							}
+
+							buttonDef OCP_Delete {
+								rect			290, 195, 120, 25
+								text			"#str_20132"
+								textalign		1
+								textscale		0.33
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+								onTime 0 {
+									if ( "gui::profileList_sel_0" >= 0 ) {
+										set "forecolor" BUTTON_FORECOLOR_STRING ;
+										set "noevents" "0"
+									} else {
+										set "forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+										set "noevents" "1"
+									}
+								}
+								onActionRelease {
+									set	"cmd" "play guisounds_menu_clickin; deleteProfile" ;
+									set "cmd" "scanforprofiles";
+								}
+							}
+
+							buttonDef OCP_Load {
+								rect			290, 225, 120, 25
+								text			"#str_20260"
+								textalign		1
+								textscale		0.33
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+								onTime 0 {
+									if ( "gui::profileList_sel_0" >= 0 ) {
+										set "forecolor" BUTTON_FORECOLOR_STRING ;
+										set "noevents" "0"
+									} else {
+										set "forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+										set "noevents" "1"
+									}
+								}
+								onActionRelease {
+									set	"cmd" "play guisounds_menu_clickin; loadProfile" ;
+								}
+							}
+
+							buttonDef OCP_Save {
+								rect			290, 255, 120, 25
+								text			"#str_20261"
+								textalign		1
+								textscale		0.33
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+								onTime 0 {
+									if ( "OCP_ProfileNameEdit::text" "!=" "" ) {
+										set "forecolor" BUTTON_FORECOLOR_STRING ;
+										set "noevents" "0"
+									} else {
+										set "forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+										set "noevents" "1"
+									}
+								}
+
+								onActionRelease {
+									set	"cmd" "play guisounds_menu_clickin; saveProfile" ;
+									set "cmd" "scanforprofiles";
+								}
+							}
+						}
+					}
+				}
 			}
 
 			tabDef Options_GameOptions {
@@ -168,6 +1920,523 @@
 
 				onTabActivate {
 					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+
+				tabContainerDef Options_GameOptions_Container {
+					rect		0, 0, 570, 370
+					activetab	0
+					horizontal	1
+					tabHeight	100
+					tabMargins	40, 0
+					sepcolor	0.74, 0.81, 0.88, 1
+
+					tabDef Options_GameOptionsLook {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_00623"
+						textaligny				30
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OGL_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OGL_Headings {
+								rect		0, 0, 420, 30
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								font		"fonts/menu"
+								text		"#str_20263"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+							}
+
+							buttonDef OG_Decals {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Decals {
+									rect		0, 0, 250, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20264"
+								}
+								choiceDef OGO_Decals {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"g_decals"
+									choiceType	0
+								}
+							}
+
+							buttonDef OG_Showhud {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Showhud {
+									rect		0, 0, 250, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20265"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_Showhud {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"g_showHud"
+									choiceType	0
+								}
+							}
+
+							buttonDef OG_Showgun {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Showgun {
+									rect		0, 0, 250, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20266"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_Showgun {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"ui_showGun"	
+									choiceType	0
+								}
+							}
+
+							buttonDef OG_Subtitles {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Subtitles {
+									rect		0, 0, 250, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20267"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_Subtitles {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"g_subtitles"
+									choiceType	0
+								}
+							}
+
+							buttonDef OG_Profanity {
+								rect			10, 160, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Profanity {
+									rect		0, 0, 250, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_41002"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_Profanity {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"com_profanity"	
+									choiceType	0
+								}
+							}
+
+							buttonDef OG_Crosshair {
+								rect			10, 190, 400, 55
+								leftMat			"guis/assets/menu/text_titlebox_left.tga"
+								middleMat		"guis/assets/menu/text_titlebox.tga"
+								rightMat		"guis/assets/menu/text_titlebox_right.tga"
+
+								windowDef OGT_Crosshair {
+									rect		0, 5, 250, 45
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20268"
+									textscale	0.33
+									textalign	1
+									textaligny	8
+									shadow		1
+								}
+								choiceDef OGO_Crosshair {
+									rect		250, 5, 100, 45
+									forecolor	0, 0, 0, 0
+									hovercolor	0, 0, 0, 0
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		0
+									choices		"#str_20269"
+									values		"0;1;2;3;4;5;6;7;8"
+									cvar		"g_crosshair"
+									choiceType	0
+									onMouseEnter {
+										set "OGG_Crosshair0::forecolor" EDITABLE_HOVERCOLOR_STRING;
+									}
+									onMouseExit {
+										set "OGG_Crosshair0::forecolor" EDITABLE_FORECOLOR_STRING;
+									}
+								}
+								windowDef OGG_Crosshair0 {
+									rect		250, 5, 100, 45
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									text		"#str_20270"
+									textscale	0.33
+									textalign	1
+									textaligny	8
+									visible		("gui::g_crosshair" == 0)
+									noevents	1
+								}
+								windowDef OGG_Crosshair1 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair1"
+									visible		("gui::g_crosshair" == 1)
+									noevents	1
+								}
+								windowDef OGG_Crosshair2 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair2"
+									visible		("gui::g_crosshair" == 2)
+									noevents	1
+								}
+								windowDef OGG_Crosshair3 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair3"
+									visible		("gui::g_crosshair" == 3)
+									noevents	1
+								}
+								windowDef OGG_Crosshair4 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair4"
+									visible		("gui::g_crosshair" == 4)
+									noevents	1
+								}
+								windowDef OGG_Crosshair5 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair5"
+									visible		("gui::g_crosshair" == 5)
+									noevents	1
+								}
+								windowDef OGG_Crosshair6 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair6"
+									visible		("gui::g_crosshair" == 6)
+									noevents	1
+								}
+								windowDef OGG_Crosshair7 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair7"
+									visible		("gui::g_crosshair" == 7)
+									noevents	1
+								}
+								windowDef OGG_Crosshair8 {
+									rect		284, 11, 32, 32
+									background	"textures/interface/crosshairs/crosshair8"
+									visible		("gui::g_crosshair" == 8)
+									noevents	1
+								}
+							}
+
+						}
+					}
+					
+					tabDef Options_GameOptionsFeel {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20271"
+						textaligny				30
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OGF_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef OGF_Headings {
+								rect		0, 0, 420, 30
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								font		"fonts/menu"
+								text		"#str_20272"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+							}
+							
+							buttonDef OG_UseDDA {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_UseDDA {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_41097"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_UseDDA {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"g_useDDA"
+									choiceType	0
+								}
+							}
+
+							buttonDef OG_Invertmouse {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Invertmouse {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20274"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_Invertmouse {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"m_pitch"
+									choiceType	1
+									values		"0.022;-0.022"
+								}
+							}
+
+							buttonDef OG_Smoothmouse {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Smoothmouse {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20275"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								windowDef OGO_SmoothmouseBG {
+									rect		250, 4, 100, 16
+									background	"guis/assets/sliderbackground.tga"
+								}
+								sliderDef OGO_Smoothmouse {
+									rect		250, 4, 100, 16
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									low			1
+									high		8
+									step		1
+									thumbShader	"guis/assets/sliderbutton.tga"
+									cvar		"m_smooth"
+								}
+							}
+
+							buttonDef OG_MouseSensitivity {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_MouseSensitivity {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20276"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								windowDef OGO_MouseSensitivityBG {
+									rect		250, 4, 100, 16
+									background	"guis/assets/sliderbackground.tga"
+								}
+								sliderDef OGO_MouseSensitivity {
+									rect		250, 4, 100, 16
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									low			1
+									high		30
+									step		0.5
+									thumbShader	"guis/assets/sliderbutton.tga"
+									cvar		"sensitivity"
+								}
+							}
+
+							buttonDef OG_Freelook {
+								rect			10, 160, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_Freelook {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20277"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_Freelook {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"in_freelook"
+									choiceType	0
+								}
+							}
+
+/*							buttonDef OG_ToggleZoom {
+								rect			10, 190, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OGT_ToggleZoom {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									text		"#str_20279"
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+								}
+								choiceDef OGO_ToggleZoom {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	-2
+									textscale	0.33
+									shadow		1
+									choices		"#str_20152"
+									cvar		"in_toggleZoom"
+									choiceType	0
+								}
+							}
+*/
+						}
+					}
 				}
 			}
 
@@ -203,6 +2472,418 @@
 					tabHeight	100
 					tabMargins	40,0
 					sepcolor	0.74, 0.81, 0.88, 1
+
+					tabDef Options_Video_Normal {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_20280"
+						textaligny				30
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+							resetTime "OVN_QualityLevels" "0";
+						}
+
+						windowDef OVN_Page {
+							rect		25, 18, 420, 350
+
+							buttonDef OVN_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								font		"fonts/menu"
+								text		"#str_20281"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+							}
+
+							buttonDef OVN_Autodetect {
+								rect			10, 40, 400, 35
+								leftMat			"guis/assets/menu/text_titlebox_left.tga"
+								middleMat		"guis/assets/menu/text_titlebox.tga"
+								rightMat		"guis/assets/menu/text_titlebox_right.tga"
+								noTime			1
+								
+								windowDef OVN_AutodetectTitle {
+									rect				0, 5, 200, 25
+									text				"#str_41177"
+									textaligny			0
+									textalign			1
+									textscale			0.33
+									shadow				1
+									forecolor			STATIC_FORECOLOR_COMMA
+								}
+								
+								buttonDef OVN_LoadRecommended {
+									rect				225, 5, 150, 25
+									text				"#str_41178"	// Detect
+									textalign			1
+									textaligny			-2
+									shadow				1
+									forecolor			BUTTON_FORECOLOR_COMMA
+									hoverColor			BUTTON_HOVERCOLOR_COMMA
+									leftMat				"guis/assets/menu/button/corner"
+									middleMat			"guis/assets/menu/button/strip"
+									leftHoverMat		"guis/assets/menu/button/rollover_corner"
+									middleHoverMat		"guis/assets/menu/button/rollover_strip"
+									rightMat			"guis/assets/menu/button/invcorner"
+									rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
+									edgeWidth			12
+									onAction {
+										set	"cmd" "play guisounds_menu_clickin" ;
+										set	"cmd" "video recommended" ;
+										resetTime "OVN_QualityLevels" "0";
+										resetTime "OVA_ShaderDetail" "0";
+										namedEvent "NeedVidRestart";
+									}
+								}
+							}
+
+							buttonDef OVN_QualityLevels {
+								rect			10, 80, 400, 75
+								leftMat			"guis/assets/menu/text_titlebox_left.tga"
+								middleMat		"guis/assets/menu/text_titlebox.tga"
+								rightMat		"guis/assets/menu/text_titlebox_right.tga"
+								noTime			1
+								onNamedEvent	videoupdated {
+									resetTime "OVN_QualityLevels" "0";
+								}
+
+								onTime 100 {	// Wait for a bit, the video change doesn't happen til next frame
+									if ("gui::com_imageQuality" == 0) {
+										set "OVN_RadioQualityLow::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityLow::noevents" "1";
+										set "OVN_RadioQualityMedium::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityMedium::noevents" "0";
+										set "OVN_RadioQualityHigh::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityHigh::noevents" "0";
+									}
+									else if ("gui::com_imageQuality" == 1) {
+										set "OVN_RadioQualityLow::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityLow::noevents" "0";
+										set "OVN_RadioQualityMedium::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityMedium::noevents" "1";
+										set "OVN_RadioQualityHigh::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityHigh::noevents" "0";
+									}
+									else if ("gui::com_imageQuality" == 2) {
+										set "OVN_RadioQualityLow::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityLow::noevents" "0";
+										set "OVN_RadioQualityMedium::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityMedium::noevents" "0";
+										set "OVN_RadioQualityHigh::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityHigh::noevents" "1";
+									}
+									else {	// Ultra or invalid, leave all buttons valid
+										set "OVN_RadioQualityLow::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityLow::noevents" "0";
+										set "OVN_RadioQualityMedium::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityMedium::noevents" "0";
+										set "OVN_RadioQualityHigh::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityHigh::noevents" "0";
+									}
+								}
+
+								windowDef OVN_TextureQualityTitle {
+									rect				0, 5, 200, 25
+									text				"#str_41179"
+									textaligny			0
+									textalign			1
+									textscale			0.33
+									shadow				1
+									forecolor			STATIC_FORECOLOR_COMMA
+								}
+
+								buttonDef OVN_RadioQualityLow {
+									rect				50, 40, 100, 18
+									backcolor			RADIO_INACTIVE_BACKCOLOR_COMMA
+									forecolor			RADIO_FORECOLOR_COMMA
+									hovercolor			RADIO_HOVERCOLOR_COMMA
+									bordercolor			RADIO_BORDERCOLOR_COMMA
+									hoverbordercolor	RADIO_BORDERCOLOR_COMMA
+									bordersize			1
+									text				"#str_20283"
+									textscale			0.28
+									textalign			1
+									textaligny			-4
+									shadow				1
+
+									onAction {
+										set	"cmd" "play guisounds_menu_tick" ;
+										set	"cmd" "video low" ;
+										resetTime "OVN_QualityLevels" "0";
+										namedEvent "NeedVidRestart";
+									}
+								}
+
+								buttonDef OVN_RadioQualityMedium {
+									rect				150, 40, 100, 18
+									backcolor			RADIO_INACTIVE_BACKCOLOR_COMMA
+									forecolor			RADIO_FORECOLOR_COMMA
+									hovercolor			RADIO_HOVERCOLOR_COMMA
+									bordercolor			RADIO_BORDERCOLOR_COMMA
+									hoverbordercolor	RADIO_BORDERCOLOR_COMMA
+									bordersize			1
+									text				"#str_20284"
+									textscale			0.28
+									textalign			1
+									textaligny			-4
+									shadow				1
+
+									onAction {
+										set	"cmd" "play guisounds_menu_tick" ;
+										set	"cmd" "video medium" ;
+										resetTime "OVN_QualityLevels" "0";
+										namedEvent "NeedVidRestart";
+									}
+								}
+
+								buttonDef OVN_RadioQualityHigh {
+									rect				250, 40, 100, 18
+									backcolor			RADIO_INACTIVE_BACKCOLOR_COMMA
+									forecolor			RADIO_FORECOLOR_COMMA
+									hovercolor			RADIO_HOVERCOLOR_COMMA
+									bordercolor			RADIO_BORDERCOLOR_COMMA
+									hoverbordercolor	RADIO_BORDERCOLOR_COMMA
+									bordersize			1
+									text				"#str_20285"
+									textscale			0.28
+									textalign			1
+									textaligny			-4
+									shadow				1
+
+									onAction {
+										set	"cmd" "play guisounds_menu_tick" ;
+										set	"cmd" "video high" ;
+										resetTime "OVN_QualityLevels" "0";
+										namedEvent "NeedVidRestart";
+									}
+								}
+							}
+
+							buttonDef OVN_Resolution {
+								rect			10, 160, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+								windowDef OVN_ResolutionTitle {
+									rect		0, 0, 200, 25
+									text		"#str_20287"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+
+								choiceDef OVN_ResolutionChoice {
+									rect		200, 0, 200, 25
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									choices		"#str_20288"
+									values		"3;4;5;7;8"
+									cvar		"r_mode"
+									updateGroup	render
+									choiceType	1
+									onAction {
+										namedEvent "NeedVidRestart";
+									}
+								}
+							}
+							
+							buttonDef OVN_Fullscreen {
+								rect			10, 190, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+								
+								windowDef OVN_FullscreenTitle {
+									rect		0, 0, 200, 25
+									text		"#str_20289"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								
+								choiceDef OVN_FullscreenChoice {
+									rect		200, 0, 200, 25
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									choices		"#str_20152"
+									cvar		"r_fullscreen"
+									updateGroup	render
+									choiceType	0
+									onAction {
+										namedEvent "NeedVidRestart";
+									}
+								}
+							}
+
+							buttonDef OVN_Brightness {
+								rect			10, 220, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVN_BrightnessTitle {
+									rect		0, 0, 200, 25
+									text		"#str_20290"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+
+								windowDef OVN_BrightnessBG {
+									rect		250, 4, 100, 16
+									background	"guis/assets/sliderbackground.tga"
+								}
+								sliderDef OVN_BrightnessSlider {
+									rect		250, 4, 100, 16
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									low			0.5
+									high		2.0
+									step		0.1
+									thumbShader	"guis/assets/sliderbutton.tga"
+									cvar		"r_brightness"
+								}
+							}
+
+							buttonDef OVN_Gamma {
+								rect			10, 250, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVN_GammaTitle {
+									rect		0, 0, 200, 25
+									text		"#str_20291"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+
+								windowDef OVN_GammaBG {
+									rect		250, 4, 100, 16
+									background	"guis/assets/sliderbackground.tga"
+								}
+								sliderDef OVN_GammaSlider {
+									rect		250, 4, 100, 16
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									low			0.5
+									high		2.0
+									step		0.1
+									thumbShader	"guis/assets/sliderbutton.tga"
+									cvar		"r_gamma"
+								}
+							}
+
+							buttonDef OVN_AspectRatio {
+								rect			10, 280, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+								
+								windowDef OVN_AspectRatioTitle {
+									rect		0, 0, 200, 25
+									text		"#str_20292"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+								
+								choiceDef OVN_AspectRatioChoice {
+									rect		200, 0, 200, 25
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									choices		"#str_20293"
+									values		"0;1;2"
+									cvar		"r_aspectratio"
+									updateGroup	render
+									choiceType	0
+									onAction {
+										//namedEvent "NeedVidRestart";
+									}
+								}
+							}
+
+							buttonDef OVN_ApplyChanges {
+								rect			280, 315, 115, 28
+								text			"#str_20294"
+								textalign		1
+								textaligny		-1
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+								noEvents		1
+
+								onNamedEvent NeedVidRestart {
+									set "noevents" "0";
+									set "forecolor" BUTTON_FORECOLOR_STRING;
+									set "hovercolor" BUTTON_HOVERCOLOR_STRING;
+								}
+
+								onNamedEvent VidRestart {
+									set "noevents" "1";
+									set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
+									set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
+								}
+
+								onAction {
+									set	"cmd"	"play guisounds_menu_clickin" ;
+									namedEvent "VidRestart";
+								}
+							}
+						}
+					}
 
 					tabDef Options_Video_Advanced {
 						rect					100, 0, 470, 370
@@ -569,6 +3250,252 @@
 							}
 						}	// END OF PAGE
 					}
+
+					tabDef Options_Video_Advanced2 {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					"#str_41147"
+						textaligny				30
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef OVM_Page {
+							rect		25, 18, 420, 350
+
+							buttonDef OVM_Headings {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								font		"fonts/menu"
+								text		"#str_20295"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+							}
+
+							buttonDef OVM_GlowOverlays {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVM_Title_GlowOverlays {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_20308"
+								}
+								choiceDef OVM_Choice_GlowOverlays {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20297"
+									cvar		"r_skipGlowOverlay"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVM_LowParticleDetail {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVM_Title_LowParticleDetail {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_41071"
+								}
+								choiceDef OVM_Choice_LowParticleDetail {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20297"
+									cvar		"r_lowParticleDetail"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVM_FastSkinning {
+								rect			10, 100, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVM_Title_FastSkinning {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_41072"
+								}
+								choiceDef OVM_Choice_FastSkinning {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20297"
+									cvar		"r_useFastSkinning"
+									choiceType	0
+								}
+							}
+
+							buttonDef OVM_Anisotropy {
+								rect			10, 130, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OVM_Title_Anisotropy {
+									rect		0, 0, 200, 25
+									forecolor	STATIC_FORECOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									text		"#str_41180"
+								}
+								choiceDef OVM_Choice_Anisotropy {
+									rect		200, 0, 200, 25
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									choices		"#str_20305"
+									values		"1;2;4;8;16"
+									cvar		"image_anisotropy"
+									choiceType	1
+								}
+							}
+
+/*							buttonDef OVM_Drivers {
+								rect			10, 160, 400, 90
+								leftMat			"guis/assets/menu/text_titlebox_left.tga"
+								middleMat		"guis/assets/menu/text_titlebox.tga"
+								rightMat		"guis/assets/menu/text_titlebox_right.tga"
+								noTime			1
+
+								windowDef OVM_DriversTitle {
+									rect				0, 10, 200, 25
+									text				"#str_41098"	// Video Driver
+									textaligny			0
+									textalign			1
+									textscale			0.33
+									shadow				1
+									forecolor			STATIC_FORECOLOR_COMMA
+								}
+
+								buttonDef OVM_CheckDriver {
+									rect				215, 10, 170, 25
+									text				"#str_41099"
+									textalign			1
+									textaligny			-2
+									shadow				1
+									forecolor			BUTTON_FORECOLOR_COMMA
+									hoverColor			BUTTON_HOVERCOLOR_COMMA
+									leftMat				"guis/assets/menu/button/corner"
+									middleMat			"guis/assets/menu/button/strip"
+									leftHoverMat		"guis/assets/menu/button/rollover_corner"
+									middleHoverMat		"guis/assets/menu/button/rollover_strip"
+									rightMat			"guis/assets/menu/button/invcorner"
+									rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
+									edgeWidth			12
+									onAction {
+										set	"cmd" "play guisounds_menu_clickin" ;
+										set	"cmd" "http prey" ;
+									}
+								}
+
+								windowDef OVM_DriversTitle2 {
+									rect				20, 40, 360, 50
+									text				"#str_41100"
+									textaligny			0
+									textalign			1
+									textscale			0.3
+									shadow				1
+									forecolor			STATIC_FORECOLOR_COMMA
+								}
+							}
+*/
+
+							buttonDef OVM_ApplyChanges {
+								rect			280, 315, 115, 28
+								text			"#str_20294"
+								textalign		1
+								textaligny		-1
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+								noEvents		1
+								
+								onNamedEvent NeedVidRestart {
+									set "noevents" "0";
+									set "forecolor" BUTTON_FORECOLOR_STRING;
+									set "hovercolor" BUTTON_HOVERCOLOR_STRING;
+								}
+
+								onNamedEvent VidRestart {
+									set "noevents" "1";
+									set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
+									set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
+								}
+
+								onAction {
+									set	"cmd"	"play guisounds_menu_clickin" ;
+									namedEvent "VidRestart";
+								}
+							}
+						}
+					}
 				}
 			}
 
@@ -583,8 +3510,447 @@
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	0
 
+				onNamedEvent UpdateOptions {
+					// Set initial state of our sound options based on the state variables
+					// Called whenever options may have changed
+
+					// Mixer Grayed based on mixeroption
+					// Device Grayed unless openAL is ON
+					// Speakers Grayed unless openAL is OFF
+					// Reverse Grayed unless openAL is OFF
+					// Driver Button visible if oldAudioDriver
+					
+					if ("gui::oldAudioDriver" != 0) {
+						set "OA_SoundDriverNotice::visible" "1";
+					}
+					else {
+						set "OA_SoundDriverNotice::visible" "0";
+					}
+
+					// If no eax capable devices are available, disable the mixer change
+					if ("gui::mixeroption" != 0) {
+						// Enable mixer choice
+						set "OA_SoundSystemChoice::noevents" "0";
+						set "OA_SoundSystemChoice::forecolor" EDITABLE_FORECOLOR_STRING;
+					}
+					else {
+						// Disable mixer choice
+						set "OA_SoundSystemChoice::noevents" "1" ;
+						set "OA_SoundSystemChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+					}
+
+					if ("gui::openAL" != 0) {		// OpenAL is ON
+						// Enable device choice
+						set "OA_DeviceChoice::noevents" "0" ;
+						set "OA_DeviceChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
+
+						// Disable speaker choice
+						set "OA_SpeakerSetupChoice::noevents" "1" ;
+						set "OA_SpeakerSetupChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+
+						// Disable Reverse choice
+						set "OA_ReverseChannelsChoice::noevents" "1" ;
+						set "OA_ReverseChannelsChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+					}
+					else {							// OpenAL is OFF
+						// Disable device choice
+						set "OA_DeviceChoice::noevents" "1" ;
+						set "OA_DeviceChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+
+						// Enable Speaker choice
+						set "OA_SpeakerSetupChoice::noevents" "0" ;
+						set "OA_SpeakerSetupChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
+
+						// Enable Reverse choice
+						set "OA_ReverseChannelsChoice::noevents" "0" ;
+						set "OA_ReverseChannelsChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
+					}
+
+					// EAX Grayed unless openAL is on and device supports EAX
+					if ( ("gui::openAL" != 0) && ("gui::supportsEax" != 0) ) {
+						set "OA_EAXChoice::noevents" "0" ;
+						set "OA_EAXChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
+					}
+					else {
+						set "OA_EAXChoice::noevents" "1" ;
+						set "OA_EAXChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+					}
+				}
+
 				onTabActivate {
 					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+
+				windowDef OA_Options {
+					rect		101, 1, 468, 368
+					backcolor	TAB_PAGE_BACKCOLOR_COMMA
+					background	"guis/assets/menu/fadebg_top.tga"
+
+					windowDef OA_Page {
+						rect		25, 17, 420, 350
+
+						buttonDef OA_Headings {
+							rect		0, 0, 420, 30
+							forecolor	HEADING_FORECOLOR_DARK_COMMA
+							leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+							middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+							font		"fonts/menu"
+							text		"#str_20311"
+							textalign	1
+							textaligny	-3
+							textscale	0.45
+							shadow		1
+							noevents	1
+						}
+
+						buttonDef OA_Volume {
+							rect			10, 40, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+							windowDef OAT_Volume {
+								rect		0, 0, 200, 25
+								text		"#str_41132"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+							windowDef OA_VolumeBG {
+								rect		250, 4, 100, 16
+								background	"guis/assets/sliderbackground.tga"
+							}
+							sliderDef OA_VolumeSlider {
+								rect		250, 4, 100, 16
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								low			0
+								high		1
+								step		0.05
+								thumbShader	"guis/assets/sliderbutton.tga"
+								cvar		"s_volume_dB"
+								volumeslider	1
+								
+								onSliderChange {
+									set "cmd" "play guisounds_menu_volumetick";
+								}
+							}
+						}
+
+						buttonDef OA_MusicVolume {
+							rect			10, 70, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+							windowDef OAT_MusicVolume {
+								rect		0, 0, 200, 25
+								text		"#str_41133"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+							windowDef OA_MusicVolumeBG {
+								rect		250, 4, 100, 16
+								background	"guis/assets/sliderbackground.tga"
+							}
+							sliderDef OA_MusicVolumeSlider {
+								rect		250, 4, 100, 16
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								low			0
+								high		1
+								step		0.05
+								thumbShader	"guis/assets/sliderbutton.tga"
+								cvar		"s_musicvolume_dB"
+								volumeslider	1
+							}
+						}
+
+						buttonDef OA_LevelLoadMusic {
+							rect			10, 100, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_LevelLoadMusic {
+								rect		0, 0, 200, 25
+								text		"#str_20315"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_LevelLoadMusic {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"#str_20152"
+								cvar		"g_levelloadmusic"
+								choiceType	0
+							}
+						}
+						
+						buttonDef OA_SoundSystem {
+							rect			10, 130, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_SoundSystem {
+								rect		0, 0, 200, 25
+								text		"#str_20312"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OA_SoundSystemChoice {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"#str_20313"
+								values		"0;1"
+								cvar		"s_useOpenAL"
+								choiceType	1
+								onActionRelease {
+									set "cmd" "sound system" ;
+								}
+							}
+						}
+
+						buttonDef OA_SoundDriverNotice {
+							rect			10, 160, 400, 50
+							leftMat			"guis/assets/menu/text_titlebox_left.tga"
+							middleMat		"guis/assets/menu/text_titlebox.tga"
+							rightMat		"guis/assets/menu/text_titlebox_right.tga"
+
+							windowDef OA_SoundDriverNoticeTitle {
+								rect				10, 5, 190, 40
+								text				"#str_41176"
+								textaligny			-3
+								textalign			1
+								textscale			0.33
+								shadow				1
+								forecolor			STATIC_FORECOLOR_COMMA
+							}
+
+							buttonDef OA_SoundDriverNoticeButton {
+								rect				215, 10, 170, 25
+								text				"#str_41099"
+								textalign			1
+								textaligny			-2
+								shadow				1
+								forecolor			BUTTON_FORECOLOR_COMMA
+								hoverColor			BUTTON_HOVERCOLOR_COMMA
+								leftMat				"guis/assets/menu/button/corner"
+								middleMat			"guis/assets/menu/button/strip"
+								leftHoverMat		"guis/assets/menu/button/rollover_corner"
+								middleHoverMat		"guis/assets/menu/button/rollover_strip"
+								rightMat			"guis/assets/menu/button/invcorner"
+								rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth			12
+								onAction {
+									set	"cmd" "play guisounds_menu_clickin" ;
+									set	"cmd" "http sounddriver" ;
+								}
+							}
+						}
+
+						windowDef OA_Suboptions_Software {
+							rect		0, 220, 420, 200
+							visible		("gui::openal" == 0)
+
+							buttonDef OA_SubHeading_Software {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								font		"fonts/menu"
+								text		"#str_20316"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+								noevents	1
+							}
+
+							buttonDef OA_SpeakerSetup {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OAT_SpeakerSetup {
+									rect		0, 0, 200, 25
+									text		"#str_20317"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+
+								choiceDef OA_SpeakerSetupChoice {
+									rect		200, 0, 200, 25
+									textscale	0.33
+									textalign	1
+									textaligny	0
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									choices		"#str_20318"
+									values		"2;6"
+									cvar		"s_numberOfSpeakers"
+									choiceType	1
+									onActionRelease {
+										set "cmd" "sound speakers" ;
+									}
+								}
+							}
+
+							buttonDef OA_ReverseChannels {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OAT_ReverseChannels {
+									rect		0, 0, 200, 25
+									text		"#str_20319"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+
+								choiceDef OA_ReverseChannelsChoice {
+									rect		200, 0, 200, 25
+									textscale	0.33
+									textalign	1
+									textaligny	0
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									choices		"#str_20152"
+									cvar		"s_reverse"
+									choiceType	0
+								}
+							}
+						}
+
+						windowDef OA_Suboptions_OpenAL {
+							rect		0, 220, 420, 200
+							visible		("gui::openal" != 0)
+
+							buttonDef OA_SubHeading_OpenAL {
+								rect		0, 0, 420, 30
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								font		"fonts/menu"
+								text		"#str_20320"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+								noevents	1
+							}
+
+							buttonDef OA_Device {
+								rect			10, 40, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OAT_Device {
+									rect		0, 0, 200, 25
+									text		"#str_20321"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+
+								choiceDef OA_DeviceChoice {
+									rect		200, 0, 200, 25
+									textscale	0.33
+									textalign	1
+									textaligny	0
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									choices		"gui::device_name"
+									cvar		"s_deviceName"
+									choiceType	1
+
+									onActionRelease {
+										set "cmd" "sound device" ;
+									}
+								}
+							}
+
+							buttonDef OA_EAX {
+								rect			10, 70, 400, 25
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+								windowDef OAT_EAX {
+									rect		0, 0, 200, 25
+									text		"#str_20322"
+									textalign	1
+									textaligny	0
+									textscale	0.33
+									shadow		1
+									forecolor	STATIC_FORECOLOR_COMMA
+								}
+
+								choiceDef OA_EAXChoice {
+									rect		200, 0, 200, 25
+									textscale	0.33
+									textalign	1
+									textaligny	0
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									choices		"#str_20323"
+									values		"1;0"
+									cvar		"s_useEAXReverb"
+									choiceType	1
+
+									onActionRelease {
+										set "cmd" "sound eax" ;
+									}
+								}
+							}
+
+							windowDef EAXLogo {
+								rect		175, 100, 64, 28
+								background	"guis/assets/menu/eax.tga"
+								forecolor	STATIC_FORECOLOR_COMMA
+								visible		"gui::eax"
+							}
+						}
+					}
 				}
 			}
 		}
