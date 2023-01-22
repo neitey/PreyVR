@@ -162,7 +162,7 @@
 			tabMargins	100, 0
 			
 			buttonDef Button_Options_Controls {
-				rect			0, 20, 100, 370
+				rect			0, 20, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -182,7 +182,7 @@
 			}
 			
 			buttonDef Button_Options_Game {
-				rect			0, 40, 100, 370
+				rect			0, 40, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -202,7 +202,7 @@
 			}
 			
 			buttonDef Button_Options_Video {
-				rect			0, 60, 100, 370
+				rect			0, 60, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -222,7 +222,7 @@
 			}
 			
 			buttonDef Button_Options_Audio {
-				rect			0, 80, 100, 370
+				rect			0, 80, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -2737,7 +2737,7 @@
 				}
 				
 				buttonDef Button_Options_Video_Normal {
-					rect			100, 0, 70, 370
+					rect			100, 0, 70, 70
 					backcolor		0, 0, 0, 0
 					forecolor		TABTOP_FORECOLOR_COMMA
 					hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -2756,7 +2756,7 @@
 				}
 
 				buttonDef Button_Options_Video_Advanced {
-					rect			155, 0, 70, 370
+					rect			155, 0, 70, 70
 					backcolor		0, 0, 0, 0
 					forecolor		TABTOP_FORECOLOR_COMMA
 					hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -2775,7 +2775,7 @@
 				}
 
 				buttonDef Button_Options_Video_Advanced2 {
-					rect			240, 0, 70, 370
+					rect			240, 0, 70, 70
 					backcolor		0, 0, 0, 0
 					forecolor		TABTOP_FORECOLOR_COMMA
 					hovercolor		TABTOP_HOVERCOLOR_COMMA
