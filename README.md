@@ -4,7 +4,7 @@ This a work-in-progress project bringing Prey 2006 game into VR (on Oculus Quest
 
 Running this game require a copy of the original Prey 2006 data. Tested on English version patched with 1.4 patch.
 
-Copy the `preybase` folder from the original game into the headset as `PreyVR/preybase`.
+Copy the `base` folder from the original game into the headset as `PreyVR/preybase`.
 
 ![PreyVR Banner](https://github.com/lvonasek/Doom3Quest/blob/master/app/src/main/res/drawable/ic_launcher.png?raw=true)
 
