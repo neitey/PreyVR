@@ -25,8 +25,6 @@
 			set "Options_GameOptions_Container::visible" "1" ;
 			set "Options_Video_Container::visible" "0" ;
 			set "OA_Options::visible" "0" ;
-			set "Options_GameOptionsLook::visible" "1" ;
-			set "Options_GameOptionsFeel::visible" "0" ;
 			set "Options_Video_Normal::visible" "1" ;
 			set "Options_Video_Advanced::visible" "0" ;
 			set "Options_Video_Advanced2::visible" "0" ;
@@ -225,42 +223,6 @@
 					set "cmd" "play guisounds_menu_tabflip" ;
 				}
 				
-				buttonDef Button_Options_GameOptionsLook {
-					rect			100, 0, 470, 70
-					backcolor		0, 0, 0, 0
-					forecolor		TABTOP_FORECOLOR_COMMA
-					hovercolor		TABTOP_HOVERCOLOR_COMMA
-					activeColor		TABTOP_ACTIVECOLOR_COMMA
-					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-					text			"#str_00623"
-					seperatorLines	1, 1, 1, 1
-					seperatorMargin	0
-
-					onAction {
-						set "cmd" "play guisounds_menu_tabflip" ;
-						set "Options_GameOptionsLook::visible" "1" ;
-						set "Options_GameOptionsFeel::visible" "0" ;
-					}
-				}
-
-				buttonDef Button_Options_GameOptionsFeel {
-					rect			150, 0, 470, 70
-					backcolor		0, 0, 0, 0
-					forecolor		TABTOP_FORECOLOR_COMMA
-					hovercolor		TABTOP_HOVERCOLOR_COMMA
-					activeColor		TABTOP_ACTIVECOLOR_COMMA
-					hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-					text			"#str_20271"
-					seperatorLines	1, 1, 1, 1
-					seperatorMargin	0
-
-					onAction {
-						set "cmd" "play guisounds_menu_tabflip" ;
-						set "Options_GameOptionsLook::visible" "0" ;
-						set "Options_GameOptionsFeel::visible" "1" ;
-					}
-				}
-
 				tabDef Options_GameOptions {
 					rect		0, 20, 570, 370
 					activetab	0
@@ -368,23 +330,23 @@
 									choiceType	0
 								}
 							}
-
-							buttonDef OG_Showgun {
+							
+							buttonDef OG_UseDDA {
 								rect			10, 100, 400, 25
 								leftMat			"guis/assets/menu/textbar_corner.tga"
 								middleMat		"guis/assets/menu/textbarstrip.tga"
 								rightMat		"guis/assets/menu/textbar_invcorner.tga"
 
-								windowDef OGT_Showgun {
+								windowDef OGT_UseDDA {
 									rect		0, 0, 250, 25
 									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20266"
+									text		"#str_41097"
 									textalign	1
 									textaligny	-2
 									textscale	0.33
 									shadow		1
 								}
-								choiceDef OGO_Showgun {
+								choiceDef OGO_UseDDA {
 									rect		200, 0, 200, 25
 									forecolor	EDITABLE_FORECOLOR_COMMA
 									hovercolor	EDITABLE_HOVERCOLOR_COMMA
@@ -393,7 +355,7 @@
 									textscale	0.33
 									shadow		1
 									choices		"#str_20152"
-									cvar		"ui_showGun"	
+									cvar		"g_useDDA"
 									choiceType	0
 								}
 							}
@@ -550,230 +512,6 @@
 								}
 							}
 
-						}
-					}
-					
-					tabDef Options_GameOptionsFeel {
-						rect					100, 0, 470, 370
-						backcolor				TAB_PAGE_BACKCOLOR_COMMA
-						background				"guis/assets/menu/fadebg.tga"
-						forecolor				TAB_FORECOLOR_COMMA
-						hovercolor				TAB_HOVERCOLOR_COMMA
-						activeColor				TAB_ACTIVECOLOR_COMMA
-						matcolor				1, 1, 1, 1
-						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
-						buttonLeftMat			"guis/assets/menu/tabtop.tga"
-						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
-						buttonRightMat			"guis/assets/menu/tabbottom.tga"
-						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
-						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
-						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
-						text					""
-						textaligny				30
-						buttonEdgeWidth			16
-						seperatorLines			1, 1, 1, 1
-						seperatorMargin			1
-
-						onTabActivate {
-							set "cmd" "play guisounds_menu_tabflip" ;
-						}
-
-						windowDef OGF_Page {
-							rect		25, 18, 420, 350
-							
-							buttonDef OGF_Headings {
-								rect		0, 0, 420, 30
-								forecolor	HEADING_FORECOLOR_DARK_COMMA
-								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
-								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
-								noevents	1
-								font		"fonts/menu"
-								text		"#str_20272"
-								textalign	1
-								textaligny	-3
-								textscale	0.45
-								shadow		1
-							}
-							
-							buttonDef OG_UseDDA {
-								rect			10, 40, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-								windowDef OGT_UseDDA {
-									rect		0, 0, 200, 25
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_41097"
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-								}
-								choiceDef OGO_UseDDA {
-									rect		200, 0, 200, 25
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-									choices		"#str_20152"
-									cvar		"g_useDDA"
-									choiceType	0
-								}
-							}
-
-							buttonDef OG_Invertmouse {
-								rect			10, 70, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-								windowDef OGT_Invertmouse {
-									rect		0, 0, 200, 25
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20274"
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-								}
-								choiceDef OGO_Invertmouse {
-									rect		200, 0, 200, 25
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-									choices		"#str_20152"
-									cvar		"m_pitch"
-									choiceType	1
-									values		"0.022;-0.022"
-								}
-							}
-
-							buttonDef OG_Smoothmouse {
-								rect			10, 100, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-								windowDef OGT_Smoothmouse {
-									rect		0, 0, 200, 25
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20275"
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-								}
-								windowDef OGO_SmoothmouseBG {
-									rect		250, 4, 100, 16
-									background	"guis/assets/sliderbackground.tga"
-								}
-								sliderDef OGO_Smoothmouse {
-									rect		250, 4, 100, 16
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									low			1
-									high		8
-									step		1
-									thumbShader	"guis/assets/sliderbutton.tga"
-									cvar		"m_smooth"
-								}
-							}
-
-							buttonDef OG_MouseSensitivity {
-								rect			10, 130, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-								windowDef OGT_MouseSensitivity {
-									rect		0, 0, 200, 25
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20276"
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-								}
-								windowDef OGO_MouseSensitivityBG {
-									rect		250, 4, 100, 16
-									background	"guis/assets/sliderbackground.tga"
-								}
-								sliderDef OGO_MouseSensitivity {
-									rect		250, 4, 100, 16
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									low			1
-									high		30
-									step		0.5
-									thumbShader	"guis/assets/sliderbutton.tga"
-									cvar		"sensitivity"
-								}
-							}
-
-							buttonDef OG_Freelook {
-								rect			10, 160, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-								windowDef OGT_Freelook {
-									rect		0, 0, 200, 25
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20277"
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-								}
-								choiceDef OGO_Freelook {
-									rect		200, 0, 200, 25
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-									choices		"#str_20152"
-									cvar		"in_freelook"
-									choiceType	0
-								}
-							}
-
-/*							buttonDef OG_ToggleZoom {
-								rect			10, 190, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-								windowDef OGT_ToggleZoom {
-									rect		0, 0, 200, 25
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20279"
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-								}
-								choiceDef OGO_ToggleZoom {
-									rect		200, 0, 200, 25
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-									choices		"#str_20152"
-									cvar		"in_toggleZoom"
-									choiceType	0
-								}
-							}
-*/
 						}
 					}
 				}
