@@ -1,0 +1,285 @@
+
+
+	//------------------------------------------------------
+	//
+	//	Savegame Menu
+	//
+	//------------------------------------------------------
+	windowDef Savegame_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "Main_Logo::visible" "0" ;
+			set "Main_Menu::visible" "0" ;
+			set "Savegame_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "Savegame_Menu::visible" "1" ;
+			transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "Savegame_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
+			set "Savegame_Titlebar::visible" "0" ;
+			set "cmd" "play2 guisounds_menu_slidein";
+		}
+		onTime 200 {
+			transition "Savegame_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_FINAL_RECT_TEXT "500" "500" "500";
+			set "Savegame_Titlebar::visible" "1" ;
+		}
+		onTime 700 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_SAVEGAME;
+		}
+	}
+	windowDef Savegame_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "MainIG_Title3::noEvents" "0" ;		// Disable the button until anim is done
+			set "Main_Portal::visible" "1" ;
+			set "Main_Logo::visible" "1" ;
+			transition "Savegame_Menu::rect" MENU_FINAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "500" "500" "500";
+			set "cmd" "play2 guisounds_menu_slideout";
+		}
+		onTime 300 {
+			transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "400" ;
+		}
+		onTime 500 {
+			transition "Savegame_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_INITIAL_RECT_TEXT "200" ;
+			set "Savegame_Titlebar::visible" "0" ;
+		}
+		onTime 700 {
+			set "Savegame_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+		onTime 800 {
+			set "MainIG_Title3::noEvents" "0" ;		// Enable the button again
+		}
+	}
+
+	superWindowDef Savegame_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.7
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 7, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef Savegame_Titlebar {
+			rect		32, 8, 556, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.55
+			textalign	1
+			textaligny	-8
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20333"
+			noevents	1
+		}
+
+		buttonDef Savegame_TitlebarBottom {
+			rect		32, 432, 556, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+			
+			buttonDef Savegame_BottomButton_Cancel {
+				rect		8, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.4
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "Savegame_AnimOut" "0";
+				}
+			}
+		}
+
+
+		windowDef Savegame_Page {
+			rect		80, 50, 460, 380
+
+			buttonDef SG_Header1 {
+				rect		10, 20, 260, 25
+				backcolor	LISTCONTENT_BACKGROUND
+				forecolor	LISTHEADING_FORECOLOR_COMMA
+				bordercolor	0, 0, 0, 1
+				bordersize	1
+				text		"#str_20128"
+				textalignx	15
+				textaligny	-2
+				noevents	1
+			}
+			buttonDef SG_Header2 {
+				rect		272, 20, 75, 25
+				backcolor	LISTCONTENT_BACKGROUND
+				forecolor	LISTHEADING_FORECOLOR_COMMA
+				bordercolor	0, 0, 0, 1
+				bordersize	1
+				text		"#str_20129"
+				textalignx	15
+				textaligny	-2
+				noevents	1
+			}
+			buttonDef SG_Header3 {
+				rect		348.5, 20, 100, 25
+				backcolor	LISTCONTENT_BACKGROUND
+				forecolor	LISTHEADING_FORECOLOR_COMMA
+				bordercolor	0, 0, 0, 1
+				bordersize	1
+				text		"#str_20130"
+				textalignx	15
+				textaligny	-2
+				noevents	1
+			}
+
+			windowDef SG_Box1 {
+				rect		10, 47, 260, 269
+				backcolor	LISTCONTENT_BACKGROUND
+				bordercolor	0, 0, 0, 1
+				bordersize	1
+			}
+			windowDef SG_Box2 {
+				rect		272, 47, 75, 269
+				backcolor	LISTCONTENT_BACKGROUND
+				bordercolor	0, 0, 0, 1
+				bordersize	1
+			}
+			windowDef SG_Box3 {
+				rect		348.5, 47, 80, 269
+				backcolor	LISTCONTENT_BACKGROUND
+				bordercolor	0, 0, 0, 1
+				bordersize	1
+			}
+
+			superWindowDef SGPageTitleFrame {
+				rect		8, 19, 443, 24
+				cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+				leftMat		"guis/assets/menu/pictureframe_left.tga"
+				topMat		"guis/assets/menu/pictureframe_strip.tga"
+				margins		0, 0, 0, 0	// left, right, top, bottom
+				cornerSize	4, 4
+				edgeSize	4, 4
+				noevents	1
+			}
+			superWindowDef SGPageFrame {
+				rect		8, 45, 443, 272
+				cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+				leftMat		"guis/assets/menu/pictureframe_left.tga"
+				topMat		"guis/assets/menu/pictureframe_strip.tga"
+				margins		0, 0, 0, 0	// left, right, top, bottom
+				cornerSize	4, 4
+				edgeSize	4, 4
+				noevents	1
+			}
+
+			windowDef SG_ListCap_Top {
+				rect		434, 46, 16, 4
+				background	"guis/assets/scrollbarv_cap.tga"
+			}
+			windowDef SG_ListCap_Bottom {
+				rect		434, 262+50, 16, -4
+				background	"guis/assets/scrollbarv_cap.tga"
+			}
+
+			listDef SG_List {
+				rect		10, 50, 440, 262
+				foreColor	LISTCONTENT_FORECOLOR_COMMA
+				bordercolor	LISTCONTENT_SELECTION_COLOR
+				focuscolor	LISTCONTENT_SELECTION_OUTLINE
+				textscale	0.32
+				listName	"loadGame"
+				tabstops	"10, 267, 350"
+
+				onAction {
+					set	"cmd" "play guisounds_menu_tick" ;
+					set	"cmd" "updateSaveGameInfo" ;
+					resetTime "SG_Button" "0" ;
+				}
+			}
+
+			superWindowDef SG_Description_bg {
+				rect		9, 334, 262, 22
+				cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+				leftMat		"guis/assets/menu/pictureframe_left.tga"
+				topMat		"guis/assets/menu/pictureframe_strip.tga"
+				margins		0, 0, 0, 0	// left, right, top, bottom
+				cornerSize	4, 4
+				edgeSize	4, 4
+				noevents	1
+			}
+			
+			editDef SG_Description {
+				rect			10, 335, 260, 20
+				backcolor		LISTCONTENT_BACKGROUND
+				forecolor		1, 1, 1, 1
+				text			"gui::saveGameName"
+				textaligny		-3
+				maxchars		32
+				invalidKeys		"."
+
+				onEnter {
+					set "cmd" "play guisounds_menu_clickin; saveGame" ; 
+				}
+
+				onAction {
+					resetTime "SG_Button" "0" ;
+				}
+			}
+
+			// New game name
+			windowDef SGCBtn2 {
+				rect		10, 355, 262, 22
+				text		" NEW NAME" // New Name
+				textscale	0.25
+				textaligny	4
+				forecolor	BUTTON_FORECOLOR_COMMA
+	
+				onAction {
+					set	"cmd"	"play guisounds_menuclickup; createNewName"; 
+				}
+			}
+
+			buttonDef SG_Button {
+				rect			300, 332, 145, 25
+				text			"#str_20334"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+
+				onTime 0 {
+					if ( "SG_Description::text" "!=" "" ) {
+						set "forecolor" BUTTON_FORECOLOR_STRING ;
+						set "noevents" "0"
+					} else {
+						set "forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+						set "noevents" "1"
+					}
+				}
+
+				onActionRelease {
+					set	"cmd" "play guisounds_menu_clickin; saveGame" ;
+				}
+			}
+		}
+	}
