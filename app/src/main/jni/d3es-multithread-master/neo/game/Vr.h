@@ -552,4 +552,10 @@ extern idCVar vr_rumbleChainsaw;
 
 extern idCVar vr_comfortRepeat;
 
+extern idCVar vr_weaponZoomed;
+
+//Lubos BEGIN
+void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin);
+//Lubos END
+
 #endif

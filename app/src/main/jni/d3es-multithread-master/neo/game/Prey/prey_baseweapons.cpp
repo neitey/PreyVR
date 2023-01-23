@@ -2,6 +2,7 @@
 #pragma hdrstop
 
 #include "prey_local.h"
+#include "Vr.h"
 
 #define WEAPON_DEBUG if(g_debugWeapon.GetBool()) gameLocal.Warning
 
@@ -1205,6 +1206,12 @@ void hhWeapon::PresentWeapon( bool showViewModel ) {
 	// update animation
 	UpdateAnimation();
 
+	//Lubos BEGIN
+	if (game->isVR && !vr_weaponZoomed.GetBool()) {
+		ApplyVRWeaponTransform(renderEntity.axis, renderEntity.origin);
+	}
+	//Lubos END
+
 	// only show the surface in player view
 	renderEntity.allowSurfaceInViewID = owner->entityNumber+1;
 
@@ -2197,7 +2204,6 @@ HUMANHEAD bjk
 */
 bool hhWeapon::GetAltMode() const {
 	return WEAPON_ALTMODE != 0;
-	
 }
 
 /*

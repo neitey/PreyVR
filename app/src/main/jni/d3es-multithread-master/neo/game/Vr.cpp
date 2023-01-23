@@ -180,3 +180,27 @@ idCVar vr_dualWield( "vr_dualWield", "2", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIV
 
 idCVar vr_debugHands( "vr_debugHands", "0", CVAR_BOOL | CVAR_GAME, "Enable hand/weapon/dual wielding debugging" );
 idCVar vr_rumbleChainsaw( "vr_rumbleChainsaw", "1", CVAR_BOOL | CVAR_GAME | CVAR_ARCHIVE, "Enable weapon (currently chainsaw only) constant haptic feedback in VR. Not recommended for wireless VR controllers." );
+
+idCVar vr_weaponZoomed( "vr_weaponZoomed", "0", CVAR_BOOL | CVAR_GAME, "Indicates weapon is in zoom mode." );
+
+//Lubos BEGIN
+void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
+{
+	idAngles weaponAngles;
+	weaponAngles[PITCH] = pVRClientInfo->weaponangles_temp[PITCH];
+	weaponAngles[YAW] = pVRClientInfo->weaponangles_temp[YAW];
+	weaponAngles[ROLL] = pVRClientInfo->weaponangles_temp[ROLL];
+
+	idAngles hmdAngles;
+	hmdAngles[PITCH] = pVRClientInfo->hmdorientation_temp[PITCH];
+	hmdAngles[YAW] = pVRClientInfo->hmdorientation_temp[YAW];
+	hmdAngles[ROLL] = pVRClientInfo->hmdorientation_temp[ROLL];
+
+	axis = hmdAngles.ToMat3().Inverse() * axis;
+	axis = weaponAngles.ToMat3() * axis;
+
+	//auto head = pVRClientInfo->hmdposition;
+	//auto weapon = vr_weaponHand.GetInteger() == 0 ? pVRClientInfo->rhandposition : pVRClientInfo->lhandposition;
+	//origin += idVec3(weapon[0] - head[0], weapon[1] - head[1], weapon[2] - head[2]);
+}
+//Lubos END

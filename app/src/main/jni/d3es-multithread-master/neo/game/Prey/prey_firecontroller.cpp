@@ -3,6 +3,7 @@
 #pragma hdrstop
 
 #include "prey_local.h"
+#include "Vr.h"
 
 ABSTRACT_DECLARATION( idClass, hhFireController )
 END_CLASS
@@ -193,6 +194,15 @@ idMat3 hhFireController::DetermineProjectileAxis( const idMat3& axis ) {
 
 	projectileAngles[2] = axis.ToAngles()[2];
 
+	//Lubos BEGIN
+	if (game->isVR && !vr_weaponZoomed.GetBool()) {
+		idMat3 axis = projectileAngles.ToMat3();
+		idVec3 origin = muzzleOrigin;
+		ApplyVRWeaponTransform(axis, origin);
+		return axis;
+	}
+	//Lubos END
+
 	return projectileAngles.ToMat3();
 }
 
@@ -241,6 +251,18 @@ bool hhFireController::LaunchProjectiles( const idVec3& pushVelocity ) {
 				localMuzzleAxis = newAxis;
 			}
 		}
+		//Lubos BEGIN
+		if (game->isVR && !vr_weaponZoomed.GetBool()) {
+			idMat3 axis = GetSelfConst()->GetAxis();
+			idVec3 origin = GetSelfConst()->GetOrigin();
+			ApplyVRWeaponTransform(axis, origin);
+
+			idVec3 weaponToMuzzle = localMuzzleOrigin - GetSelfConst()->GetOrigin();
+			weaponToMuzzle = weaponToMuzzle * GetSelfConst()->GetAxis().Inverse();
+			localMuzzleOrigin = origin + (weaponToMuzzle * axis);
+			localMuzzleAxis = axis;
+		}
+		//Lubos END
 		CreateMuzzleFx( localMuzzleOrigin, localMuzzleAxis );
 	}
 

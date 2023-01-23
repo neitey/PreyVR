@@ -3,6 +3,7 @@
 #pragma hdrstop
 
 #include "prey_local.h"
+#include "Vr.h"
 
 #define DAMAGE_INDICATOR_TIME		1100		// Update this in hud_damageindicator.guifragment too
 
@@ -1871,10 +1872,12 @@ void hhPlayer::UpdateCrosshairs() {
 	bool targeting = false;
 	int crosshair = 0;
 
+	/* Lubos - crosshair is in VR currently unsupported
 	if ( !privateCameraView && !IsLocked(idealWeapon) && (!hand.IsValid() || hand->IsLowered()) && !InCinematic() && weapon.IsValid() && g_crosshair.GetInteger() ) {
 		weapon->UpdateCrosshairs(combatCrosshair, targeting);
 		crosshair = g_crosshair.GetInteger();
 	}
+	*/
 
 	cursor->SetStateBool( "combatcursor", targeting ? false : combatCrosshair );
 	cursor->SetStateBool( "activecombatcursor", targeting );
@@ -4927,7 +4930,12 @@ void hhPlayer::Think( void ) {
 		{
 			GetZoomFov().Init( gameLocal.GetTime(), 0.0f, CalcFov(true), g_fov.GetInteger() );
 			g_fov.ClearModified();
+			vr_weaponZoomed.SetBool(true); //Lubos
+		} else {
+			vr_weaponZoomed.SetBool(false); //Lubos
 		}
+	} else {
+		vr_weaponZoomed.SetBool(false); //Lubos
 	}
 
 	// if we have an active gui, we will unrotate the view angles as
