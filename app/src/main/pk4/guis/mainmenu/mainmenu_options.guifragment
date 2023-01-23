@@ -266,7 +266,7 @@
 								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
 								noevents	1
 								font		"fonts/menu"
-								text		"#str_20263"
+								text		"#str_20262"
 								textalign	1
 								textaligny	-3
 								textscale	0.45
@@ -360,37 +360,8 @@
 								}
 							}
 
-							buttonDef OG_Subtitles {
-								rect			10, 130, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-								windowDef OGT_Subtitles {
-									rect		0, 0, 250, 25
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20267"
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-								}
-								choiceDef OGO_Subtitles {
-									rect		200, 0, 200, 25
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		1
-									choices		"#str_20152"
-									cvar		"g_subtitles"
-									choiceType	0
-								}
-							}
-
 							buttonDef OG_Profanity {
-								rect			10, 160, 400, 25
+								rect			10, 130, 400, 25
 								leftMat			"guis/assets/menu/textbar_corner.tga"
 								middleMat		"guis/assets/menu/textbarstrip.tga"
 								rightMat		"guis/assets/menu/textbar_invcorner.tga"
@@ -417,101 +388,6 @@
 									choiceType	0
 								}
 							}
-
-							buttonDef OG_Crosshair {
-								rect			10, 190, 400, 55
-								leftMat			"guis/assets/menu/text_titlebox_left.tga"
-								middleMat		"guis/assets/menu/text_titlebox.tga"
-								rightMat		"guis/assets/menu/text_titlebox_right.tga"
-
-								windowDef OGT_Crosshair {
-									rect		0, 5, 250, 45
-									forecolor	STATIC_FORECOLOR_COMMA
-									text		"#str_20268"
-									textscale	0.33
-									textalign	1
-									textaligny	8
-									shadow		1
-								}
-								choiceDef OGO_Crosshair {
-									rect		250, 5, 100, 45
-									forecolor	0, 0, 0, 0
-									hovercolor	0, 0, 0, 0
-									textalign	1
-									textaligny	-2
-									textscale	0.33
-									shadow		0
-									choices		"#str_20269"
-									values		"0;1;2;3;4;5;6;7;8"
-									cvar		"g_crosshair"
-									choiceType	0
-									onMouseEnter {
-										set "OGG_Crosshair0::forecolor" EDITABLE_HOVERCOLOR_STRING;
-									}
-									onMouseExit {
-										set "OGG_Crosshair0::forecolor" EDITABLE_FORECOLOR_STRING;
-									}
-								}
-								windowDef OGG_Crosshair0 {
-									rect		250, 5, 100, 45
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									text		"#str_20270"
-									textscale	0.33
-									textalign	1
-									textaligny	8
-									visible		("gui::g_crosshair" == 0)
-									noevents	1
-								}
-								windowDef OGG_Crosshair1 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair1"
-									visible		("gui::g_crosshair" == 1)
-									noevents	1
-								}
-								windowDef OGG_Crosshair2 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair2"
-									visible		("gui::g_crosshair" == 2)
-									noevents	1
-								}
-								windowDef OGG_Crosshair3 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair3"
-									visible		("gui::g_crosshair" == 3)
-									noevents	1
-								}
-								windowDef OGG_Crosshair4 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair4"
-									visible		("gui::g_crosshair" == 4)
-									noevents	1
-								}
-								windowDef OGG_Crosshair5 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair5"
-									visible		("gui::g_crosshair" == 5)
-									noevents	1
-								}
-								windowDef OGG_Crosshair6 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair6"
-									visible		("gui::g_crosshair" == 6)
-									noevents	1
-								}
-								windowDef OGG_Crosshair7 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair7"
-									visible		("gui::g_crosshair" == 7)
-									noevents	1
-								}
-								windowDef OGG_Crosshair8 {
-									rect		284, 11, 32, 32
-									background	"textures/interface/crosshairs/crosshair8"
-									visible		("gui::g_crosshair" == 8)
-									noevents	1
-								}
-							}
-
 						}
 					}
 				}
@@ -764,7 +640,12 @@
 									onAction {
 										set	"cmd" "play guisounds_menu_tick" ;
 										set	"cmd" "video low" ;
-										resetTime "OVN_QualityLevels" "0";
+										set "OVN_RadioQualityLow::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityLow::noevents" "1";
+										set "OVN_RadioQualityMedium::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityMedium::noevents" "0";
+										set "OVN_RadioQualityHigh::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityHigh::noevents" "0";
 										namedEvent "NeedVidRestart";
 									}
 								}
@@ -786,7 +667,12 @@
 									onAction {
 										set	"cmd" "play guisounds_menu_tick" ;
 										set	"cmd" "video medium" ;
-										resetTime "OVN_QualityLevels" "0";
+										set "OVN_RadioQualityLow::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityLow::noevents" "0";
+										set "OVN_RadioQualityMedium::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityMedium::noevents" "1";
+										set "OVN_RadioQualityHigh::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityHigh::noevents" "0";
 										namedEvent "NeedVidRestart";
 									}
 								}
@@ -808,76 +694,12 @@
 									onAction {
 										set	"cmd" "play guisounds_menu_tick" ;
 										set	"cmd" "video high" ;
-										resetTime "OVN_QualityLevels" "0";
-										namedEvent "NeedVidRestart";
-									}
-								}
-							}
-
-							buttonDef OVN_Resolution {
-								rect			10, 160, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							
-								windowDef OVN_ResolutionTitle {
-									rect		0, 0, 200, 25
-									text		"#str_20287"
-									textalign	1
-									textaligny	0
-									textscale	0.33
-									shadow		1
-									forecolor	STATIC_FORECOLOR_COMMA
-								}
-
-								choiceDef OVN_ResolutionChoice {
-									rect		200, 0, 200, 25
-									textalign	1
-									textaligny	0
-									textscale	0.33
-									shadow		1
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									choices		"#str_20288"
-									values		"3;4;5;7;8"
-									cvar		"r_mode"
-									updateGroup	render
-									choiceType	1
-									onAction {
-										namedEvent "NeedVidRestart";
-									}
-								}
-							}
-							
-							buttonDef OVN_Fullscreen {
-								rect			10, 190, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-								
-								windowDef OVN_FullscreenTitle {
-									rect		0, 0, 200, 25
-									text		"#str_20289"
-									textalign	1
-									textaligny	0
-									textscale	0.33
-									shadow		1
-									forecolor	STATIC_FORECOLOR_COMMA
-								}
-								
-								choiceDef OVN_FullscreenChoice {
-									rect		200, 0, 200, 25
-									textalign	1
-									textaligny	0
-									textscale	0.33
-									shadow		1
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									choices		"#str_20152"
-									cvar		"r_fullscreen"
-									updateGroup	render
-									choiceType	0
-									onAction {
+										set "OVN_RadioQualityLow::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityLow::noevents" "0";
+										set "OVN_RadioQualityMedium::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityMedium::noevents" "0";
+										set "OVN_RadioQualityHigh::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+										set "OVN_RadioQualityHigh::noevents" "1";
 										namedEvent "NeedVidRestart";
 									}
 								}
@@ -944,76 +766,6 @@
 									step		0.1
 									thumbShader	"guis/assets/sliderbutton.tga"
 									cvar		"r_gamma"
-								}
-							}
-
-							buttonDef OVN_AspectRatio {
-								rect			10, 280, 400, 25
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-								
-								windowDef OVN_AspectRatioTitle {
-									rect		0, 0, 200, 25
-									text		"#str_20292"
-									textalign	1
-									textaligny	0
-									textscale	0.33
-									shadow		1
-									forecolor	STATIC_FORECOLOR_COMMA
-								}
-								
-								choiceDef OVN_AspectRatioChoice {
-									rect		200, 0, 200, 25
-									textalign	1
-									textaligny	0
-									textscale	0.33
-									shadow		1
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									choices		"#str_20293"
-									values		"0;1;2"
-									cvar		"r_aspectratio"
-									updateGroup	render
-									choiceType	0
-									onAction {
-										//namedEvent "NeedVidRestart";
-									}
-								}
-							}
-
-							buttonDef OVN_ApplyChanges {
-								rect			280, 315, 115, 28
-								text			"#str_20294"
-								textalign		1
-								textaligny		-1
-								shadow			1
-								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
-								hoverColor		BUTTON_HOVERCOLOR_COMMA
-								leftMat			"guis/assets/menu/button/corner"
-								middleMat		"guis/assets/menu/button/strip"
-								leftHoverMat	"guis/assets/menu/button/rollover_corner"
-								middleHoverMat	"guis/assets/menu/button/rollover_strip"
-								rightMat		"guis/assets/menu/button/invcorner"
-								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
-								edgeWidth		12
-								noEvents		1
-
-								onNamedEvent NeedVidRestart {
-									set "noevents" "0";
-									set "forecolor" BUTTON_FORECOLOR_STRING;
-									set "hovercolor" BUTTON_HOVERCOLOR_STRING;
-								}
-
-								onNamedEvent VidRestart {
-									set "noevents" "1";
-									set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
-									set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
-								}
-
-								onAction {
-									set	"cmd"	"play guisounds_menu_clickin" ;
-									namedEvent "VidRestart";
 								}
 							}
 						}
@@ -1347,41 +1099,6 @@
 									choiceType	0
 								}
 							}
-
-							buttonDef OVA_ApplyChanges {
-								rect			280, 315, 115, 28
-								text			"#str_20294"
-								textalign		1
-								textaligny		-1
-								shadow			1
-								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
-								hoverColor		BUTTON_HOVERCOLOR_COMMA
-								leftMat			"guis/assets/menu/button/corner"
-								middleMat		"guis/assets/menu/button/strip"
-								leftHoverMat	"guis/assets/menu/button/rollover_corner"
-								middleHoverMat	"guis/assets/menu/button/rollover_strip"
-								rightMat		"guis/assets/menu/button/invcorner"
-								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
-								edgeWidth		12
-								noEvents		1
-								
-								onNamedEvent NeedVidRestart {
-									set "noevents" "0";
-									set "forecolor" BUTTON_FORECOLOR_STRING;
-									set "hovercolor" BUTTON_HOVERCOLOR_STRING;
-								}
-
-								onNamedEvent VidRestart {
-									set "noevents" "1";
-									set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
-									set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
-								}
-
-								onAction {
-									set	"cmd"	"play guisounds_menu_clickin" ;
-									namedEvent "VidRestart";
-								}
-							}
 						}	// END OF PAGE
 					}
 
@@ -1543,91 +1260,6 @@
 									choiceType	1
 								}
 							}
-
-/*							buttonDef OVM_Drivers {
-								rect			10, 160, 400, 90
-								leftMat			"guis/assets/menu/text_titlebox_left.tga"
-								middleMat		"guis/assets/menu/text_titlebox.tga"
-								rightMat		"guis/assets/menu/text_titlebox_right.tga"
-								noTime			1
-
-								windowDef OVM_DriversTitle {
-									rect				0, 10, 200, 25
-									text				"#str_41098"	// Video Driver
-									textaligny			0
-									textalign			1
-									textscale			0.33
-									shadow				1
-									forecolor			STATIC_FORECOLOR_COMMA
-								}
-
-								buttonDef OVM_CheckDriver {
-									rect				215, 10, 170, 25
-									text				"#str_41099"
-									textalign			1
-									textaligny			-2
-									shadow				1
-									forecolor			BUTTON_FORECOLOR_COMMA
-									hoverColor			BUTTON_HOVERCOLOR_COMMA
-									leftMat				"guis/assets/menu/button/corner"
-									middleMat			"guis/assets/menu/button/strip"
-									leftHoverMat		"guis/assets/menu/button/rollover_corner"
-									middleHoverMat		"guis/assets/menu/button/rollover_strip"
-									rightMat			"guis/assets/menu/button/invcorner"
-									rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
-									edgeWidth			12
-									onAction {
-										set	"cmd" "play guisounds_menu_clickin" ;
-										set	"cmd" "http prey" ;
-									}
-								}
-
-								windowDef OVM_DriversTitle2 {
-									rect				20, 40, 360, 50
-									text				"#str_41100"
-									textaligny			0
-									textalign			1
-									textscale			0.3
-									shadow				1
-									forecolor			STATIC_FORECOLOR_COMMA
-								}
-							}
-*/
-
-							buttonDef OVM_ApplyChanges {
-								rect			280, 315, 115, 28
-								text			"#str_20294"
-								textalign		1
-								textaligny		-1
-								shadow			1
-								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
-								hoverColor		BUTTON_HOVERCOLOR_COMMA
-								leftMat			"guis/assets/menu/button/corner"
-								middleMat		"guis/assets/menu/button/strip"
-								leftHoverMat	"guis/assets/menu/button/rollover_corner"
-								middleHoverMat	"guis/assets/menu/button/rollover_strip"
-								rightMat		"guis/assets/menu/button/invcorner"
-								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
-								edgeWidth		12
-								noEvents		1
-								
-								onNamedEvent NeedVidRestart {
-									set "noevents" "0";
-									set "forecolor" BUTTON_FORECOLOR_STRING;
-									set "hovercolor" BUTTON_HOVERCOLOR_STRING;
-								}
-
-								onNamedEvent VidRestart {
-									set "noevents" "1";
-									set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
-									set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
-								}
-
-								onAction {
-									set	"cmd"	"play guisounds_menu_clickin" ;
-									namedEvent "VidRestart";
-								}
-							}
 						}
 					}
 				}
@@ -1647,19 +1279,6 @@
 				onNamedEvent UpdateOptions {
 					// Set initial state of our sound options based on the state variables
 					// Called whenever options may have changed
-
-					// Mixer Grayed based on mixeroption
-					// Device Grayed unless openAL is ON
-					// Speakers Grayed unless openAL is OFF
-					// Reverse Grayed unless openAL is OFF
-					// Driver Button visible if oldAudioDriver
-					
-					if ("gui::oldAudioDriver" != 0) {
-						set "OA_SoundDriverNotice::visible" "1";
-					}
-					else {
-						set "OA_SoundDriverNotice::visible" "0";
-					}
 
 					// If no eax capable devices are available, disable the mixer change
 					if ("gui::mixeroption" != 0) {
@@ -1865,44 +1484,6 @@
 								choiceType	1
 								onActionRelease {
 									set "cmd" "sound system" ;
-								}
-							}
-						}
-
-						buttonDef OA_SoundDriverNotice {
-							rect			10, 160, 400, 50
-							leftMat			"guis/assets/menu/text_titlebox_left.tga"
-							middleMat		"guis/assets/menu/text_titlebox.tga"
-							rightMat		"guis/assets/menu/text_titlebox_right.tga"
-
-							windowDef OA_SoundDriverNoticeTitle {
-								rect				10, 5, 190, 40
-								text				"#str_41176"
-								textaligny			-3
-								textalign			1
-								textscale			0.33
-								shadow				1
-								forecolor			STATIC_FORECOLOR_COMMA
-							}
-
-							buttonDef OA_SoundDriverNoticeButton {
-								rect				215, 10, 170, 25
-								text				"#str_41099"
-								textalign			1
-								textaligny			-2
-								shadow				1
-								forecolor			BUTTON_FORECOLOR_COMMA
-								hoverColor			BUTTON_HOVERCOLOR_COMMA
-								leftMat				"guis/assets/menu/button/corner"
-								middleMat			"guis/assets/menu/button/strip"
-								leftHoverMat		"guis/assets/menu/button/rollover_corner"
-								middleHoverMat		"guis/assets/menu/button/rollover_strip"
-								rightMat			"guis/assets/menu/button/invcorner"
-								rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
-								edgeWidth			12
-								onAction {
-									set	"cmd" "play guisounds_menu_clickin" ;
-									set	"cmd" "http sounddriver" ;
 								}
 							}
 						}
