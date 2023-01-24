@@ -1207,7 +1207,7 @@ void hhWeapon::PresentWeapon( bool showViewModel ) {
 	UpdateAnimation();
 
 	//Lubos BEGIN
-	if (game->isVR && !vr_weaponZoomed.GetBool()) {
+	if (game->isVR && !vr_weaponZoomed.GetBool() && (status <= WP_RELOAD)) {
 		ApplyVRWeaponTransform(renderEntity.axis, renderEntity.origin);
 	}
 	//Lubos END
