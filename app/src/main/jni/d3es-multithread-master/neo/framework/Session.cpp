@@ -35,6 +35,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "Session_local.h"
 #include "Doom3Quest/VrCommon.h"
 
+int fixAudio = 0; //Lubos
+
 idCVar	idSessionLocal::com_showAngles("com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "");
 idCVar	idSessionLocal::com_minTics("com_minTics", "1", CVAR_SYSTEM, "");
 idCVar	idSessionLocal::com_showTics("com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "");
@@ -1427,6 +1429,8 @@ void idSessionLocal::MoveToNewMap(const char *mapName)
 	}
 
 	SetGUI(NULL, NULL);
+
+	fixAudio = 10; //Lubos
 }
 
 /*
@@ -2900,6 +2904,15 @@ void idSessionLocal::Draw()
 	if (!fullConsole) {
 		console->Draw(false);
 	}
+
+	//Lubos BEGIN
+	if (fixAudio > 0) {
+		fixAudio--;
+		if (fixAudio == 0) {
+			ExitMenu();
+		}
+	}
+	//Lubos END
 }
 
 /*
