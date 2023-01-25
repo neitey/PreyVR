@@ -665,7 +665,7 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 				parms->subviewSurface = drawSurf;
 
 				// generate render commands for it
-				R_RenderView(parms);
+				//R_RenderView(parms); //Lubos
 				tr.UnCrop();
 				return true;
 			}
