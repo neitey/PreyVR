@@ -40,6 +40,16 @@ If you have questions concerning this license or the applicable additional terms
 
 float RB_overbright = 1;
 
+//Lubos
+char* blacklisted[] = {
+		"makealpha( models/mapobjects/skybox/fractal_clouds_mask)",
+		"makealpha( models/mapobjects/skybox/spindle/spindle_light_mask)",
+		"makealpha( models/mapobjects/skybox/sphere_add)",
+		"models/mapobjects/skybox/starfield",
+		"models/mapobjects/skybox/sphere_side",
+		"textures/decals/windows_scale01",
+};
+
 /*
 ================
 RB_DrawElementsWithCounters
@@ -61,7 +71,19 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 	}
 */
 	if ( surf->indexCache ) {
-		qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
+		//Lubos BEGIN
+		bool render = true;
+		for (char* item : blacklisted) {
+			if (strcmp(item, surf->material->ImageName()) == 0) {
+				render = false;
+				break;
+			}
+		}
+
+		if (render) {
+			qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
+		}
+		//Lubos END
 		backEnd.pc.c_vboIndexes += surf->numIndexes;
 	} else {
 		static bool bOnce = true;
