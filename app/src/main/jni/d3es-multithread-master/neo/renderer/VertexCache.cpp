@@ -454,24 +454,14 @@ void idVertexCache::Alloc(void* data, int size, vertCache_t** buffer, bool index
 
 	block->indexBuffer = indexBuffer;
 
-	// TODO, make this more efficient...
-#if 0
-	if( block->frontEndMemory && size < block->size)
-	{
-
-	}
-	else
-	{
-		free(block->frontEndMemory);
+	//Lubos BEGIN
+	if( !block->frontEndMemory || size > block->size) {
+		if( block->frontEndMemory )
+			free(block->frontEndMemory);
 		block->frontEndMemory = malloc(size + 16);
-		block->size = size;
 	}
-#else
-	if( block->frontEndMemory )
-		free(block->frontEndMemory);
-	block->frontEndMemory = malloc(size + 16);
 	block->size = size;
-#endif
+	//Lubos END
 
 	memcpy( block->frontEndMemory, data, size );
 	block->frontEndMemoryDirty = true;
