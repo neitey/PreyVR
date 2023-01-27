@@ -857,6 +857,11 @@ void idSessionLocal::HandleMainMenuCommands(const char *menuCommand)
 		}
 
 		if (!idStr::Icmp(cmd, "startMultiplayer")) {
+			//Lubos BEGIN
+			StartNewGame(cvarSystem->GetCVarString("si_map"));
+			return;
+			//Lubos END
+
 			int dedicated = guiActive->State().GetInt("dedicated");
 			cvarSystem->SetCVarBool("net_LANServer", guiActive->State().GetBool("server_type"));
 
