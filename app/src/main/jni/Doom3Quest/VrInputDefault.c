@@ -354,26 +354,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
 
         //Right-hand specific stuff
         {
-            //Adjust positional factor for this sample based on how long the last frame took, it should
-            //approximately even out the positional movement on a per frame basis (especially when fps is much lower than 60)
-            /*
-            static float lastSampleTime = 0;
-            float sampleTime = Sys_Milliseconds();
-            float vr_positional_factor = 2400.0f * ((1000.0f / (float)Doom3Quest_GetRefresh()) / (sampleTime-lastSampleTime));
-            lastSampleTime = sampleTime;
-
-            //This section corrects for the fact that the controller actually controls direction of movement, but we want to move relative to the direction the
-            //player is facing for positional tracking
-
-            vec2_t v;
-            rotateAboutOrigin(-pVRClientInfo->hmdposition_delta[0] * vr_positional_factor,
-                              pVRClientInfo->hmdposition_delta[2] * vr_positional_factor, - pVRClientInfo->hmdorientation[YAW], v);
-            positional_movementSideways = v[0];
-            positional_movementForward = v[1];
-             */
-
-
-
             //Fire Primary
             if ((pDominantTrackedRemoteNew->Buttons & ovrButton_Trigger) !=
                 (pDominantTrackedRemoteOld->Buttons & ovrButton_Trigger)) {

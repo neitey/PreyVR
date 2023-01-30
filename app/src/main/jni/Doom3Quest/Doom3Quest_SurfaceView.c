@@ -997,16 +997,30 @@ void Doom3Quest_HapticDisable()
 void VR_Doom3Main(int argc, char** argv);
 
 void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up, float *yaw, float *pitch, float *roll ) {
-    *joy_side = remote_movementSideways;
-    *joy_forward = remote_movementForward;
-    *hmd_forward = positional_movementForward;
-    *hmd_side = positional_movementSideways;
-    *up = remote_movementUp;
-    //Lubos BEGIN
-    *yaw = vr.hmdorientation_temp[YAW] + snapTurn;
-    *pitch = vr.hmdorientation_temp[PITCH];
-    *roll = vr.hmdorientation_temp[ROLL];
-    //Lubos END
+	//Lubos BEGIN
+	//Adjust positional factor for this sample based on how long the last frame took, it should
+	//approximately even out the positional movement on a per frame basis (especially when fps is much lower than 60)
+	static float lastSampleTime = 0;
+	float sampleTime = Sys_Milliseconds();
+	float vr_positional_factor = 3600.0f * ((1000.0f / (float)Doom3Quest_GetRefresh()) / (sampleTime-lastSampleTime));
+	lastSampleTime = sampleTime;
+
+	//This section corrects for the fact that the controller actually controls direction of movement, but we want to move relative to the direction the
+	//player is facing for positional tracking
+	vec2_t v;
+	float dx = pVRClientInfo->hmdposition_delta[0] * vr_positional_factor;
+	float dy = pVRClientInfo->hmdposition_delta[2] * vr_positional_factor;
+	rotateAboutOrigin(-dx,dy, -pVRClientInfo->hmdorientation_temp[YAW], v);
+
+	*hmd_forward = v[0];
+	*hmd_side = v[1];
+	*joy_side = remote_movementSideways;
+	*joy_forward = remote_movementForward;
+	*up = pVRClientInfo->hmdposition_delta[1] * vr_positional_factor;
+	*yaw = vr.hmdorientation_temp[YAW] + snapTurn;
+	*pitch = vr.hmdorientation_temp[PITCH];
+	*roll = vr.hmdorientation_temp[ROLL];
+	//Lubos END
 }
 
 /*
@@ -1393,9 +1407,6 @@ void VR_Init()
 	screenYaw = 0.0f;
 	remote_movementSideways = 0.0f;
 	remote_movementForward = 0.0f;
-	remote_movementUp = 0.0f;
-	positional_movementSideways = 0.0f;
-	positional_movementForward = 0.0f;
 	snapTurn = 0.0f;
 	vr.visible_hud = true;
 

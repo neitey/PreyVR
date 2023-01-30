@@ -27,8 +27,6 @@ extern ovrDeviceID controllerIDs[2];
 extern float remote_movementSideways;
 extern float remote_movementForward;
 extern float remote_movementUp;
-extern float positional_movementSideways;
-extern float positional_movementForward;
 extern float snapTurn;
 
 void sendButtonAction(const char* action, long buttonDown);
