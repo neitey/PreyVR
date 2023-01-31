@@ -67,6 +67,13 @@ Handles user intended acceleration
 ==============
 */
 void idPhysics_Player::Accelerate( const idVec3 &wishdir, const float wishspeed, const float accel ) {
+	//Lubos BEGIN
+	if (game->isVR) {
+		//Sys_Printf("Kunda=%f", current.velocity);
+		current.velocity = wishdir * wishspeed;
+	}
+	//Lubos END
+
 #if 1
 	// q2 style
 	float addspeed, accelspeed, currentspeed;
