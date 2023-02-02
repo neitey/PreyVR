@@ -1450,31 +1450,6 @@ void hhGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
 	}
 }
 
-void hhGameLocal::CheckRenderCvars() {
-	// Koz
-	if ( vr_useFloorHeight.IsModified() || ( vr_normalViewHeight.IsModified() && vr_useFloorHeight.GetInteger() == 0 ) || vr_scale.IsModified() )
-	{
-		vr_useFloorHeight.ClearModified();
-		vr_normalViewHeight.ClearModified();
-		vr_scale.ClearModified();
-	}
-}
-
-
-void hhGameLocal::EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn) {
-	//TODO:implement
-}
-
-bool hhGameLocal::CMDButtonsAttackCall(int &teleportCanceled) {
-	//TODO:implement
-	return false;
-}
-
-bool hhGameLocal::CMDButtonsPhysicalCrouch() {
-	//TODO:implement
-	return false;
-}
-
 bool hhGameLocal::InCinematic() {
 	if( GetLocalPlayer() && GetLocalPlayer()->GetPrivateCameraView() )
 		return true;

@@ -22,11 +22,6 @@ public:
 
 	//Lubos BEGIN
 	virtual void 				SetVRClientInfo(vrClientInfo *pVRClientInfo);
-	virtual void				CheckRenderCvars();
-	virtual void 				EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn);
-	virtual bool 				CMDButtonsAttackCall(int &teleportCanceled);
-	virtual bool 				CMDButtonsPhysicalCrouch();
-
 	virtual bool 				InCinematic();
 
 	// Release the mouse when the PDA is open

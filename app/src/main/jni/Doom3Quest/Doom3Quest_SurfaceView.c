@@ -1000,20 +1000,21 @@ void VR_Doom3Main(int argc, char** argv);
 float hmdposition_last[3] = {};
 
 void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up, float *yaw, float *pitch, float *roll ) {
-	float vr_positional_factor = 4000.0f;
+	float dx = pVRClientInfo->hmdposition_last[0] - hmdposition_last[0];
+	float dy = pVRClientInfo->hmdposition_last[1] - hmdposition_last[1];
+	float dz = pVRClientInfo->hmdposition_last[2] - hmdposition_last[2];
+	if (fabs(dx) + fabs(dy) + fabs(dz) > 1) {
+		dx = 0; dy = 0; dz = 0;
+	}
 
-	//This section corrects for the fact that the controller actually controls direction of movement, but we want to move relative to the direction the
-	//player is facing for positional tracking
 	vec2_t v;
-	float dx = (pVRClientInfo->hmdposition_last[0] - hmdposition_last[0]) * vr_positional_factor;
-	float dy = (pVRClientInfo->hmdposition_last[2] - hmdposition_last[2]) * vr_positional_factor;
-	rotateAboutOrigin(dx,-dy, -pVRClientInfo->hmdorientation_temp[YAW], v);
+	rotateAboutOrigin(dx,-dz, -pVRClientInfo->hmdorientation_temp[YAW], v);
 
-	*hmd_forward = v[0];
-	*hmd_side = v[1];
+	*hmd_forward = v[0] * 2400.0f;
+	*hmd_side = v[1] * 2400.0f;
 	*joy_side = remote_movementSideways;
 	*joy_forward = remote_movementForward;
-	*up = (pVRClientInfo->hmdposition_last[1] - hmdposition_last[1]) * vr_positional_factor;
+	*up = pVRClientInfo->hmdposition_last[1];
 	*yaw = vr.hmdorientation_temp[YAW] + snapTurn;
 	*pitch = vr.hmdorientation_temp[PITCH];
 	*roll = vr.hmdorientation_temp[ROLL];

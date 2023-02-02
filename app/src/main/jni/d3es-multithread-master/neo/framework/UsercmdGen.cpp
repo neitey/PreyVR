@@ -866,8 +866,8 @@ void idUsercmdGenLocal::MakeCurrent(void)
 
 		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward );
 		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe);
+		cmd.elevationVR = up;
 
-		game->EvaluateVRMoveMode(viewangles, cmd, buttonCurrentlyClicked, 0);
 		viewangles[PITCH] = pitch;
 		viewangles[YAW] = yaw;
 		viewangles[ROLL] = roll;

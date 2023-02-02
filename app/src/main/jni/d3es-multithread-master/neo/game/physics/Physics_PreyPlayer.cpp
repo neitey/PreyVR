@@ -122,7 +122,13 @@ hhPhysics_Player::SetOwnerCameraTarget
 */
 void hhPhysics_Player::SetOwnerCameraTarget( const idVec3& Origin, const idMat3& Axis, int iInterpFlags ) {
 	if( camera && castSelf ) {
-		camera->UpdateTarget( Origin, Axis, castSelf->EyeHeightIdeal(), iInterpFlags );
+		//Lubos BEGIN
+		idVec3 position = Origin;
+		if (game->isVR) {
+			position += idVec3(0, 0, (command.elevationVR - 1.5f) * 32.0f) * GetAxis();
+		}
+		//Lubos END
+		camera->UpdateTarget( position, Axis, castSelf->EyeHeightIdeal(), iInterpFlags );
 	}
 	else if (castSelfGeneric && castSelfGeneric->IsType(idActor::Type)) { //rww - update the view axis for non-player actors
 		idActor *actor = static_cast<idActor *>(castSelfGeneric);

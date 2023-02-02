@@ -178,6 +178,7 @@ class usercmd_t
 		signed char impulse;						// impulse command
 		byte		flags;							// additional flags
 		int			sequence;						// just for debugging
+		float       elevationVR;                    // Lubos
 
 	public:
 		void		ByteSwap();						// on big endian systems, byte swap the shorts and ints
