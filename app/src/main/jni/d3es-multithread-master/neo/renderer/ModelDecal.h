@@ -109,7 +109,7 @@ private:
 
 	// Adds the winding triangles to the appropriate decal in the
 	// chain, creating a new one if necessary.
-	void						AddWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime );
+	void						AddWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime, idVec3 offset /*Lubos*/ );
 
 	// Adds depth faded triangles for the winding to the appropriate
 	// decal in the chain, creating a new one if necessary.

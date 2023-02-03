@@ -206,7 +206,7 @@ void idRenderModelDecal::GlobalProjectionInfoToLocal( decalProjectionInfo_t &loc
 idRenderModelDecal::AddWinding
 =================
 */
-void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime ) {
+void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime, idVec3 offset /*Lubos*/) {
 	int i;
 	float invFadeDepth, fade;
 	decalInfo_t	decalInfo;
@@ -233,7 +233,7 @@ void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decal
 			}
 			fade = 1.0f - fade;
 			vertDepthFade[tri.numVerts + i] = fade;
-			tri.verts[tri.numVerts + i].xyz = w[i].ToVec3();
+			tri.verts[tri.numVerts + i].xyz = w[i].ToVec3() + offset; //Lubos
 			tri.verts[tri.numVerts + i].st[0] = w[i].s;
 			tri.verts[tri.numVerts + i].st[1] = w[i].t;
 			for ( int k = 0 ; k < 4 ; k++ ) {
@@ -264,7 +264,7 @@ void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decal
 		nextDecal = idRenderModelDecal::Alloc();
 	}
 	// let the next decal on the chain take a look
-	nextDecal->AddWinding( w, decalMaterial, fadePlanes, fadeDepth, startTime );
+	nextDecal->AddWinding( w, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
 }
 
 /*
@@ -275,16 +275,21 @@ idRenderModelDecal::AddDepthFadedWinding
 void idRenderModelDecal::AddDepthFadedWinding( const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime ) {
 	idFixedWinding front, back;
 
-	front = w;
-	if ( front.Split( &back, fadePlanes[0], 0.1f ) == SIDE_CROSS ) {
-		AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime );
-	}
+	//Lubos BEGIN
+	for (int i = -1; i <= 1; i += 2) {
+		idVec3 offset = idVec3(i , i, i) * 0.01f;
+		front = w;
+		if ( front.Split( &back, fadePlanes[0], 0.1f ) == SIDE_CROSS ) {
+			AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
+		}
 
-	if ( front.Split( &back, fadePlanes[1], 0.1f ) == SIDE_CROSS ) {
-		AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime );
-	}
+		if ( front.Split( &back, fadePlanes[1], 0.1f ) == SIDE_CROSS ) {
+			AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
+		}
 
-	AddWinding( front, decalMaterial, fadePlanes, fadeDepth, startTime );
+		AddWinding( front, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
+	}
+	//Lubos END
 }
 
 /*
