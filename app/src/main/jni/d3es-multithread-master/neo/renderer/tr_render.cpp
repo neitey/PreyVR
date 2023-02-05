@@ -26,6 +26,31 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+
+//Lubos BEGIN
+char* blacklisted[] = {
+		"makealpha( models/mapobjects/skybox/spindle/spindle_light_mask)",
+		"makealpha( models/mapobjects/skybox/fractal_clouds_mask)",
+		"makealpha( models/mapobjects/skybox/sphere_cap_add)",
+		"makealpha( models/mapobjects/skybox/sphere_add)",
+		"models/mapobjects/skybox/big_earth",
+		"models/mapobjects/skybox/starfield",
+		"models/mapobjects/skybox/sphere_side",
+		"textures/decals/windows_scale01",
+};
+
+//#define MATERIAL_PROFILER
+#ifdef MATERIAL_PROFILER
+#include "Doom3Quest/VrCommon.h"
+#include <chrono>
+#include <map>
+
+time_t lastRender;
+std::map<char*, int> renderProfile;
+#endif
+
+//Lubos END
+
 #include "idlib/precompiled.h"
 #include "renderer/VertexCache.h"
 #include "renderer/Cinematic.h"
@@ -40,15 +65,6 @@ If you have questions concerning this license or the applicable additional terms
 
 float RB_overbright = 1;
 
-//Lubos
-char* blacklisted[] = {
-		"makealpha( models/mapobjects/skybox/fractal_clouds_mask)",
-		"makealpha( models/mapobjects/skybox/spindle/spindle_light_mask)",
-		"makealpha( models/mapobjects/skybox/sphere_add)",
-		"models/mapobjects/skybox/starfield",
-		"models/mapobjects/skybox/sphere_side",
-		"textures/decals/windows_scale01",
-};
 
 /*
 ================
@@ -73,18 +89,51 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 	if ( surf->indexCache ) {
 		//Lubos BEGIN
 		bool render = true;
-		for (char* item : blacklisted) {
-			if (strcmp(item, surf->material->ImageName()) == 0) {
-				render = false;
-				break;
+		if (strcmp("dmshuttle2", cvarSystem->GetCVarString("si_map")) == 0) {
+			for (char* item : blacklisted) {
+				if (strcmp(item, surf->material->ImageName()) == 0) {
+					render = false;
+					break;
+				}
 			}
 		}
 
 		if (render) {
+#ifdef MATERIAL_PROFILER
+			std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 			qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
+			backEnd.pc.c_vboIndexes += surf->numIndexes;
+			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+			char* material = const_cast<char *>(surf->material->ImageName());
+			if (renderProfile.find(material) == renderProfile.end()) {
+				renderProfile[material] = 0;
+			}
+			renderProfile[material] += std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
+			time_t currentRender = time(NULL);
+			if (lastRender != currentRender) {
+				while (!renderProfile.empty()) {
+					int max = -1;
+					for (auto& profile : renderProfile) {
+						if (max < profile.second / 1000) {
+							max = profile.second / 1000;
+							material = profile.first;
+						}
+					}
+					renderProfile.erase(material);
+					if (max > 1) {
+						ALOGE("PROFILER: Rendering %s took %dms", material, max);
+					}
+				}
+				lastRender = currentRender;
+			}
+#else
+			qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
+			backEnd.pc.c_vboIndexes += surf->numIndexes;
+#endif
 		}
 		//Lubos END
-		backEnd.pc.c_vboIndexes += surf->numIndexes;
 	} else {
 		static bool bOnce = true;
 		if (bOnce) {
