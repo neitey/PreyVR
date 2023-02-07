@@ -1015,7 +1015,7 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
 	*joy_side = remote_movementSideways;
 	*joy_forward = remote_movementForward;
 	*up = pVRClientInfo->hmdposition_last[1];
-	*yaw = vr.hmdorientation_temp[YAW] + snapTurn;
+	*yaw = vr.hmdorientation_temp[YAW] + vr.snapTurn;
 	*pitch = vr.hmdorientation_temp[PITCH];
 	*roll = vr.hmdorientation_temp[ROLL];
 
@@ -1409,7 +1409,7 @@ void VR_Init()
 	screenYaw = 0.0f;
 	remote_movementSideways = 0.0f;
 	remote_movementForward = 0.0f;
-	snapTurn = 0.0f;
+	vr.snapTurn = 0.0f;
 	vr.visible_hud = true;
 
 	//init randomiser

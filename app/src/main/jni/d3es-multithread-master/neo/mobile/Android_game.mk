@@ -325,6 +325,6 @@ LOCAL_SRC_FILES = $(src_idlib) $(src_game)
 
 LOCAL_SHARED_LIBRARIES := 
 LOCAL_STATIC_LIBRARIES :=d3es_
-LOCAL_LDLIBS :=
+LOCAL_LDLIBS := -landroid -llog
 
 include $(BUILD_SHARED_LIBRARY)
