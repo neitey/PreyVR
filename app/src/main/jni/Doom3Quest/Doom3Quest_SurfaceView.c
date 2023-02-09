@@ -580,7 +580,7 @@ static bool ovrFramebuffer_Create(
 			// Create the depth buffer texture.
 			GL(glGenTextures(1, &frameBuffer->DepthBuffers[i]));
 			GL(glBindTexture(GL_TEXTURE_2D_ARRAY, frameBuffer->DepthBuffers[i]));
-			GL(glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, 2));
+			GL(glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, width, height, 2));
 			GL(glBindTexture(GL_TEXTURE_2D_ARRAY, 0));
 
 			// Create the frame buffer.
@@ -635,7 +635,7 @@ static bool ovrFramebuffer_Create(
 				GL(glGenRenderbuffers(1, &frameBuffer->DepthBuffers[i]));
 				GL(glBindRenderbuffer(GL_RENDERBUFFER, frameBuffer->DepthBuffers[i]));
 				GL(glRenderbufferStorageMultisampleEXT(
-						GL_RENDERBUFFER, multisamples, GL_DEPTH_COMPONENT24, width, height));
+						GL_RENDERBUFFER, multisamples, GL_DEPTH_COMPONENT32F, width, height));
 				GL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 
 				// Create the frame buffer.

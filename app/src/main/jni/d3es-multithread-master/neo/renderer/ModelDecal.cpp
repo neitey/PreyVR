@@ -276,19 +276,17 @@ void idRenderModelDecal::AddDepthFadedWinding( const idWinding &w, const idMater
 	idFixedWinding front, back;
 
 	//Lubos BEGIN
-	for (int i = -1; i <= 1; i += 2) {
-		idVec3 offset = idVec3(i , i, i) * 0.01f;
-		front = w;
-		if ( front.Split( &back, fadePlanes[0], 0.1f ) == SIDE_CROSS ) {
-			AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
-		}
-
-		if ( front.Split( &back, fadePlanes[1], 0.1f ) == SIDE_CROSS ) {
-			AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
-		}
-
-		AddWinding( front, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
+	idVec3 offset = idVec3(-1, 0, 0) * tr.primaryRenderView.viewaxis;
+	front = w;
+	if ( front.Split( &back, fadePlanes[0], 0.1f ) == SIDE_CROSS ) {
+		AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
 	}
+
+	if ( front.Split( &back, fadePlanes[1], 0.1f ) == SIDE_CROSS ) {
+		AddWinding( back, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
+	}
+
+	AddWinding( front, decalMaterial, fadePlanes, fadeDepth, startTime, offset );
 	//Lubos END
 }
 
