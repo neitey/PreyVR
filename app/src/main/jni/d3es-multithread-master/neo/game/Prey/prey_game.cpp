@@ -739,6 +739,20 @@ gameReturn_t hhGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			}
 		}
 
+		//Lubos BEGIN
+		if (game->isVR && view) {
+			{
+				idAngles camera = (view->viewaxis * player->GetAxis().Inverse()).ToAngles();
+				for (int i = 0; i < 3; i++) {
+					camera[i] -= pVRClientInfo->hmdorientation_temp[i];
+					while (camera[i] > 180) camera[i] -= 360;
+					while (camera[i] <-180) camera[i] += 360;
+				}
+				ALOGV("Camera misaxis=%d %d %d", (int)camera[PITCH], (int)camera[YAW], (int)camera[ROLL]);
+			}
+		}
+		//Lubos END
+
 		// clear any debug lines from a previous frame
 		gameRenderWorld->DebugClearLines( time );
 
