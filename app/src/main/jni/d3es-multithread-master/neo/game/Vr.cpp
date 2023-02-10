@@ -215,7 +215,7 @@ void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin, idMat3 gravity)
 	gravityAngles[PITCH] = v[0];
 	gravityAngles[ROLL] = v[1];
 	gravityAngles[YAW] = 0;
-	ALOGV("Floor angles=%d %d %d", (int)gravityAngles[PITCH], (int)gravityAngles[YAW], (int)gravityAngles[ROLL]);
+	//ALOGV("Floor angles=%d %d %d", (int)gravityAngles[PITCH], (int)gravityAngles[YAW], (int)gravityAngles[ROLL]);
 
 	// Get offset between hand and weapon
 	auto head = pVRClientInfo->hmdposition_last;
@@ -225,8 +225,8 @@ void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin, idMat3 gravity)
 	rotateAboutOrigin(-dx,dz, pVRClientInfo->snapTurn, v);
 
 	// Apply weapon translation
-	idVec3 diff = idVec3(v[0], v[1], weapon[1] - head[1]) * 32;
-	diff -= idVec3(12, 0, 0) * axis;
-	origin += diff * gravityAngles.ToMat3();
+	//idVec3 diff = idVec3(v[0], v[1], weapon[1] - head[1]) * 32;
+	//diff -= idVec3(12, 0, 0) * axis;
+	//origin += diff * gravityAngles.ToMat3();
 }
 //Lubos END
