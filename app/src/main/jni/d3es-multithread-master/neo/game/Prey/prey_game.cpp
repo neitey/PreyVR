@@ -747,8 +747,9 @@ gameReturn_t hhGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 					camera[i] -= pVRClientInfo->hmdorientation_temp[i];
 					while (camera[i] > 180) camera[i] -= 360;
 					while (camera[i] <-180) camera[i] += 360;
+					pVRClientInfo->hmdorientation_diff[i] = camera[i];
 				}
-				ALOGV("Camera misaxis=%d %d %d", (int)camera[PITCH], (int)camera[YAW], (int)camera[ROLL]);
+				//ALOGV("Camera misaxis=%d %d %d", (int)camera[PITCH], (int)camera[YAW], (int)camera[ROLL]);
 			}
 		}
 		//Lubos END

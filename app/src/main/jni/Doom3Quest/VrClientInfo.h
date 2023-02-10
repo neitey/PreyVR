@@ -40,6 +40,8 @@ typedef struct {
 
     //FP - Temp Variables for other stuff
     float snapTurn;
+    vec3_t hmdorientation_diff;
+    vec3_t hmdorientation_offset;
     vec3_t hmdorientation_temp;
     vec3_t weaponangles_temp;
     vec3_t weaponangles_last_temp; // Don't use this, it is just for calculating delta!

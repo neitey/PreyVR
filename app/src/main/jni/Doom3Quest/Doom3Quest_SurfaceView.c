@@ -1009,15 +1009,17 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
 
 	vec2_t v;
 	rotateAboutOrigin(dx,-dz, -pVRClientInfo->hmdorientation_temp[YAW], v);
-
 	*hmd_forward = v[0] * 2400.0f;
 	*hmd_side = v[1] * 2400.0f;
 	*joy_side = remote_movementSideways;
 	*joy_forward = remote_movementForward;
 	*up = pVRClientInfo->hmdposition_last[1];
+
+	if (fabs(vr.hmdorientation_diff[PITCH]) > 1) vr.hmdorientation_offset[PITCH] += vr.hmdorientation_diff[PITCH] > 0 ? 0.5f : -0.5f;
+	if (fabs(vr.hmdorientation_diff[ROLL]) > 1) vr.hmdorientation_offset[ROLL] += vr.hmdorientation_diff[ROLL] > 0 ? 0.5f : -0.5f;
+	*pitch = vr.hmdorientation_temp[PITCH] - vr.hmdorientation_offset[PITCH];
+	*roll = vr.hmdorientation_temp[ROLL] - vr.hmdorientation_offset[ROLL];
 	*yaw = vr.hmdorientation_temp[YAW] + vr.snapTurn;
-	*pitch = vr.hmdorientation_temp[PITCH];
-	*roll = vr.hmdorientation_temp[ROLL];
 
 	hmdposition_last[0] = pVRClientInfo->hmdposition_last[0];
 	hmdposition_last[1] = pVRClientInfo->hmdposition_last[1];
