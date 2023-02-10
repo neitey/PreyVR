@@ -29,7 +29,6 @@ ovrDeviceID controllerIDs[2];
 
 float remote_movementSideways;
 float remote_movementForward;
-float snapTurn;
 
 #include "VrInput.h"
 

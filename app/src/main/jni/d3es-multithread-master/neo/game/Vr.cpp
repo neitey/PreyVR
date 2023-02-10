@@ -184,23 +184,49 @@ idCVar vr_rumbleChainsaw( "vr_rumbleChainsaw", "1", CVAR_BOOL | CVAR_GAME | CVAR
 idCVar vr_weaponZoomed( "vr_weaponZoomed", "0", CVAR_BOOL | CVAR_GAME, "Indicates weapon is in zoom mode." );
 
 //Lubos BEGIN
-void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
+void rotateAboutOrigin(float x, float y, float rotation, vec2_t out)
 {
+	out[0] = cosf(DEG2RAD(-rotation)) * x  +  sinf(DEG2RAD(-rotation)) * y;
+	out[1] = cosf(DEG2RAD(-rotation)) * y  -  sinf(DEG2RAD(-rotation)) * x;
+}
+
+void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin, idMat3 gravity)
+{
+	// Get controller orientation
 	idAngles weaponAngles;
 	weaponAngles[PITCH] = pVRClientInfo->weaponangles_temp[PITCH];
 	weaponAngles[YAW] = pVRClientInfo->weaponangles_temp[YAW];
 	weaponAngles[ROLL] = pVRClientInfo->weaponangles_temp[ROLL];
 
+	// Get headset orientation
 	idAngles hmdAngles;
 	hmdAngles[PITCH] = pVRClientInfo->hmdorientation_temp[PITCH];
 	hmdAngles[YAW] = pVRClientInfo->hmdorientation_temp[YAW];
 	hmdAngles[ROLL] = pVRClientInfo->hmdorientation_temp[ROLL];
 
+	// Apply weapon orientation
 	axis = hmdAngles.ToMat3().Inverse() * axis;
 	axis = weaponAngles.ToMat3() * axis;
 
-	//auto head = pVRClientInfo->hmdposition;
-	//auto weapon = vr_weaponHand.GetInteger() == 0 ? pVRClientInfo->rhandposition : pVRClientInfo->lhandposition;
-	//origin += idVec3(weapon[0] - head[0], weapon[1] - head[1], weapon[2] - head[2]);
+	// Get floor orientation relatively to the headset coordinate space
+	vec2_t v;
+	idAngles gravityAngles = gravity.ToAngles();
+	rotateAboutOrigin(gravityAngles[PITCH],gravityAngles[ROLL], -gravityAngles[YAW], v);
+	gravityAngles[PITCH] = v[0];
+	gravityAngles[ROLL] = v[1];
+	gravityAngles[YAW] = 0;
+	//ALOGV("Floor angles=%d %d %d", (int)gravityAngles[PITCH], (int)gravityAngles[YAW], (int)gravityAngles[ROLL]);
+
+	// Get offset between hand and weapon
+	auto head = pVRClientInfo->hmdposition_last;
+	auto weapon = pVRClientInfo->rhandposition;
+	float dx = weapon[0] - head[0];
+	float dz = weapon[2] - head[2];
+	rotateAboutOrigin(-dx,dz, pVRClientInfo->snapTurn, v);
+
+	// Apply weapon translation
+	//idVec3 diff = idVec3(v[0], v[1], weapon[1] - head[1]) * 32;
+	//diff -= idVec3(12, 0, 0) * axis;
+	//origin += diff * gravityAngles.ToMat3();
 }
 //Lubos END

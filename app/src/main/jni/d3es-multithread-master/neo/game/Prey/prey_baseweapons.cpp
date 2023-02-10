@@ -1208,7 +1208,11 @@ void hhWeapon::PresentWeapon( bool showViewModel ) {
 
 	//Lubos BEGIN
 	if (game->isVR && !vr_weaponZoomed.GetBool() && (status <= WP_RELOAD)) {
-		ApplyVRWeaponTransform(renderEntity.axis, renderEntity.origin);
+		hhPlayer* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
+		if (player) {
+			renderEntity.origin = player->GetEyePosition();
+			ApplyVRWeaponTransform(renderEntity.axis, renderEntity.origin, player->GetAxis());
+		}
 	}
 	//Lubos END
 

@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+typedef float vec2_t[2];
 typedef float vec3_t[3];
 typedef float vec4_t[4];
 
@@ -38,6 +39,7 @@ typedef struct {
     vec3_t hmdposition_delta;
 
     //FP - Temp Variables for other stuff
+    float snapTurn;
     vec3_t hmdorientation_temp;
     vec3_t weaponangles_temp;
     vec3_t weaponangles_last_temp; // Don't use this, it is just for calculating delta!
