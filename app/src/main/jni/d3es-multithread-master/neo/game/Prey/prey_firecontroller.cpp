@@ -198,11 +198,7 @@ idMat3 hhFireController::DetermineProjectileAxis( const idMat3& axis ) {
 	if (game->isVR && !vr_weaponZoomed.GetBool()) {
 		idMat3 axis = projectileAngles.ToMat3();
 		idVec3 origin = muzzleOrigin;
-
-		hhPlayer* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
-		if (player) {
-			ApplyVRWeaponTransform(axis, origin, player->GetAxis());
-		}
+		ApplyVRWeaponTransform(axis, origin);
 		return axis;
 	}
 	//Lubos END
@@ -259,10 +255,7 @@ bool hhFireController::LaunchProjectiles( const idVec3& pushVelocity ) {
 		if (game->isVR && !vr_weaponZoomed.GetBool()) {
 			idMat3 axis = GetSelfConst()->GetAxis();
 			idVec3 origin = GetSelfConst()->GetOrigin();
-			hhPlayer* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
-			if (player) {
-				ApplyVRWeaponTransform(axis, origin, player->GetAxis());
-			}
+			ApplyVRWeaponTransform(axis, origin);
 
 			idVec3 weaponToMuzzle = localMuzzleOrigin - GetSelfConst()->GetOrigin();
 			weaponToMuzzle = weaponToMuzzle * GetSelfConst()->GetAxis().Inverse();

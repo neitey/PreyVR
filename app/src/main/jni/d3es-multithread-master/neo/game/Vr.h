@@ -560,7 +560,7 @@ extern idCVar vr_weaponZoomed;
 #define ALOGE(...) __android_log_print( ANDROID_LOG_ERROR, "PreyVR", __VA_ARGS__ )
 #define ALOGV(...) __android_log_print( ANDROID_LOG_VERBOSE, "PreyVR", __VA_ARGS__ )
 
-void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin, idMat3 gravity);
+void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin);
 //Lubos END
 
 #endif

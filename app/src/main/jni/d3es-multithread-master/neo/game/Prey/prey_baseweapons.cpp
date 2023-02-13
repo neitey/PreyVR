@@ -1211,7 +1211,7 @@ void hhWeapon::PresentWeapon( bool showViewModel ) {
 		hhPlayer* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
 		if (player) {
 			renderEntity.origin = player->GetEyePosition();
-			ApplyVRWeaponTransform(renderEntity.axis, renderEntity.origin, player->GetAxis());
+			ApplyVRWeaponTransform(renderEntity.axis, renderEntity.origin);
 		}
 	}
 	//Lubos END
