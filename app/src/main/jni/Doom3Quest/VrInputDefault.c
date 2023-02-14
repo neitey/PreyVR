@@ -253,7 +253,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                         ALOGV("**WEAPON EVENT** velocity triggered %s",
                               velocityTriggeredAttack ? "+attack" : "-attack");
                         Android_ButtonChange(UB_ATTACK, velocityTriggeredAttack ? 1 : 0);
-                        Android_ButtonChange(UB_ATTACK_ALT, velocityTriggeredAttack ? 1 : 0);//Lubos
                         fired = velocityTriggeredAttack;
                     }
                 }
@@ -264,7 +263,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                 velocityTriggeredAttack = false;
                 ALOGV("**WEAPON EVENT**  velocity triggered -attack");
                 Android_ButtonChange(UB_ATTACK, velocityTriggeredAttack ? 1 : 0);
-                Android_ButtonChange(UB_ATTACK_ALT, velocityTriggeredAttack ? 1 : 0);//Lubos
             }
 
             static bool velocityTriggeredAttackOffHand = false;
@@ -358,11 +356,20 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
             if ((pDominantTrackedRemoteNew->Buttons & ovrButton_Trigger) !=
                 (pDominantTrackedRemoteOld->Buttons & ovrButton_Trigger)) {
 
-                ALOGV("**WEAPON EVENT**  Not Grip Pushed %sattack", (pDominantTrackedRemoteNew->Buttons & ovrButton_Trigger) ? "+" : "-");
+                ALOGV("**WEAPON EVENT**  Trigger Pushed %sattack", (pDominantTrackedRemoteNew->Buttons & ovrButton_Trigger) ? "+" : "-");
 
                 handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_ATTACK);
-                handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_ATTACK_ALT);//Lubos
             }
+
+            //Lubos BEGIN
+            if ((pDominantTrackedRemoteNew->Buttons & ovrButton_GripTrigger) !=
+                (pDominantTrackedRemoteOld->Buttons & ovrButton_GripTrigger)) {
+
+                ALOGV("**WEAPON EVENT**  Grip Pushed %sattack", (pDominantTrackedRemoteNew->Buttons & ovrButton_GripTrigger) ? "+" : "-");
+
+                handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, false, ovrButton_GripTrigger, UB_ATTACK_ALT);
+            }
+            //Lubos END
 
             //Duck
             if ((primaryButtonsNew & primaryButton1) !=

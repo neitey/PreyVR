@@ -4930,13 +4930,21 @@ void hhPlayer::Think( void ) {
 		{
 			GetZoomFov().Init( gameLocal.GetTime(), 0.0f, CalcFov(true), g_fov.GetInteger() );
 			g_fov.ClearModified();
-			vr_weaponZoomed.SetBool(true); //Lubos
+		}
+	}
+
+	//Lubos BEGIN
+	if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
+		hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
+		if ( weap && weap->GetAltMode() ) {
+			pVRClientInfo->weaponZoom = true;
 		} else {
-			vr_weaponZoomed.SetBool(false); //Lubos
+			pVRClientInfo->weaponZoom = false;
 		}
 	} else {
-		vr_weaponZoomed.SetBool(false); //Lubos
+		pVRClientInfo->weaponZoom = false;
 	}
+	//Lubos END
 
 	// if we have an active gui, we will unrotate the view angles as
 	// we turn the mouse movements into gui events

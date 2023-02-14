@@ -38,10 +38,14 @@ typedef struct {
     vec3_t hmdposition_last; // Don't use this, it is just for calculating delta!
     vec3_t hmdposition_delta;
 
-    //FP - Temp Variables for other stuff
+    //Lubos BEGIN
     float snapTurn;
+    bool weaponZoom;
     vec3_t hmdorientation_diff;
     vec3_t hmdorientation_offset;
+    //Lubos END
+
+    //FP - Temp Variables for other stuff
     vec3_t hmdorientation_temp;
     vec3_t weaponangles_temp;
     vec3_t weaponangles_last_temp; // Don't use this, it is just for calculating delta!
