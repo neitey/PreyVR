@@ -2674,7 +2674,6 @@ void idSessionLocal::AdvanceRenderDemo(bool singleFrameOnly)
 		}
 
 		if (ds == DS_RENDER) {
-#if !defined(_RAVENxxx)
 			// jmarshall - demos
 			if (rw->ProcessDemoCommand(readDemo, &currentDemoRenderView, &demoTimeOffset)) {
 				// a view is ready to render
@@ -2682,7 +2681,6 @@ void idSessionLocal::AdvanceRenderDemo(bool singleFrameOnly)
 				numDemoFrames++;
 			}
 // jmarshall end
-#endif
 			continue;
 		}
 
@@ -3034,9 +3032,7 @@ void idSessionLocal::Frame()
 			int c = aviDemoFrameCount - aviTicStart;
 
 			while (c--) {
-#if !defined(_RAVENxxx)
 				renderSystem->TakeScreenshot(com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL);
-#endif
 				name = va("demos/%s/%s_%05i.tga", aviDemoShortName.c_str(), aviDemoShortName.c_str(), ++aviTicStart);
 			}
 		}
@@ -3046,10 +3042,8 @@ void idSessionLocal::Frame()
 		// remove any printed lines at the top before taking the screenshot
 		console->ClearNotifyLines();
 
-#if !defined(_RAVENxxx)
 		// this will call Draw, possibly multiple times if com_aviDemoSamples is > 1
 		renderSystem->TakeScreenshot(com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL);
-#endif
 	}
 
 	// at startup, we may be backwards
