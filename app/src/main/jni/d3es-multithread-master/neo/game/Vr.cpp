@@ -88,9 +88,6 @@ idCVar vr_controllerOffsetZ( "vr_controllerOffsetZ", "-0.9", CVAR_FLOAT | CVAR_A
 idCVar vr_vcx( "vr_vcx", "0", CVAR_FLOAT | CVAR_ARCHIVE, "Controller X offset to handle center" ); // these values work for steam
 idCVar vr_vcy( "vr_vcy", "0", CVAR_FLOAT | CVAR_ARCHIVE, "Controller Y offset to handle center" );
 idCVar vr_vcz( "vr_vcz", "0", CVAR_FLOAT | CVAR_ARCHIVE, "Controller Z offset to handle center" );
-//idCVar vr_vcx( "vr_vcx", "-3.5", CVAR_FLOAT | CVAR_ARCHIVE, "Controller X offset to handle center" ); // these values work for steam
-//idCVar vr_vcy( "vr_vcy", "0", CVAR_FLOAT | CVAR_ARCHIVE, "Controller Y offset to handle center" );
-//idCVar vr_vcz( "vr_vcz", "-.5", CVAR_FLOAT | CVAR_ARCHIVE, "Controller Z offset to handle center" );
 
 idCVar vr_mountx( "vr_mountx", "0", CVAR_FLOAT | CVAR_ARCHIVE, "If motion controller mounted on object, X offset from controller to object handle.\n (Eg controller mounted on Topshot)" );
 idCVar vr_mounty( "vr_mounty", "0", CVAR_FLOAT | CVAR_ARCHIVE, "If motion controller mounted on object, Y offset from controller to object handle.\n (Eg controller mounted on Topshot)" );
