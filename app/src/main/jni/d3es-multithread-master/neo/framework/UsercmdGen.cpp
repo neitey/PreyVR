@@ -820,6 +820,7 @@ void idUsercmdGenLocal::InitCurrent(void)
 }
 
 extern "C" void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up, float *yaw, float *pitch, float *roll );
+extern "C" void VR_GetJoystick( float *x, float *y );
 
 /*
 ================
@@ -853,24 +854,26 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		//Call game specific VR stuff and gubbins
 		int buttonCurrentlyClicked =ButtonState( UB_IMPULSE41 );
 
-		//Dr Beefs Code
-		float forward,strafe;
-		float hmd_forward,hmd_strafe;
-		float up = 0;
-		float yaw = 0;
-		float pitch = 0;
-		float roll = 0;
-
 		//Lubos BEGIN
-		VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
+		float temp = 0;
+		float forward = 0, strafe = 0;
+		float pitch = 0, yaw = 0, roll = 0;
+		float hmd_forward = 0, hmd_strafe = 0, up = 0;
+		if (pVRClientInfo->vehicleMode) {
+			VR_GetMove(&forward, &strafe, &temp, &temp, &temp, &temp, &temp, &temp);
+			VR_GetJoystick(&yaw, &pitch);
+			viewangles[PITCH] += pitch;
+			viewangles[YAW] += yaw;
+		} else {
+			VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
+			viewangles[PITCH] = pitch;
+			viewangles[YAW] = yaw;
+			viewangles[ROLL] = roll;
+		}
 
 		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward );
 		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe);
 		cmd.elevationVR = up;
-
-		viewangles[PITCH] = pitch;
-		viewangles[YAW] = yaw;
-		viewangles[ROLL] = roll;
 		//Lubos END
 
 		// check to make sure the angles haven't wrapped

@@ -1025,6 +1025,13 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
 	hmdposition_last[1] = pVRClientInfo->hmdposition_last[1];
 	hmdposition_last[2] = pVRClientInfo->hmdposition_last[2];
 }
+
+extern ovrVector2f *pPrimaryJoystick;
+
+void VR_GetJoystick( float *x, float *y ) {
+	*x = -pPrimaryJoystick->x;
+	*y = -pPrimaryJoystick->y;
+}
 //Lubos END
 
 /*

@@ -195,7 +195,7 @@ idMat3 hhFireController::DetermineProjectileAxis( const idMat3& axis ) {
 	projectileAngles[2] = axis.ToAngles()[2];
 
 	//Lubos BEGIN
-	if (game->isVR && !pVRClientInfo->weaponZoom) {
+	if (game->isVR && !pVRClientInfo->vehicleMode && !pVRClientInfo->weaponZoom) {
 		idMat3 axis = projectileAngles.ToMat3();
 		idVec3 origin = muzzleOrigin;
 		ApplyVRWeaponTransform(axis, origin);
@@ -252,7 +252,7 @@ bool hhFireController::LaunchProjectiles( const idVec3& pushVelocity ) {
 			}
 		}
 		//Lubos BEGIN
-		if (game->isVR && !pVRClientInfo->weaponZoom) {
+		if (game->isVR && !pVRClientInfo->vehicleMode && !pVRClientInfo->weaponZoom) {
 			idMat3 axis = GetSelfConst()->GetAxis();
 			idVec3 origin = GetSelfConst()->GetOrigin();
 			ApplyVRWeaponTransform(axis, origin);

@@ -508,6 +508,7 @@ void hhPlayerVehicleInterface::UpdateControlHand( const usercmd_t& cmds ) {
 	if( controlHand.IsValid() ) {
 		controlHand->UpdateControlDirection( idVec3(Sign(cmds.forwardmove), Sign(cmds.rightmove), Sign(cmds.upmove)) );
 	}
+	pVRClientInfo->vehicleMode = controlHand.IsValid(); //Lubos
 }
 
 void hhPlayerVehicleInterface::CreateControlHand( hhPlayer* pilot, const char* handName ) {
@@ -536,6 +537,7 @@ void hhPlayerVehicleInterface::RemoveHand() {
 		//controlHand->RemoveHand();
 		controlHand = NULL;
 	}
+	pVRClientInfo->vehicleMode = false; //Lubos
 	weaponHandState.RestoreFromArchive();
 }
 

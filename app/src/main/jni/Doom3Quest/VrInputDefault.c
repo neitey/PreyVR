@@ -61,6 +61,22 @@ extern bool inGameGuiActive;
 extern bool objectiveSystemActive;
 extern bool inCinematic;
 
+//All this to allow stick and button switching!
+ovrVector2f *pPrimaryJoystick;
+ovrVector2f *pSecondaryJoystick;
+uint32_t primaryButtonsNew;
+uint32_t primaryButtonsOld;
+uint32_t secondaryButtonsNew;
+uint32_t secondaryButtonsOld;
+uint32_t weaponButtonsNew;
+uint32_t weaponButtonsOld;
+uint32_t offhandButtonsNew;
+uint32_t offhandButtonsOld;
+int primaryButton1;
+int primaryButton2;
+int secondaryButton1;
+int secondaryButton2;
+
 void Doom3Quest_HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight );
 
 void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGamepad *pFootTrackingNew, ovrInputStateGamepad *pFootTrackingOld, ovrInputStateTrackedRemote *pDominantTrackedRemoteNew, ovrInputStateTrackedRemote *pDominantTrackedRemoteOld, ovrTracking* pDominantTracking,
@@ -75,22 +91,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
     //Need this for the touch screen
     ovrTracking * pWeapon = pDominantTracking;
     ovrTracking * pOff = pOffTracking;
-
-    //All this to allow stick and button switching!
-    ovrVector2f *pPrimaryJoystick;
-    ovrVector2f *pSecondaryJoystick;
-    uint32_t primaryButtonsNew;
-    uint32_t primaryButtonsOld;
-    uint32_t secondaryButtonsNew;
-    uint32_t secondaryButtonsOld;
-    uint32_t weaponButtonsNew;
-    uint32_t weaponButtonsOld;
-    uint32_t offhandButtonsNew;
-    uint32_t offhandButtonsOld;
-    int primaryButton1;
-    int primaryButton2;
-    int secondaryButton1;
-    int secondaryButton2;
 
     weaponButtonsNew = pDominantTrackedRemoteNew->Buttons;
     weaponButtonsOld = pDominantTrackedRemoteOld->Buttons;
