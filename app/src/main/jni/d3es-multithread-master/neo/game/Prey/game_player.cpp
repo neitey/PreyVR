@@ -4944,6 +4944,23 @@ void hhPlayer::Think( void ) {
 	} else {
 		pVRClientInfo->weaponZoom = false;
 	}
+
+	pVRClientInfo->weaponOffset[0] = 0; //forward
+	pVRClientInfo->weaponOffset[1] = 0; //left
+	pVRClientInfo->weaponOffset[2] = 0; //up
+	if (bSpiritWalk) {
+		pVRClientInfo->weaponOffset[0] = -15; pVRClientInfo->weaponOffset[1] = 0; pVRClientInfo->weaponOffset[2] = 5; //bow
+	} else {
+		switch (currentWeapon) {
+			case 1: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 8; pVRClientInfo->weaponOffset[2] = 20; break; //wrench
+			case 2: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 10; break; //rifle
+			case 3: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 5; break; //crawler
+			case 4: pVRClientInfo->weaponOffset[0] = -8; pVRClientInfo->weaponOffset[1] = 8; pVRClientInfo->weaponOffset[2] = 8; break; //leech gun
+			case 5: pVRClientInfo->weaponOffset[0] = -8; pVRClientInfo->weaponOffset[1] = 4; pVRClientInfo->weaponOffset[2] = 6; break; //auto-cannon
+			case 6: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 10; break; //acid spray
+			case 7: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 10; break; //crawler cannon
+		}
+	}
 	//Lubos END
 
 	// if we have an active gui, we will unrotate the view angles as

@@ -206,6 +206,6 @@ void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
 	axis = hmdAngles.ToMat3().Inverse() * axis;
 	origin += 32.0f * idVec3(-dz, -dx, dy) * axis;
 	axis = weaponAngles.ToMat3() * axis;
-	origin -= idVec3(12, 0, 0) * axis;
+	origin += idVec3(pVRClientInfo->weaponOffset[0], pVRClientInfo->weaponOffset[1], pVRClientInfo->weaponOffset[2]) * axis;
 }
 //Lubos END

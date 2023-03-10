@@ -42,6 +42,7 @@ typedef struct {
     float snapTurn;
     bool vehicleMode;
     bool weaponZoom;
+    vec3_t weaponOffset;
     vec3_t hmdorientation_diff;
     vec3_t hmdorientation_offset;
     //Lubos END
