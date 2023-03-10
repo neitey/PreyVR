@@ -1015,8 +1015,8 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
 	*joy_forward = remote_movementForward;
 	*up = pVRClientInfo->hmdposition_last[1];
 
-	if (fabs(vr.hmdorientation_diff[PITCH]) > 1) vr.hmdorientation_offset[PITCH] += vr.hmdorientation_diff[PITCH] > 0 ? 0.5f : -0.5f;
-	if (fabs(vr.hmdorientation_diff[ROLL]) > 1) vr.hmdorientation_offset[ROLL] += vr.hmdorientation_diff[ROLL] > 0 ? 0.5f : -0.5f;
+	if (fabs(vr.hmdorientation_diff[PITCH]) > 1) vr.hmdorientation_offset[PITCH] += vr.hmdorientation_diff[PITCH] * 0.1f;
+	if (fabs(vr.hmdorientation_diff[ROLL]) > 1) vr.hmdorientation_offset[ROLL] += vr.hmdorientation_diff[ROLL] * 0.1f;
 	*pitch = vr.hmdorientation_temp[PITCH] - vr.hmdorientation_offset[PITCH];
 	*roll = vr.hmdorientation_temp[ROLL] - vr.hmdorientation_offset[ROLL];
 	*yaw = vr.hmdorientation_temp[YAW] + vr.snapTurn;
