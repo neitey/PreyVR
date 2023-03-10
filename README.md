@@ -16,7 +16,7 @@ Logo created by madrapper: https://www.deviantart.com/madrapper/art/Prey-Icon-12
 # How was it done
 
 The work is based on DrBeef's Doom3Quest and this project: https://github.com/glKarin/com.n0n3m4.diii4a
-(last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/daf3bea005a7964f797bb630f0492a4afade6e64).
+(last updated from https://github.com/glKarin/com.n0n3m4.diii4a/commit/93d6fd6314a48bd544ec0262801c415a8990034a).
 
 As DrBeef's and glKarin's use different versions of idTech4A++ engine, in this repo I merged them together.
 

@@ -550,6 +550,15 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 				return false;
 			}
 
+			//k: idMaterial::directPortalDistance may be max distance for render, also see `materials/portals.mtr`.
+			int index = shader->GetDirectPortalDistance();
+			if(index >= 0 && index < EXP_REG_NUM_PREDEFINED)
+			{
+				float maxPortalDistanceLimit = drawSurf->space->entityDef->parms.shaderParms[index];
+				if(maxPortalDistanceLimit > 0.0f && (tr.viewDef->renderView.vieworg - drawSurf->space->entityDef->parms.origin).LengthFast() > maxPortalDistanceLimit) //k: maybe parm == 0
+					return false;
+			}
+
 			// copy the viewport size from the original
 			parms = (viewDef_t *)R_FrameAlloc(sizeof(*parms));
 			if (!parms) {
