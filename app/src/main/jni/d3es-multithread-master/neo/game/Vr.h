@@ -1,7 +1,6 @@
 #ifndef __VR_H__
 #define __VR_H__
 
-#include "vr_hmd.h"
 #include "../renderer/Image.h"
 #include "../idlib/math/Quat.h"
 #include "../idlib/math/Matrix.h"
