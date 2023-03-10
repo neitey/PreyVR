@@ -5,6 +5,7 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "Vr.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Player )
 END_CLASS
@@ -1088,7 +1089,7 @@ void idPhysics_Player::CheckDuck( void ) {
 	float maxZ;
 
 	//Lubos BEGIN
-	if (game->isVR && (command.elevationVR < 1)) {
+	if (game->isVR && (command.elevationVR < vr_crouchTriggerDist.GetFloat())) {
 		command.upmove = -1;
 	}
 	//Lubos END

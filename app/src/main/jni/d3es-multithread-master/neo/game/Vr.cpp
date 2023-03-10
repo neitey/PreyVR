@@ -133,7 +133,6 @@ idCVar vr_playerBodyMode( "vr_playerBodyMode", "0", CVAR_INTEGER | CVAR_GAME | C
 idCVar vr_moveThirdPerson( "vr_moveThirdPerson", "1", CVAR_BOOL | CVAR_GAME | CVAR_ARCHIVE, "Artifical movement will user 3rd person perspective." );
 //needs to be added to menu - cant be bothered now
 idCVar vr_crouchMode( "vr_crouchMode", "0", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIVE, "Crouch Mode:\n 0 = Full motion crouch (In game matches real life)\n 1 = Crouch anim triggered by smaller movement." );
-idCVar vr_crouchTriggerDist( "vr_crouchTriggerDist", "7", CVAR_FLOAT | CVAR_ARCHIVE, " Distance ( in real-world inches ) player must crouch in real life to toggle crouch\n" );
 idCVar vr_crouchHideBody( "vr_crouchHideBody", "1", CVAR_FLOAT | CVAR_ARCHIVE, "Hide body ( if displayed )  when crouching. 0 = Dont hide, 1 = hide." );
 
 idCVar vr_frameCheck( "vr_frameCheck", "1", CVAR_INTEGER | CVAR_ARCHIVE, "0 = bypass frame check" );
@@ -181,9 +180,10 @@ idCVar vr_dualWield( "vr_dualWield", "2", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIV
 idCVar vr_debugHands( "vr_debugHands", "0", CVAR_BOOL | CVAR_GAME, "Enable hand/weapon/dual wielding debugging" );
 idCVar vr_rumbleChainsaw( "vr_rumbleChainsaw", "1", CVAR_BOOL | CVAR_GAME | CVAR_ARCHIVE, "Enable weapon (currently chainsaw only) constant haptic feedback in VR. Not recommended for wireless VR controllers." );
 
-idCVar vr_weaponZoomed( "vr_weaponZoomed", "0", CVAR_BOOL | CVAR_GAME, "Indicates weapon is in zoom mode." );
 
 //Lubos BEGIN
+idCVar vr_crouchTriggerDist( "vr_crouchTriggerDist", "1", CVAR_FLOAT | CVAR_ARCHIVE, " Distance ( in real-world meters ) player must crouch in real life to toggle crouch\n" );
+
 void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
 {
 	// Get controller orientation

@@ -491,7 +491,6 @@ extern idCVar	vr_walkSpeedAdjust;
 
 extern idCVar	vr_movePoint;
 
-extern idCVar	vr_crouchTriggerDist;
 extern idCVar	vr_crouchMode;
 extern idCVar	vr_crouchHideBody;
 
@@ -552,9 +551,10 @@ extern idCVar vr_rumbleChainsaw;
 
 extern idCVar vr_comfortRepeat;
 
-extern idCVar vr_weaponZoomed;
 
 //Lubos BEGIN
+extern idCVar vr_crouchTriggerDist;
+
 #include <android/log.h>
 
 #define ALOGE(...) __android_log_print( ANDROID_LOG_ERROR, "PreyVR", __VA_ARGS__ )
