@@ -122,6 +122,9 @@ typedef enum {
 	UB_IMPULSE62,
 	UB_IMPULSE63,
 
+	//HUMANHEAD
+	UB_ATTACK_ALT,
+
 	UB_MAX_BUTTONS
 } usercmdButton_t;
 
