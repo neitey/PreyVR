@@ -467,6 +467,8 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 	R_DirectFrameBufferEnd();
 }
 
+int lastRenderSkybox = -1; //Lubos
+
 /*
 ==================
 R_GenerateSurfaceSubview
@@ -639,8 +641,12 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 			parms->superView = tr.viewDef;
 			parms->subviewSurface = drawSurf;
 
-			// generate render commands for it
-			R_RenderView(parms);
+			//Lubos BEGIN
+			if (lastRenderSkybox != tr.frameCount) {
+				lastRenderSkybox = tr.frameCount;
+				R_RenderView(parms);
+			}
+			//Lubos END
 			return true;
 		}
 		case SC_MIRROR:
