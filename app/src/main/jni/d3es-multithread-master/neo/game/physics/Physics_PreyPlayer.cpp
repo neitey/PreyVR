@@ -124,7 +124,7 @@ void hhPhysics_Player::SetOwnerCameraTarget( const idVec3& Origin, const idMat3&
 	if( camera && castSelf ) {
 		//Lubos BEGIN
 		idVec3 position = Origin;
-		if (game->isVR && groundPlane && !IsCrouching()) {
+		if (game->isVR && !IsCrouching()) {
 			position += idVec3(0, 0, (command.elevationVR - 1.5f) * 24.0f) * GetAxis();
 		}
 		//Lubos END
