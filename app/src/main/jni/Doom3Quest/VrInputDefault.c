@@ -181,7 +181,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
         handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, true, ovrButton_Trigger, 1);
     }
 
-    if ( !inCinematic && !inMenu )
+    if ( ( !inCinematic && !inMenu ) || ( pVRClientInfo->vehicleMode && !inMenu ) )
     {
         static bool canUseQuickSave = false;
         if (pOffTracking->Status & (VRAPI_TRACKING_STATUS_POSITION_TRACKED | VRAPI_TRACKING_STATUS_POSITION_VALID)) {
