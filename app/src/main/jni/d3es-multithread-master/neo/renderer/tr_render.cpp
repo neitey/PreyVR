@@ -62,8 +62,12 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 	}
 */
 	if ( surf->indexCache ) {
-		qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
-		backEnd.pc.c_vboIndexes += surf->numIndexes;
+		//Lubos BEGIN
+		if( idStr( surf->material->GetName() ).CmpPrefix( "textures/dreamworld/cavepaint" ) != 0 ) {
+			qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
+			backEnd.pc.c_vboIndexes += surf->numIndexes;
+		}
+		//Lubos END
 	} else {
 		static bool bOnce = true;
 		if (bOnce) {
