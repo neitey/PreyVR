@@ -642,7 +642,7 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 			parms->subviewSurface = drawSurf;
 
 			//Lubos BEGIN
-			if (lastRenderSkybox != tr.frameCount) {
+			if ((lastRenderSkybox != tr.frameCount) && !parms->superView->isSubview) {
 				lastRenderSkybox = tr.frameCount;
 				float ipd = cvarSystem->GetCVarFloat("vr_ipd");
 				cvarSystem->SetCVarFloat("vr_ipd", 0);
