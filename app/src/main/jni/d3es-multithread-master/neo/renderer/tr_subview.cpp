@@ -644,10 +644,9 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 			//Lubos BEGIN
 			if ((lastRenderSkybox != tr.frameCount) && !parms->superView->isSubview) {
 				lastRenderSkybox = tr.frameCount;
-				float ipd = cvarSystem->GetCVarFloat("vr_ipd");
-				cvarSystem->SetCVarFloat("vr_ipd", 0);
+				parms->renderView.forceMono = true;
 				R_RenderView(parms);
-				cvarSystem->SetCVarFloat("vr_ipd", ipd);
+				parms->renderView.forceMono = false;
 			}
 			//Lubos END
 			return true;
