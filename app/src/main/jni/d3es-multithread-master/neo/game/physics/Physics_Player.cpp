@@ -1415,21 +1415,6 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		command.upmove = 0;
 	}
 
-	//Lubos BEGIN
-	if (game->isVR) {
-		idBounds bounds = clipModel->GetBounds();
-		bounds[0][0] = -5;
-		bounds[0][1] = -5;
-		bounds[1][0] = 5;
-		bounds[1][1] = 5;
-		if ( pm_usecylinder.GetBool() ) {
-			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
-		} else {
-			clipModel->LoadModel( idTraceModel( bounds ) );
-		}
-	}
-	//Lubos END
-
 	// set watertype and waterlevel
 	idPhysics_Player::SetWaterLevel();
 
