@@ -63,9 +63,26 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 */
 	if ( surf->indexCache ) {
 		//Lubos BEGIN
-		if( idStr( surf->material->GetName() ).CmpPrefix( "textures/dreamworld/cavepaint" ) != 0 ) {
-			qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
+		idStr texture(surf->material->GetName());
+		if(texture.CmpPrefix("textures/dreamworld/cavepaint") != 0) {
+
+			//modify the depth to fix decals
+			int bits = backEnd.glState.glStateBits;
+			if(texture.CmpPrefix("textures/decals") == 0) {
+				float offset = 0.0001f;
+				glDepthRangef(offset, 1 + offset);
+				GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
+			}
+
+			//render geometry
+			qglDrawElements(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *) vertexCache.Position(surf->indexCache));
 			backEnd.pc.c_vboIndexes += surf->numIndexes;
+
+			//restore previous state
+			if(texture.CmpPrefix("textures/decals") == 0) {
+				glDepthRangef(0, 1);
+				GL_State(bits);
+			}
 		}
 		//Lubos END
 	} else {
