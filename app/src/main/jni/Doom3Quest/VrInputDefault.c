@@ -506,6 +506,14 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                     //Lubos: Turn on deathwalk
                     Android_SetImpulse(UB_IMPULSE54);
                 }
+
+                //Lubos BEGIN
+                if (((offhandButtonsNew & ovrButton_X) !=
+                     (offhandButtonsOld & ovrButton_X)) &&
+                    (offhandButtonsNew & ovrButton_X)) {
+                    Android_SetImpulse(UB_IMPULSE16); //lighter
+                }
+                //Lubos END
             }
 
             //We need to record if we have started firing primary so that releasing trigger will stop definitely firing, if user has pushed grip
