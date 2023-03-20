@@ -859,16 +859,25 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		float forward = 0, strafe = 0;
 		float pitch = 0, yaw = 0, roll = 0;
 		float hmd_forward = 0, hmd_strafe = 0, up = 0;
+		static bool wasVehicleMode = false;
 		if (pVRClientInfo->vehicleMode) {
+			if (!wasVehicleMode) {
+				VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
+				viewangles[PITCH] = pitch;
+				viewangles[YAW] = yaw;
+				viewangles[ROLL] = roll;
+			}
 			VR_GetMove(&forward, &strafe, &temp, &temp, &temp, &temp, &temp, &temp);
 			VR_GetJoystick(&yaw, &pitch);
 			viewangles[PITCH] += pitch;
 			viewangles[YAW] += yaw;
+			wasVehicleMode = true;
 		} else {
 			VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 			viewangles[PITCH] = pitch;
 			viewangles[YAW] = yaw;
 			viewangles[ROLL] = roll;
+			wasVehicleMode = false;
 		}
 
 		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward );
