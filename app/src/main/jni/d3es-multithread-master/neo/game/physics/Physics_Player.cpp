@@ -70,7 +70,7 @@ Handles user intended acceleration
 void idPhysics_Player::Accelerate( const idVec3 &wishdir, const float wishspeed, const float accel ) {
 	//Lubos BEGIN
 	if (game->isVR && fabs(accel - PM_ACCELERATE) < 0.01f) {
-		current.velocity = wishdir * wishspeed;
+		current.velocity = current.velocity * 0.5f + wishdir * wishspeed * 0.5f;
 	}
 	//Lubos END
 
