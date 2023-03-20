@@ -1875,6 +1875,12 @@ void idMaterial::ParseDeform( idLexer &src ) {
 		SetMaterialFlag(MF_NOSHADOWS);
 		return;
 	}
+	if (!token.Icmp("beam")) {
+		cullType = CT_TWO_SIDED;
+		src.SkipRestOfLine();
+		SetMaterialFlag(MF_NOSHADOWS);
+		return;
+	}
 #endif
 
 	src.Warning( "Bad deform type '%s'", token.c_str() );

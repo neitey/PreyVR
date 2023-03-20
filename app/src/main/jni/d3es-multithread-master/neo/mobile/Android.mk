@@ -55,6 +55,7 @@ src_renderer = \
 	renderer/ModelManager.cpp \
 	renderer/ModelOverlay.cpp \
 	renderer/Model_beam.cpp \
+	renderer/Model_hhBeam.cpp \
 	renderer/Model_ase.cpp \
 	renderer/Model_liquid.cpp \
 	renderer/Model_lwo.cpp \
