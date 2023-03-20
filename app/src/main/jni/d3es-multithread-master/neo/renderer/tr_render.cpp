@@ -81,7 +81,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		}
 
 		//modify blend function to fix windows
-		if(texture.CmpPrefix("textures/sfx/glass_walk") == 0) {
+		if(texture.CmpPrefix("textures/sfx/glass") == 0) {
 			GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
 			glStateUpdated = true;
 		}
