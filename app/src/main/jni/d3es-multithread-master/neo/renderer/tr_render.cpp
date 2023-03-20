@@ -63,26 +63,37 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 */
 	if ( surf->indexCache ) {
 		//Lubos BEGIN
+		bool glStateUpdated = false;
+		int bits = backEnd.glState.glStateBits;
 		idStr texture(surf->material->GetName());
-		if(texture.CmpPrefix("textures/dreamworld/cavepaint") != 0) {
 
-			//modify the depth to fix decals
-			int bits = backEnd.glState.glStateBits;
-			if(texture.CmpPrefix("textures/decals") == 0) {
-				float offset = 0.0001f;
-				glDepthRangef(offset, 1 + offset);
-				GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
-			}
+		//cave paints have unsupported blending, better no texture than broken texture
+		if(texture.CmpPrefix("textures/dreamworld/cavepaint") == 0) {
+			return;
+		}
 
-			//render geometry
-			qglDrawElements(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *) vertexCache.Position(surf->indexCache));
-			backEnd.pc.c_vboIndexes += surf->numIndexes;
+		//modify the depth to fix decals
+		if(texture.CmpPrefix("textures/decals") == 0) {
+			float offset = 0.0001f;
+			glDepthRangef(offset, 1 + offset);
+			GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
+			glStateUpdated = true;
+		}
 
-			//restore previous state
-			if(texture.CmpPrefix("textures/decals") == 0) {
-				glDepthRangef(0, 1);
-				GL_State(bits);
-			}
+		//modify blend function to fix windows
+		if(texture.CmpPrefix("textures/sfx/glass_walk") == 0) {
+			GL_State(GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE_MINUS_SRC_COLOR);
+			glStateUpdated = true;
+		}
+
+		//render geometry
+		qglDrawElements(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *) vertexCache.Position(surf->indexCache));
+		backEnd.pc.c_vboIndexes += surf->numIndexes;
+
+		//restore previous state
+		if(glStateUpdated) {
+			glDepthRangef(0, 1);
+			GL_State(bits);
 		}
 		//Lubos END
 	} else {
