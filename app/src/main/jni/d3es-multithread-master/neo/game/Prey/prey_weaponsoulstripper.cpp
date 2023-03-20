@@ -3,6 +3,8 @@
 
 #include "prey_local.h"
 
+#include "Vr.h"
+
 const idEventDef EV_KillBeam( "killBeam", NULL, NULL );
 
 CLASS_DECLARATION( hhWeaponFireController, hhSoulStripperAltFireController )
@@ -110,7 +112,8 @@ void hhBeamBasedFireController::LaunchProjectiles( const idVec3& launchOrigin, c
 			//just keep the existing axis
 		}
 	}
-	shotbeam->SetOrigin( beamOrigin );
+
+	shotbeam->SetOrigin( launchOrigin ); //Lubos
 	shotbeam->SetAxis( aimAxis );
 	shotbeam->SetTargetLocation( results.endpos-aimAxis[0]*40 );
 	float length = (results.endpos - start).Length();
@@ -150,6 +153,12 @@ void hhBeamBasedFireController::Think()
 				//just keep the existing axis
 			}
 		}
+
+		//Lubos BEGIN
+		if (game->isVR) {
+			ApplyVRWeaponTransform( aimAxis, beamOrigin );
+		}
+		//Lubos END
 		shotbeam->SetOrigin( beamOrigin );
 		shotbeam->SetAxis( aimAxis );
 	}
@@ -198,7 +207,16 @@ CLASS_DECLARATION( hhBeamBasedFireController, hhSunbeamFireController )
 END_CLASS
 
 void hhSunbeamFireController::LaunchProjectiles( const idVec3& launchOrigin, const idMat3& aimAxis, const idVec3& pushVelocity, idEntity* projOwner ) {
-	hhBeamBasedFireController::LaunchProjectiles(launchOrigin, aimAxis, pushVelocity, projOwner);
+
+	//Lubos BEGIN
+	idMat3 axis = aimAxis;
+	idVec3 origin = launchOrigin;
+	if (game->isVR) {
+		ApplyVRWeaponTransform(axis, origin);
+	}
+	hhBeamBasedFireController::LaunchProjectiles(origin, axis, pushVelocity, projOwner);
+	//Lubos END
+
 	//HUMANHEAD PCF rww 05/18/06 - since values are assuming 60hz, make them relative
 	float backpush = dict->GetFloat("backpush","0.0")*(60.0f/(float)USERCMD_HZ);
 	float slowwalk = dict->GetFloat("slowwalk","0.0")*(60.0f/(float)USERCMD_HZ);
@@ -237,6 +255,12 @@ void hhSunbeamFireController::Think()
 				//just keep the existing axis
 			}
 		}
+		//Lubos BEGIN
+		if (game->isVR) {
+			ApplyVRWeaponTransform( aimAxis, beamOrigin );
+			end = beamOrigin + length * aimAxis[0];
+		}
+		//Lubos END
 		shotbeam->SetOrigin( beamOrigin );
 		shotbeam->SetAxis( aimAxis );
 		shotbeam->SetTargetLocation( end );
