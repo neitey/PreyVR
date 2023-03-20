@@ -878,6 +878,14 @@ void hhWeaponSoulStripper::UpdateBeam( idVec3 start, bool struckEntity ) {
 
 		GetJointWorldTransform( dict->GetString("attach_beam"), boneOrigin, boneAxis);
 
+		//Lubos BEGIN
+		if (game->isVR) {
+			boneOrigin *= -1.0f;
+			ApplyVRWeaponTransform(boneAxis, boneOrigin);
+			boneOrigin *= -1.0f;
+		}
+		//Lubos END
+
 		beam->SetOrigin( boneOrigin );
 
 		beam->SetArcVector( GetAxis()[0] );
