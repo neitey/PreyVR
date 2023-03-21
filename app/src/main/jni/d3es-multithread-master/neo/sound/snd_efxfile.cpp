@@ -102,6 +102,12 @@ idEFXFile::FindEffect
 bool idEFXFile::FindEffect( idStr &name, ALuint *effect ) {
 	int i;
 
+	//Lubos BEGIN
+	if (strcmp(cvarSystem->GetCVarString("si_map"), "dmshuttle2") == 0) {
+		return false;
+	}
+	//Lubos END
+
 	for ( i = 0; i < effects.Num(); i++ ) {
 		if ( effects[i]->name == name ) {
 			*effect = effects[i]->effect;
