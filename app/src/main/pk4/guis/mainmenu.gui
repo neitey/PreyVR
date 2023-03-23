@@ -767,34 +767,6 @@ windowDef desktop {
 				text		"#str_20554"
 			}
 		}
-
-		superWindowDef Main_Bottom {
-			rect		180, 438, 450, 32
-			matcolor	1, 1, 1, 0.5
-			backcolor	0, 0, 0, 0
-			cornerMat	"guis/assets/menu/window_cornerUL"
-			topMat		"guis/assets/menu/window_top"
-			background	"_black"
-			margins		25, 25, 7, 0	// left, right, top, bottom
-			cornerSize	38, 32
-			edgeSize	4, 4
-
-			buttonDef Main_Bottom_ButtonCredits {
-				rect		310, 4, 100, 25
-				backcolor	0, 0, 0, 0
-				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
-				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
-				textscale	0.35
-				textalign	1
-				shadow		1
-				font		"fonts/menu"
-				text		"#str_20017"
-				onAction {
-					set "cmd" "play guisounds_menu_clickin";
-					resetTime "Credits_AnimIn" "0" ;
-				}
-			}
-		}
 	}
 	
 	// Include the submenus
