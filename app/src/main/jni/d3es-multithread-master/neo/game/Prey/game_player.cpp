@@ -1093,7 +1093,22 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 	if ( !GuiActive() ) {
 		if ( cursor ) {
 			UpdateCrosshairs();
-			cursor->Redraw( gameLocal.realClientTime );
+
+			//Lubos BEGIN
+			if (game->isVR && !InVehicle()) {
+				idVec3 worldPos = weapon->GetEyeTraceInfo().endpos;
+				idVec3 screenPos = hhUtils::ProjectOntoScreen(worldPos, *renderView);
+				pVRClientInfo->uiOffset[0] = screenPos.x - SCREEN_WIDTH / 2.0f;
+				pVRClientInfo->uiOffset[1] = screenPos.y - SCREEN_HEIGHT / 2.0f;
+				pVRClientInfo->uiScale[0] = 1;
+				pVRClientInfo->uiScale[1] = 1;
+				cursor->Redraw( gameLocal.realClientTime );
+				pVRClientInfo->uiOffset[0] = 0;
+				pVRClientInfo->uiOffset[1] = 0;
+			} else {
+				cursor->Redraw( gameLocal.realClientTime );
+			}
+			//Lubos END
 		}
 	}
 }
@@ -1886,12 +1901,10 @@ void hhPlayer::UpdateCrosshairs() {
 	bool targeting = false;
 	int crosshair = 0;
 
-	/* Lubos - crosshair is in VR currently unsupported
 	if ( !privateCameraView && !IsLocked(idealWeapon) && (!hand.IsValid() || hand->IsLowered()) && !InCinematic() && weapon.IsValid() && g_crosshair.GetInteger() ) {
 		weapon->UpdateCrosshairs(combatCrosshair, targeting);
 		crosshair = g_crosshair.GetInteger();
 	}
-	*/
 
 	cursor->SetStateBool( "combatcursor", targeting ? false : combatCrosshair );
 	cursor->SetStateBool( "activecombatcursor", targeting );

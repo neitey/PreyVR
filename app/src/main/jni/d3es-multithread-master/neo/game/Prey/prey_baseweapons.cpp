@@ -2036,7 +2036,7 @@ void hhWeapon::PrecomputeTraceInfo() {
 	float traceDist = 1024.0f;	// was CM_MAX_TRACE_DIST
 
 	//Lubos BEGIN
-	if (game->isVR) {
+	if (game->isVR && !pVRClientInfo->vehicleMode) {
 		ApplyVRWeaponTransform(weaponAxis, eyePos);
 	}
 	//Lubos END
