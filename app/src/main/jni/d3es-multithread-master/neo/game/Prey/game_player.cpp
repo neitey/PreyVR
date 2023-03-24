@@ -1095,7 +1095,7 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 			UpdateCrosshairs();
 
 			//Lubos BEGIN
-			if (game->isVR && !InVehicle()) {
+			if (game->isVR && !InVehicle() && weapon.IsValid() && renderView) {
 				idVec3 worldPos = weapon->GetEyeTraceInfo().endpos;
 				idVec3 screenPos = hhUtils::ProjectOntoScreen(worldPos, *renderView);
 				pVRClientInfo->uiOffset[0] = screenPos.x - SCREEN_WIDTH / 2.0f;
