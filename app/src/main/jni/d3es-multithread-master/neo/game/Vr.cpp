@@ -51,7 +51,7 @@ idCVar vr_hudPosAngle( "vr_hudPosAngle", "30", CVAR_FLOAT | CVAR_GAME | CVAR_ARC
 //In Menu - working
 idCVar vr_hudPosLock( "vr_hudPosLock", "1", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIVE, "Lock Hud to:  0 = Face, 1 = Body" );
 //In Menu - working but look activated is still not good IMO
-idCVar vr_hudType( "vr_hudType", "1", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIVE, "VR Hud Type. 0 = Disable.\n1 = Full\n2=Look Activate", 0, 2 );
+idCVar vr_hudType( "vr_hudType", "1", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIVE, "VR Hud Type. 0 = Disable.\n1 = Full", 0, 1 );
 idCVar vr_hudRevealAngle( "vr_hudRevealAngle", "40", CVAR_FLOAT | CVAR_GAME | CVAR_ARCHIVE, "HMD pitch to reveal HUD in look activate mode." );
 
 //In Menu - Working

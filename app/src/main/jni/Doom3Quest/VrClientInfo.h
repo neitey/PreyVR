@@ -45,6 +45,8 @@ typedef struct {
     vec3_t weaponOffset;
     vec3_t hmdorientation_diff;
     vec3_t hmdorientation_offset;
+    vec2_t uiScale;
+    vec2_t uiOffset;
     //Lubos END
 
     //FP - Temp Variables for other stuff

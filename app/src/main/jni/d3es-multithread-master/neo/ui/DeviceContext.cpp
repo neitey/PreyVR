@@ -41,7 +41,6 @@ idVec4 idDeviceContext::colorBlack;
 idVec4 idDeviceContext::colorWhite;
 idVec4 idDeviceContext::colorNone;
 
-
 idCVar gui_smallFontLimit("gui_smallFontLimit", "0.30", CVAR_GUI | CVAR_ARCHIVE, "");
 idCVar gui_mediumFontLimit("gui_mediumFontLimit", "0.60", CVAR_GUI | CVAR_ARCHIVE, "");
 
@@ -192,6 +191,13 @@ void idDeviceContext::Init()
     // DG: this is used for the "make sure menus are rendered as 4:3" hack
     fixScaleForMenu.Set(1, 1);
     fixOffsetForMenu.Set(0, 0);
+
+    //Lubos BEGIN
+    pVRClientInfo->uiOffset[0] = 0;
+    pVRClientInfo->uiOffset[1] = 0;
+    pVRClientInfo->uiScale[0] = 1;
+    pVRClientInfo->uiScale[1] = 1;
+    //Lubos END
 }
 
 void idDeviceContext::Shutdown()
@@ -401,6 +407,13 @@ void idDeviceContext::AdjustCursorCoords(float *x, float *y, float *w, float *h)
 
 void idDeviceContext::DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader)
 {
+	//Lubos BEGIN
+	x = x * pVRClientInfo->uiScale[0] + pVRClientInfo->uiOffset[0];
+	y = y * pVRClientInfo->uiScale[1] + pVRClientInfo->uiOffset[1];
+	w *= pVRClientInfo->uiScale[0];
+	h *= pVRClientInfo->uiScale[1];
+	//Lubos END
+
 	idDrawVert verts[4];
 	glIndex_t indexes[6];
 	indexes[0] = 3;
@@ -467,6 +480,12 @@ void idDeviceContext::DrawStretchPic(float x, float y, float w, float h, float s
 	verts[3].tangents[1][2] = 0;
 
 	bool ident = !mat.IsIdentity();
+
+	//Lubos BEGIN
+	if ((pVRClientInfo->uiScale[0] < 1) || (pVRClientInfo->uiScale[1] < 1)) {
+		ident = false;
+	}
+	//Lubos END
 
 	if (ident) {
 		verts[0].xyz -= origin;
