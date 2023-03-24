@@ -197,7 +197,7 @@ void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
 
 	// Get offset between hand and weapon
 	auto head = pVRClientInfo->hmdposition_last;
-	auto weapon = pVRClientInfo->rhandposition;
+	auto weapon = cvarSystem->GetCVarInteger("vr_weaponHand") == 0 ? pVRClientInfo->rhandposition : pVRClientInfo->lhandposition;
 	float dx = weapon[0] - head[0];
 	float dy = weapon[1] - head[1];
 	float dz = weapon[2] - head[2];
