@@ -2035,6 +2035,12 @@ void hhWeapon::PrecomputeTraceInfo() {
 	idMat3 weaponAxis = GetAxis();
 	float traceDist = 1024.0f;	// was CM_MAX_TRACE_DIST
 
+	//Lubos BEGIN
+	if (game->isVR) {
+		ApplyVRWeaponTransform(weaponAxis, eyePos);
+	}
+	//Lubos END
+
 	// Perform eye trace
 	gameLocal.clip.TracePoint( eyeTraceInfo, eyePos, eyePos + weaponAxis[0] * traceDist, 
 		MASK_SHOT_BOUNDINGBOX | CONTENTS_GAME_PORTAL, owner.GetEntity() );
