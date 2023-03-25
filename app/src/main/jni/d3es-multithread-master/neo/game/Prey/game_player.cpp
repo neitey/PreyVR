@@ -1066,26 +1066,21 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 
 	_hud->SetStateInt( "s_debug", cvarSystem->GetCVarInteger( "s_showLevelMeter" ) );
 
+	//Lubos BEGIN
+	if (game->isVR && !game->InCinematic()) {
+		pVRClientInfo->uiOffset[0] = 200;
+		pVRClientInfo->uiOffset[1] = 180;
+		pVRClientInfo->uiScale[0] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
+		pVRClientInfo->uiScale[1] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
+	}
+	//Lubos END
+
 	//HUMANHEAD aob: vehicle logic
 	if ( InVehicle() ) {
 		DrawHUDVehicle( _hud );
 	}
 	else {
-		//Lubos BEGIN
-		if (game->isVR) {
-			pVRClientInfo->uiOffset[0] = 200;
-			pVRClientInfo->uiOffset[1] = 180;
-			pVRClientInfo->uiScale[0] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
-			pVRClientInfo->uiScale[1] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
-			_hud->Redraw( gameLocal.realClientTime );
-			pVRClientInfo->uiOffset[0] = 0;
-			pVRClientInfo->uiOffset[1] = 0;
-			pVRClientInfo->uiScale[0] = 1;
-			pVRClientInfo->uiScale[1] = 1;
-		} else {
-			_hud->Redraw( gameLocal.realClientTime );
-		}
-		//Lubos END
+		_hud->Redraw( gameLocal.realClientTime );
 	}
 	//HUMANHEAD END
 
@@ -1103,14 +1098,19 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 				pVRClientInfo->uiScale[0] = 1;
 				pVRClientInfo->uiScale[1] = 1;
 				cursor->Redraw( gameLocal.realClientTime );
-				pVRClientInfo->uiOffset[0] = 0;
-				pVRClientInfo->uiOffset[1] = 0;
 			} else {
 				cursor->Redraw( gameLocal.realClientTime );
 			}
 			//Lubos END
 		}
 	}
+
+	//Lubos BEGIN
+	pVRClientInfo->uiOffset[0] = 0;
+	pVRClientInfo->uiOffset[1] = 0;
+	pVRClientInfo->uiScale[0] = 1;
+	pVRClientInfo->uiScale[1] = 1;
+	//Lubos END
 }
 
 /*

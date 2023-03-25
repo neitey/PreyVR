@@ -12,6 +12,7 @@
 //Lubos BEGIN
 extern idCVar vr_crouchTriggerDist;
 extern idCVar vr_hudType;
+extern idCVar vr_vehicle3d;
 
 #include <android/log.h>
 
