@@ -2,6 +2,8 @@
 
 This a work-in-progress project bringing Prey 2006 game into VR (on Oculus Quest 2).
 
+# Instructions
+
 Running this game require a copy of the original Prey 2006 data. Tested on English version patched with 1.4 patch.
 
 Copy the `base` folder from the original game into the headset as `PreyVR/preybase`.
