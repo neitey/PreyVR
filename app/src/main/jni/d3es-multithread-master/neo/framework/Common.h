@@ -133,6 +133,9 @@ struct MemInfo_t {
 	int				aasAssetsCount;
 	int				aasAssetsTotal;
 #endif
+#ifdef _HUMANHEAD
+	int				animAssetsTotal;	// HUMANHEAD pdm
+#endif
 };
 
 class idCommon
@@ -251,6 +254,18 @@ class idCommon
 		virtual void 				HapticStopEvent(const char* event) = 0;
 		virtual void 				HapticEnable() = 0;
 		virtual void 				HapticDisable() = 0;
+
+#ifdef _HUMANHEAD
+	// HUMANHEAD pdm
+	virtual void				FixupKeyTranslations(const char *src, char *dst, int lengthAllocated) {}
+	virtual void				MaterialKeyForBinding(const char *binding, char *keyMaterial, char *key, bool &isBound) {
+		isBound = false;
+	}
+
+	//HUMANHEAD rww
+	virtual void				SetGameSensitivityFactor(float factor) {} //allows game logic to set a sensitivity factor for input
+	//HUMANHEAD END
+#endif
 };
 
 extern idCommon 		*common;

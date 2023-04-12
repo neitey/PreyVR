@@ -47,7 +47,12 @@ enum {
 	FX_ATTACHLIGHT,
 	FX_ATTACHENTITY,
 	FX_LAUNCH,
-	FX_SHOCKWAVE
+	FX_SHOCKWAVE,
+#ifdef _HUMANHEAD
+	// HUMANHEAD nla - Support for the 'useAxis'
+	FX_USEAXIS,
+	// HUMANHEAD nla
+#endif
 };
 
 //
@@ -60,6 +65,13 @@ typedef struct {
 	idStr					data;
 	idStr					name;
 	idStr					fire;
+
+#ifdef _HUMANHEAD
+	// HUMANHEAD nla
+	int					useAxis;
+	idVec3				dir;
+	// HUMANHEAD END
+#endif
 
 	float					delay;
 	float					duration;

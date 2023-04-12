@@ -723,6 +723,14 @@ public:
 
 	// Text drawing for debug visualization.
 	virtual void			DrawText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0, bool depthTest = false ) = 0;
+
+#ifdef _HUMANHEAD
+	//HUMANHEAD rww
+#if _HH_RENDERDEMO_HACKS
+	virtual void			DemoSmokeEvent(const idDeclParticle *smoke, const int systemTimeOffset, const float diversity, const idVec3 &origin, const idMat3 &axis) {}
+#endif
+	//HUMANHEAD END
+#endif
 };
 
 #endif /* !__RENDERWORLD_H__ */

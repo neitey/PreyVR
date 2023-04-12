@@ -1405,7 +1405,7 @@ void hhGameLocal::GetTip(const char *binding, idStr &keyMaterialString, idStr &k
 	keyMaterial[0] = '\0';
 	key[0] = '\0';
 	if (binding) {
-	//	common->MaterialKeyForBinding(binding, keyMaterial, key, isWide); // jmarshall
+		common->MaterialKeyForBinding(binding, keyMaterial, key, isWide);
 		keyMaterialString = keyMaterial;
 		keyString = key;
 	}

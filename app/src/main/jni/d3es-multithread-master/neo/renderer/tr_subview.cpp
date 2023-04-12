@@ -608,7 +608,7 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 			idMat3 hh3(forward2, left2, up2);
 			parms->renderView.viewaxis = hh3;
 			parms->initialViewAreaOrigin = remoteRenderView->vieworg + remoteRenderView->viewaxis[0] * 16; //k: offset TODO how many???, this value will be using find areaNum
-			parms->renderView.vieworg = pos2; // + forward2 * 8; //k: offset TODO: how many???;
+			parms->renderView.vieworg = pos2;
 
 			parms->superView = tr.viewDef;
 			parms->subviewSurface = drawSurf;

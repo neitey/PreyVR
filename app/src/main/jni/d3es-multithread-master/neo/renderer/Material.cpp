@@ -2156,6 +2156,9 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		}
 		*/
 #endif
+		} else if (!token.Icmp("suppressInSubview")) {
+			suppressInSubview = true;
+			continue;
 		} else if ( !token.Icmp( "portalSky" ) ) {
 			portalSky = true;
 			continue;

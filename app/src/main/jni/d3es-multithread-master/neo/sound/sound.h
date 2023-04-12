@@ -59,6 +59,11 @@ static const int	SSF_PLAY_ONCE =			BIT(6);	// never restart if already playing o
 static const int	SSF_UNCLAMPED =			BIT(7);	// don't clamp calculated volumes at 1.0
 static const int	SSF_NO_FLICKER =		BIT(8);	// always return 1.0 for volume queries
 static const int	SSF_NO_DUPS =			BIT(9);	// try not to play the same sound twice in a row
+#ifdef _HUMANHEAD
+static const int	SSF_VOICEAMPLITUDE =	BIT(10);// HUMANHEAD pdm: include in findamplitude queries
+static const int	SSF_OMNI_WHEN_CLOSE =	BIT(11);// HUMANHEAD pdm: make omni when within the mindistance
+static const int	SSF_NOREVERB =			BIT(12);// HUMANHEAD pdm: reverb exclusion
+#endif
 
 // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
 typedef struct {
@@ -274,8 +279,14 @@ public:
 	virtual	int				Index( void ) const = 0;
 
 #ifdef _HUMANHEAD
+	//HUMANHEAD: aob
 	virtual void		ModifySound(idSoundShader* shader, const s_channelType channel, const hhSoundShaderParmsModifier& parmModifier) = 0;
 	virtual soundShaderParms_t* GetSoundParms(idSoundShader* shader, const s_channelType channel) = 0;
+	virtual float			CurrentAmplitude( const s_channelType channel ) { return 0.0f; }
+	virtual float			CurrentVoiceAmplitude( const s_channelType channel ) {
+		return 0.0f;
+	}
+	//HUMANHEAD END
 #endif
 };
 
@@ -351,6 +362,16 @@ public:
 	virtual void			SetSlowmo( bool active ) = 0;
 	virtual void			SetSlowmoSpeed( float speed ) = 0;
 	virtual void			SetEnviroSuit( bool active ) = 0;
+
+#ifdef _HUMANHEAD
+	//HUMANHEAD
+	virtual void			RegisterLocation(int area, const char *locationName) {}
+	virtual void			ClearAreaLocations() {}
+	//HUMANHEAD END
+
+	virtual void			SetSpiritWalkEffect( bool active ) {}	// HUMANHEAD pdm
+	virtual void			SetVoiceDucker( bool active ) {}		// HUMANHEAD pdm
+#endif
 };
 
 
