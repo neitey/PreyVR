@@ -831,6 +831,7 @@ idCommonLocal::Quit
 */
 void idCommonLocal::Quit(void)
 {
+	std::exit(0);//Lubos
 
 #ifdef ID_ALLOW_TOOLS
 
