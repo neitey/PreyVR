@@ -287,23 +287,6 @@ extern idCVar	si_spectators;
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
 
-//Lubos BEGIN
-extern idCVar vr_weaponHand;
-extern idCVar vr_ipd;
-extern idCVar vr_heightoffset;
-extern idCVar vr_controlscheme;
-extern idCVar	vr_shakeamplitude;
-extern idCVar	vr_knockback;
-extern idCVar vr_throwables;
-extern idCVar vr_turnmode;
-extern idCVar vr_turnangle;
-extern idCVar vr_hudmode;
-extern idCVar g_infiniteAmmo;
-extern idCVar g_useWeaponDepthHack;
-extern idCVar g_weaponShadows;
-extern idCVar timescale;
-//Lubos END
-
 extern const char *si_gameTypeArgs[];
 
 //extern const char *ui_skinArgs[];	// HUMANHEAD pdm: removed

@@ -184,14 +184,14 @@
 				}
 			}
 			
-			buttonDef Button_Options_Audio {
+			buttonDef Button_Options_VR {
 				rect			0, 60, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
 				activeColor		TABTOP_ACTIVECOLOR_COMMA
 				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-				text			"#str_20310"
+				text			"VR"
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	0
 
@@ -558,7 +558,7 @@
 				}
 			}
 
-			tabDef Options_Audio {
+			tabDef Options_VR {
 				rect			0, 20, 570, 370
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
@@ -568,60 +568,6 @@
 				text			""
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	0
-
-				onNamedEvent UpdateOptions {
-					// Set initial state of our sound options based on the state variables
-					// Called whenever options may have changed
-
-					// If no eax capable devices are available, disable the mixer change
-					if ("gui::mixeroption" != 0) {
-						// Enable mixer choice
-						set "OA_SoundSystemChoice::noevents" "0";
-						set "OA_SoundSystemChoice::forecolor" EDITABLE_FORECOLOR_STRING;
-					}
-					else {
-						// Disable mixer choice
-						set "OA_SoundSystemChoice::noevents" "1" ;
-						set "OA_SoundSystemChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
-					}
-
-					if ("gui::openAL" != 0) {		// OpenAL is ON
-						// Enable device choice
-						set "OA_DeviceChoice::noevents" "0" ;
-						set "OA_DeviceChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
-
-						// Disable speaker choice
-						set "OA_SpeakerSetupChoice::noevents" "1" ;
-						set "OA_SpeakerSetupChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
-
-						// Disable Reverse choice
-						set "OA_ReverseChannelsChoice::noevents" "1" ;
-						set "OA_ReverseChannelsChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
-					}
-					else {							// OpenAL is OFF
-						// Disable device choice
-						set "OA_DeviceChoice::noevents" "1" ;
-						set "OA_DeviceChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
-
-						// Enable Speaker choice
-						set "OA_SpeakerSetupChoice::noevents" "0" ;
-						set "OA_SpeakerSetupChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
-
-						// Enable Reverse choice
-						set "OA_ReverseChannelsChoice::noevents" "0" ;
-						set "OA_ReverseChannelsChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
-					}
-
-					// EAX Grayed unless openAL is on and device supports EAX
-					if ( ("gui::openAL" != 0) && ("gui::supportsEax" != 0) ) {
-						set "OA_EAXChoice::noevents" "0" ;
-						set "OA_EAXChoice::forecolor" EDITABLE_FORECOLOR_STRING ;
-					}
-					else {
-						set "OA_EAXChoice::noevents" "1" ;
-						set "OA_EAXChoice::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
-					}
-				}
 
 				onTabActivate {
 					set "cmd" "play guisounds_menu_tabflip" ;
@@ -641,7 +587,7 @@
 							leftMat		"guis/assets/menu/text_titlebar_corner.tga"
 							middleMat	"guis/assets/menu/text_titlebarstrip.tga"
 							font		"fonts/menu"
-							text		"#str_20311"
+							text		"VR"
 							textalign	1
 							textaligny	-3
 							textscale	0.45
@@ -649,83 +595,79 @@
 							noevents	1
 						}
 
-						buttonDef OA_Volume {
+						buttonDef OA_AutoCrouch {
 							rect			10, 40, 400, 25
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
 
-							windowDef OAT_Volume {
+							windowDef OAT_AutoCrouch {
 								rect		0, 0, 200, 25
-								text		"#str_41132"
+								text		"Level to autocrouch"
 								textalign	1
 								textaligny	0
 								textscale	0.33
 								shadow		1
 								forecolor	STATIC_FORECOLOR_COMMA
 							}
-							windowDef OA_VolumeBG {
+							windowDef OA_AutoCrouchBG {
 								rect		250, 4, 100, 16
 								background	"guis/assets/sliderbackground.tga"
 							}
-							sliderDef OA_VolumeSlider {
+							sliderDef OA_AutoCrouchSlider {
 								rect		250, 4, 100, 16
 								forecolor	EDITABLE_FORECOLOR_COMMA
 								hovercolor	EDITABLE_HOVERCOLOR_COMMA
 								low			0
-								high		1
-								step		0.05
+								high		1.2
+								step		0.1
 								thumbShader	"guis/assets/sliderbutton.tga"
-								cvar		"s_volume_dB"
+								cvar		"vr_crouchTriggerDist"
 								volumeslider	1
-								
-								onSliderChange {
-									set "cmd" "play guisounds_menu_volumetick";
-								}
 							}
 						}
 
-						buttonDef OA_MusicVolume {
+						buttonDef OA_CameraShake {
 							rect			10, 70, 400, 25
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
 
-							windowDef OAT_MusicVolume {
+							windowDef OAT_CameraShake {
 								rect		0, 0, 200, 25
-								text		"#str_41133"
+								text		"Camera shake level"
 								textalign	1
 								textaligny	0
 								textscale	0.33
 								shadow		1
 								forecolor	STATIC_FORECOLOR_COMMA
 							}
-							windowDef OA_MusicVolumeBG {
+							windowDef OA_CameraShakeBG {
 								rect		250, 4, 100, 16
 								background	"guis/assets/sliderbackground.tga"
 							}
-							sliderDef OA_MusicVolumeSlider {
+							sliderDef OA_CameraShakeSlider {
 								rect		250, 4, 100, 16
 								forecolor	EDITABLE_FORECOLOR_COMMA
 								hovercolor	EDITABLE_HOVERCOLOR_COMMA
 								low			0
-								high		1
-								step		0.05
+								high		1.0
+								step		0.1
 								thumbShader	"guis/assets/sliderbutton.tga"
-								cvar		"s_musicvolume_dB"
+								cvar		"vr_shakeAmplitude"
 								volumeslider	1
 							}
 						}
 
-						buttonDef OA_LevelLoadMusic {
+						buttonDef OA_LeftHand {
 							rect			10, 100, 400, 25
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
 							
-							windowDef OAT_LevelLoadMusic {
+							windowDef OAT_LeftHand {
 								rect		0, 0, 200, 25
-								text		"#str_20315"
+								text		"Use left hand"
 								textalign	1
 								textaligny	0
 								textscale	0.33
@@ -733,7 +675,7 @@
 								forecolor	STATIC_FORECOLOR_COMMA
 							}
 
-							choiceDef OAC_LevelLoadMusic {
+							choiceDef OAC_LeftHand {
 								rect		200, 0, 200, 25
 								textscale	0.33
 								textalign	1
@@ -742,7 +684,78 @@
 								forecolor	EDITABLE_FORECOLOR_COMMA
 								hovercolor	EDITABLE_HOVERCOLOR_COMMA
 								choices		"#str_20152"
-								cvar		"g_levelloadmusic"
+								cvar		"vr_weaponHand"
+								choiceType	0
+							}
+						}
+						
+						buttonDef OA_Refresh {
+							rect			10, 130, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_Refresh {
+								rect		0, 0, 200, 25
+								text		"Refresh rate"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_Refresh {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"60;72;80;90"
+								values		"60;72;80;90"
+								cvar		"vr_refresh"
+								choiceType	1
+							}
+						}
+						
+						buttonDef OA_Vehicle3D {
+							rect			10, 160, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_Vehicle3D {
+								rect		0, 0, 200, 25
+								text		"Fly vehicle in 3D mode"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+							
+							windowDef OAN_Vehicle3D {
+								rect		0, 20, 200, 25
+								text		"(increases motion sickness)"
+								textalign	1
+								textaligny	0
+								textscale	0.2
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_Vehicle3D {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"#str_20152"
+								cvar		"vr_vehicle3d"
 								choiceType	0
 							}
 						}

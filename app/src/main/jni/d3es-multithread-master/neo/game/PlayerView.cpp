@@ -5,6 +5,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "Vr.h"
 
 const int IMPULSE_DELAY = 150;
 
@@ -351,6 +352,12 @@ void idPlayerView::CalculateShake() {
 	idVec3	origin, matrix;
 
 	float shakeVolume = gameSoundWorld->CurrentShakeAmplitudeForPosition( gameLocal.time, player->firstPersonViewOrigin );
+	//Lubos BEGIN
+	if (game->isVR) {
+		shakeVolume *= vr_shakeAmplitude.GetFloat();
+	}
+	//Lubos END
+
 	//
 	// shakeVolume should somehow be molded into an angle here
 	// it should be thought of as being in the range 0.0 -> 1.0, although
