@@ -38,8 +38,6 @@ import java.util.Vector;
 
 @SuppressLint("SdCardPath") public class GLES3JNIActivity extends Activity implements SurfaceHolder.Callback
 {
-	private static final String CFG_VERSION_KEY = "CFG_VERSION_KEY";
-
 	private Vector<HapticServiceClient> externalHapticsServiceClients = new Vector<>();
 
 	//Use a vector of pairs, it is possible a given package _could_ in the future support more than one haptic service
@@ -220,20 +218,6 @@ import java.util.Vector;
 			exitAfterCopy = true;
 		}
 		copy_asset(root.getAbsolutePath(), "commandline.txt", false);
-
-		//Remove user config if game was updated
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-		if (pref.getInt(CFG_VERSION_KEY, 0) != BuildConfig.VERSION_CODE) {
-			File configFile = new File(root, "saves/preybase/preyconfig.cfg");
-			if (configFile.exists()) {
-				if (configFile.delete()) {
-					Log.d(APPLICATION, "User config will be recreated.");
-				}
-			}
-			SharedPreferences.Editor e = pref.edit();
-			e.putInt(CFG_VERSION_KEY, BuildConfig.VERSION_CODE);
-			e.commit();
-		}
 
 		//Base game
 		base.mkdirs();
