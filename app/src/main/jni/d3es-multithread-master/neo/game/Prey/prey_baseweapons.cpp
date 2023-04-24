@@ -1868,7 +1868,8 @@ bool hhWeapon::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 	assert(!FLOAT_IS_NAN(cameraShakeOffset.z));
 
 	if( !cameraShakeOffset.Compare(vec3_zero, VECTOR_EPSILON) ) {
-		origin = (bResult) ? cameraShakeOffset + origin : cameraShakeOffset;
+		float shakeVolume = vr_shakeAmplitude.GetFloat();
+		origin = (bResult) ? cameraShakeOffset * shakeVolume + origin : cameraShakeOffset * shakeVolume;
 		origin *= GetPhysics()->GetAxis().Transpose();
 		if( !bResult ) { axis = mat3_identity; }
 		return true;
