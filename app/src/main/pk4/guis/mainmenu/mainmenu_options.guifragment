@@ -720,8 +720,70 @@
 							}
 						}
 						
-						buttonDef OA_Vehicle3D {
+						buttonDef OA_TurnMode {
 							rect			10, 160, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_TurnMode {
+								rect		0, 0, 200, 25
+								text		"Turn mode"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_TurnMode {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"snap;smooth"
+								values		"0;1"
+								cvar		"vr_turnmode"
+								choiceType	1
+							}
+						}
+						
+						buttonDef OA_TurnAngle {
+							rect			10, 190, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_TurnAngle {
+								rect		0, 0, 200, 25
+								text		"Turn angle speed"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_TurnAngle {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"15;30;45"
+								values		"15;30;45"
+								cvar		"vr_turnangle"
+								choiceType	1
+							}
+						}
+						
+						buttonDef OA_Vehicle3D {
+							rect			10, 220, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
