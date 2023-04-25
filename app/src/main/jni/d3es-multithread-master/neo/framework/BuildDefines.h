@@ -60,12 +60,12 @@ If you have questions concerning this license or the applicable additional terms
 
 // let .dds be loaded from FS without altering pure state. only for developement.
 #ifndef ID_PURE_ALLOWDDS
-#define ID_PURE_ALLOWDDS 0
+#define ID_PURE_ALLOWDDS 1
 #endif
 
 // build an exe with no CVAR_CHEAT controls
 #ifndef ID_ALLOW_CHEATS
-#define ID_ALLOW_CHEATS 0
+#define ID_ALLOW_CHEATS 1
 #endif
 
 #ifndef ID_ENABLE_CURL
