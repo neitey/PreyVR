@@ -1088,12 +1088,6 @@ void idPhysics_Player::CheckDuck( void ) {
 	idBounds bounds;
 	float maxZ;
 
-	//Lubos BEGIN
-	if (game->isVR && (command.elevationVR < vr_crouchTriggerDist.GetFloat())) {
-		command.upmove = -1;
-	}
-	//Lubos END
-
 	if ( current.movementType == PM_DEAD ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {

@@ -11,7 +11,6 @@
 
 //Lubos BEGIN
 extern idCVar vr_shakeAmplitude;
-extern idCVar vr_crouchTriggerDist;
 extern idCVar vr_hudType;
 extern idCVar vr_vehicle3d;
 

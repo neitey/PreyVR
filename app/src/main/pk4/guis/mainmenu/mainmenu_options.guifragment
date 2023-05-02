@@ -595,34 +595,34 @@
 							noevents	1
 						}
 
-						buttonDef OA_AutoCrouch {
+						buttonDef OA_Height {
 							rect			10, 40, 400, 25
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
 
-							windowDef OAT_AutoCrouch {
+							windowDef OAT_Height {
 								rect		0, 0, 200, 25
-								text		"Level to autocrouch"
+								text		"Height adjust"
 								textalign	1
 								textaligny	0
 								textscale	0.33
 								shadow		1
 								forecolor	STATIC_FORECOLOR_COMMA
 							}
-							windowDef OA_AutoCrouchBG {
+							windowDef OA_HeightBG {
 								rect		250, 4, 100, 16
 								background	"guis/assets/sliderbackground.tga"
 							}
-							sliderDef OA_AutoCrouchSlider {
+							sliderDef OA_HeightSlider {
 								rect		250, 4, 100, 16
 								forecolor	EDITABLE_FORECOLOR_COMMA
 								hovercolor	EDITABLE_HOVERCOLOR_COMMA
-								low			0
-								high		1.2
+								low			-0.5
+								high		0.5
 								step		0.1
 								thumbShader	"guis/assets/sliderbutton.tga"
-								cvar		"vr_crouchTriggerDist"
+								cvar		"vr_heightAdjust"
 								volumeslider	1
 							}
 						}
