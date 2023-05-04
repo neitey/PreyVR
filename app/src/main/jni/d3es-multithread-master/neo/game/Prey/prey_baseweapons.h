@@ -305,7 +305,7 @@ class hhWeapon: public hhAnimatedEntity {
 		bool				lightOn;
 
 		// zoom
-	    int					zoomFov;			// variable zoom fov per weapon
+	    float				zoomFov;			// variable zoom fov per weapon
 
 		// weighting for viewmodel angles
 		int					weaponAngleOffsetAverages;

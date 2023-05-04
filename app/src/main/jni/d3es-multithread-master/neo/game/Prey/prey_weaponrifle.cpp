@@ -54,8 +54,10 @@ hhWeaponZoomable::ZoomIn
 void hhWeaponZoomable::ZoomInStep() {
 	int maxFov = spawnArgs.GetInt( "zoomFovMax" );
 	if ( zoomFov < maxFov ) {
-		zoomFov += spawnArgs.GetInt( "zoomFovStep" );
-		StartSound( "snd_scope_click", SND_CHANNEL_ANY, 0, false, NULL );
+		//Lubos BEGIN
+		zoomFov += spawnArgs.GetInt( "zoomFovStep" ) * 0.1f;
+		//StartSound( "snd_scope_click", SND_CHANNEL_ANY, 0, false, NULL );
+		//Lubos END
 		if ( zoomFov > maxFov ) {
 			zoomFov = maxFov;
 		}
@@ -73,8 +75,10 @@ hhWeaponZoomable::ZoomOut
 void hhWeaponZoomable::ZoomOutStep() {
 	int minFov = spawnArgs.GetInt( "zoomFovMin" );
 	if ( zoomFov > minFov ) {
-		zoomFov -= spawnArgs.GetInt( "zoomFovStep" );
-		StartSound( "snd_scope_click", SND_CHANNEL_ANY, 0, false, NULL );
+		//Lubos BEGIN
+		zoomFov -= spawnArgs.GetInt( "zoomFovStep" ) * 0.1f;
+		//StartSound( "snd_scope_click", SND_CHANNEL_ANY, 0, false, NULL );
+		//Lubos END
 		if ( zoomFov < minFov ) {
 			zoomFov = minFov;
 		}

@@ -39,6 +39,7 @@ typedef struct {
     vec3_t hmdposition_delta;
 
     //Lubos BEGIN
+    int weaponZooming;
     float snapTurn;
     bool vehicleMode;
     bool weaponZoom;

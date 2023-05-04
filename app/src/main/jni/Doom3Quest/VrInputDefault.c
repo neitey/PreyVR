@@ -390,6 +390,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
 				(between(0.8f, pPrimaryJoystick->y, 1.0f) ||
 				 between(-1.0f, pPrimaryJoystick->y, -0.8f)))
 			{
+				pVRClientInfo->weaponZooming = between(0.8f, pPrimaryJoystick->y, 1.0f) ? 1 : -1; //Lubos
 				if (!itemSwitched) {
 					if (between(0.8f, pPrimaryJoystick->y, 1.0f))
 					{
@@ -404,6 +405,7 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
 					itemSwitched = true;
 				}
 			} else {
+				pVRClientInfo->weaponZooming = 0; //Lubos
 				itemSwitched = false;
 			}
         }

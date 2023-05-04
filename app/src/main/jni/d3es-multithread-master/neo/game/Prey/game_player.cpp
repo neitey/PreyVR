@@ -2929,7 +2929,7 @@ void hhPlayer::PerformImpulse( int impulse ) {
 			if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
 				hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
 				if ( weap && weap->GetAltMode() ) {
-					weap->ZoomInStep();
+					//Lubos:weap->ZoomInStep();
 				} else {
 					NextWeapon();
 				}
@@ -2942,7 +2942,7 @@ void hhPlayer::PerformImpulse( int impulse ) {
 			if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
 				hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
 				if ( weap && weap->GetAltMode() ) {
-					weap->ZoomOutStep();
+					//Lubos:weap->ZoomOutStep();
 				} else {
 					PrevWeapon();
 				}
@@ -4891,6 +4891,20 @@ void hhPlayer::Think( void ) {
 	UpdatePossession();
 
 	UpdatePlayerIcons();
+
+	//Lubos BEGIN
+	if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
+		hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
+		if ( weap && weap->GetAltMode() ) {
+			if (pVRClientInfo->weaponZooming == -1) {
+				weap->ZoomInStep();
+			} else if (pVRClientInfo->weaponZooming == 1) {
+				weap->ZoomOutStep();
+			}
+		}
+	}
+	//Lubos END
+
 
 	// latch button actions
 	oldButtons = usercmd.buttons;

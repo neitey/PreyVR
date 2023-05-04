@@ -295,7 +295,11 @@ void hhWeapon::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( lightOn );
 
-	savefile->ReadInt( zoomFov );
+	//Lubos BEGIN
+	int zoom = 0;
+	savefile->ReadInt( zoom );
+	zoomFov = zoom;
+	//Lubos END
 
 	savefile->ReadInt( weaponAngleOffsetAverages );
 	savefile->ReadFloat( weaponAngleOffsetScale );
