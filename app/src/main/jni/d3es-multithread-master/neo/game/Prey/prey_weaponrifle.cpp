@@ -371,7 +371,21 @@ void hhWeaponRifle::UpdateGUI() {
 		parmValue = angles.Normalize360().yaw;
 		zoomOverlayGui->SetStateFloat( "yaw", parmValue );
 		zoomOverlayGui->StateChanged( gameLocal.time );
-		zoomOverlayGui->Redraw( gameLocal.GetTime() );
+		//Lubos BEGIN
+		if (game->isVR ) {
+			pVRClientInfo->uiOffset[0] = 200;
+			pVRClientInfo->uiOffset[1] = 180;
+			pVRClientInfo->uiScale[0] = 0.375f;
+			pVRClientInfo->uiScale[1] = 0.28125f;
+			zoomOverlayGui->Redraw( gameLocal.GetTime() );
+			pVRClientInfo->uiOffset[0] = 0;
+			pVRClientInfo->uiOffset[1] = 0;
+			pVRClientInfo->uiScale[0] = 1;
+			pVRClientInfo->uiScale[1] = 1;
+		} else {
+			zoomOverlayGui->Redraw( gameLocal.GetTime() );
+		}
+		//Lubos END
 	}
 }
 

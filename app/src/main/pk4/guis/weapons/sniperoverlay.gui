@@ -1,0 +1,107 @@
+/*
+	Sniper Overlay
+*/
+
+// Available gui vars:
+//	yaw	-	weapon orientation
+windowDef desktop {
+	rect			0, 0, 640, 480 
+	backcolor		0, 0, 0, 0 
+	notime			1
+	
+	onNamedEvent zoomIn {
+		// Sniper rifle just activated
+		resetTime "0";
+	}
+
+	onTime 0 {	
+		transition "barrel_clamps::rect"		"320 240 0 0"	"70 -1 540 540" "300" ;
+		transition "barrel_clamps::matcolor"	"0.7 0.3 0.0 1"		"0.6 0.1 0.0 1" "1000" ;
+		transition "rifle_number1::matcolor"	"0 0 0 0"		"1 1 1 0.5" "2000" ;
+		transition "rifle_number2::matcolor"	"0 0 0 0"		"1 1 1 1" "1000" ;
+		transition "FieldOfViewBar::matcolor"	"0 0 0 0"		"1 1 1 1" "1000" ;
+		transition "bars::matcolor"				"0 0 0 0"		"0.3 0.3 0.3 0.3" "400" ;
+		
+		set "compass::rect" "320 240 0 0" ;
+		set "barrel::rect" "320 240 0 0" ;
+		set "barrel2::rect" "320 240 0 0" ;
+		set "barrel3::rect" "320 240 0 0" ;
+		set "scope::matcolor" "0.0 0.0 0.0 0.0" ;
+		set "scope::rect" "288 208 64 64" ;
+	}
+	
+	onTime 300 {
+		transition "compass::rect" "320 240 0 0" "77 -3 480 480" "300" ;
+		transition "barrel::rect" "320 240 0 0" "96 25 480 480" "200" ;
+		transition "barrel2::rect" "320 240 0 0" "96 25 480 480" "200" ;
+		transition "barrel3::rect" "320 240 0 0" "288 208 64 64" "200" ;
+		transition "scope::matcolor"			"0 0 0 0"		"1.0 1.0 1.0 1.0" "500" ;
+	}
+
+	windowDef FieldOfViewParent {
+		rect		80, 0, 480, 480
+		// FOV comes in the range [0.3-1.0] so that's why this is a little complex
+		rotate		45 - ((("gui::fov" - 0.3) * 1.4) * 90)
+		
+		windowDef FieldOfViewBar {
+			rect		0, 224, 32, 16
+			matcolor	1, 1, 1, 1
+			background	"textures/interface/crosshairs/rifle_number3"
+		}
+	}
+	
+	windowDef compass {
+		rect		320, 240, 0, 0
+		matcolor	1, 1, 1, 1
+		background	"models/weapons/rifle/rifle_letters"
+		rotate		"gui::yaw"	//time //(0 - "gui::yaw")
+	}
+	
+	windowDef bars {
+		rect		79, 0, 480, 480
+		matcolor	1, 1, 1, 1
+		background	"models/weapons/rifle/scopeviewbars"
+	}
+	
+	windowDef barrel {
+		rect		320, 240, 0, 0
+		matcolor	1, 1, 1, 1
+		background	"textures/interface/crosshairs/rifle_barrel1"
+	}
+	
+	windowDef barrel2 {
+		rect		320, 240, 0, 0
+		matcolor	1, 1, 1, 1
+		background	"textures/interface/crosshairs/rifle_barrel2"
+	}
+
+	windowDef barrel_clamps {
+		rect	100, 31, 480, 480
+		matcolor	1, 1, 1, 1
+		background	"textures/interface/crosshairs/rifle_barrel_clamps"
+	}
+	
+	windowDef rifle_number1 {
+		rect		540, 130, 74, 96
+		matcolor	1, 1, 1, 1
+		background	"textures/interface/crosshairs/rifle_number1"
+	}
+	
+	windowDef rifle_number2 {
+		rect		35, 26, 177.29, 480
+		background	"textures/interface/crosshairs/rifle_number2"
+		matcolor	1, 1, 1, 1
+	}
+	
+	windowDef scope {
+		rect		320, 240, 0, 0
+		matcolor	1, 1, 1, 1
+		background	"textures/interface/crosshairs/rifle_barrel"
+	}
+	
+	windowDef barrel3 {
+		rect		320, 240, 0, 0
+		matcolor	1, 1, 1, 1
+		background	"textures/interface/crosshairs/rifle_barrel3"
+	}
+}
