@@ -199,7 +199,7 @@ hhWeaponAutoCannon::Event_SpawnSparkLocal
 void hhWeaponAutoCannon::Event_SpawnSparkLocal( const char* defName ) {
 	assert(dict); //rww - this could happen if the server sent a beam event before we initialized the weap on the client
 	sparkGapSize = dict->GetFloat( "sparkGapSize" );
-	
+
 	SAFE_REMOVE( beamSystem );
 	beamSystem = hhBeamSystem::SpawnBeam( GetOrigin(), defName, mat3_identity, true );
 	if( !beamSystem.IsValid() ) {
@@ -236,8 +236,10 @@ void hhWeaponAutoCannon::Event_SpawnRearGasFX() {
 		fxInfo.UseWeaponDepthHack( true );
 		fxInfo.RemoveWhenDone( true );
 
-		BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxL"), &fxInfo, &EV_Broadcast_AssignLeftRearFx, false );
-		BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxR"), &fxInfo, &EV_Broadcast_AssignRightRearFx, false );
+		if ( !game->isVR ) { //Lubos
+			BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxL"), &fxInfo, &EV_Broadcast_AssignLeftRearFx, false );
+			BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxR"), &fxInfo, &EV_Broadcast_AssignRightRearFx, false );
+		}
 
 		if( GetHeatLevel() >= 1.0f )
 			StartSound( "snd_overheat", SND_CHANNEL_BODY, 0, false, NULL );

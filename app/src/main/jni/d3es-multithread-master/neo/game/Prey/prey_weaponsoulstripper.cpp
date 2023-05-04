@@ -522,6 +522,12 @@ void hhWeaponSoulStripper::SpawnCans() {
 		}
 	}
 
+	//Lubos BEGIN
+	if ( game->isVR ) {
+		return;
+	}
+	//Lubos END
+
 	// Spawn individual canister beams (top to center)
 	beamCanA1 = SpawnCanisterBeam( "attach_topA", "attach_soulA", beam_canTop );
 	beamCanB1 = SpawnCanisterBeam( "attach_topB", "attach_soulB", beam_canTop );
@@ -1281,6 +1287,11 @@ void hhWeaponSoulStripper::Restore( idRestoreGame *savefile ) {
 	fxCanB.Restore( savefile );
 	fxCanC.Restore( savefile );
 	savefile->ReadBool(cansValid);
+	//Lubos BEGIN
+	if (game->isVR && cansValid) {
+		DestroyCans();
+	}
+	//Lubos END
 
 	savefile->ReadFloat( beamLength );
 	savefile->ReadFloat( maxBeamLength );
