@@ -4,6 +4,7 @@
 
 // Available gui vars:
 //	yaw	-	weapon orientation
+
 windowDef desktop {
 	rect			0, 0, 640, 480 
 	backcolor		0, 0, 0, 0 
@@ -19,7 +20,6 @@ windowDef desktop {
 		transition "barrel_clamps::matcolor"	"0.7 0.3 0.0 1"		"0.6 0.1 0.0 1" "1000" ;
 		transition "rifle_number1::matcolor"	"0 0 0 0"		"1 1 1 0.5" "2000" ;
 		transition "rifle_number2::matcolor"	"0 0 0 0"		"1 1 1 1" "1000" ;
-		transition "FieldOfViewBar::matcolor"	"0 0 0 0"		"1 1 1 1" "1000" ;
 		transition "bars::matcolor"				"0 0 0 0"		"0.3 0.3 0.3 0.3" "400" ;
 		
 		set "compass::rect" "320 240 0 0" ;
@@ -38,18 +38,6 @@ windowDef desktop {
 		transition "scope::matcolor"			"0 0 0 0"		"1.0 1.0 1.0 1.0" "500" ;
 	}
 
-	windowDef FieldOfViewParent {
-		rect		80, 0, 480, 480
-		// FOV comes in the range [0.3-1.0] so that's why this is a little complex
-		rotate		45 - ((("gui::fov" - 0.3) * 1.4) * 90)
-		
-		windowDef FieldOfViewBar {
-			rect		0, 224, 32, 16
-			matcolor	1, 1, 1, 1
-			background	"textures/interface/crosshairs/rifle_number3"
-		}
-	}
-	
 	windowDef compass {
 		rect		320, 240, 0, 0
 		matcolor	1, 1, 1, 1
