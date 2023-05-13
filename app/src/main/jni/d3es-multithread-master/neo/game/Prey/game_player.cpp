@@ -2011,7 +2011,7 @@ void hhPlayer::UpdateFocus( void ) {
 			renderEntity_t *renderEnt = e->GetRenderEntity();
 			if ( renderEnt ) {
 				for (int ix=0; ix<MAX_RENDERENTITY_GUI; ix++) {
-					if (renderEnt->gui[ix] && ((talon->GetOrigin() - renderEnt->origin).Length() < 100)) {
+					if (renderEnt->gui[ix] && ((talon->GetOrigin() - renderEnt->origin).Length() < 150)) {
 						renderEnt->gui[ix]->Translate(translateAlienFont);
 					}
 				}
