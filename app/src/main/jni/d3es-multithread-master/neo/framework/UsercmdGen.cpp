@@ -432,6 +432,7 @@ idCVar idUsercmdGenLocal::m_smooth("m_smooth", "1", CVAR_SYSTEM | CVAR_ARCHIVE |
 idCVar idUsercmdGenLocal::m_strafeSmooth("m_strafeSmooth", "4", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "number of samples blended for mouse moving", 1, 8, idCmdSystem::ArgCompletion_Integer<1,8>);
 idCVar idUsercmdGenLocal::m_showMouseRate("m_showMouseRate", "0", CVAR_SYSTEM | CVAR_BOOL, "shows mouse movement");
 idCVar vr_heightAdjust( "vr_heightAdjust", "0", CVAR_FLOAT | CVAR_ARCHIVE, " Adjust of the player height\n" ); //Lubos
+idCVar vr_trackingScale( "vr_trackingScale", "24", CVAR_FLOAT | CVAR_ARCHIVE, " Scale of the 6DoF movement\n" ); //Lubos
 
 static idUsercmdGenLocal localUsercmdGen;
 idUsercmdGen	*usercmdGen = &localUsercmdGen;
@@ -881,9 +882,9 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			wasVehicleMode = false;
 		}
 
-		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward );
-		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe);
-		cmd.elevationVR = up + vr_heightAdjust.GetFloat();
+		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward * vr_trackingScale.GetFloat() );
+		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe * vr_trackingScale.GetFloat());
+		cmd.elevationVR = (up + vr_heightAdjust.GetFloat() - 1.5f) * vr_trackingScale.GetFloat();
 		//Lubos END
 
 		// check to make sure the angles haven't wrapped

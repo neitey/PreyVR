@@ -1009,8 +1009,8 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
 
 	vec2_t v;
 	rotateAboutOrigin(dx,-dz, -pVRClientInfo->hmdorientation_temp[YAW], v);
-	*hmd_forward = v[0] * 2400.0f;
-	*hmd_side = v[1] * 2400.0f;
+	*hmd_forward = v[0] * 100.0f;
+	*hmd_side = v[1] * 100.0f;
 	*joy_side = remote_movementSideways;
 	*joy_forward = remote_movementForward;
 	*up = pVRClientInfo->hmdposition_last[1];
