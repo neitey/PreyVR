@@ -178,7 +178,10 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
 
     if ( inMenu || inCinematic ) // Specific cases where we need to interact using mouse etc
     {
-        handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, true, ovrButton_Trigger, 1);
+	    //Lubos BEGIN
+	    handleTrackedControllerButton_AsButton(leftTrackedRemoteState_new.Buttons, leftTrackedRemoteState_old.Buttons, true, ovrButton_Trigger, 1);
+	    handleTrackedControllerButton_AsButton(rightTrackedRemoteState_new.Buttons, rightTrackedRemoteState_old.Buttons, true, ovrButton_Trigger, 1);
+	    //Lubos END
     }
 
     if ( ( !inCinematic && !inMenu ) || ( pVRClientInfo->vehicleMode && !inMenu ) )
