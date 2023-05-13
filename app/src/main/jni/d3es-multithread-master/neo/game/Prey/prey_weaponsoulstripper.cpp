@@ -522,12 +522,6 @@ void hhWeaponSoulStripper::SpawnCans() {
 		}
 	}
 
-	//Lubos BEGIN
-	if ( game->isVR ) {
-		return;
-	}
-	//Lubos END
-
 	// Spawn individual canister beams (top to center)
 	beamCanA1 = SpawnCanisterBeam( "attach_topA", "attach_soulA", beam_canTop );
 	beamCanB1 = SpawnCanisterBeam( "attach_topB", "attach_soulB", beam_canTop );
@@ -543,9 +537,13 @@ void hhWeaponSoulStripper::SpawnCans() {
 	beamCanB3 = SpawnCanisterBeam( "attach_bottomB", "attach_topB", beam_canGlow );
 	beamCanC3 = SpawnCanisterBeam( "attach_bottomC", "attach_topC", beam_canGlow );
 
-	fxCanA = SpawnCanisterFx( "attach_bottomA", fx_can );
-	fxCanB = SpawnCanisterFx( "attach_bottomB", fx_can );
-	fxCanC = SpawnCanisterFx( "attach_bottomC", fx_can );
+	//Lubos BEGIN
+	if (!game->isVR) {
+		fxCanA = SpawnCanisterFx( "attach_bottomA", fx_can );
+		fxCanB = SpawnCanisterFx( "attach_bottomB", fx_can );
+		fxCanC = SpawnCanisterFx( "attach_bottomC", fx_can );
+	}
+	//Lubos END
 
 	cansValid = true;
 }
@@ -1289,7 +1287,9 @@ void hhWeaponSoulStripper::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(cansValid);
 	//Lubos BEGIN
 	if (game->isVR && cansValid) {
-		DestroyCans();
+		SAFE_REMOVE(fxCanA);
+		SAFE_REMOVE(fxCanB);
+		SAFE_REMOVE(fxCanC);
 	}
 	//Lubos END
 
