@@ -431,8 +431,12 @@ idCVar idUsercmdGenLocal::m_strafeScale("m_strafeScale", "6.25", CVAR_SYSTEM | C
 idCVar idUsercmdGenLocal::m_smooth("m_smooth", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "number of samples blended for mouse viewing", 1, 8, idCmdSystem::ArgCompletion_Integer<1,8>);
 idCVar idUsercmdGenLocal::m_strafeSmooth("m_strafeSmooth", "4", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "number of samples blended for mouse moving", 1, 8, idCmdSystem::ArgCompletion_Integer<1,8>);
 idCVar idUsercmdGenLocal::m_showMouseRate("m_showMouseRate", "0", CVAR_SYSTEM | CVAR_BOOL, "shows mouse movement");
-idCVar vr_heightAdjust( "vr_heightAdjust", "0", CVAR_FLOAT | CVAR_ARCHIVE, " Adjust of the player height\n" ); //Lubos
-idCVar vr_trackingScale( "vr_trackingScale", "24", CVAR_FLOAT | CVAR_ARCHIVE, " Scale of the 6DoF movement\n" ); //Lubos
+
+//Lubos BEGIN
+idCVar vr_heightAdjust( "vr_heightAdjust", "0", CVAR_FLOAT | CVAR_ARCHIVE, " Adjust of the player height\n" );
+idCVar vr_trackingScale( "vr_trackingScale", "24", CVAR_FLOAT | CVAR_ARCHIVE, " Scale of the 6DoF movement\n" );
+idCVar vr_invertVehicleY("vr_invertVehicleY", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "Invert Y axis in vehicle control\n");
+//Lubos END
 
 static idUsercmdGenLocal localUsercmdGen;
 idUsercmdGen	*usercmdGen = &localUsercmdGen;
@@ -871,6 +875,9 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			}
 			VR_GetMove(&forward, &strafe, &temp, &temp, &temp, &temp, &temp, &temp);
 			VR_GetJoystick(&yaw, &pitch);
+			if (vr_invertVehicleY.GetBool()) {
+				pitch *= -1.0f;
+			}
 			viewangles[PITCH] += pitch;
 			viewangles[YAW] += yaw;
 			wasVehicleMode = true;
