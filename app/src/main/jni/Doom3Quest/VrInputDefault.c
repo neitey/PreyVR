@@ -517,10 +517,13 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                 }
                 if (((offhandButtonsNew & ovrButton_Y) !=
                      (offhandButtonsOld & ovrButton_Y)) &&
-                    (offhandButtonsNew & ovrButton_Y) &&
-                    (offhandButtonsNew & ovrButton_Trigger) &&
+                    (offhandButtonsNew & ovrButton_Y)) {
+                    if ((offhandButtonsNew & ovrButton_Trigger) &&
                     (offhandButtonsNew & ovrButton_GripTrigger)) {
-                    Android_SetCommand("god"); //cheat
+                        Android_SetCommand("god"); //cheat
+                    } else {
+                        Android_SetImpulse(UB_IMPULSE25); //throw granade
+                    }
                 }
                 //Lubos END
             }
