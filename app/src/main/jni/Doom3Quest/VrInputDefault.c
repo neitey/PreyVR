@@ -375,16 +375,15 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
             //Lubos END
 
             //Duck
-            if ((primaryButtonsNew & primaryButton1) !=
-                (primaryButtonsOld & primaryButton1)) {
+            if ((weaponButtonsNew & domButton1) != (weaponButtonsOld & domButton1)) {
 
-                handleTrackedControllerButton_AsToggleButton(primaryButtonsNew, primaryButtonsOld, primaryButton1, UB_DOWN);
+                handleTrackedControllerButton_AsToggleButton(weaponButtonsNew, weaponButtonsOld, domButton1, UB_DOWN);
             }
 
             //Jump
-            if ((primaryButtonsNew & primaryButton2) != (primaryButtonsOld & primaryButton2))
+            if ((weaponButtonsNew & domButton2) != (weaponButtonsOld & domButton2))
             {
-                handleTrackedControllerButton_AsButton(primaryButtonsNew, primaryButtonsOld, false, primaryButton2, UB_UP);
+                handleTrackedControllerButton_AsButton(weaponButtonsNew, weaponButtonsOld, false, domButton2, UB_UP);
             }
 
 			//Weapon Chooser
@@ -513,14 +512,14 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                 }
 
                 //Lubos BEGIN
-                if (((offhandButtonsNew & ovrButton_X) !=
-                     (offhandButtonsOld & ovrButton_X)) &&
-                    (offhandButtonsNew & ovrButton_X)) {
+                if (((offhandButtonsNew & offButton1) !=
+                     (offhandButtonsOld & offButton1)) &&
+                    (offhandButtonsNew & offButton1)) {
                     Android_SetImpulse(UB_IMPULSE16); //lighter
                 }
-                if (((offhandButtonsNew & ovrButton_Y) !=
-                     (offhandButtonsOld & ovrButton_Y)) &&
-                    (offhandButtonsNew & ovrButton_Y)) {
+                if (((offhandButtonsNew & offButton2) !=
+                     (offhandButtonsOld & offButton2)) &&
+                    (offhandButtonsNew & offButton2)) {
                     if ((offhandButtonsNew & ovrButton_Trigger) &&
                     (offhandButtonsNew & ovrButton_GripTrigger)) {
                         Android_SetCommand("god"); //cheat
