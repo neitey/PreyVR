@@ -537,13 +537,9 @@ void hhWeaponSoulStripper::SpawnCans() {
 	beamCanB3 = SpawnCanisterBeam( "attach_bottomB", "attach_topB", beam_canGlow );
 	beamCanC3 = SpawnCanisterBeam( "attach_bottomC", "attach_topC", beam_canGlow );
 
-	//Lubos BEGIN
-	if (!game->isVR) {
-		fxCanA = SpawnCanisterFx( "attach_bottomA", fx_can );
-		fxCanB = SpawnCanisterFx( "attach_bottomB", fx_can );
-		fxCanC = SpawnCanisterFx( "attach_bottomC", fx_can );
-	}
-	//Lubos END
+	fxCanA = SpawnCanisterFx( "attach_bottomA", fx_can );
+	fxCanB = SpawnCanisterFx( "attach_bottomB", fx_can );
+	fxCanC = SpawnCanisterFx( "attach_bottomC", fx_can );
 
 	cansValid = true;
 }
@@ -1149,7 +1145,7 @@ void hhWeaponSoulStripper::Event_PlayCycle( int channel, const char *animname ) 
 //=============================================================================
 
 void hhWeaponSoulStripper::PresentWeapon( bool showViewModel ) {
-	if ( IsHidden() || !owner->CanShowWeaponViewmodel() || pm_thirdPerson.GetBool() ) {
+	if ( IsHidden() || !owner->CanShowWeaponViewmodel() || pm_thirdPerson.GetBool() || /*Lubos*/game->isVR ) {
 		if ( beamCanA1.IsValid() ) beamCanA1->Activate( false );
 		if ( beamCanB1.IsValid() ) beamCanB1->Activate( false );
 		if ( beamCanC1.IsValid() ) beamCanC1->Activate( false );
@@ -1285,13 +1281,6 @@ void hhWeaponSoulStripper::Restore( idRestoreGame *savefile ) {
 	fxCanB.Restore( savefile );
 	fxCanC.Restore( savefile );
 	savefile->ReadBool(cansValid);
-	//Lubos BEGIN
-	if (game->isVR && cansValid) {
-		SAFE_REMOVE(fxCanA);
-		SAFE_REMOVE(fxCanB);
-		SAFE_REMOVE(fxCanC);
-	}
-	//Lubos END
 
 	savefile->ReadFloat( beamLength );
 	savefile->ReadFloat( maxBeamLength );
