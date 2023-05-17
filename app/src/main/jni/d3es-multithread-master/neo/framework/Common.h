@@ -249,7 +249,7 @@ class idCommon
 		virtual int 				GetFrameNumber() = 0;
 
 		//Haptic Feedback
-		virtual void 				Vibrate(int channel, float low, float high ) = 0;
+		virtual void 				Vibrate(int channel, float low, float high, int length ) = 0;
 		virtual void 				HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight ) = 0;
 		virtual void 				HapticStopEvent(const char* event) = 0;
 		virtual void 				HapticEnable() = 0;

@@ -950,11 +950,13 @@ Doom3Quest_Vibrate
 
 //0 = left, 1 = right
 float vibration_channel_intensity[2][2] = {{0.0f,0.0f},{0.0f,0.0f}};
+int vibration_length[2] = {0, 0};
 
-void Doom3Quest_Vibrate(int channel, float low, float high)
+void Doom3Quest_Vibrate(int channel, float low, float high, int length)
 {
 	vibration_channel_intensity[channel][0] = low;
 	vibration_channel_intensity[channel][1] = high;
+	vibration_length[channel] = length;
 }
 
 void jni_haptic_event(const char* event, int position, int flags, int intensity, float angle, float yHeight);
@@ -1722,38 +1724,17 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
     Doom3Quest_getTrackedRemotesOrientation(controlscheme, switch_sticks);
 }
 
-/*void Doom3Quest_processHaptics() {//Handle haptics
-	static float lastFrameTime = 0.0f;
-	float timestamp = (float)(GetTimeInMilliSeconds());
-	float frametime = timestamp - lastFrameTime;
-	lastFrameTime = timestamp;
-
-	for (int i = 0; i < 2; ++i) {
-		if (vibration_channel_duration[i] > 0.0f ||
-			vibration_channel_duration[i] == -1.0f) {
-			vrapi_SetHapticVibrationSimple(gAppState.Ovr, controllerIDs[i],
-										   vibration_channel_intensity[i]);
-
-			if (vibration_channel_duration[i] != -1.0f) {
-				vibration_channel_duration[i] -= frametime;
-
-				if (vibration_channel_duration[i] < 0.0f) {
-					vibration_channel_duration[i] = 0.0f;
-					vibration_channel_intensity[i] = 0.0f;
-				}
-			}
-		} else {
-			vrapi_SetHapticVibrationSimple(gAppState.Ovr, controllerIDs[i], 0.0f);
-		}
-	}
-}*/
-
 void Doom3Quest_processHaptics() {//Handle haptics
 
 	float beat;
 	bool enable;
 	for (int h = 0; h < 2; ++h) {
 		beat = fabs( vibration_channel_intensity[h][0] - vibration_channel_intensity[h][1] ) / 65535;
+		if (vibration_length[h] > 0) {
+			vibration_length[h]--;
+		} else if (vibration_length[h] == 0) {
+			beat = 0;
+		}
 		if(beat > 0.0f)
 			vrapi_SetHapticVibrationSimple(gAppState.Ovr, controllerIDs[1 - h], beat);
 		else

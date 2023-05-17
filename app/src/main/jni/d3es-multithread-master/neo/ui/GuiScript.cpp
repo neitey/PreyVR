@@ -690,6 +690,8 @@ void idGuiScriptList::Execute(idWindow *win)
 
 		gs->Execute(win);
 	}
+
+	common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 500, 1000, 5);//Lubos
 }
 
 /*

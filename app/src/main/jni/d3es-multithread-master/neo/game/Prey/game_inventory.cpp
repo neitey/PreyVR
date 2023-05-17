@@ -277,6 +277,9 @@ bool hhInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 
 	if( owner && owner->IsType( hhPlayer::Type ) ) {
 		playerOwner = static_cast<hhPlayer*>(owner);
+
+		common->Vibrate(0, 50, 500, 5);//Lubos
+		common->Vibrate(1, 50, 500, 5);//Lubos
 	}
 
 	if ( !idStr::Icmp( statname, "health" ) || !idStr::Icmp( statname, "healthspecial" ) ) { //healthspecial is for mp and indicates that this item can push a player's health up to the "real" maxhealth

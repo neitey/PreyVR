@@ -136,6 +136,8 @@ const char *idChoiceWindow::HandleEvent(const sysEvent_t *event, bool *updateVis
 	bool runAction = false;
 	bool runAction2 = false;
 
+	common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 500, 1000, 5);//Lubos
+
 	if (event->evType == SE_KEY) {
 		key = event->evValue;
 

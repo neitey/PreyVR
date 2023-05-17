@@ -158,7 +158,7 @@ class idCommonLocal : public idCommon
 
 		virtual int					GetFrameNumber();
 
-		virtual void 				Vibrate(int channel, float low, float high );
+		virtual void 				Vibrate(int channel, float low, float high, int length );
 		virtual void				HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight );
 		virtual void 				HapticStopEvent(const char* event);
 		virtual void                HapticEnable();
@@ -2647,15 +2647,15 @@ void idCommonLocal::InitSIMD(void)
 }
 
 extern "C" void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh);
-extern "C" void Doom3Quest_Vibrate(int channel, float low, float high );
+extern "C" void Doom3Quest_Vibrate(int channel, float low, float high, int length );
 extern "C" void Doom3Quest_HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight );
 extern "C" void Doom3Quest_HapticStopEvent(const char* event);
 extern "C" void Doom3Quest_HapticEnable();
 extern "C" void Doom3Quest_HapticDisable();
 
-void idCommonLocal::Vibrate(int channel, float low, float high)
+void idCommonLocal::Vibrate(int channel, float low, float high, int length)
 {
-	Doom3Quest_Vibrate(channel, low, high);
+	Doom3Quest_Vibrate(channel, low, high, length);
 }
 
 void idCommonLocal::HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight )

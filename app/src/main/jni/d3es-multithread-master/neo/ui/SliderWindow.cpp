@@ -146,6 +146,8 @@ const char *idSliderWindow::HandleEvent(const sysEvent_t *event, bool *updateVis
 		return "";
 	}
 
+	common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 500, 1000, 5);//Lubos
+
 	int key = event->evValue;
 
 	if (event->evValue2 && key == K_MOUSE1) {

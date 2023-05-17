@@ -195,11 +195,20 @@ idMat3 hhFireController::DetermineProjectileAxis( const idMat3& axis ) {
 	projectileAngles[2] = axis.ToAngles()[2];
 
 	//Lubos BEGIN
-	if (game->isVR && !pVRClientInfo->vehicleMode && !pVRClientInfo->weaponZoom) {
-		idMat3 axis = projectileAngles.ToMat3();
-		idVec3 origin = muzzleOrigin;
-		ApplyVRWeaponTransform(axis, origin);
-		return axis;
+	idEntity *owner = GetProjectileOwner();
+	if ( owner && owner->IsType( hhPlayer::Type ) ) {
+		hhPlayer *player = static_cast<hhPlayer *>(owner);
+		if (game->isVR && !pVRClientInfo->vehicleMode) {
+			idMat3 axis = projectileAngles.ToMat3();
+			idVec3 origin = muzzleOrigin;
+			if (pVRClientInfo->weaponZoom && player->renderView) {
+				origin = player->renderView->vieworg;
+				axis = player->renderView->viewaxis;
+			} else {
+				ApplyVRWeaponTransform(axis, origin);
+			}
+			return axis;
+		}
 	}
 	//Lubos END
 
@@ -252,16 +261,27 @@ bool hhFireController::LaunchProjectiles( const idVec3& pushVelocity ) {
 			}
 		}
 		//Lubos BEGIN
-		if (game->isVR && !pVRClientInfo->vehicleMode && !pVRClientInfo->weaponZoom) {
-			idMat3 axis = GetSelfConst()->GetAxis();
-			idVec3 origin = GetSelfConst()->GetOrigin();
-			ApplyVRWeaponTransform(axis, origin);
+		idEntity *owner = GetProjectileOwner();
+		if ( owner && owner->IsType( hhPlayer::Type ) ) {
+			hhPlayer *player = static_cast<hhPlayer *>(owner);
+			if (game->isVR && !pVRClientInfo->vehicleMode) {
+				idMat3 axis = GetSelfConst()->GetAxis();
+				idVec3 origin = GetSelfConst()->GetOrigin();
+				if (pVRClientInfo->weaponZoom && player->renderView) {
+					origin = player->renderView->vieworg;
+					axis = player->renderView->viewaxis;
+				} else {
+					ApplyVRWeaponTransform(axis, origin);
+				}
 
-			idVec3 weaponToMuzzle = localMuzzleOrigin - GetSelfConst()->GetOrigin();
-			weaponToMuzzle = weaponToMuzzle * GetSelfConst()->GetAxis().Inverse();
-			localMuzzleOrigin = origin + (weaponToMuzzle * axis);
-			localMuzzleAxis = axis;
+				idVec3 weaponToMuzzle = localMuzzleOrigin - GetSelfConst()->GetOrigin();
+				weaponToMuzzle = weaponToMuzzle * GetSelfConst()->GetAxis().Inverse();
+				localMuzzleOrigin = origin + (weaponToMuzzle * axis);
+				localMuzzleAxis = axis;
+			}
 		}
+		common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 100, 1000, 10);//Lubos
+
 		//Lubos END
 		CreateMuzzleFx( localMuzzleOrigin, localMuzzleAxis );
 	}

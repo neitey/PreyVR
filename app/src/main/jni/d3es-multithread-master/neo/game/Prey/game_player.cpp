@@ -1093,10 +1093,11 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 			if (game->isVR && !InVehicle() && weapon.IsValid() && renderView) {
 				idVec3 worldPos = weapon->GetEyeTraceInfo().endpos;
 				idVec3 screenPos = hhUtils::ProjectOntoScreen(worldPos, *renderView);
-				pVRClientInfo->uiOffset[0] = screenPos.x - SCREEN_WIDTH / 2.0f;
-				pVRClientInfo->uiOffset[1] = screenPos.y - SCREEN_HEIGHT / 2.0f;
-				pVRClientInfo->uiScale[0] = 1;
-				pVRClientInfo->uiScale[1] = 1;
+				float scale = 250.0f / idMath::ClampFloat(250, 10000, screenPos.z);
+				pVRClientInfo->uiOffset[0] = screenPos.x - SCREEN_WIDTH / 2.0f * scale;
+				pVRClientInfo->uiOffset[1] = screenPos.y - SCREEN_HEIGHT / 2.0f * scale;
+				pVRClientInfo->uiScale[0] = scale;
+				pVRClientInfo->uiScale[1] = scale;
 				cursor->Redraw( gameLocal.realClientTime );
 			} else {
 				cursor->Redraw( gameLocal.realClientTime );
@@ -2011,7 +2012,7 @@ void hhPlayer::UpdateFocus( void ) {
 			renderEntity_t *renderEnt = e->GetRenderEntity();
 			if ( renderEnt ) {
 				for (int ix=0; ix<MAX_RENDERENTITY_GUI; ix++) {
-					if (renderEnt->gui[ix] && ((talon->GetOrigin() - renderEnt->origin).Length() < 150)) {
+					if (renderEnt->gui[ix] && ((talon->GetOrigin() - renderEnt->origin).Length() < 200)) {
 						renderEnt->gui[ix]->Translate(translateAlienFont);
 					}
 				}
@@ -3207,6 +3208,9 @@ hhPlayer::Damage
 void hhPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 					   const char *damageDefName, const float damageScale, const int location ) {
 
+	common->Vibrate(0, 50, 500, damageScale * 10);//Lubos
+	common->Vibrate(1, 50, 500, damageScale * 10);//Lubos
+
 	if(	IsSpiritOrDeathwalking() ) { //Player is spirit-walking, so check for special immunities
 		const idKeyValue *kv = spawnArgs.MatchPrefix("immunityspirit");
 		while( kv && kv->GetValue().Length() ) {
@@ -3368,7 +3372,7 @@ void hhPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		}
 	} else {
 		idPlayer::Damage( inflictor, attacker, dir, damageDefName, damageScale, location );
-	}	
+	}
 
 	//HUMANHEAD rww - hit feedback
 	if (gameLocal.isMultiplayer && attacker && !gameLocal.isClient) { //let's broadcast from the server only, so hit feedback is always reliable
