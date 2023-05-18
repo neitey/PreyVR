@@ -42,6 +42,7 @@ typedef struct {
     int weaponZooming;
     float snapTurn;
     bool disableFootStep;
+    bool inMenu;
     bool vehicleMode;
     bool weaponZoom;
     vec3_t weaponOffset;

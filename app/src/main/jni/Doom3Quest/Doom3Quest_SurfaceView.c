@@ -143,6 +143,8 @@ void Doom3Quest_setUseScreenLayer(int screen)
 	objectiveSystemActive = !!(screen & 0x4);
 	inCinematic = !!(screen & 0x8);
 	loading = !!(screen & 0x10);
+
+	pVRClientInfo->inMenu = inMenu;
 }
 
 bool Doom3Quest_useScreenLayer()
