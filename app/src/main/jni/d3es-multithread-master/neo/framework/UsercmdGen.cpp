@@ -888,9 +888,13 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			viewangles[ROLL] = roll;
 			wasVehicleMode = false;
 		}
+		hmd_forward *= vr_trackingScale.GetFloat();
+		hmd_strafe *= vr_trackingScale.GetFloat();
 
-		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward * vr_trackingScale.GetFloat() );
-		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe * vr_trackingScale.GetFloat());
+		pVRClientInfo->disableFootStep = fabs(hmd_forward) + fabs(hmd_strafe) > fabs(forward) + fabs(strafe);
+
+		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward );
+		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe );
 		cmd.elevationVR = (up + vr_heightAdjust.GetFloat() - 1.5f) * vr_trackingScale.GetFloat();
 		//Lubos END
 

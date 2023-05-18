@@ -3093,7 +3093,7 @@ hhPlayer::PlayFootstepSound
 ==================
 */
 void hhPlayer::PlayFootstepSound() {
-	if ( IsSpiritOrDeathwalking() ) {
+	if ( IsSpiritOrDeathwalking() || /*Lubos*/pVRClientInfo->disableFootStep ) {
 		return; // No footstep sounds in spiritwalk mode
 	}
 
