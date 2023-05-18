@@ -705,18 +705,37 @@ bool R_GenerateSubViews( void ) {
 
 	// scan the surfaces until we either find a subview, or determine
 	// there are no more subview surfaces.
-	for ( i = 0 ; i < tr.viewDef->numDrawSurfs ; i++ ) {
-		drawSurf = tr.viewDef->drawSurfs[i];
-		shader = drawSurf->material;
+	//Lubos BEGIN
+	bool portalHack = false;
+	if (strcmp(session->GetCurrentMapName(), "maps/game/salvage") == 0) {
+		portalHack = true;
+	}
+	for (int pass = 0; pass < (portalHack ? 2 : 1); pass++) {
+		for ( i = 0 ; i < tr.viewDef->numDrawSurfs ; i++ ) {
+			drawSurf = tr.viewDef->drawSurfs[i];
+			shader = drawSurf->material;
 
-		if ( !shader || !shader->HasSubview() ) {
-			continue;
-		}
+			if ( !shader || !shader->HasSubview() ) {
+				continue;
+			}
 
-		if ( R_GenerateSurfaceSubview( drawSurf ) ) {
-			subviews = true;
+			if (portalHack) {
+				bool portal = ( shader->GetSort() == SS_SUBVIEW ) && ( shader->GetSubviewClass() == SC_PORTAL );
+				if ( ( pass == 0 ) && !portal ) {
+					if ( R_GenerateSurfaceSubview( drawSurf ) ) {
+						subviews = true;
+					}
+				} else if ( ( pass == 1 ) && portal ) {
+					if ( R_GenerateSurfaceSubview( drawSurf ) ) {
+						subviews = true;
+					}
+				}
+			} else if ( R_GenerateSurfaceSubview( drawSurf ) ) {
+				subviews = true;
+			}
 		}
 	}
+	//Lubos END
 
 	return subviews;
 }
