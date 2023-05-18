@@ -103,7 +103,7 @@ bool idEFXFile::FindEffect( idStr &name, ALuint *effect ) {
 	int i;
 
 	//Lubos BEGIN
-	if (strcmp(cvarSystem->GetCVarString("si_map"), "dmshuttle2") == 0) {
+	if (game->isVR) {
 		return false;
 	}
 	//Lubos END
