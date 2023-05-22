@@ -1,0 +1,164 @@
+
+#include "guis/mainmenu/menucolors.guifragment"
+
+windowDef Desktop {
+	rect		0 ,0 ,640 ,480 
+	backcolor	0, 0, 0, 0
+	menugui		1
+	float	"activate2"	0
+
+	onActivate {
+		if ("activate2" == 0) { 
+			set	"activate2" "1" ; 
+			resetTime "Open" "0" ;
+		}
+	}
+	
+	windowDef Open {
+		rect 		0, 0, 0, 0
+		visible	0
+		notime 1
+
+		onTime 100 {
+			set "BlackFade::backcolor" "0 0 0 1" ;
+			set "BlackFade::visible" "1" ;
+			transition "BlackFade::backcolor" "0 0 0 1" "0 0 0 0" "1000" ;
+		}
+		onTime 1700 {
+			set "BlackFade::visible" "0" ;
+		}
+	}
+
+	windowDef Main_Portal {
+		rect		0, 0, 640, 480
+
+		windowDef Background {
+			rect		0, 0, 640, 480
+			backcolor	0, 0, 0, 0
+			matcolor	1, 1, 1, 1
+			background	"guis/assets/menu/background.tga"
+		}
+	}
+	windowDef PreyLogo {
+		rect		60, 80, 510, 35 
+		background  "guis/assets/menu/prey"
+		matcolor	1 ,1 ,1 ,1
+		noevents	1
+	}
+
+	superWindowDef main {
+		rect		172, 184, 280, 220
+		matcolor	1, 1, 1, 0.7
+		backcolor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		20, 20, 7, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		
+		buttonDef Credits_Titlebar {
+			rect		32, 7, 215, 19
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			noevents	1
+		}
+
+		buttonDef Credits_TitlebarBottom {
+			rect		32, 194, 215, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+			noevents	1
+		}
+	}
+
+	buttonDef Restart {
+		rect		237, 280, 150, 30
+		text		"#str_20643"
+		textscale	0.4
+		textaligny	0
+		textalign	1
+		forecolor		BUTTON_FORECOLOR_COMMA
+		hoverColor		BUTTON_HOVERCOLOR_COMMA
+		leftMat			"guis/assets/menu/button/corner"
+		middleMat		"guis/assets/menu/button/strip"
+		leftHoverMat	"guis/assets/menu/button/rollover_corner"
+		middleHoverMat	"guis/assets/menu/button/rollover_strip"
+		rightMat		"guis/assets/menu/button/invcorner"
+		rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+		edgeWidth		10
+
+		onAction {
+			set "cmd" "restart" ;
+		}
+		
+		onMouseEnter {
+			transition "forecolor" "1 1 1 0.5" "1 1 1 1" "400" ;
+			transition "Restart2::forecolor" "1 1 1 0" "1 1 1 0.7" "400" ;
+		}
+		
+		onMouseExit {
+			transition "forecolor" "1 1 1 1" "1 1 1 0.5" "400" ;
+			transition "Restart2::forecolor" "1 1 1 0.7" "1 1 1 0" "400" ;
+		}
+	}
+	
+	windowDef Restart2 {
+		rect	192, 310, 240, 20
+		forecolor 1, 1, 1, 0
+		textscale	0.28
+		text	"#str_20647"
+		textaligny -4
+		textalign	1
+	}
+	
+	buttonDef MainMenu {
+		rect	237, 330, 150, 30
+		text	"#str_20644"
+		textscale	0.4
+		textaligny	0
+		textalign	1
+		forecolor		BUTTON_FORECOLOR_COMMA
+		hoverColor		BUTTON_HOVERCOLOR_COMMA
+		leftMat			"guis/assets/menu/button/corner"
+		middleMat		"guis/assets/menu/button/strip"
+		leftHoverMat	"guis/assets/menu/button/rollover_corner"
+		middleHoverMat	"guis/assets/menu/button/rollover_strip"
+		rightMat		"guis/assets/menu/button/invcorner"
+		rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+		edgeWidth		10
+
+		onAction {
+			set "cmd" "exec disconnect" ;
+		}
+
+		onMouseEnter {
+			transition "forecolor" "1 1 1 0.5" "1 1 1 1" "400" ;
+			transition "MainMenu2::forecolor" "1 1 1 0" "1 1 1 0.7" "400" ;
+		}
+		
+		onMouseExit {
+			transition "forecolor" "1 1 1 1" "1 1 1 0.5" "400" ;
+			transition "MainMenu2::forecolor" "1 1 1 0.7" "1 1 1 0" "400" ;
+		}
+	}
+	
+	windowDef MainMenu2 {
+		rect	192, 360, 240, 20
+		forecolor 1, 1, 1, 0
+		textscale	0.28
+		text	"#str_20018"
+		textaligny -4
+		textalign	1
+	}
+
+
+	windowDef BlackFade {
+		rect	0, 0, 640, 480
+		backcolor 0, 0, 0, 1
+		visible 1
+	}
+}
