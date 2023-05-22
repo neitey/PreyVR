@@ -39,7 +39,7 @@
 	}
 	
 	superWindowDef Mods_Menu {
-		rect		193, 445, 353, 32
+		rect		193, 85, 583, 32
 		matcolor	1, 1, 1, 0.7
 		backColor	0, 0, 0, 0
 		cornerMat	"guis/assets/menu/window_cornerUL"
@@ -60,7 +60,6 @@
 			textalign	1
 			textaligny	-3
 			shadow		1
-			font		"fonts/menu"
 			text		"#str_20133"
 			noevents	1
 		}
@@ -88,72 +87,47 @@
 				}
 			}
 		}
-
-		windowDef Mods_ListBG {
-			rect		51, 59, 270, 130
-			backcolor	1, 1, 1, 0.1
-
-			windowDef Mods_ListCap_Top {
-				rect		254, 0, 16, 4
-				background	"guis/assets/scrollbarv_cap.tga"
-			}
-			windowDef Mods_ListCap_Bottom {
-				rect		254, 126, 16, -4
-				background	"guis/assets/scrollbarv_cap.tga"
-			}
-
-			listDef Mods_List {
-				rect		0, 4, 270, 122
-				foreColor	LISTCONTENT_FORECOLOR_COMMA
-				bordercolor	LISTCONTENT_SELECTION_COLOR
-				focuscolor	LISTCONTENT_SELECTION_OUTLINE
-				textscale	0.25
-				listName	"modsList"
-
-				onAction {
-					set "cmd" "play guisounds_menu_tick" ;
-					resetTime "Mods_LoadButton" "0" ;
-				}
-
-				onEnter {
-					set "cmd" "play guisounds_menu_clickin" ;
-					set "cmd" "loadMod" ;
-				}
-			}
+		
+		windowDef Mods_Info1 {
+			rect		0, 30, 400, 25
+			text		"The mods won't start unless they are installed in preybase folder"
+			textalign	1
+			textaligny	0
+			textscale	0.25
+			shadow		1
+			forecolor	STATIC_FORECOLOR_COMMA
 		}
 
-		//Load MOD
-		buttonDef Mods_LoadButton {
-			rect			221, 200, 100, 25
-			text			"#str_20134"
-			textscale		0.33
+		windowDef Mods_Info2 {
+			rect		0, 45, 400, 25
+			text		"Get the mods/addons from https://www.moddb.com/games/prey/"
+			textalign	1
+			textaligny	0
+			textscale	0.25
+			shadow		1
+			forecolor	STATIC_FORECOLOR_COMMA
+		}
+
+		buttonDef Mod_Revelations {
+			rect		    32, 80, 312, 24
+			text			"Prey Revelations"
+			textscale		0.4
 			textalign		1
-			textaligny		0
+			textaligny		-6
+			shadow			1
+			font			"fonts/menu"
 			forecolor		BUTTON_FORECOLOR_COMMA
 			hoverColor		BUTTON_HOVERCOLOR_COMMA
 			leftMat			"guis/assets/menu/button/corner"
 			middleMat		"guis/assets/menu/button/strip"
+			rightMat		"guis/assets/menu/button/invcorner"
 			leftHoverMat	"guis/assets/menu/button/rollover_corner"
 			middleHoverMat	"guis/assets/menu/button/rollover_strip"
-			rightMat		"guis/assets/menu/button/invcorner"
 			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
 			edgeWidth		12
-
-			onTime 0 {
-				if ( "gui::modsList_sel_0" >= 0 ) {
-					set "forecolor" "1 1 1 1" ;
-					set "noevents" "0"
-				} else {
-					set "forecolor" "1 1 1 0.5" ;
-					set "noevents" "1"
-				}
-			}
-
 			onAction {
-				set "cmd" "play guisounds_menu_clickin" ;
+				set	"cmd" "play guisounds_menu_clickin" ;
+				set	"cmd" "startgame rev01" ;
 			}
-			onActionRelease {
-				set	"cmd" "loadMod" ;
-			}			
 		}
 	}
