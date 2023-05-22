@@ -754,6 +754,7 @@ void idConsoleLocal::SetDisplayFraction(float frac)
 {
 	finalFrac = frac;
 	fracTime = com_frameTime;
+	pVRClientInfo->consoleShown = frac >= 0.01f; //Lubos
 }
 
 /*
@@ -1244,6 +1245,7 @@ void	idConsoleLocal::Draw(bool forceFullScreen)
 		// we want the console closed when we go back to a session state
 		Close();
 		// we are however catching keyboard input
+		pVRClientInfo->consoleShown = true; //Lubos
 		keyCatching = true;
 	}
 

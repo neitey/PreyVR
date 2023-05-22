@@ -41,6 +41,7 @@ typedef struct {
     //Lubos BEGIN
     int weaponZooming;
     float snapTurn;
+    bool consoleShown;
     bool disableFootStep;
     bool inMenu;
     bool vehicleMode;
