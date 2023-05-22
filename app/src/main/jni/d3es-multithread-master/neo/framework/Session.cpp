@@ -3983,6 +3983,11 @@ const char * idSessionLocal::GetDeathwalkMapName(const char *mapName) const
 		mapDecl = declManager->FindType(DECL_MAPDEF, "defaultMap", false);
 #endif
 	const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>(mapDecl);
+	//LUBOS BEGIN
+	if (!mapDef) {
+		return "";
+	}
+	//LUBOS END
 	const char *dwMap = mapDef->dict.GetString("deathwalkmap");
 	if(!dwMap || !dwMap[0])
 		return "";
