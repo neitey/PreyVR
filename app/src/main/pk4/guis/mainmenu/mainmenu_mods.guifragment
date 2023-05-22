@@ -108,8 +108,77 @@
 			forecolor	STATIC_FORECOLOR_COMMA
 		}
 
-		buttonDef Mod_Revelations {
+		buttonDef Mod_AlteredReality {
 			rect		    32, 80, 312, 24
+			text			"Altered Reality"
+			textscale		0.4
+			textalign		1
+			textaligny		-6
+			shadow			1
+			font			"fonts/menu"
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+			onAction {
+				set	"cmd" "play guisounds_menu_clickin" ;
+				set	"cmd" "startgame shrapnelcity" ;
+			}
+		}
+
+		buttonDef Mod_LeonPrey {
+			rect		    32, 100, 312, 24
+			text			"LeonPrey"
+			textscale		0.4
+			textalign		1
+			textaligny		-6
+			shadow			1
+			font			"fonts/menu"
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+			onAction {
+				set	"cmd" "play guisounds_menu_clickin" ;
+				set	"cmd" "startgame LeonPreySP" ;
+			}
+		}
+
+		buttonDef Mod_LostCity {
+			rect		    32, 120, 312, 24
+			text			"Lost City"
+			textscale		0.4
+			textalign		1
+			textaligny		-6
+			shadow			1
+			font			"fonts/menu"
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+			onAction {
+				set	"cmd" "play guisounds_menu_clickin" ;
+				set	"cmd" "startgame bja_sp/lostcity" ;
+			}
+		}
+
+		buttonDef Mod_Revelations {
+			rect		    32, 140, 312, 24
 			text			"Prey Revelations"
 			textscale		0.4
 			textalign		1
@@ -128,6 +197,52 @@
 			onAction {
 				set	"cmd" "play guisounds_menu_clickin" ;
 				set	"cmd" "startgame rev01" ;
+			}
+		}
+
+		buttonDef Mod_SurprisinglyFocused {
+			rect		    32, 160, 312, 24
+			text			"Surprisingly Focused"
+			textscale		0.4
+			textalign		1
+			textaligny		-6
+			shadow			1
+			font			"fonts/menu"
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+			onAction {
+				set	"cmd" "play guisounds_menu_clickin" ;
+				set	"cmd" "startgame focused" ;
+			}
+		}
+
+		buttonDef Mod_WhosHome {
+			rect		    32, 180, 312, 24
+			text			"Who's Home?"
+			textscale		0.4
+			textalign		1
+			textaligny		-6
+			shadow			1
+			font			"fonts/menu"
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+			onAction {
+				set	"cmd" "play guisounds_menu_clickin" ;
+				set	"cmd" "startgame prey_sky1" ;
 			}
 		}
 	}
