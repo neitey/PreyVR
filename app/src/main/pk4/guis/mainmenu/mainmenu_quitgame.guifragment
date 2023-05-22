@@ -1,0 +1,145 @@
+
+
+	//------------------------------------------------------
+	//
+	//	QuitGame Menu
+	//
+	//------------------------------------------------------
+	windowDef QuitGame_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "Main_Menu::visible" "0" ;
+			set "QuitGame_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "QuitGame_Menu::visible" "1" ;
+			//transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "QuitGame_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_SMALL_RECT_TEXT "500" "500" "500" ;
+			set "cmd" "play2 guisounds_menu_slideinsmall";
+		}
+		onTime 500 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_QUITGAME;
+		}
+	}
+	windowDef QuitGame_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "Main_Portal::visible" "1" ;
+			transition "QuitGame_Menu::rect" MENU_SMALL_RECT_TEXT MENU_INITIAL_RECT_TEXT "500" "500" "500";
+			//transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "500" ;
+			set "cmd" "play2 guisounds_menu_slideoutsmall";
+		}
+		onTime 500 {
+			set "QuitGame_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+	}
+	
+	superWindowDef QuitGame_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.7
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 1, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef QuitGame_Titlebar {
+			rect		32, 8, 312, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.4
+			textalign	1
+			textaligny	-3
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20332"
+			noevents	1
+		}
+
+		windowDef QuitGame_AreYouSure {
+			rect		11, 19, 353, 200
+			text		"#str_20124"
+			textscale	0.5
+			textalign	1
+			textaligny	65
+			shadow		2
+			backcolor	0, 0, 0, 0
+			forecolor	0.8, 0.87, 0.98, 1
+			
+			buttonDef QuitGame_Yes {
+				rect			65, 125, 100, 30
+				text			"#str_20125"
+				textscale		0.35
+				textalign		1
+				textaligny		1
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				onAction {
+					set	"cmd" "play guisounds_menu_clickin" ; 
+					set "cmd" "exec disconnect" ;
+				}
+			}
+			buttonDef QuitGame_No {
+				rect			185, 125, 100, 30
+				text			"#str_20126"
+				textscale		0.35
+				textalign		1
+				textaligny		1
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				onAction {
+					set	"cmd" "play guisounds_menu_cancel" ; 
+					resetTime "QuitGame_AnimOut" "0";
+				}
+			}
+		}
+		
+		buttonDef QuitGame_TitlebarBottom {
+			rect		32, 243, 312, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+
+			buttonDef QuitGame_BottomButton_Cancel {
+				rect		19, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.4
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "QuitGame_AnimOut" "0";
+				}
+			}
+		}
+	}

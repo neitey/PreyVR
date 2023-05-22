@@ -1,0 +1,325 @@
+
+	#include "guis/mainmenu/mainmenu_creditdefines.guifragment"
+
+#define CREDITS_TIME_STRING					"130000"
+#define CREDITS_TIME_PLUS_2700_NUMBER		132700
+
+	//------------------------------------------------------
+	//
+	//	Credits Menu
+	//
+	//------------------------------------------------------
+	windowDef Credits_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "Main_Logo::visible" "0" ;
+			set "Main_Menu::visible" "0" ;
+			set "Credits_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "Credits_Menu::visible" "1" ;
+			transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "Credits_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
+			set "Credits_Titlebar::visible" "0" ;
+
+			// Reset all children to initial state
+			set "Logo::matcolor" "0 0 0 0";
+			set "HHead::matcolor" "0 0 0 0";
+			set "ThreeDR::matcolor" "0 0 0 0";
+			set "Title1::forecolor" "0 0 0 0";
+			set "Title2::forecolor" "0 0 0 0";
+			transition "Logo::matcolor" "0 0 0 0" "0 0 0 0" "1";
+			transition "HHead::matcolor" "0 0 0 0" "0 0 0 0" "1";
+			transition "ThreeDR::matcolor" "0 0 0 0" "0 0 0 0" "1";
+			transition "Title1::matcolor" "0 0 0 0" "0 0 0 0" "1";
+			transition "Title2::matcolor" "0 0 0 0" "0 0 0 0" "1";
+
+			// Transitions now replace past duplicates rather than fighting with each other, so
+			// to kill the old transition, we issue a new one
+			transition "VirtualPageCredits::rect" CREDITS_VPAGE_SRCRECT_STRING CREDITS_VPAGE_SRCRECT_STRING "1";
+			
+			set "CreditLine1::onCallDisable" "1";		// Call disable on all windows
+			set "CreditLine1::onCallReset" "1";			// Call onReset event on all windows
+
+			set "cmd" "play2 guisounds_menu_slidein";
+		}
+		onTime 200 {
+			transition "Credits_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_FINAL_RECT_TEXT "500" "500" "500";
+			set "Credits_Titlebar::visible" "1" ;
+		}
+		onTime 690 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_CREDITS;
+		}
+		// Looping point ---------------------------------------------------------------------------------------------
+		onTime 700 {
+			// Reset all children to initial state
+			set "Logo::matcolor" "0 0 0 0";
+			set "HHead::matcolor" "0 0 0 0";
+			set "ThreeDR::matcolor" "0 0 0 0";
+			set "Title1::forecolor" "0 0 0 0";
+			set "Title2::forecolor" "0 0 0 0";
+
+			// Transitions now replace past duplicates rather than fighting with each other, so
+			// to kill the old transition, we issue a new one
+			transition "VirtualPageCredits::rect" CREDITS_VPAGE_SRCRECT_STRING CREDITS_VPAGE_SRCRECT_STRING "1";
+
+			transition "Logo::matcolor" "0 0 0 0" "1 1 1 0.9" "1000" ;
+		}
+		onTime 1700 {
+			transition "Title1::forecolor" "0.8 0.87 0.98 0" "0.8 0.87 0.98 1" "1000" ;
+		}
+		onTime 2700 {
+			transition "VirtualPageCredits::rect" CREDITS_VPAGE_SRCRECT_STRING CREDITS_VPAGE_DSTRECT_STRING CREDITS_TIME_STRING ;
+		}
+		onTime 2800 {
+			set "CreditLine1::onCallEnable" "1";
+		}
+		onTime 3500 {
+			transition "HHead::matcolor" "0 0 0 0" "1 1 1 1" "1000" ;
+		}
+		onTime 28000 {
+			transition "Title2::forecolor" "0 0 0 0" "1 1 1 1" "1000" ;
+		}
+		onTime 29000 {
+			transition "ThreeDR::matcolor" "0 0 0 0" "1 1 1 1" "1000" ;
+		}
+		onTime CREDITS_TIME_PLUS_2700_NUMBER {
+			set "CreditLine1::onCallDisable" "1";
+			set "CreditLine1::onCallReset" "1";
+			resetTime "700" ;
+		}
+	}
+	windowDef Credits_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "Main_Bottom_ButtonCredits::noEvents" "1" ;			// Disable the button until anim is done
+			set "Main_Portal::visible" "1" ;
+			set "Main_Logo::visible" "1" ;
+			transition "Credits_Menu::rect" MENU_FINAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "500" "500" "500";
+			set "cmd" "play2 guisounds_menu_slideout";
+		}
+		onTime 300 {
+			transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "400" ;
+		}
+		onTime 500 {
+			transition "Credits_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_INITIAL_RECT_TEXT "200" ;
+			set "Credits_Titlebar::visible" "0" ;
+		}
+		onTime 700 {
+			set "Credits_AnimIn::noTime" "1";
+			set "Credits_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+		onTime 800 {
+			set "HHBonus::visible" "0";
+			set "Main_Bottom_ButtonCredits::noEvents" "0" ;			// Enable the button again
+		}
+	}
+
+	superWindowDef Credits_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.7
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 7, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef Credits_Titlebar {
+			rect		32, 8, 556, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.55
+			textalign	1
+			textaligny	-8
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20017"
+			noevents	1
+		}
+
+		buttonDef Credits_TitlebarBottom {
+			rect		32, 432, 556, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+
+			buttonDef Credits_BottomButton_Cancel {
+				rect		8, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.4
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "Credits_AnimOut" "0";
+				}
+			}
+		}
+
+		windowDef VirtualPageClipper {
+			rect		0, 31, 620, 400
+
+			#include "guis/mainmenu/mainmenu_creditcontent.guifragment"
+
+			buttonDef HiddenButton {
+				rect			430, 210, 50, 50
+				backcolor		1, 0, 0, 0
+				onAction {
+					resetTime "HHIcon1" "0";
+				}
+			}
+			windowDef HHIcon1 {
+				rect			100, 400, 50, 64
+				background		"guis/assets/menu/head"
+				noTime			1
+				noEvents		1
+				onTime 0 {
+					transition "rect" "100 400 50 64" "100 340 50 64" "200" ;
+					set "noEvents" "0";
+				}
+				onTime 1000 {
+					transition "rect" "100 340 50 64" "100 400 50 64" "200" ;
+				}
+				onTime 1200 {
+					set "noEvents" "1";
+				}
+				onAction {
+					resetTime "HHIcon2" "0";
+				}
+			}
+			windowDef HHIcon2 {
+				rect			300, 400, 50, 64
+				background		"guis/assets/menu/head"
+				noTime			1
+				noEvents		1
+				onTime 0 {
+					transition "rect" "300 400 50 64" "300 340 50 64" "200" ;
+					set "noEvents" "0";
+				}
+				onTime 1000 {
+					transition "rect" "300 340 50 64" "300 400 50 64" "200" ;
+				}
+				onTime 1200 {
+					set "noEvents" "1";
+				}
+				onAction {
+					resetTime "HHIcon3" "0";
+				}
+			}
+			windowDef HHIcon3 {
+				rect			150, -64, 50, 64
+				background		"guis/assets/menu/head180"
+				noTime			1
+				noEvents		1
+				noClip	0
+				onTime 0 {
+					transition "rect" "150 -64 50 64" "150 0 50 64" "200" ;
+					set "noEvents" "0";
+				}
+				onTime 1000 {
+					transition "rect" "150 0 50 64" "150 -64 50 64" "200" ;
+				}
+				onTime 1200 {
+					set "noEvents" "1";
+				}
+				onAction {
+					resetTime "HHIcon4" "0";
+				}
+			}
+			windowDef HHIcon4 {
+				rect			500, 400, 50, 64
+				background		"guis/assets/menu/head"
+				noTime			1
+				noEvents		1
+				onTime 0 {
+					transition "rect" "500 400 50 64" "500 340 50 64" "200" ;
+					set "noEvents" "0";
+				}
+				onTime 1000 {
+					transition "rect" "500 340 50 64" "500 400 50 64" "200" ;
+				}
+				onTime 1200 {
+					set "noEvents" "1";
+				}
+				onAction {
+					set "HHBonus::bonus" "1";
+					resetTime "HHBonus" "0";
+				}
+			}
+			windowDef HHBonus {
+				rect			32, 0, 564, 400
+				backcolor		0, 0, 0, 0.9
+				visible			0
+				noTime			1
+				noEvents		1
+				float bonus		0
+
+				onTime 0 {
+					if ("bonus" == 1) {
+						set "HHBonusText1::onStart" "1";
+						set "HHBonusText2::onStart" "1";
+						set "visible" "1";
+						set "noEvents" "0";
+						set "HHTeam::matcolor" "1 1 1 0";
+						transition "HHTeam::matcolor" "1 1 1 0" "1 1 1 1" "2000";
+					}
+					else {
+						set "noTime" "1";
+					}
+				}
+				onTime 30000 {
+					set "visible" "0";
+					set "noEvents" "1";
+				}
+				onAction {
+					set "visible" "0";
+					set "noEvents" "1";
+				}
+
+				windowDef HHTeam {
+					rect			60, 50, 440, 320
+					background		"guis/assets/menu/team.tga"
+					matcolor		1, 1, 1, 1
+				}
+				splineDef HHBonusText1 {
+					rect			0, 0, 564, 400
+					forecolor		1, 1, 0, 1
+					forecolor		1, 1, 0, 1
+					text			"#str_41172"
+					textalign		1
+					textaligny		-5
+					textscale		0.9
+					duration		7000
+					trailOffset		0.04
+					splinePoints	12
+					trails			0
+				}
+/*				splineDef HHBonusText2 {
+					rect			0, 0, 564, 400
+					text			"#str_41011"
+					textalign		1
+					textaligny		370
+					textscale		0.33
+					duration		7000
+					trailOffset		0.04
+					splinePoints	12
+					trails			0
+				}
+*/
+			}
+		}
+	}

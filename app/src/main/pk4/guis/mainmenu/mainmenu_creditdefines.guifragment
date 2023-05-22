@@ -1,0 +1,116 @@
+// Definitions for Credits
+
+#define CREDIT_HEADING_FORECOLOR_COMMA			0.8, 0.87, 0.98, 1
+#define CREDIT_HEADING_FORECOLOR_STRING			"0.8 0.87 0.98 1"
+#define CREDIT_HEADING_FORECOLOR_STRING_FADED	"0.8 0.87 0.98 0"
+
+#define CREDIT_TITLE_FORECOLOR_COMMA			0.82, 0.89, 0.99, 1
+#define CREDIT_TITLE_FORECOLOR_STRING			"0.82 0.89 0.99 1"
+#define CREDIT_TITLE_FORECOLOR_STRING_FADED		"1 1 1 0.7"
+
+#define CREDIT_NAME_FORECOLOR_COMMA				0.6, 0.68, 0.78, 0.88
+#define CREDIT_NAME_FORECOLOR_STRING			"0.6 0.68 0.78 0.88"
+#define CREDIT_NAME_FORECOLOR_STRING_FADED		"1 1 1 0"
+
+#define CREDIT_INITIALRECT_COMMA				1000, 350, 320, 20
+#define CREDIT_INITIALRECT_STRING				"1000 350 320 20"
+#define CREDIT_BOTTOMRECT_COMMA					150, 350, 320, 20
+#define CREDIT_BOTTOMRECT_STRING				"150 350 320 20"
+#define CREDIT_TOPRECT_STRING					"150 0 320 20"
+#define CREDIT_INITIALX							"1000"
+#define CREDIT_FINALX							"150"
+
+#define CREDIT_SHEARRIGHT_STRING				"-0.6"
+#define CREDIT_SHEARLEFT_STRING					"0.6"
+#define CREDIT_SHEARNONE_STRING					"0"
+
+
+// ------------------------------------------------------------
+// Misc things to clean up the gui
+// ------------------------------------------------------------
+
+#define CREDIT_TITLE_XVALUE					"xvalue"
+#define CREDIT_NAMES_XVALUE					150
+#define CREDIT_HEADG_XVALUE					150
+#define CREDIT_TITLE_DIMENSIONS				320, 20
+#define CREDIT_NAMES_DIMENSIONS				320, 20
+#define CREDIT_HEADG_DIMENSIONS				320, 40
+
+#define CREDITS_VPAGE_SRCRECT_COMMA			0, 0, 620, 5300
+#define CREDITS_VPAGE_SRCRECT_STRING		"0 0 620 5300"
+#define CREDITS_VPAGE_DSTRECT_STRING		"0 -5300 620 5300"
+
+// ------------------------------------------------------------
+// Window property definitions
+// ------------------------------------------------------------
+
+#define CREDIT_DEFINITION_TITLE																						\
+			forecolor			CREDIT_TITLE_FORECOLOR_COMMA														\
+			textalign			1																					\
+			textaligny			-3																					\
+			visible				0																					\
+			noTime				1																					\
+			shear				0, ("shearvalue")																	\
+			splineIn			0																					\
+			float shearvalue	0																					\
+			float xvalue		1000																				\
+			onNamedEvent Reset {																					\
+				set "visible" "0";																					\
+				set "xvalue" "1000";																				\
+				set "noTime" "1";																					\
+			}																										\
+			onTime 0 {																								\
+				set "visible" "1";																					\
+				set "forecolor" CREDIT_TITLE_FORECOLOR_STRING ;														\
+				set "shearvalue" CREDIT_SHEARRIGHT_STRING ;															\
+				set "xvalue" "1000";																				\
+				transition "xvalue" "1000" "150" "500" "500" "500" ;												\
+			}																										\
+			onTime 400 {																							\
+				transition "shearvalue" CREDIT_SHEARRIGHT_STRING CREDIT_SHEARLEFT_STRING "100" ;					\
+			}																										\
+			onTime 500 {																							\
+				transition "shearvalue" CREDIT_SHEARLEFT_STRING CREDIT_SHEARNONE_STRING "100" ;						\
+			}																										\
+			onTime 18000 {																							\
+				transition "forecolor" CREDIT_TITLE_FORECOLOR_STRING CREDIT_TITLE_FORECOLOR_STRING_FADED "900" ;	\
+			}
+
+#define CREDIT_DEFINITION_NAME																				 		\
+			forecolor			CREDIT_NAME_FORECOLOR_COMMA															\
+			textalign			1																					\
+			textaligny			-3																					\
+			visible				0																					\
+			noTime				1																					\
+			trailOffset			0.012																				\
+			onNamedEvent Reset {																					\
+				set "visible" "0";																					\
+				set "noTime" "1";																					\
+			}																										\
+			onTime 0 {																								\
+				set "visible" "1";																					\
+				set "forecolor" CREDIT_NAME_FORECOLOR_STRING ;														\
+				set "onStart" "1";																					\
+			}																										\
+			onTime 18000 {																							\
+				transition "forecolor" CREDIT_NAME_FORECOLOR_STRING CREDIT_NAME_FORECOLOR_STRING_FADED "900" ;		\
+			}
+
+#define CREDIT_DEFINITION_HEADING																			 		\
+			forecolor			CREDIT_HEADING_FORECOLOR_COMMA														\
+			textalign			1																					\
+			textaligny			-3																					\
+			visible				0																					\
+			noTime				1																					\
+			onNamedEvent Reset {																					\
+				set "visible" "0";																					\
+				set "noTime" "1";																					\
+			}																										\
+			onTime 0 {																								\
+				set "visible" "1";																					\
+				set "forecolor" CREDIT_HEADING_FORECOLOR_STRING ;													\
+				set "onStart" "1";																					\
+			}																										\
+			onTime 18000 {																							\
+				transition "forecolor" CREDIT_HEADING_FORECOLOR_STRING CREDIT_HEADING_FORECOLOR_STRING_FADED "900" ;	\
+			}

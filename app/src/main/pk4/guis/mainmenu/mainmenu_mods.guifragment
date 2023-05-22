@@ -1,0 +1,159 @@
+
+
+	//------------------------------------------------------
+	//
+	//	Mods Menu
+	//
+	//------------------------------------------------------
+	windowDef Mods_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "Main_Menu::visible" "0" ;
+			set "Mods_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "Mods_Menu::visible" "1" ;
+			//transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "Mods_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_SMALL_RECT_TEXT "500" "500" "500" ;
+			set "cmd" "play2 guisounds_menu_slideinsmall";
+		}
+		onTime 500 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_MODS;
+		}
+	}
+	windowDef Mods_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "Main_Portal::visible" "1" ;
+			transition "Mods_Menu::rect" MENU_SMALL_RECT_TEXT MENU_INITIAL_RECT_TEXT "500" "500" "500";
+			//transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "500" ;
+			set "cmd" "play2 guisounds_menu_slideoutsmall";
+		}
+		onTime 500 {
+			set "Mods_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+	}
+	
+	superWindowDef Mods_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.7
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 1, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef Mods_Titlebar {
+			rect		32, 8, 312, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.4
+			textalign	1
+			textaligny	-3
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20133"
+			noevents	1
+		}
+
+		buttonDef Mods_TitlebarBottom {
+			rect		32, 243, 312, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+
+			buttonDef Mods_BottomButton_Cancel {
+				rect		19, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.4
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "Mods_AnimOut" "0";
+				}
+			}
+		}
+
+		windowDef Mods_ListBG {
+			rect		51, 59, 270, 130
+			backcolor	1, 1, 1, 0.1
+
+			windowDef Mods_ListCap_Top {
+				rect		254, 0, 16, 4
+				background	"guis/assets/scrollbarv_cap.tga"
+			}
+			windowDef Mods_ListCap_Bottom {
+				rect		254, 126, 16, -4
+				background	"guis/assets/scrollbarv_cap.tga"
+			}
+
+			listDef Mods_List {
+				rect		0, 4, 270, 122
+				foreColor	LISTCONTENT_FORECOLOR_COMMA
+				bordercolor	LISTCONTENT_SELECTION_COLOR
+				focuscolor	LISTCONTENT_SELECTION_OUTLINE
+				textscale	0.25
+				listName	"modsList"
+
+				onAction {
+					set "cmd" "play guisounds_menu_tick" ;
+					resetTime "Mods_LoadButton" "0" ;
+				}
+
+				onEnter {
+					set "cmd" "play guisounds_menu_clickin" ;
+					set "cmd" "loadMod" ;
+				}
+			}
+		}
+
+		//Load MOD
+		buttonDef Mods_LoadButton {
+			rect			221, 200, 100, 25
+			text			"#str_20134"
+			textscale		0.33
+			textalign		1
+			textaligny		0
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+
+			onTime 0 {
+				if ( "gui::modsList_sel_0" >= 0 ) {
+					set "forecolor" "1 1 1 1" ;
+					set "noevents" "0"
+				} else {
+					set "forecolor" "1 1 1 0.5" ;
+					set "noevents" "1"
+				}
+			}
+
+			onAction {
+				set "cmd" "play guisounds_menu_clickin" ;
+			}
+			onActionRelease {
+				set	"cmd" "loadMod" ;
+			}			
+		}
+	}

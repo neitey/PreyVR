@@ -1,0 +1,793 @@
+
+//----------------------------------------------------------------------------------------------
+// Anims
+//----------------------------------------------------------------------------------------------
+	windowDef AnimResetDefaults_Up {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 1;
+			set "RDChoice1::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice1::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice1::selected" "0" ;
+			set "RDChoice2::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice2::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice2::selected" "0" ;
+			set "RDChoice3::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice3::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice3::selected" "0" ;
+			set "RDChoice4::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice4::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice4::selected" "0" ;
+			set "RDChoice5::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice5::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+			set "RDChoice5::selected" "0" ;
+
+			resetTime "RDResetBtnText" "0";
+
+			set "Overlay_ResetDefaults::visible" "1";
+		}
+	}
+	windowDef AnimResetDefaults_Down {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 0;
+			set "Overlay_ResetDefaults::visible" "0";
+		}
+	}
+
+	windowDef AnimLoadGameConfirmation_Up {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 1;
+			set "Overlay_LoadGameConfirmation::visible" "1";
+		}
+	}
+	windowDef AnimLoadGameConfirmation_Down {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 0;
+			set "Overlay_LoadGameConfirmation::visible" "0";
+		}
+	}
+
+	windowDef AnimDeleteSaveGame_Up {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 1;
+			set "Overlay_DeleteSaveGame::visible" "1";
+		}
+	}
+	windowDef AnimDeleteSaveGame_Down {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 0;
+			set "Overlay_DeleteSaveGame::visible" "0";
+		}
+	}
+
+	windowDef AnimOverwriteSaveGame_Up {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 1;
+			set "Overlay_OverwriteSaveGame::visible" "1";
+		}
+	}
+	windowDef AnimOverwriteSaveGame_Down {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 0;
+			set "Overlay_OverwriteSaveGame::visible" "0";
+		}
+	}
+
+	windowDef AnimMustRestart_Up {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 1;
+			set "Overlay_MustRestart::visible" "1";
+		}
+	}
+	windowDef AnimMustRestart_Down {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 0;
+			set "Overlay_MustRestart::visible" "0";
+		}
+	}
+
+	windowDef AnimPunkbusterDenied_Up {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 1;
+			set "Overlay_PunkbusterDenied::visible" "1";
+		}
+	}
+	windowDef AnimPunkbusterDenied_Down {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inModal" 0;
+			set "Overlay_PunkbusterDenied::visible" "0";
+		}
+	}
+
+
+//----------------------------------------------------------------------------------------------
+// Overlays
+//----------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------
+// Overlay_LoadGameConfirmation
+//--------------------------------------------------------
+
+	windowDef Overlay_ResetDefaults {
+		rect		0, 0, 640, 480
+		backcolor 	0, 0, 0, 0.8
+		visible		0
+		modal		1
+
+		superWindowDef RD {
+			rect		142, 100, 360, 250
+			cornerMat	"guis/assets/menu/window_cornerUL"
+			topMat		"guis/assets/menu/window_top"
+			background	"_black"
+			matcolor	1, 1, 1, 0.7
+			margins		25, 25, 1, 0	// left, right, top, bottom
+			cornerSize	38, 32
+			edgeSize	4, 4
+
+			windowDef RDTitleText {
+				rect		20, 12, 320, 20
+				text		"#str_20324"
+				textscale	0.33
+				textalign	1
+				textaligny	0
+				forecolor	STATIC_FORECOLOR_COMMA
+			}
+
+			windowDef RDText {
+				rect		30, 35, 300, 35
+				text		"#str_20325"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.25
+				textalign	1
+			}
+
+			windowDef RDTitle1 {
+				rect		130, 70, 150, 20
+				text		"#str_20210"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.25
+				textalign	0
+			}
+			windowDef RDTitle2 {
+				rect		130, 90, 150, 20
+				text		"#str_20262"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.25
+				textalign	0
+			}
+			windowDef RDTitle3 {
+				rect		130, 110, 150, 20
+				text		"#str_20281"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.25
+				textalign	0
+			}
+			windowDef RDTitle4 {
+				rect		130, 130, 150, 20
+				text		"#str_20311"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.25
+				textalign	0
+			}
+			windowDef RDTitle5 {
+				rect		130, 150, 150, 20
+				text		"#str_20326"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.25
+				textalign	0
+			}
+
+			buttonDef RDChoice1 {
+				rect				110, 74, 12, 12
+				background			"guis/assets/menu/checkbox.tga"
+				matcolor			CHECKBOX_MATCOLOR_OFF_COMMA
+				hoverMatColor		CHECKBOX_MATCOLOR_OFF_COMMA
+				bordercolor			CHECKBOX_BORDERCOLOR_COMMA
+				hoverBorderColor	CHECKBOX_HOVERBORDERCOLOR_COMMA
+				bordersize			1
+				float selected		0
+				onAction {
+					if ("selected" == 0) {
+						set "matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "selected" "1" ;
+						resetTime "RDResetBtnText" "0";
+					}
+					else {
+						set "matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "selected" "0" ;
+						resetTime "RDResetBtnText" "0";
+					}
+				}
+			}
+			buttonDef RDChoice2 {
+				rect				110, 94, 12, 12
+				background			"guis/assets/menu/checkbox.tga"
+				matcolor			CHECKBOX_MATCOLOR_OFF_COMMA
+				hoverMatColor		CHECKBOX_MATCOLOR_OFF_COMMA
+				bordercolor			CHECKBOX_BORDERCOLOR_COMMA
+				hoverBorderColor	CHECKBOX_HOVERBORDERCOLOR_COMMA
+				bordersize			1
+				float selected		0
+				onAction {
+					if ("selected" == 0) {
+						set "matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "selected" "1" ;
+						resetTime "RDResetBtnText" "0";
+					}
+					else {
+						set "matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "selected" "0" ;
+						resetTime "RDResetBtnText" "0";
+					}
+				}
+			}
+			buttonDef RDChoice3 {
+				rect				110, 114, 12, 12
+				background			"guis/assets/menu/checkbox.tga"
+				matcolor			CHECKBOX_MATCOLOR_OFF_COMMA
+				hoverMatColor		CHECKBOX_MATCOLOR_OFF_COMMA
+				bordercolor			CHECKBOX_BORDERCOLOR_COMMA
+				hoverBorderColor	CHECKBOX_HOVERBORDERCOLOR_COMMA
+				bordersize			1
+				float selected		0
+				onAction {
+					if ("selected" == 0) {
+						set "matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "selected" "1" ;
+						resetTime "RDResetBtnText" "0";
+					}
+					else {
+						set "matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "selected" "0" ;
+						resetTime "RDResetBtnText" "0";
+					}
+				}
+			}
+			buttonDef RDChoice4 {
+				rect				110, 134, 12, 12
+				background			"guis/assets/menu/checkbox.tga"
+				matcolor			CHECKBOX_MATCOLOR_OFF_COMMA
+				hoverMatColor		CHECKBOX_MATCOLOR_OFF_COMMA
+				bordercolor			CHECKBOX_BORDERCOLOR_COMMA
+				hoverBorderColor	CHECKBOX_HOVERBORDERCOLOR_COMMA
+				bordersize			1
+				float selected		0
+				onAction {
+					if ("selected" == 0) {
+						set "matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "selected" "1" ;
+						resetTime "RDResetBtnText" "0";
+					}
+					else {
+						set "matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "selected" "0" ;
+						resetTime "RDResetBtnText" "0";
+					}
+				}
+			}
+			buttonDef RDChoice5 {
+				rect				110, 154, 12, 12
+				background			"guis/assets/menu/checkbox.tga"
+				matcolor			CHECKBOX_MATCOLOR_OFF_COMMA
+				hoverMatColor		CHECKBOX_MATCOLOR_OFF_COMMA
+				bordercolor			CHECKBOX_BORDERCOLOR_COMMA
+				hoverBorderColor	CHECKBOX_HOVERBORDERCOLOR_COMMA
+				bordersize			1
+				float selected		0
+				onAction {
+					if ("selected" == 0) {
+#if 0 // These make the first 4 boxes toggle along with #5 and off again, but it seemed confusing
+						set "RDChoice1::matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice1::hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice1::selected" "1" ;
+						set "RDChoice2::matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice2::hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice2::selected" "1" ;
+						set "RDChoice3::matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice3::hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice3::selected" "1" ;
+						set "RDChoice4::matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice4::hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice4::selected" "1" ;
+#endif
+						set "RDChoice5::matcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice5::hovermatcolor" CHECKBOX_MATCOLOR_ON_STRING ;
+						set "RDChoice5::selected" "1" ;
+
+						resetTime "RDResetBtnText" "0";
+					}
+					else {
+#if 0 // These make the first 4 boxes toggle along with #5 and off again, but it seemed confusing
+						set "RDChoice1::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice1::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice1::selected" "0" ;
+						set "RDChoice2::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice2::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice2::selected" "0" ;
+						set "RDChoice3::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice3::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice3::selected" "0" ;
+						set "RDChoice4::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice4::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice4::selected" "0" ;
+#endif
+						set "RDChoice5::matcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice5::hovermatcolor" CHECKBOX_MATCOLOR_OFF_STRING ;
+						set "RDChoice5::selected" "0" ;
+
+						resetTime "RDResetBtnText" "0";
+					}
+				}
+			}
+
+			buttonDef RDResetBtnText {
+				rect			65, 190, 100, 25
+				text			"#str_20327"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				noevents		1
+				noTime			1
+				onTime 0 {
+					if ("RDChoice1::selected" == 1 || "RDChoice2::selected" == 1 || "RDChoice3::selected" == 1 || "RDChoice4::selected" == 1 || "RDChoice5::selected" == 1) {
+						set "forecolor" BUTTON_FORECOLOR_STRING;
+						set "noevents" "0";
+					}
+					else {
+						set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
+						set "noevents" "1";
+					}
+				}
+				onAction {
+					set	"cmd" "play guisounds_menu_clickin" ;
+					if ("RDChoice1::selected" == 1) {
+						set "cmd" "resetbindings" ;			// Reset controls to defaults.cfg
+					}
+					if ("RDChoice2::selected" == 1) {
+						set "cmd" "resetgame" ;				// Reset game options
+					}
+					if ("RDChoice3::selected" == 1) {
+						set "cmd" "resetvideo" ;			// Reset video settings
+					}
+					if ("RDChoice4::selected" == 1) {
+						set "cmd" "resetaudio" ;			// Reset audio settings
+					}
+					if ("RDChoice5::selected" == 1) {
+						set "cmd" "resetbindings" ;			// Reset controls to defaults.cfg
+						set "cmd" "resetgame" ;				// Reset game options
+						set "cmd" "resetvideo" ;			// Reset video settings
+						set "cmd" "resetaudio" ;			// Reset audio settings
+						set "cmd" "exec cvar_restart";		// Reset all cvars
+					}
+
+					resetTime "AnimResetDefaults_Down" "0" ;
+				}
+			}
+
+			buttonDef RDCancelBtnText {
+				rect			195, 190, 100, 25
+				text			"#str_20328"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd" "play guisounds_menu_cancel" ;
+					resetTime "AnimResetDefaults_Down" "0" ;
+				}
+			}
+		}
+	}
+
+//--------------------------------------------------------
+// Overlay_LoadGameConfirmation
+//--------------------------------------------------------
+
+	windowDef Overlay_LoadGameConfirmation {
+		rect		0, 0, 640, 480
+		backcolor 	0, 0, 0, 0.4
+		visible		0
+		modal		1
+
+		superWindowDef LGC {
+			rect		142, 132, 360, 140
+			cornerMat	"guis/assets/menu/window_cornerUL"
+			topMat		"guis/assets/menu/window_top"
+			background	"_black"
+			matcolor	1, 1, 1, 0.7
+			margins		25, 25, 1, 0	// left, right, top, bottom
+			cornerSize	38, 32
+			edgeSize	4, 4
+
+			windowDef LGCText {
+				rect		30, 15, 300, 35
+				text		"#str_20329"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.26
+				textalign	1
+			}
+
+			windowDef LGCText2 {
+				rect		30, 50, 300, 20
+				text		"gui::saveGameName"
+				forecolor	EDITABLE_FORECOLOR_COMMA
+				textscale	0.35
+				textalign	1
+			}
+
+			buttonDef LGCYesBtnText {
+				rect			65, 100, 80, 25
+				text			"#str_20260"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd" "play guisounds_menu_clickin" ;
+					set	"cmd" "loadGame" ;
+					resetTime "AnimLoadGameConfirmation_Down" "0" ;
+				}
+			}
+
+			buttonDef LGCCancelBtnText {
+				rect			215, 100, 80, 25
+				text			"#str_20328"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd" "play guisounds_menu_cancel" ;
+					resetTime "AnimLoadGameConfirmation_Down" "0" ;
+				}
+			}
+		}
+	}
+
+//--------------------------------------------------------
+// Overlay_DeleteSaveGame
+//--------------------------------------------------------
+
+	windowDef Overlay_DeleteSaveGame {
+		rect		0, 0, 640, 480
+		backcolor 	0, 0, 0, 0.4
+		visible		0
+		modal		1
+
+		superWindowDef DSG {
+			rect		142, 132, 360, 140
+			cornerMat	"guis/assets/menu/window_cornerUL"
+			topMat		"guis/assets/menu/window_top"
+			background	"_black"
+			matcolor	1, 1, 1, 0.7
+			margins		25, 25, 1, 0	// left, right, top, bottom
+			cornerSize	38, 32
+			edgeSize	4, 4
+
+			windowDef DSGText {
+				rect		30, 15, 300, 35
+				text		"#str_20330"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.26
+				textalign	1
+			}
+
+			windowDef DSGText2 {
+				rect		30, 50, 300, 20
+				text		"gui::saveGameName"
+				forecolor	EDITABLE_FORECOLOR_COMMA
+				textscale	0.35
+				textalign	1
+			}
+
+			buttonDef DSGYesBtnText {
+				rect			65, 100, 80, 25
+				text			"#str_20132"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd" "deleteGame ; play guisounds_menu_clickin" ; 
+					resetTime "AnimDeleteSaveGame_Down" "0" ;
+				}
+			}
+
+			buttonDef DSGCancelBtnText {
+				rect			215, 100, 80, 25
+				text			"#str_20328"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd"	"play guisounds_menu_cancel" ; 
+					resetTime "AnimDeleteSaveGame_Down" "0" ;
+				}
+			}
+		}
+	}
+
+//--------------------------------------------------------
+// Overlay_OverwriteSaveGame
+//--------------------------------------------------------
+
+	windowDef Overlay_OverwriteSaveGame {
+		rect		0, 0, 640, 480
+		backcolor 	0, 0, 0, 0.4
+		visible		0
+		modal		1
+
+		superWindowDef OSG {
+			rect		142, 132, 360, 140
+			cornerMat	"guis/assets/menu/window_cornerUL"
+			topMat		"guis/assets/menu/window_top"
+			background	"_black"
+			matcolor	1, 1, 1, 0.7
+			margins		25, 25, 1, 0	// left, right, top, bottom
+			cornerSize	38, 32
+			edgeSize	4, 4
+
+			windowDef OSGText {
+				rect		20, 15, 320, 35
+				text		"#str_20331"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.26
+				textalign	1
+			}
+
+			windowDef OSGText2 {
+				rect		20, 50, 320, 20
+				text		"gui::saveGameName"
+				forecolor	EDITABLE_FORECOLOR_COMMA
+				textscale	0.35
+				textalign	1
+			}
+
+			buttonDef OSGYesBtnText {
+				rect			65, 100, 80, 25
+				text			"#str_20125"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd"	"play guisounds_menu_clickin ; saveGame 1" ;	//fixme: is this right? saving over slot 1 always?
+					resettime "AnimOverwriteSaveGame_Down" "0";
+				}
+			}
+
+			buttonDef OSGCancelBtnText {
+				rect			215, 100, 80, 25
+				text			"#str_20328"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd"	"play guisounds_menu_cancel" ; 
+					resettime "AnimOverwriteSaveGame_Down" "0";
+				}
+			}
+		}
+	}
+
+
+//--------------------------------------------------------
+// Overlay_MustRestart
+//--------------------------------------------------------
+
+	windowDef Overlay_MustRestart {
+		rect		0, 0, 640, 480
+		backcolor 	0, 0, 0, 0.5
+		visible		0
+		modal		1
+
+		superWindowDef OMR {
+			rect		142, 132, 360, 140
+			cornerMat	"guis/assets/menu/window_cornerUL"
+			topMat		"guis/assets/menu/window_top"
+			background	"_black"
+			matcolor	1, 1, 1, 0.7
+			margins		25, 25, 1, 0	// left, right, top, bottom
+			cornerSize	38, 32
+			edgeSize	4, 4
+
+			windowDef OMRText {
+				rect		40, 15, 280, 70
+				text		"#str_41073"
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.35
+				textalign	1
+			}
+
+			buttonDef OMROKBtnText {
+				rect			130, 100, 100, 25
+				text			"#str_04339"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd" "play guisounds_menu_clickin" ;
+					resettime "AnimMustRestart_Down" "0";
+				}
+			}
+		}
+	}
+	
+
+//--------------------------------------------------------
+// Overlay_PunkbusterDenied
+//--------------------------------------------------------
+
+	windowDef Overlay_PunkbusterDenied {
+		rect		0, 0, 640, 480
+		backcolor 	0, 0, 0, 0.5
+		visible		0
+		modal		1
+
+		superWindowDef OPD {
+			rect		142, 132, 360, 140
+			cornerMat	"guis/assets/menu/window_cornerUL"
+			topMat		"guis/assets/menu/window_top"
+			background	"_black"
+			matcolor	1, 1, 1, 0.7
+			margins		25, 25, 1, 0	// left, right, top, bottom
+			cornerSize	38, 32
+			edgeSize	4, 4
+
+			windowDef OPDText {
+				rect		40, 15, 280, 70
+				text		"#str_07237"		// This server requires punkbuster. It can be enabled from the server browser.
+				forecolor	STATIC_FORECOLOR_COMMA
+				textscale	0.35
+				textalign	1
+			}
+
+			buttonDef OPDOKBtnText {
+				rect			130, 100, 100, 25
+				text			"#str_04339"	// OK
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				wantenter		1
+				onAction {
+					set	"cmd" "play guisounds_menu_clickin" ;
+					resettime "AnimPunkbusterDenied_Down" "0";
+				}
+			}
+		}
+	}

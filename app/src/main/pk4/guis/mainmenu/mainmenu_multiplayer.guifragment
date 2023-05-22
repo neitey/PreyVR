@@ -1,0 +1,2868 @@
+
+
+	// PATCH: Added this window to hang global functions on
+	windowDef MultiplayerGlobal {
+		rect	0, 0, 1, 1
+		float canjoin	1
+		onTime 0 {
+			// Alerted that status may have changed
+			if ( "gui::serverlist_sel_0" >= 0 && ("gui::gui_cl_punkbuster" != 0 || "gui::server_punkbuster" == 0)) {
+				// Allow Join: only if valid choice, and either pbclient is enabled or not a pb server
+				set "MFS_Summary_JoinGame::noevents" "0" ;
+				set "MFS_Players_JoinGame::noevents" "0" ;
+				set "MFS_Details_JoinGame::noevents" "0" ;
+				set "MFS_Summary_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
+				set "MFS_Players_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
+				set "MFS_Details_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
+				set "MultiplayerGlobal::canjoin" 1;
+			
+			} else {
+				// Disallow Join
+				set "MFS_Summary_JoinGame::noevents" "1" ;
+				set "MFS_Players_JoinGame::noevents" "1" ;
+				set "MFS_Details_JoinGame::noevents" "1" ;
+				set "MFS_Summary_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+				set "MFS_Players_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+				set "MFS_Details_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+				set "MultiplayerGlobal::canjoin" 0;
+			}
+		}
+	}
+
+
+	windowDef PrecacheAddOnMapLoadingScreens1 {
+		rect			0, 0, 1, 1
+		background	"guis/assets/loading/thumbs/dmgravitylab_6.tga"
+		visible		0
+		noevents		1
+	}
+	windowDef PrecacheAddOnMapLoadingScreens2 {
+		rect			0, 0, 1, 1
+		background	"guis/assets/loading/thumbs/dmplanes_4.tga"
+		visible		0
+		noevents		1
+	}
+	windowDef PrecacheAddOnMapLoadingScreens3 {
+		rect			0, 0, 1, 1
+		background	"guis/assets/loading/thumbs/dmtopillogical_4.tga"
+		visible		0
+		noevents		1
+	}
+	windowDef PrecacheAddOnMapLoadingScreens5 {
+		rect			0, 0, 1, 1
+		background	"guis/assets/loading/thumbs/dmtunnelrat_8.tga"
+		visible		0
+		noevents		1
+	}
+
+	//------------------------------------------------------
+	//
+	//	Multiplayer Menu
+	//
+	//------------------------------------------------------
+	windowDef Multiplayer_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "Main_Logo::visible" "0" ;
+			set "Main_Menu::visible" "0" ;
+			set "Multiplayer_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "Multiplayer_Menu::visible" "1" ;
+			transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "Multiplayer_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
+			set "Multiplayer_Titlebar::visible" "0" ;
+
+			// Check for servers
+			namedEvent "Multiplayer_FindServers::ScanForServers";
+			
+			// Fill in model list
+			set "cmd" "modelscan";
+			set "cmd" "play2 guisounds_menu_slidein";
+		}
+		onTime 200 {
+			transition "Multiplayer_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_FINAL_RECT_TEXT "500" "500" "500";
+			set "Multiplayer_Titlebar::visible" "1" ;
+		}
+		onTime 700 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_MULTIPLAYER;
+		}
+	}
+	windowDef Multiplayer_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "MainOG_Title4::noEvents" "1" ;				// Disable the button until anim is done
+			set "Main_Portal::visible" "1" ;
+			set "Main_Logo::visible" "1" ;
+			transition "Multiplayer_Menu::rect" MENU_FINAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "500" "500" "500";
+			set "cmd" "play2 guisounds_menu_slideout";
+		}
+		onTime 300 {
+			transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "400" ;
+		}
+		onTime 500 {
+			transition "Multiplayer_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_INITIAL_RECT_TEXT "200" ;
+			set "Multiplayer_Titlebar::visible" "0" ;
+		}
+		onTime 700 {
+			set "Multiplayer_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+		onTime 800 {
+			set "MainOG_Title4::noEvents" "0" ;				// Enable the button again
+		}
+	}
+	
+	superWindowDef Multiplayer_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.7
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 7, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef Multiplayer_Titlebar {
+			rect		32, 8, 556, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.55
+			textalign	1
+			textaligny	-8
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20135"
+			noevents	1
+		}
+
+		buttonDef Multiplayer_TitlebarBottom {
+			rect		32, 432, 556, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+
+			buttonDef Multiplayer_BottomButton_Cancel {
+				rect		8, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.4
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "Multiplayer_AnimOut" "0";
+				}
+			}
+		}
+
+		tabContainerDef Multiplayer_TabContainer {
+			rect		25, 35, 570, 390
+			backcolor	0, 0, 0, 0
+			sepcolor	0.74, 0.81, 0.88, 1
+			activetab	2
+
+			tabDef Multiplayer_Settings {
+				rect			0, 20, 570, 370
+				backcolor		TAB_PAGE_BACKCOLOR_COMMA
+				background		"guis/assets/menu/fadebg_top.tga"
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20136"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	1
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					set "cmd" "modelscan";
+				}
+
+				windowDef Multiplayer_Settings_PlayerModelBG {
+					rect		10, 135, 550, 230
+
+					windowDef Multiplayer_Settings_PlayerModelCaption {
+						rect		10, 18, 150, 16
+						backcolor	0, 0, 0, 0
+						forecolor	STATIC_FORECOLOR_COMMA
+						textscale	0.33
+						textaligny	-6
+						text		"#str_20137"
+						shadow		1
+					}
+					windowDef Multiplayer_Settings_PlayerModel {
+						rect		10, 35, 128, 128
+						backcolor	0, 0, 0, 0
+						matcolor	1, 1, 1, 1
+						background	"gui::mp_currentmodelportrait"
+					}
+					windowDef Multiplayer_Settings_PlayerModelName {
+						rect		0, 165, 148, 20
+						backcolor	0, 0, 0, 0
+						forecolor	EDITABLE_FORECOLOR_COMMA
+						textscale	0.4
+						textalign	1
+						textaligny	-5
+						text		"gui::mp_currentmodelname"
+						shadow		1
+					}
+
+					tabContainerDef MPS_PlayerPages {
+						rect			200, 10, 318, 210
+						backcolor		0, 0, 0, 0
+						sepcolor		0.74, 0.81, 0.88, 1
+						activetab		0
+						tabMargins		120, 0
+						tabHeight		20
+						visible	1
+
+						tabDef MPS_Page1 {
+							rect			0, 20, 318, 190
+							backcolor		TAB_PAGE_BACKCOLOR_COMMA
+							background		"guis/assets/menu/fadebg_top.tga"
+							forecolor		TABTOP_FORECOLOR_COMMA
+							hovercolor		TABTOP_HOVERCOLOR_COMMA
+							activeColor		TABTOP_ACTIVECOLOR_COMMA
+							hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+							text			"1"
+							textaligny		-2
+							seperatorLines	1, 1, 1, 1
+							seperatorMargin	50
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							windowDef Multiplayer_Settings_Model0 {
+								rect			6, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait0"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 0";
+								}
+							}
+							windowDef Multiplayer_Settings_Model1 {
+								rect			68, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait1"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 1";
+								}
+							}
+							windowDef Multiplayer_Settings_Model2 {
+								rect			130, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait2"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 2";
+								}
+							}
+							windowDef Multiplayer_Settings_Model3 {
+								rect			192, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait3"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 3";
+								}
+							}
+							windowDef Multiplayer_Settings_Model4 {
+								rect			254, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait4"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 4";
+								}
+							}
+//row 2
+							windowDef Multiplayer_Settings_Model5 {
+								rect			6, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait5"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 5";
+								}
+							}
+							windowDef Multiplayer_Settings_Model6 {
+								rect			68, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait6"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 6";
+								}
+							}
+							windowDef Multiplayer_Settings_Model7 {
+								rect			130, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait7"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 7";
+								}
+							}
+							windowDef Multiplayer_Settings_Model8 {
+								rect			192, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait8"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 8";
+								}
+							}
+							windowDef Multiplayer_Settings_Model9 {
+								rect			254, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait9"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 9";
+								}
+							}
+//row 3
+							windowDef Multiplayer_Settings_Model10 {
+								rect			6, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait10"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 10";
+								}
+							}
+							windowDef Multiplayer_Settings_Model11 {
+								rect			68, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait11"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 11";
+								}
+							}
+							windowDef Multiplayer_Settings_Model12 {
+								rect			130, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait12"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 12";
+								}
+							}
+							windowDef Multiplayer_Settings_Model13 {
+								rect			192, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait13"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 13";
+								}
+							}
+							windowDef Multiplayer_Settings_Model14 {
+								rect			254, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait14"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 14";
+								}
+							}
+						}
+						tabDef MPS_Page2 {
+							rect			0, 20, 318, 190
+							backcolor		TAB_PAGE_BACKCOLOR_COMMA
+							background		"guis/assets/menu/fadebg_top.tga"
+							forecolor		TABTOP_FORECOLOR_COMMA
+							hovercolor		TABTOP_HOVERCOLOR_COMMA
+							activeColor		TABTOP_ACTIVECOLOR_COMMA
+							hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+							text			"2"
+							textaligny		-2
+							seperatorLines	1, 1, 1, 1
+							seperatorMargin	50
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							windowDef Multiplayer_Settings_Model15 {
+								rect			6, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait15"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 15";
+								}
+							}
+							windowDef Multiplayer_Settings_Model16 {
+								rect			68, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait16"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 16";
+								}
+							}
+							windowDef Multiplayer_Settings_Model17 {
+								rect			130, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait17"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 17";
+								}
+							}
+							windowDef Multiplayer_Settings_Model18 {
+								rect			192, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait18"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 18";
+								}
+							}
+							windowDef Multiplayer_Settings_Model19 {
+								rect			254, 5, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait19"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 19";
+								}
+							}
+//row 2
+							windowDef Multiplayer_Settings_Model20 {
+								rect			6, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait20"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 20";
+								}
+							}
+							windowDef Multiplayer_Settings_Model21 {
+								rect			68, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait21"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 21";
+								}
+							}
+							windowDef Multiplayer_Settings_Model22 {
+								rect			130, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait22"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 22";
+								}
+							}
+							windowDef Multiplayer_Settings_Model23 {
+								rect			192, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait23"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 23";
+								}
+							}
+							windowDef Multiplayer_Settings_Model24 {
+								rect			254, 66, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait24"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 24";
+								}
+							}
+//row 3
+							windowDef Multiplayer_Settings_Model25 {
+								rect			6, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait25"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 25";
+								}
+							}
+							windowDef Multiplayer_Settings_Model26 {
+								rect			68, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait26"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 26";
+								}
+							}
+							windowDef Multiplayer_Settings_Model27 {
+								rect			130, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait27"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 27";
+								}
+							}
+							windowDef Multiplayer_Settings_Model28 {
+								rect			192, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait28"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 28";
+								}
+							}
+							windowDef Multiplayer_Settings_Model29 {
+								rect			254, 127, 58, 58
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait29"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 29";
+								}
+							}
+						}
+					}
+				}
+
+				windowDef Multiplayer_SettingsBG {
+					rect			20, 20, 530, 115
+
+					buttonDef Multiplayer_Settings_PlayerName {
+						rect			0, 0, 530, 25
+						leftMat			"guis/assets/menu/textbar_corner.tga"
+						middleMat		"guis/assets/menu/textbarstrip.tga"
+						rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+						windowDef Multiplayer_Settings_PlayerNameTitle {
+							rect		0, 0, 265, 25
+							text		"#str_20138"
+							textscale	0.33
+							textalign	1
+							textaligny	-1
+							shadow		1
+							forecolor	STATIC_FORECOLOR_COMMA
+						}
+						editDef Multiplayer_Settings_PlayerNameEdit {
+							rect		265, 0, 265, 25
+							cvar		"ui_name"
+							maxchars 	40
+							textscale	0.33
+							textaligny	-1
+							shadow		1
+							forecolor	EDITABLE_FORECOLOR_COMMA
+							hovercolor	EDITABLE_HOVERCOLOR_COMMA
+							onEnter {
+								setFocus "Multiplayer_Settings_DataRateChoice";	// set focus somewhere else
+							}
+						}
+					}
+
+					buttonDef Multiplayer_Settings_DataRate {
+						rect			0, 30, 530, 25
+						leftMat			"guis/assets/menu/textbar_corner.tga"
+						middleMat		"guis/assets/menu/textbarstrip.tga"
+						rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+						windowDef Multiplayer_Settings_DataRateTitle {
+							rect		0, 0, 265, 25
+							text		"#str_20139"
+							textscale	0.33
+							textalign	1
+							textaligny	-1
+							shadow		1
+							forecolor	STATIC_FORECOLOR_COMMA
+						}
+						choiceDef Multiplayer_Settings_DataRateChoice {
+							rect		265, 0, 265, 25
+							choices		"#str_20140"
+							//HUMANHEAD rww - new default rates
+							//values		"16000;25600;10000"
+							values		"24000;32000;16000"
+							cvar		"net_clientMaxRate"
+							choiceType	1
+							textscale	0.33
+							textaligny	-1
+							shadow		1
+							forecolor	EDITABLE_FORECOLOR_COMMA
+							hovercolor	EDITABLE_HOVERCOLOR_COMMA
+						}
+					}
+
+					buttonDef Multiplayer_Settings_CDKey {
+						rect			0, 60, 530, 25
+						leftMat			"guis/assets/menu/textbar_corner.tga"
+						middleMat		"guis/assets/menu/textbarstrip.tga"
+						rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+						windowDef Multiplayer_Settings_CDKeyTitle {
+							rect		0, 0, 265, 25
+							text		"#str_20141"
+							textscale	0.33
+							textalign	1
+							textaligny	-1
+							shadow		1
+							forecolor	STATIC_FORECOLOR_COMMA
+						}
+						windowDef Multiplayer_Settings_Demo {
+							rect		265, 0, 265, 25
+							text    	"#str_42115"
+							textscale	0.33
+							textaligny	-1
+							shadow		1
+							forecolor	EDITABLE_FORECOLOR_COMMA
+							visible		("gui::isdemo" != 0)
+						}
+						buttonDef Multiplayer_Settings_CDKeyButton {
+							rect		265, 0, 265, 25
+							text    	"gui::str_d3key_state"	//fixme: make str_preykey_state
+							textscale	0.33
+							textaligny	-1
+							shadow		1
+							forecolor	EDITABLE_FORECOLOR_COMMA
+							hovercolor	EDITABLE_HOVERCOLOR_COMMA
+							visible		("gui::isdemo" == 0)
+							onActionRelease {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set	"cmd" "SetCDKey" ;
+							}
+						}
+					}
+					
+					buttonDef Multiplayer_Settings_Autoswitch {
+						rect			0, 90, 530, 25
+						leftMat			"guis/assets/menu/textbar_corner.tga"
+						middleMat		"guis/assets/menu/textbarstrip.tga"
+						rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+						windowDef Multiplayer_Settings_AutoswitchTitle {
+							rect		0, 0, 265, 25
+							text		"#str_20273"
+							textscale	0.33
+							textalign	1
+							textaligny	-1
+							shadow		1
+							forecolor	STATIC_FORECOLOR_COMMA
+						}
+						choiceDef Multiplayer_Settings_AutoswitchChoice {
+							rect		265, 0, 265, 25
+							textscale	0.33
+							textaligny	-1
+							shadow		1
+							forecolor	EDITABLE_FORECOLOR_COMMA
+							hovercolor	EDITABLE_HOVERCOLOR_COMMA
+							choices		"#str_20152"
+							cvar		"ui_autoSwitch"
+							choiceType	0
+						}
+					}
+				}
+			}
+
+			tabDef Multiplayer_CreateServer {
+				rect			0, 20, 570, 370
+				backcolor		TAB_PAGE_BACKCOLOR_COMMA
+				background		"guis/assets/menu/fadebg_top.tga"
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20142"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	1
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					set "cmd" "CheckUpdate" ;
+					set "cmd" "MAPScan" ;
+				}
+
+				windowDef MCS_TabBG {
+					rect		20, 5, 530, 360
+
+					tabContainerDef MCS_TabContainer {
+						rect		5, 5, 520, 350
+						backcolor	0, 1, 0, 0
+						
+						sepcolor	0.74, 0.81, 0.88, 1
+						activetab	0
+						horizontal	1
+						tabHeight	80
+						tabMargins	40, 0
+						
+						tabDef MCS_Normal {
+							rect					80, 0, 440, 350
+							backcolor				TAB_PAGE_BACKCOLOR_COMMA
+							background				"guis/assets/menu/fadebg_side.tga"
+							forecolor				TAB_FORECOLOR_COMMA
+							hovercolor				TAB_HOVERCOLOR_COMMA
+							activeColor				TAB_ACTIVECOLOR_COMMA
+							matcolor				1, 1, 1, 1
+							hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+							buttonLeftMat			"guis/assets/menu/tabtop.tga"
+							buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+							buttonRightMat			"guis/assets/menu/tabbottom.tga"
+							buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+							buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+							buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+							buttonEdgeWidth			14
+							text					"#str_20143"
+							textaligny				20
+							seperatorLines			1, 1, 1, 1
+							seperatorMargin			1
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							buttonDef MCS_ServerName {
+								rect			20, 10, 400, 24
+								leftMat			"guis/assets/menu/textbar_corner.tga"
+								middleMat		"guis/assets/menu/textbarstrip.tga"
+								rightMat		"guis/assets/menu/textbar_invcorner.tga"
+								text			"#str_20144"
+								textalignx		10
+								textaligny		-2
+								shadow			1
+								forecolor		STATIC_FORECOLOR_COMMA
+
+								editDef MCS_ServerNameEdit {
+									rect		140, 0, 260, 24
+									cvar		"si_name"
+									maxchars 	24
+									textaligny	-2
+									shadow		1
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									onEnter {
+										setFocus "MCS_Create";	// set focus somewhere else
+									}
+								}
+							}
+							
+							windowDef MCS_Choices {
+								rect			20, 32, 400, 310
+								backcolor		1, 1, 0, 0
+
+								buttonDef MCS_Create {
+									rect			280, 280, 120, 30
+									text			"#str_20143"
+									textalign		1
+									textaligny		0
+									shadow			1
+									forecolor		BUTTON_FORECOLOR_COMMA
+									hoverColor		BUTTON_HOVERCOLOR_COMMA
+									leftMat			"guis/assets/menu/button/corner"
+									middleMat		"guis/assets/menu/button/strip"
+									leftHoverMat	"guis/assets/menu/button/rollover_corner"
+									middleHoverMat	"guis/assets/menu/button/rollover_strip.tga"
+									rightMat		"guis/assets/menu/button/invcorner"
+									rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+									edgeWidth		12
+									onActionRelease {
+										set "cmd" "play guisounds_menu_clickin" ;
+										set "cmd" "startMultiplayer" ;
+									}
+								}
+
+								windowDef MCS_Map {
+									rect				0, 0, 190, 310
+									backcolor			0, 0, 0, 0
+									
+									windowDef MCS_MapImageBG {
+										rect			0, 9, 170, 120
+										backcolor		0, 0, 0, 1
+										forecolor		1, 1, 1, 1
+										text			"#str_20145"
+										textscale		0.33
+										textalign		1
+										textaligny		20
+										forecolor		STATIC_FORECOLOR_COMMA
+
+										windowDef MCS_MapImage {
+											rect		0, 0, 170, 120
+											background  "gui::current_levelshot"
+										}
+
+										superWindowDef MCS_MapImageFrame {
+											rect		0, 0, 170, 120
+											cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+											leftMat		"guis/assets/menu/pictureframe_left.tga"
+											topMat		"guis/assets/menu/pictureframe_strip.tga"
+											margins		0, 0, 0, 0	// left, right, top, bottom
+											cornerSize	4, 4
+											edgeSize	4, 4
+										}
+									}
+									
+									windowDef MCS_MapTitle {
+										rect			0, 133, 170, 25
+										forecolor		LISTHEADING_FORECOLOR_COMMA
+										text			"#str_20146"
+										textscale		0.35
+										textalign		0
+										textaligny		-3
+										shadow			1
+									}
+									
+									windowDef MCS_MapListBG {
+										rect		0, 155, 170, 155
+										
+										superWindowDef MCS_MapList_gfx {
+											rect		0, 0, 170, 155
+											cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+											leftMat		"guis/assets/menu/pictureframe_left.tga"
+											topMat		"guis/assets/menu/pictureframe_strip.tga"
+											margins		0, 0, 0, 0	// left, right, top, bottom
+											cornerSize	4, 4
+											edgeSize	4, 4
+											noevents	1
+										}
+										windowDef MCS_MapListCap_Top {
+											rect		153, 1, 16, 4
+											background	"guis/assets/scrollbarv_cap.tga"
+										}
+										windowDef MCS_MapListCap_Bottom {
+											rect		153, 150, 16, -4
+											background	"guis/assets/scrollbarv_cap.tga"
+										}
+
+										listDef MCS_MapList {
+											rect		2, 4, 167, 146
+											forecolor 	LISTCONTENT_FORECOLOR_COMMA
+											bordercolor	LISTCONTENT_SELECTION_COLOR
+											focuscolor	LISTCONTENT_SELECTION_OUTLINE
+											textscale 	0.34
+											listName	"mapList"
+											onAction {
+												set "cmd" "play guisounds_menu_tick" ;
+												set "cmd" "click_mapList" ;
+											}
+										}
+									}
+								}
+
+								// Right side
+								buttonDef MCS_ServerType {
+									rect			180, 9, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_ServerType_text {
+										rect		10, 0, 200, 24
+										text		"#str_20147"
+										forecolor	STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+									choiceDef MCS_ServerTypeEdit {
+										rect		80, 0, 115, 24
+										gui			"server_type"
+										choices		"#str_20148"
+										choiceType	0
+										textscale	0.33
+										textalign	2
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+
+								buttonDef MCS_GameType {
+									rect			180, 36, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_GameType_text {
+										rect		10, 0, 200, 24
+										text			"#str_20149"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+									
+									choiceDef MCS_GameTypeEdit {
+										rect			80, 0, 115, 24
+										choices			"#str_20150"
+										values			"Deathmatch;Team DM"
+										// you can use both cvar and gui, gui is in choiceType 0 all the time so it works with scripts
+										cvar			"si_gameType"
+										gui				"currentGameType"
+										currentChoice	0
+										choiceType		1
+										textscale		0.33
+										textalign		2
+										shadow		1
+										forecolor		EDITABLE_FORECOLOR_COMMA
+										hovercolor		EDITABLE_HOVERCOLOR_COMMA
+										onAction {
+											set "cmd" "MAPScan" ;
+											resetTime "MCS_TeamDamage" "0";
+										}
+									}
+								}
+
+								buttonDef MCS_TeamDamage {
+									rect			180, 63, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_TeamDamage_text {
+										rect		10, 0, 200, 24
+										text			"#str_20151"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+									
+									onTime 0 {
+										if ( "gui::currentGameType" == 2 ) {
+											set "MCS_TeamDamageEdit::forecolor" EDITABLE_FORECOLOR_STRING ;
+											set "MCS_TeamDamageEdit::noevents" "0"
+										} else {
+											set "MCS_TeamDamageEdit::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+											set "MCS_TeamDamageEdit::noevents" "1"
+										}
+									}
+
+									choiceDef MCS_TeamDamageEdit {
+										rect		80, 0, 115, 24
+										choices		"#str_20152"
+										cvar		"si_teamDamage"
+										choiceType	0
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_GRAYED_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										noevents	1
+									}
+								}
+
+								buttonDef MCS_FragLimit {
+									rect			180, 90, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_FragLimit_text {
+										rect		10, 0, 200, 24
+										text			"#str_20153"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+									
+									editDef MCS_FragLimitEdit {
+										rect		177, 0, 35, 24
+										cvar		"si_fragLimit"
+										maxchars	3
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										onEnter {
+											setFocus "MCS_Create";	// set focus somewhere else
+										}
+									}
+								}
+
+								buttonDef MCS_TimeLimit {
+									rect			180, 117, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"							
+									
+									windowDef MCS_TimeLimit_text {
+										rect		10, 0, 200, 24
+										text			"#str_20154"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+
+									editDef MCS_TimeLimitEdit {
+										rect		179, 0, 35, 24
+										cvar		"si_timeLimit"
+										maxchars	2
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										onEnter {
+											setFocus "MCS_Create";	// set focus somewhere else
+										}
+									}
+								}
+
+								buttonDef MCS_MaxPlayers {
+									rect			180, 144, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_MaxPlayers_text {
+										rect		10, 0, 200, 24
+										text			"#str_20155"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+
+									editDef MCS_MaxPlayersEdit {
+										rect		185, 0, 35, 24
+										cvar		"si_maxPlayers"
+										maxchars 	1
+										cvarmax		8
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										onEnter {
+											setFocus "MCS_Create";	// set focus somewhere else
+										}
+									}
+								}
+
+								buttonDef MCS_DoWarmup {
+									rect			180, 171, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_DoWarmup_text {
+										rect		10, 0, 200, 24
+										text			"#str_20156"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+
+									choiceDef MCS_DoWarmupEdit {
+										rect		80, 0, 115, 24
+										choices		"#str_20152"
+										cvar		"si_warmup"
+										choiceType	0
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+
+								buttonDef MCS_AllowSpectators {
+									rect			180, 198, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_AllowSpectators_text {
+										rect		10, 0, 200, 24
+										text			"#str_20157"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+
+									choiceDef MCS_AllowSpectatorsEdit {
+										rect		80, 0, 115, 24
+										choices		"#str_20152"
+										cvar		"si_spectators"
+										choiceType	0
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+
+								buttonDef MCS_Dedicated {
+									rect			180, 225, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCS_Dedicated_text {
+										rect		10, 0, 200, 24
+										text			"#str_20158"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+
+									choiceDef MCS_DedicatedEdit {
+										rect		80, 0, 115, 24
+										choices		"#str_20152"
+										gui			"dedicated"
+										choiceType	0
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+								
+								buttonDef MCS_Punkbuster {
+									rect			180, 252, 220, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									visible			("gui::isdemo" == 0)
+									
+									windowDef MCS_Punkbuster_text {
+										rect		10, 0, 200, 24
+										text			"#str_20159"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+
+									choiceDef MCS_PunkbusterChoice {
+										rect		80, 0, 115, 24
+										choices		"#str_20152"
+										gui			"gui_sv_punkbuster"
+										choiceType	0
+										textalign	2
+										textscale	0.33
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										onAction {
+											if ("gui::gui_sv_punkbuster" != 0) {
+												// If on (about to toggle off), PB requires restart for malicious admins
+												resetTime "AnimMustRestart_Up" "0" ;
+											}
+											set "cmd" "punkbuster server";	 
+										}
+									}
+								}
+							}
+						}
+
+						tabDef MCS_Advanced {
+							rect					80, 0, 440, 350
+							backcolor				TAB_PAGE_BACKCOLOR_COMMA
+							background				"guis/assets/menu/fadebg_side.tga"
+							forecolor				TAB_FORECOLOR_COMMA
+							hovercolor				TAB_HOVERCOLOR_COMMA
+							activeColor				TAB_ACTIVECOLOR_COMMA
+							matcolor				1, 1, 1, 1
+							hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+							buttonLeftMat			"guis/assets/menu/tabtop.tga"
+							buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+							buttonRightMat			"guis/assets/menu/tabbottom.tga"
+							buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+							buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+							buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+							buttonEdgeWidth			14
+							text					"#str_20160"
+							textaligny				20
+							seperatorLines			1, 1, 1, 1
+							seperatorMargin			1
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							buttonDef MCSA_Headings {	
+								rect		10, 15, 420, 28
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								text		"#str_20161"
+								textalign	1
+								textaligny	-2
+								textscale	0.45
+								shadow		1
+								noevents	1
+							}
+
+							windowDef MCSA_Choices {  
+								rect			10, 32, 420, 310
+								backcolor		1, 1, 0, 0
+
+								buttonDef MCSA_Create {
+									rect			290, 280, 120, 30
+									text			"#str_20143"
+									textalign		1
+									textaligny		0
+									shadow			1
+									forecolor		BUTTON_FORECOLOR_COMMA
+									hoverColor		BUTTON_HOVERCOLOR_COMMA
+									leftMat			"guis/assets/menu/button/corner"
+									middleMat		"guis/assets/menu/button/strip"
+									leftHoverMat	"guis/assets/menu/button/rollover_corner"
+									middleHoverMat	"guis/assets/menu/button/rollover_strip"
+									rightMat		"guis/assets/menu/button/invcorner"
+									rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+									edgeWidth		12
+									onActionRelease {
+										set "cmd" "play guisounds_menu_clickin" ;
+										set "cmd" "startMultiplayer" ;
+									}
+								}
+
+								buttonDef MCSA_UsePassword {
+									rect			0, 25, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+									windowDef MCSA_UsePassword_text {
+										rect			10, 0, 250, 24
+										text			"#str_20162"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+									
+									choiceDef MCSA_UsePasswordChoice {
+										rect		270, 0, 130, 24
+										choices		"#str_20152"
+										cvar		"si_usepass"
+										currentChoice	0
+										choiceType	0
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										onActionRelease {
+											resetTime "MCSA_Password" "0";
+										}
+									}
+								}
+
+								buttonDef MCSA_Password {
+									rect			0, 52, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCSA_Password_text {
+										rect			10, 0, 250, 24
+										text			"#str_20163"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale	0.33
+										textaligny	0
+										shadow		1
+									}
+
+									onTime 0 {
+										if ( "gui::si_usePass" == 1 ) {
+											set "MCSA_PasswordEdit::forecolor" EDITABLE_FORECOLOR_STRING ;
+											set "MCSA_PasswordEdit::noevents" "0" ;
+										}
+										else {
+											set "MCSA_PasswordEdit::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+											set "MCSA_PasswordEdit::noevents" "1" ;
+										}
+									}
+									
+									editDef MCSA_PasswordEdit {
+										rect		270, 0, 130, 24
+										cvar		"g_password"
+										maxchars 	16
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_GRAYED_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										noevents	1
+										onEnter {
+											setFocus "MCSA_Create";	// set focus somewhere else
+										}
+									}
+								}
+
+								buttonDef MCSA_RconPassword {
+									rect			0, 79, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+									windowDef MCSA_RconPassword_text {
+										rect			10, 0, 250, 24
+										text			"#str_20164"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale		0.33
+										textaligny		0
+										shadow			1
+									}
+									
+									editDef MCSA_RconPasswordEdit {
+										rect		270, 0, 130, 24
+										maxchars 	16
+										cvar		"net_serverRemoteConsolePassword"
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_GRAYED_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										onEnter {
+											setFocus "MCSA_Create";	// set focus somewhere else
+										}
+									}
+								}
+
+								buttonDef MCSA_ReloadEngine {
+									rect			0, 106, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCSA_ReloadEngine_text {
+										rect			10, 0, 250, 24
+										text			"#str_20165"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale		0.33
+										textaligny		0
+										shadow			1
+									}
+
+									choiceDef MCSA_ReloadEngineChoice {
+										rect		270, 0, 130, 24
+										choices		"#str_20152"
+										cvar		"net_serverReloadEngine"
+										choiceType	0
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+
+								buttonDef MCSA_ServerSideMods {
+									rect			0, 133, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+									windowDef MCSA_ServerSideMods_text {
+										rect			10, 0, 250, 24
+										text			"#str_20166"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale		0.33
+										textaligny		0
+										shadow			1
+									}
+
+									choiceDef MCSA_ServerSideModsChoice {
+										rect		270, 0, 130, 24
+										choices		"#str_20152"
+										cvar		"net_serverAllowServerMod"
+										choiceType	0
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+
+								buttonDef MCSA_CycleScript {
+									rect			0, 160, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCSA_CycleScript_text {
+										rect			10, 0, 250, 24
+										text			"#str_41025"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale		0.33
+										textaligny		0
+										shadow			1
+									}
+
+									choiceDef MCSA_CycleScriptChoice {
+										rect		270, 0, 130, 24
+										choices		"#str_20152"
+										cvar		"g_runMapCycle"
+										choiceType	0
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+
+										onActionRelease {
+											resetTime "MCSA_MapCycle" "0";
+										}
+									}
+								}
+
+								buttonDef MCSA_MapCycle {
+									rect			0, 187, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+									windowDef MCSA_MapCycle_text {
+										rect			10, 0, 250, 24
+										text			"#str_20167"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale		0.33
+										textaligny		0
+										shadow			1
+									}
+
+									onTime 0 {
+										if ( "gui::g_runMapCycle" != 0 ) {
+											set "MCSA_MapCycleEdit::forecolor" EDITABLE_FORECOLOR_STRING ;
+											set "MCSA_MapCycleEdit::noevents" "0" ;
+										}
+										else {
+											set "MCSA_MapCycleEdit::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
+											set "MCSA_MapCycleEdit::noevents" "1" ;
+										}
+									}
+
+									editDef MCSA_MapCycleEdit {
+										rect		270, 0, 130, 24
+										cvar		"g_mapCycle"
+										maxchars 	200
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+										onEnter {
+											setFocus "MCSA_Create";	// set focus somewhere else
+										}
+									}
+								}
+
+								buttonDef MCSA_PureServer {
+									rect			0, 214, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+									
+									windowDef MCSA_PureServer_text {
+										rect			10, 0, 250, 24
+										text			"#str_20168"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale		0.33
+										textaligny		0
+										shadow			1
+									}
+
+									choiceDef MCSA_PureServerChoice {
+										rect		270, 0, 130, 24
+										choices		"#str_20152"
+										cvar		"si_pure"
+										choiceType	0
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+
+								buttonDef MCSA_RateConfig {
+									rect			0, 241, 420, 24
+									leftMat			"guis/assets/menu/textbar_corner.tga"
+									middleMat		"guis/assets/menu/textbarstrip.tga"
+									rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+									windowDef MCSA_RateConfig_text {
+										rect			10, 0, 250, 24
+										text			"#str_20169"
+										forecolor		STATIC_FORECOLOR_COMMA
+										textscale		0.33
+										textaligny		0
+										shadow			1
+									}
+
+									choiceDef MCSA_RateConfigChoice {
+										rect		270, 0, 130, 24
+										choices		"#str_20170"
+										cvar		"gui_configServerRate"
+										choiceType	0
+										textscale	0.33
+										textaligny	0
+										shadow		1
+										forecolor	EDITABLE_FORECOLOR_COMMA
+										hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			tabDef Multiplayer_FindServers {
+				rect			0, 20, 570, 370
+				backcolor		TAB_PAGE_BACKCOLOR_COMMA
+				background		"guis/assets/menu/fadebg_top.tga"
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"#str_20171"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	1
+
+				onNamedEvent ScanForServers {
+					if ("gui::lanSet" != 0) {
+						// Is currently set to LAN
+						set "MFS_LanRadio::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+						set "MFS_LanRadio::noevents" "1";
+						set "MFS_InternetRadio::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+						set "MFS_InternetRadio::noevents" "0";
+					}
+					else {
+						// Is currently set to Internet
+						set "MFS_InternetRadio::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+						set "MFS_InternetRadio::noevents" "1";
+						set "MFS_LanRadio::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+						set "MFS_LanRadio::noevents" "0";
+					}
+				
+					set "cmd" "UpdateServers" ;
+					set "cmd" "CheckUpdate" ;
+				}
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					namedEvent "Multiplayer_FindServers::ScanForServers";
+				}
+
+				buttonDef MFS_Header1 {			//game
+					rect		7, 7, 13, 25
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+					buttonDef MFS_IconButton3 {
+						rect			-1, 4, 13, 13
+						hovermatcolor	LISTHEADING_HOVERCOLOR_COMMA
+						background		"guis/assets/menu/icons/prey.tga"
+						onAction {
+							set	"cmd" "play guisounds_menu_tick ; sortGame" ;
+						}
+					}
+				}
+				buttonDef MFS_Header2 {			//pb
+					rect		22, 7, 13, 25
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+
+					buttonDef MFS_IconButton2 {
+						rect			-1, 4, 13, 13
+						hovermatcolor	LISTHEADING_HOVERCOLOR_COMMA
+						background		"guis/assets/menu/icons/pb_icon.tga"
+						visible			("gui::isdemo" == 0)
+						onAction {
+							set	"cmd"	"play guisounds_menu_tick ; sortPB" ;
+						}
+					}
+				}
+				windowDef MFS_Header3 {			//locked
+					rect		37, 7, 13, 25
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+					buttonDef MFS_IconButton3 {
+						rect			-1, 4, 13, 13
+						hovermatcolor	LISTHEADING_HOVERCOLOR_COMMA
+						background		"guis/assets/menu/icons/locked.tga"
+						onAction {
+							set	"cmd"	"play guisounds_menu_tick ; sortLocked" ;
+						}
+					}
+				}
+				buttonDef MFS_Header4 {			//game browser server name
+					rect		52, 7, 198, 25
+					text		"#str_20172"
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					hovercolor	LISTHEADING_HOVERCOLOR_COMMA
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+					textalignx	2
+					textaligny	-2
+					shadow		1
+					onAction {
+						set	"cmd"	"play guisounds_menu_tick ; sortServerName" ;
+					}
+				}
+				buttonDef MFS_Header5 {			//game browser players
+					rect		252, 7, 67, 25
+					text		"#str_20173"
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					hovercolor	LISTHEADING_HOVERCOLOR_COMMA
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+					textalignx	2
+					textaligny	-2
+					shadow		1
+					onAction {
+						set	"cmd"	"play guisounds_menu_tick ; sortPlayers" ;
+					}
+				}
+				buttonDef MFS_Header6 {			//game browser ping
+					rect		321, 7, 38, 25
+					text		"#str_20174"
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					hovercolor	LISTHEADING_HOVERCOLOR_COMMA
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+					textalignx	2
+					textaligny	-2
+					shadow		1
+					onAction {
+						set	"cmd"	"play guisounds_menu_tick ; sortPing" ;
+					}
+				}
+				buttonDef MFS_Header7 {			//game browser type
+					rect		361, 7, 95, 25
+					text		"#str_20175"
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					hovercolor	LISTHEADING_HOVERCOLOR_COMMA
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+					textalignx	2
+					textaligny	-2
+					shadow		1
+					onAction {
+						set	"cmd"	"play guisounds_menu_tick ; sortGameType " ;
+					}
+				}
+				buttonDef MFS_Header8 {			//game browser map
+					rect		458, 7, 106, 25
+					text		"#str_20176"
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					hovercolor	LISTHEADING_HOVERCOLOR_COMMA
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+					textalignx	2
+					textaligny	-2
+					shadow		1
+					onAction {
+						set	"cmd"	"play guisounds_menu_tick ; sortMap" ;
+					}
+				}
+
+				// Black background boxes
+				windowDef MFS_Box1 {
+					rect		7, 34, 13, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+				windowDef MFS_Box2 {
+					rect		22, 34, 13, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+				windowDef MFS_Box3 {
+					rect		37, 34, 13, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+				windowDef MFS_Box4 {
+					rect		52, 34, 198, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+				windowDef MFS_Box5 {
+					rect		252, 34, 67, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+				windowDef MFS_Box6 {
+					rect		321, 34, 38, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+				windowDef MFS_Box7 {
+					rect		361, 34, 95, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+				windowDef MFS_Box8 {
+					rect		458, 34, 92, 173
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor 0, 0, 0, 1
+					bordersize 	1
+				}
+
+				windowDef MFS_ServerlistCap_Top {
+					rect		548, 34, 16, 4
+					background	"guis/assets/scrollbarv_cap.tga"
+				}
+				windowDef MFS_ServerlistCap_Bottom {
+					rect		548, 207, 16, -4
+					background	"guis/assets/scrollbarv_cap.tga"
+				}
+
+				listDef MFS_Serverlist_Demo {
+					rect 		5, 38, 559, 169
+					forecolor 	LISTCONTENT_FORECOLOR_COMMA
+					bordercolor	LISTCONTENT_SELECTION_COLOR
+					focuscolor	LISTCONTENT_SELECTION_OUTLINE
+					bordersize 	0
+					textscale 	0.25
+					listName 	"serverlist"
+					visible		("gui::isdemo" != 0)
+
+					//				GM	PB	LK	SERVER	PLAYERS PING TYPE MAP
+					tabstops		"0, 17, 25, 52, 247, 316, 356, 453"
+					tabAligns		"1, 1, 1, 0, 1, 1, 0, 0"					// LEFT, CENTER, CENTER, CENTER, CENTER, LEFT, LEFT
+					tabTypes		"1, 1, 1, 0, 0, 0, 0, 0"					// ICON, ICON, ICON, TEXT, TEXT, TEXT, TEXT, TEXT
+					tabIconSizes	"13,13, 13,13, 13,13, 0,0, 0,0, 0,0, 0,0, 0,0"
+					tabIconVOffset	"1, 1, 1, 0, 0, 0, 0, 0"
+					tabvaligns		"1, 1, 1, 0, 0, 0, 0, 0"					// Only works for icon columns
+
+					mtr_preyIcon	"guis/assets/menu/icons/prey.tga"
+					mtr_preyXPIcon	"guis/assets/menu/icons/xp.tga"
+					mtr_modIcon		"guis/assets/menu/icons/mod.tga"
+					mtr_PB			"textures/common/nodraw"
+					mtr_locked		"guis/assets/menu/icons/locked.tga"
+
+					onAction {
+						set	"cmd" "play guisounds_menu_tick ; serverList" ;
+						set "LANLevelshot::matcolor" "1 1 1 1" ;
+						set "LANLevelshot::forecolor" "0.6 0.8 0.8 0" ;
+						resetTime "MultiplayerGlobal" "0";
+					}
+					onEnter {
+						if ("MultiplayerGlobal::canjoin" != 0) {
+							set "cmd" "play guisounds_menu_clickin" ;
+							set "cmd" "LANConnect" ;
+						}
+						else {
+							set	"cmd" "play guisounds_menu_cancel" ;
+
+							// Put up connection denied window
+							resetTime "AnimPunkbusterDenied_Up" "0";
+						}
+					}
+				}
+
+				listDef MFS_Serverlist {
+					rect 		5, 38, 559, 169
+					forecolor 	LISTCONTENT_FORECOLOR_COMMA
+					bordercolor	LISTCONTENT_SELECTION_COLOR
+					focuscolor	LISTCONTENT_SELECTION_OUTLINE
+					bordersize 	0
+					textscale 	0.25
+					listName 	"serverlist"
+					visible			("gui::isdemo" == 0)
+
+//HUMANHEAD PATCH pdm: updated tabstops and aligns so punkbuster icons shows up properly
+					//				GM	PB	LK	SERVER	PLAYERS PING TYPE MAP
+					tabstops		"0, 15, 31, 52,	247, 316, 356, 453"
+					tabAligns		"0, 0, 0, 0, 1, 1, 0, 0"					// LEFT, LEFT, LEFT, LEFT, CENTER, CENTER, LEFT, LEFT
+					tabTypes		"1, 1, 1, 0, 0, 0, 0, 0"					// ICON, ICON, ICON, TEXT, TEXT, TEXT, TEXT, TEXT
+					tabIconSizes	"13,13, 13,13, 13,13, 0,0, 0,0, 0,0, 0,0, 0,0"
+					tabIconVOffset	"1, 1, 1, 0, 0, 0, 0, 0"
+					tabvaligns		"1, 1, 1, 0, 0, 0, 0, 0"					// Only works for icon columns
+
+					mtr_preyIcon	"guis/assets/menu/icons/prey.tga"
+					mtr_preyXPIcon	"guis/assets/menu/icons/xp.tga"
+					mtr_modIcon		"guis/assets/menu/icons/mod.tga"
+					mtr_PB			"guis/assets/menu/icons/pb_icon.tga"
+					mtr_locked		"guis/assets/menu/icons/locked.tga"
+
+					onAction {
+						set	"cmd" "play guisounds_menu_tick ; serverList" ;
+						set "LANLevelshot::matcolor" "1 1 1 1" ;
+						set "LANLevelshot::forecolor" "0.6 0.8 0.8 0" ;
+						resetTime "MultiplayerGlobal" "0";
+					}
+					onEnter {
+						if ("MultiplayerGlobal::canjoin" != 0) {
+							set "cmd" "play guisounds_menu_clickin" ;
+							set "cmd" "LANConnect" ;
+						}
+						else {
+							set	"cmd" "play guisounds_menu_cancel" ;
+
+							// Put up connection denied window
+							resetTime "AnimPunkbusterDenied_Up" "0";
+						}
+					}
+				}
+
+				buttonDef MFS_QuickRefresh {
+					rect			10, 209, 120, 24
+					text			"#str_20177"
+					textscale		0.3
+					textalign		1
+					textaligny		0
+					forecolor		BUTTON_FORECOLOR_COMMA
+					hoverColor		BUTTON_HOVERCOLOR_COMMA
+					leftMat			"guis/assets/menu/button/corner"
+					middleMat		"guis/assets/menu/button/strip"
+					leftHoverMat	"guis/assets/menu/button/rollover_corner"
+					middleHoverMat	"guis/assets/menu/button/rollover_strip"
+					rightMat		"guis/assets/menu/button/invcorner"
+					rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+					edgeWidth		8
+					shadow			1
+					onAction {
+						set "cmd" "play guisounds_menu_connect ; RefreshServers" ;
+					}
+				}
+
+				buttonDef MFS_RefreshAll {
+					rect			135, 209, 120, 24
+					text			"#str_20178"
+					textscale		0.3
+					textalign		1
+					textaligny		0
+					forecolor		BUTTON_FORECOLOR_COMMA
+					hoverColor		BUTTON_HOVERCOLOR_COMMA
+					leftMat			"guis/assets/menu/button/corner"
+					middleMat		"guis/assets/menu/button/strip"
+					leftHoverMat	"guis/assets/menu/button/rollover_corner"
+					middleHoverMat	"guis/assets/menu/button/rollover_strip"
+					rightMat		"guis/assets/menu/button/invcorner"
+					rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+					edgeWidth		8
+					shadow			1
+					onAction {
+						set "cmd" "play guisounds_menu_connect ; UpdateServers" ;
+					}
+				}
+
+				windowDef MFS_LanInternetTitle {
+					rect		255, 209, 145, 24
+					forecolor	STATIC_FORECOLOR_COMMA
+					text		"#str_20179"
+					textscale	0.29
+					textalign	2
+					textaligny	0
+					shadow		1
+				}
+
+				buttonDef MFS_InternetRadio {
+					rect				405, 210, 70, 20
+					backcolor			RADIO_ACTIVE_BACKCOLOR_COMMA
+					forecolor			RADIO_FORECOLOR_COMMA
+					hovercolor			RADIO_HOVERCOLOR_COMMA
+					bordercolor			RADIO_BORDERCOLOR_COMMA
+					hoverbordercolor	RADIO_BORDERCOLOR_COMMA
+					bordersize			1
+					text				"#str_20180"
+					textscale			0.3
+					textalign			1
+					textaligny			-3
+					shadow				1
+					noevents			1
+
+					onAction {
+						set "gui::lanSet" "0" ;
+						set "MFS_InternetRadio::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+						set "MFS_InternetRadio::noevents" "1";
+						set "MFS_LanRadio::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+						set "MFS_LanRadio::noevents" "0";
+						set	"cmd" "play guisounds_menu_connect ; UpdateServers" ;
+					}
+				}
+
+				buttonDef MFS_LanRadio {
+					rect				474, 210, 70, 20
+					backcolor			RADIO_INACTIVE_BACKCOLOR_COMMA
+					forecolor			RADIO_FORECOLOR_COMMA
+					hovercolor			RADIO_HOVERCOLOR_COMMA
+					bordercolor			RADIO_BORDERCOLOR_COMMA
+					hoverbordercolor	RADIO_BORDERCOLOR_COMMA
+					bordersize			1
+					text				"#str_20181"
+					textscale			0.3
+					textalign			1
+					textaligny			-3
+					shadow				1
+
+					onAction {
+						set "gui::lanSet" "1" ;
+						set "MFS_LanRadio::backcolor" RADIO_ACTIVE_BACKCOLOR_STRING;
+						set "MFS_LanRadio::noevents" "1";
+						set "MFS_InternetRadio::backcolor" RADIO_INACTIVE_BACKCOLOR_STRING;
+						set "MFS_InternetRadio::noevents" "0";
+						set	"cmd" "play guisounds_menu_connect ; UpdateServers" ;
+					}
+				}
+
+				windowDef MFS_TabContainerBG {
+					rect		7, 233, 557, 132
+					backcolor	TAB_PAGE_BACKCOLOR_COMMA
+
+					tabContainerDef MFS_TabContainer {
+						rect			2, 2, 553, 126
+						backcolor		0, 0, 0, 0
+						sepcolor		0.74, 0.81, 0.88, 1
+						activetab		0
+						tabMargins		120, 0
+						tabHeight		20
+						
+						tabDef MFS_CurrentServerTab {
+							rect			0, 20, 553, 106
+							backcolor		0, 0, 0, 0
+							forecolor		TABTOP_FORECOLOR_COMMA
+							hovercolor		TABTOP_HOVERCOLOR_COMMA
+							activeColor		TABTOP_ACTIVECOLOR_COMMA
+							hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+							text			"#str_20182"
+							textaligny		-2
+							seperatorLines	0, 1, 1, 1
+							seperatorMargin	0
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							tabContainerDef MFS_CurrentServer {
+								rect			2, 0, 551, 106
+								backcolor		0, 0, 0, 0
+								sepcolor		0.74, 0.81, 0.88, 1
+								activetab		0
+								tabMargins		0, 0
+								horizontal		1
+								tabHeight		103
+
+								tabDef MFS_CurrentServer_Summary {
+									rect					103, 0, 448, 106
+									backcolor				TAB_PAGE_BACKCOLOR_COMMA
+									background				"guis/assets/menu/fadebg.tga"
+									forecolor				TAB_FORECOLOR_COMMA
+									hovercolor				TAB_HOVERCOLOR_COMMA
+									activeColor				TAB_ACTIVECOLOR_COMMA
+									hoverMatColor			TABTOP_HOVERMAT_COLOR_COMMA
+									buttonLeftMat			"guis/assets/menu/tabtop.tga"
+									buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+									buttonRightMat			"guis/assets/menu/tabbottom.tga"
+									buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+									buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+									buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+									buttonEdgeWidth			14
+									text					"#str_20183"
+									textaligny				6
+									textscale				0.3
+									seperatorLines			1, 1, 1, 1
+									seperatorMargin			1
+
+									onTabActivate {
+										set "cmd" "play guisounds_menu_tabflip" ;
+									}
+
+									windowDef MFS_ServerImageBG {
+										rect			4, 8, 115, 92
+										text			"#str_20184"
+										textalign		1
+										textaligny		8
+										shadow			1
+										forecolor		STATIC_FORECOLOR_COMMA
+
+										windowDef MFS_ServerImage {
+											rect			0, 0, 115, 92
+											background		"gui::browser_levelshot"
+										}
+										superWindowDef MCS_ServerImageFrame {
+											rect		0, 0, 115, 92
+											cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+											leftMat		"guis/assets/menu/pictureframe_left.tga"
+											topMat		"guis/assets/menu/pictureframe_strip.tga"
+											margins		0, 0, 0, 0	// left, right, top, bottom
+											cornerSize	4, 4
+											edgeSize	4, 4
+										}
+									}
+
+									windowDef MFS_ServerInfo {
+										rect			120, 8, 190, 94
+										backcolor		0, 0, 0, 0
+
+										windowDef ServerInfoServerName {
+											rect		0, 0, 190, 22
+											text		"gui::server_name"
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											textalign	1
+											textaligny	-4
+											textscale	0.35
+											shadow		1
+										}
+										windowDef ServerInfoMapName {
+											rect		0, 25, 190, 18
+											text		"gui::server_map"
+											forecolor	STATIC_FORECOLOR_COMMA
+											textalign	1
+											textaligny	-3
+											textscale	0.3
+											shadow		1
+										}
+										windowDef ServerInfoGameType {
+											rect		0, 40, 190, 18
+											forecolor	STATIC_FORECOLOR_COMMA
+											text		"gui::server_gametype"
+											textalign	1
+											textaligny	-3
+											textscale	0.3
+											shadow		1
+										}
+										windowDef ServerInfoPlayerInfo {
+											rect		0, 55, 190, 18
+											forecolor	STATIC_FORECOLOR_COMMA
+											text		"gui::server_playerstring"
+											textalign	1
+											textaligny	-3
+											textscale	0.3
+											shadow		1
+										}
+//										windowDef ServerInfoPassworded {
+//											rect		0, 70, 190, 18
+//											forecolor	STATIC_FORECOLOR_COMMA
+//											text		"gui::server_passworded"
+//											textalign	1
+//											textaligny	-3
+//											textscale	0.3
+//											shadow		1
+//										}
+									}
+
+									windowDef MFS_PunkBuster {
+										rect			315, 10, 120, 45
+										visible			("gui::isdemo" == 0)
+
+										windowDef MFS_PunkBusterOnServer {
+											rect			0, 0, 32, 32
+											matcolor		1, 1, 1, 1
+											background		"guis/assets/menu/icons/pblogo_enabled.tga"
+											noevents		1
+											visible			"gui::server_punkbuster"
+										}
+										windowDef MFS_PunkBusterTitle {
+											rect			35, 0, 80, 35
+											text			"#str_20159"
+											textscale		0.3
+											textalign		1
+											textaligny		-3
+											forecolor		STATIC_FORECOLOR_COMMA
+											backcolor		0, 0, 0, 0.5
+											bordercolor		0, 0, 0, 1
+											bordersize		1
+										}
+										
+										choiceDef MFS_PunkBusterChoice {
+											rect			35, 15, 80, 20
+											choices			"#str_20189"
+											gui				"gui_cl_punkbuster"
+											choiceType		0
+											textscale		0.3
+											textalign		1
+											textaligny		-1
+											forecolor		EDITABLE_FORECOLOR_COMMA
+											hovercolor		EDITABLE_HOVERCOLOR_COMMA
+											onActionRelease {
+												if ("gui::gui_cl_punkbuster" == 0) {
+													// If just toggled off, PB requires restart for malicious admins
+													resetTime "AnimMustRestart_Up" "0" ;
+												}
+												set "cmd" "punkbuster client";
+												resetTime "MultiplayerGlobal" "0";
+											}
+										}
+									}
+
+									buttonDef MFS_Summary_JoinGame {
+										rect				315, 68, 120, 28
+										text				"#str_20190"
+										textalign			1
+										textscale			0.35
+										shadow				1
+										forecolor			BUTTON_FORECOLOR_GREYED_COMMA
+										hoverColor			BUTTON_HOVERCOLOR_COMMA
+										leftMat				"guis/assets/menu/button/corner"
+										middleMat			"guis/assets/menu/button/strip"
+										leftHoverMat		"guis/assets/menu/button/rollover_corner"
+										middleHoverMat		"guis/assets/menu/button/rollover_strip"
+										rightMat			"guis/assets/menu/button/invcorner"
+										rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
+										edgeWidth			12
+										noevents			1
+										onAction {
+											if ("MultiplayerGlobal::canjoin" != 0) {
+												set	"cmd"	"play guisounds_menu_clickin ; LANConnect" ;
+											}
+										}
+									}
+								}
+
+								tabDef MFS_CurrentServer_Details {
+									rect					103, 0, 448, 106
+									backcolor				TAB_PAGE_BACKCOLOR_COMMA
+									background				"guis/assets/menu/fadebg.tga"
+									forecolor				TAB_FORECOLOR_COMMA
+									hovercolor				TAB_HOVERCOLOR_COMMA
+									activeColor				TAB_ACTIVECOLOR_COMMA
+									hoverMatColor			TABTOP_HOVERMAT_COLOR_COMMA
+									buttonLeftMat			"guis/assets/menu/tabtop.tga"
+									buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+									buttonRightMat			"guis/assets/menu/tabbottom.tga"
+									buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+									buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+									buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+									buttonEdgeWidth			14
+									text					"#str_41121"
+									textaligny				6
+									textscale				0.3
+									seperatorLines			1, 1, 1, 1
+									seperatorMargin			1
+
+									onTabActivate {
+										set "cmd" "play guisounds_menu_tabflip" ;
+									}
+
+									windowDef MFS_Details_Page {
+										rect				0, 0, 448, 106
+
+										windowDef MFS_Details_ServerName {
+											rect		10, 3, 428, 18
+											text		"gui::server_name"
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											textalign	1
+											textaligny	-6
+											textscale	0.35
+											shadow		1
+										}
+										windowDef MFS_Details_IPTitle {
+											rect		10, 20, 115, 15
+											text		"#str_20185"
+											forecolor	STATIC_FORECOLOR_COMMA
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_IP {
+											rect		125, 20, 180, 15
+											text		"gui::server_IP"
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_MapNameTitle {
+											rect		10, 35, 115, 15
+											text		"#str_20186"
+											forecolor	STATIC_FORECOLOR_COMMA
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_MapName {
+											rect		125, 35, 180, 15
+											text		"gui::server_map"
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_GameTypeTitle {
+											rect		10, 50, 115, 15
+											text		"#str_20187"
+											forecolor	STATIC_FORECOLOR_COMMA
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_GameType {
+											rect		125, 50, 180, 15
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											text		"gui::server_gametype"
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_PasswordedTitle {
+											rect		10, 65, 115, 15
+											text		"#str_20188"
+											forecolor	STATIC_FORECOLOR_COMMA
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_Passworded {
+											rect		125, 65, 180, 15
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											text		"gui::server_passworded"
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_PlayersTitle {
+											rect		10, 80, 115, 15
+											text		"#str_20191"
+											forecolor	STATIC_FORECOLOR_COMMA
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+										windowDef MFS_Details_Players {
+											rect		125, 80, 180, 15
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											text		"gui::server_players"
+											textaligny	-5
+											textscale	0.3
+											shadow		1
+										}
+									}
+
+									buttonDef MFS_Details_JoinGame {
+										rect				315, 68, 120, 28
+										text				"#str_20190"
+										textalign			1
+										textscale			0.35
+										shadow				1
+										forecolor			BUTTON_FORECOLOR_GREYED_COMMA
+										hoverColor			BUTTON_HOVERCOLOR_COMMA
+										leftMat				"guis/assets/menu/button/corner"
+										middleMat			"guis/assets/menu/button/strip"
+										leftHoverMat		"guis/assets/menu/button/rollover_corner"
+										middleHoverMat		"guis/assets/menu/button/rollover_strip"
+										rightMat			"guis/assets/menu/button/invcorner"
+										rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
+										edgeWidth			12
+										noevents			1
+										onAction {
+											if ("MultiplayerGlobal::canjoin" != 0) {
+												set	"cmd"	"play guisounds_menu_clickin ; LANConnect" ;
+											}
+										}
+									}
+								}
+
+								tabDef MFS_CurrentServer_Players {
+									rect					103, 0, 448, 106
+									backcolor				TAB_PAGE_BACKCOLOR_COMMA
+									background				"guis/assets/menu/fadebg.tga"
+									forecolor				TAB_FORECOLOR_COMMA
+									hovercolor				TAB_HOVERCOLOR_COMMA
+									activeColor				TAB_ACTIVECOLOR_COMMA
+									hoverMatColor			TABTOP_HOVERMAT_COLOR_COMMA
+									buttonLeftMat			"guis/assets/menu/tabtop.tga"
+									buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+									buttonRightMat			"guis/assets/menu/tabbottom.tga"
+									buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+									buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+									buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+									buttonEdgeWidth			16
+									text					"#str_20173"
+									textaligny				6
+									textscale				0.3
+									seperatorLines			1, 1, 1, 1
+									seperatorMargin			1
+
+									onTabActivate {
+										set "cmd" "play guisounds_menu_tabflip" ;
+									}
+
+									windowDef MFS_PlayerInfo1 {
+										rect			20, 15, 140, 80
+										backcolor		0, 0, 0, 0.5
+										bordercolor		0, 0, 0, 1
+										bordersize		1
+
+										windowDef MFS_Player1 {
+											rect		5, 10, 130, 14
+											text		"gui::player1"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+										windowDef MFS_Player2 {
+											rect		5, 25, 130, 14
+											text		"gui::player2"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+										windowDef MFS_Player3 {
+											rect		5, 40, 130, 14
+											text		"gui::player3"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+										windowDef MFS_Player4 {
+											rect		5, 55, 130, 14
+											text		"gui::player4"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+									}
+									
+									windowDef MFS_PlayerInfo2 {
+										rect			159, 15, 140, 80
+										backcolor		0, 0, 0, 0.5
+										bordercolor		0, 0, 0, 1
+										bordersize		1
+										
+										windowDef MFS_Player5 {
+											rect		5, 10, 130, 14
+											text		"gui::player5"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+										windowDef MFS_Player6 {
+											rect		5, 25, 130, 14
+											text		"gui::player6"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+										windowDef MFS_Player7 {
+											rect		5, 40, 130, 14
+											text		"gui::player7"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+										windowDef MFS_Player8 {
+											rect		5, 55, 130, 14
+											text		"gui::player8"
+											textscale	0.25
+											textaligny	-3
+											forecolor	EDITABLE_FORECOLOR_COMMA
+											shadow		1
+											noevents	1
+										}
+									}
+
+									windowDef MFS_PlayersTitle {
+										rect		310, 15, 130, 25
+										backcolor	0, 0, 0, 0
+										text		"#str_20191"
+										textscale	0.45
+										textalign	1
+										textaligny	-5
+										shadow		1
+										forecolor	STATIC_FORECOLOR_COMMA
+									}
+									windowDef MFS_PlayersLimit {
+										rect		340, 40, 70, 20
+										text		"gui::server_players"
+										textalign	1
+										textaligny	-5
+										shadow		1
+										forecolor	STATIC_FORECOLOR_COMMA
+									}
+
+									buttonDef MFS_Players_JoinGame {
+										rect				315, 68, 120, 28
+										text				"#str_20190"
+										textalign			1
+										textscale			0.35
+										shadow				1
+										forecolor			BUTTON_FORECOLOR_GREYED_COMMA
+										hoverColor			BUTTON_HOVERCOLOR_COMMA
+										leftMat				"guis/assets/menu/button/corner"
+										middleMat			"guis/assets/menu/button/strip"
+										leftHoverMat		"guis/assets/menu/button/rollover_corner"
+										middleHoverMat		"guis/assets/menu/button/rollover_strip"
+										rightMat			"guis/assets/menu/button/invcorner"
+										rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
+										edgeWidth			12
+										noevents			1
+										onAction {
+											if ("MultiplayerGlobal::canjoin" != 0) {
+												set	"cmd"	"play guisounds_menu_clickin ; LANConnect" ;
+											}
+										}
+									}
+								}
+							}
+						}	// MFS_CurrentServerTab
+
+						tabDef MFS_FiltersTab {
+							rect			5, 20, 548, 106
+							backcolor		TAB_PAGE_BACKCOLOR_COMMA
+							background		"guis/assets/menu/fadebg_top.tga"
+							forecolor		TABTOP_FORECOLOR_COMMA
+							hovercolor		TABTOP_HOVERCOLOR_COMMA
+							activeColor		TABTOP_ACTIVECOLOR_COMMA
+							hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+							text			"#str_20192"
+							textaligny		-2
+							seperatorLines	1, 1, 1, 1
+							seperatorMargin	1
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							windowDef MFS_Filters {
+								rect			50, 10, 300, 85
+								backcolor		0, 0, 0, 0.4
+								bordercolor 	0, 0, 0, 1
+								bordersize 		1
+								
+								// Filters
+								windowDef MFS_FilterGametypeTitle {
+									rect		0, 5, 150, 15
+									text		"#str_20193"
+									textscale	0.3
+									textalign	2
+									textaligny	-6
+									forecolor	STATIC_FORECOLOR_COMMA
+									shadow		1
+								}
+								choiceDef MFS_FilterGametype {
+									rect		150, 5, 150, 15
+									choices		"#str_20194"
+									choiceType  0
+									cvar		"gui_filter_gameType"
+									textscale	0.3
+									textalign	1
+									textaligny	-6
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									shadow		1
+								}
+
+								windowDef MFS_FilterPasswordTitle {
+									rect		0, 20, 150, 15
+									text		"#str_20163"
+									textscale	0.3
+									textalign	2
+									textaligny	-6
+									forecolor	STATIC_FORECOLOR_COMMA
+									shadow		1
+								}
+								choiceDef MFS_FilterPassword {
+									rect		150, 20, 150, 15
+									choices		"#str_20195"
+									choiceType  0
+									cvar		"gui_filter_password"
+									textscale	0.3
+									textalign	1
+									textaligny	-6
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									shadow		1
+								}
+
+								windowDef MFS_FilterPlayersTitle {
+									rect		0, 35, 150, 15
+									text		"#str_20196"
+									textscale	0.3
+									textalign	2
+									textaligny	-6
+									forecolor	STATIC_FORECOLOR_COMMA
+									shadow		1
+								}
+								choiceDef MFS_FilterPlayers {
+									rect		150, 35, 150, 15
+									choices		"#str_20197"
+									choiceType  0
+									cvar		"gui_filter_players"
+									textscale	0.3
+									textalign	1
+									textaligny	-6
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									shadow		1
+								}
+
+								windowDef MFS_FilterIdleServersTitle {
+									rect		0, 50, 150, 15
+									text		"#str_20198"
+									textscale	0.3
+									textalign	2
+									textaligny	-6
+									forecolor	STATIC_FORECOLOR_COMMA
+									shadow		1
+								}
+								choiceDef MFS_FilterIdleServers {
+									rect		150, 50, 150, 15
+									choices		"#str_20199"
+									choiceType  0
+									cvar		"gui_filter_idle"
+									textscale	0.3
+									textalign	1
+									textaligny	-6
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									shadow		1
+								}
+
+								windowDef MFS_FilterPunkbusterTitle {
+									rect		0, 65, 150, 15
+									text		"#str_41026"
+									textscale	0.3
+									textalign	2
+									textaligny	-6
+									forecolor	STATIC_FORECOLOR_COMMA
+									shadow		1
+									visible		("gui::isdemo" == 0)
+								}
+								choiceDef MFS_FilterPunkbuster {
+									rect		150, 65, 150, 15
+									choices		"#str_41027"
+									choiceType  0
+									cvar		"gui_filter_pb"
+									textscale	0.3
+									textalign	1
+									textaligny	-6
+									forecolor	EDITABLE_FORECOLOR_COMMA
+									hovercolor	EDITABLE_HOVERCOLOR_COMMA
+									shadow		1
+									visible		("gui::isdemo" == 0)
+								}
+							}
+
+							buttonDef MFS_ApplyFilter {
+								rect			415, 68, 120, 28
+								text			"#str_20200"
+								textscale		0.35
+								textalign		1
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+
+								onAction {
+									set "cmd" "play guisounds_menu_connect ; FilterServers" ;
+									resetTime "MultiplayerGlobal" "0";
+								}
+							}
+						}	// MFS_FiltersTab
+
+						tabDef MFS_ManualConnectTab {
+							rect			5, 20, 548, 106
+							backcolor		TAB_PAGE_BACKCOLOR_COMMA
+							background		"guis/assets/menu/fadebg_top.tga"
+							forecolor		TABTOP_FORECOLOR_COMMA
+							hovercolor		TABTOP_HOVERCOLOR_COMMA
+							activeColor		TABTOP_ACTIVECOLOR_COMMA
+							hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+							text			"#str_20201"
+							textaligny		-2
+							seperatorLines	1, 1, 1, 1
+							seperatorMargin	1
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							windowDef MFS_IPInstructions {
+								rect		100, 10, 350, 50
+								text		"#str_20202"
+								textalign	1
+								textaligny	0
+								shadow		1
+								textscale	0.35
+							}
+
+							windowDef MFS_IPConnect {
+								rect		200, 70, 150, 25
+								backcolor	0, 0, 0, 0.4
+
+								editDef MFS_IPConnectEdit {
+									rect			2, 2, 146, 20
+									backcolor		0, 0, 0, 0.6
+									forecolor		EDITABLE_FORECOLOR_COMMA
+									hovercolor		EDITABLE_HOVERCOLOR_COMMA
+									text			"gui::inetGame"		//TODO: Make this into an archived cvar?
+									textaligny		-4
+									textscale		0.35
+									maxchars		99
+									onEnter {
+										// Enter connects immediately
+										set	"cmd" "play guisounds_menu_clickin ; inetConnect" ;
+									}
+									onAction {
+										resetTime "MFS_IPConnectButton" "0" ;
+									}
+								}
+							}
+							buttonDef MFS_IPConnectButton {
+								rect			415, 68, 120, 28
+								text			"#str_20203"
+								textalign		1
+								shadow			1
+								forecolor		BUTTON_FORECOLOR_GREYED_COMMA
+								hoverColor		BUTTON_HOVERCOLOR_COMMA
+								leftMat			"guis/assets/menu/button/corner"
+								middleMat		"guis/assets/menu/button/strip"
+								leftHoverMat	"guis/assets/menu/button/rollover_corner"
+								middleHoverMat	"guis/assets/menu/button/rollover_strip"
+								rightMat		"guis/assets/menu/button/invcorner"
+								rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+								edgeWidth		12
+								noevents		1
+								onTime 0 {
+									if ( "MFS_IPConnectEdit::text" "!=" "" ) {
+										set "MFS_IPConnectButton::noevents" "0" ;
+										set "MFS_IPConnectButton::forecolor" BUTTON_FORECOLOR_STRING ;
+									} else {
+										set "MFS_IPConnectButton::noevents" "1" ;
+										set "MFS_IPConnectButton::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+									}
+								}
+								onAction {
+									set	"cmd" "play guisounds_menu_clickin ; inetConnect" ;
+									set	"noevents" "1" ;
+								}
+							}
+						}	// MFS_ManualConnectTab
+					}
+				}
+			}
+		}
+	}
+

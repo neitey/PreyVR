@@ -1,0 +1,1006 @@
+		// ------------------------------------------------------
+		// Individual Credits
+		// ------------------------------------------------------
+
+// TODO: When complete, collapse these for speed
+#define CREDITS_Y		390
+#define THREEDREALMS_Y	CREDITS_Y+1240
+#define VOICE_Y			THREEDREALMS_Y+300
+#define MOCAP_Y			VOICE_Y+1180
+#define MUSIC_Y			MOCAP_Y+300
+#define WRITING_Y		MUSIC_Y+360
+#define ADDHEADING_Y	WRITING_Y+440
+#define PUBLISHER_Y		ADDHEADING_Y+40
+#define TRITON_Y		PUBLISHER_Y+180
+#define ADDITIONAL_Y	TRITON_Y+140
+#define THANKS_Y		ADDITIONAL_Y+140
+#define COPYRIGHT_Y		THANKS_Y+420
+
+
+
+			windowDef VirtualPageCredits {
+				rect				CREDITS_VPAGE_SRCRECT_COMMA
+
+				windowDef Logo {
+					rect				110, 170, 400, 30
+					matcolor			0, 0, 0, 0
+					background			"guis/assets/menu/prey.tga"
+				}
+				windowDef Title1 {
+					rect				CREDIT_NAMES_XVALUE, 230, 320, 40
+					text				"#str_20019"
+					forecolor			0, 0, 0, 0
+					textscale			0.4
+					textalign			1
+					duration			1500
+					splinePoints		8
+					trails				5
+					trailOffset			0.04
+				}
+				windowDef HHead {
+					rect				270, 260, 80, 90
+					matcolor			0, 0, 0, 0
+					background			"guis/assets/hhead.tga"
+				}
+
+				creditDef CreditHeading1 {
+					rect				CREDIT_HEADG_XVALUE, 350, CREDIT_HEADG_DIMENSIONS
+					text				"#str_20020"
+					CREDIT_DEFINITION_HEADING
+					textscale			0.45
+				}
+				
+				creditDef CreditLine1 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+0, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20021"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine2 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+20, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20022"
+					CREDIT_DEFINITION_NAME
+				}
+
+
+				creditDef CreditLine3 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+60, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20023"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine4 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+80, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20024"
+					CREDIT_DEFINITION_NAME
+				}
+
+
+				creditDef CreditLine5 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+120, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20025"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine6 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+140, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20026"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine7 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+160, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20027"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine8 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+180, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20028"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine9 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+200, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20029"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine10 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+220, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20030"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineScriptManager {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+260, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20661"	// Script Manager
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineScriptManager2 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+280, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20032"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine11 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+320, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20031"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine13 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+340, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20033"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine14 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+360, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20034"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine15 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+400, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20035"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine16 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+420, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20036"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine17 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+460, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20037"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine18 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+480, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20038"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine19 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+500, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20039"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine20 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+520, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20040"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine21 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+540, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20041"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine22 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+580, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20042"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine23 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+600, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20043"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine24 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+640, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20044"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine25 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+660, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20045"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine26 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+680, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20046"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine27 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+700, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20047"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine28 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+720, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20048"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine29 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+740, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20049"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine30 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+760, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20050"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine31 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+780, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20051"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine32 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+820, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20052"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine33 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+840, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20053"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine34 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+880, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20054"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine35 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+900, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20055"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine36 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+920, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20056"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine37 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+960, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20057"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine38 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+980, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20058"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine39 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+1020, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20059"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine40 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+1040, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20060"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine41 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+1080, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20061"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine42 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+1100, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20062"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine43 {
+					rect				CREDIT_TITLE_XVALUE, CREDITS_Y+1140, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20063"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine44 {
+					rect				CREDIT_NAMES_XVALUE, CREDITS_Y+1160, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20064"
+					CREDIT_DEFINITION_NAME
+				}
+
+// ******* 3D Realms ********************
+
+				windowDef Title2 {
+					rect				CREDIT_NAMES_XVALUE, THREEDREALMS_Y, 320, 40
+					text				"#str_20065"
+					forecolor			0, 0, 0, 0
+					textscale			0.4
+					textalign			1
+					duration			1500
+					splinePoints		8
+					trails				5
+					trailOffset			0.04
+				}
+				windowDef ThreeDR {
+					rect				285, THREEDREALMS_Y+40, 50, 60
+					matcolor			0, 0, 0, 0
+					background			"guis/assets/menu/3drlogo.tga"
+				}
+
+				creditDef CreditHeading2 {
+					rect				CREDIT_HEADG_XVALUE, THREEDREALMS_Y+105, CREDIT_HEADG_DIMENSIONS
+					text				"#str_20066"
+					CREDIT_DEFINITION_HEADING
+					textscale			0.45
+				}
+
+				creditDef CreditLine100 {
+					rect				CREDIT_TITLE_XVALUE, THREEDREALMS_Y+140, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20067"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine101 {
+					rect				CREDIT_NAMES_XVALUE, THREEDREALMS_Y+160, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20069"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLine102 {
+					rect				CREDIT_TITLE_XVALUE, THREEDREALMS_Y+200, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20061"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine103 {
+					rect				CREDIT_NAMES_XVALUE, THREEDREALMS_Y+220, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20068"
+					CREDIT_DEFINITION_NAME
+				}
+
+// ********** Voice credits *************
+
+				creditDef CreditLineVoice1 {
+					rect				CREDIT_HEADG_XVALUE, VOICE_Y+0, CREDIT_HEADG_DIMENSIONS
+					text				"#str_20070"
+					CREDIT_DEFINITION_HEADING
+					textscale			0.45
+				}
+
+				creditDef CreditLineVoice2 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+40, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20071"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice3 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+60, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20072"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice4 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+100, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20073"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice5 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+120, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20074"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice6 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+160, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20075"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice7 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+180, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20076"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice8 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+220, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20077"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice9 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+240, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20078"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice10 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+280, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20079"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice11 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+300, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20080"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice12 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+340, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20081"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice13 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+360, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20082"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice14 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+400, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20083"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice15 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+420, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20076"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice16 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+460, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20084"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice17 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+480, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20078"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice20 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+520, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20086"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice21 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+540, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20072"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice22 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+560, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20058"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoiceHunters1 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+600, CREDIT_TITLE_DIMENSIONS
+					text				"#str_41003"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoiceHunters2 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+620, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20024"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoiceHunters3 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+640, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20058"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice23 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+680, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20087"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice24 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+700, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20076"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice25 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+720, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20072"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice26 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+740, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20078"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoicePilot1 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+780, CREDIT_TITLE_DIMENSIONS
+					text				"#str_41004"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoicePilot2 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+800, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20113"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice27 {
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+840, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20088"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice28 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+860, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20072"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice29 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+880, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20074"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice30 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+900, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20080"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice31 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+920, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20078"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice32 {
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+940, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20089"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineVoice33 {	// Ed Lima
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+960, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20058"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice34 {	// News Radio Announcer
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+1000, CREDIT_TITLE_DIMENSIONS
+					text				"#str_41181"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice35 {	// Terry White
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+1020, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42026"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice36 {	// Additional Female Voices
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+1060, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42064"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineVoice37 {	// C.J. Schellbach
+					rect				CREDIT_NAMES_XVALUE, VOICE_Y+1080, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42065"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineVoice40 {	// ...and Art Bell as Himself
+					rect				CREDIT_TITLE_XVALUE, VOICE_Y+1120, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20091"
+					CREDIT_DEFINITION_TITLE
+				}
+
+
+// ********** Motion Capture credits ****************
+				creditDef CreditLineMocap1 {	// Motion Capture
+					rect				CREDIT_HEADG_XVALUE, MOCAP_Y+0, CREDIT_HEADG_DIMENSIONS
+					text				"#str_20092"
+					CREDIT_DEFINITION_HEADING
+					textscale			0.45
+				}
+
+				creditDef CreditLineMocap2 {	// Director
+					rect				CREDIT_TITLE_XVALUE, MOCAP_Y+40, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20093"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineMocap3 {	// Jeff Dewitt
+					rect				CREDIT_NAMES_XVALUE, MOCAP_Y+60, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20094"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineMocap4 {	// Male Characters
+					rect				CREDIT_TITLE_XVALUE, MOCAP_Y+100, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20095"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineMocap5 {	// Geno Kett
+					rect				CREDIT_NAMES_XVALUE, MOCAP_Y+120, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20096"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineMocap6 {
+					rect				CREDIT_TITLE_XVALUE, MOCAP_Y+160, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20097"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineMocap7 {
+					rect				CREDIT_NAMES_XVALUE, MOCAP_Y+180, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20098"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineMocap8 {
+					rect				CREDIT_TITLE_XVALUE, MOCAP_Y+220, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20099"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineMocap9 {
+					rect				CREDIT_NAMES_XVALUE, MOCAP_Y+240, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20100"
+					CREDIT_DEFINITION_NAME
+				}
+
+// ********** Original Music By **************
+				creditDef CreditMusic1 {	// Original Music By
+					rect				CREDIT_HEADG_XVALUE, MUSIC_Y+0, CREDIT_HEADG_DIMENSIONS
+					text				"#str_42066"
+					CREDIT_DEFINITION_HEADING
+					textscale			0.45
+				}
+				creditDef CreditMusic2 {	// Artistry Entertainment
+					rect				CREDIT_HEADG_XVALUE, MUSIC_Y+40, CREDIT_HEADG_DIMENSIONS
+					text				"#str_42067"
+					CREDIT_DEFINITION_HEADING
+				}
+				creditDef CreditMusic3 {	// www.directsong.com
+					rect				CREDIT_NAMES_XVALUE, MUSIC_Y+60, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42068"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditMusic4 {	// Composed by
+					rect				CREDIT_TITLE_XVALUE, MUSIC_Y+100, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42069"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditMusic5 {	// Jeremy Soule
+					rect				CREDIT_NAMES_XVALUE, MUSIC_Y+120, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42028"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditMusic6 {	// Additional Music
+					rect				CREDIT_TITLE_XVALUE, MUSIC_Y+160, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42029"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditMusic7 {	// Julian Soule
+					rect				CREDIT_NAMES_XVALUE, MUSIC_Y+180, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42030"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditMusic8 {	// Nick Murray
+					rect				CREDIT_NAMES_XVALUE, MUSIC_Y+200, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42031"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditMusic9 {	// Brian Richmond
+					rect				CREDIT_NAMES_XVALUE, MUSIC_Y+220, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42032"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditMusic10 {	// Cara Wong
+					rect				CREDIT_NAMES_XVALUE, MUSIC_Y+240, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42033"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditMusic11 {	// Music Supervision
+					rect				CREDIT_TITLE_XVALUE, MUSIC_Y+280, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42034"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditMusic12 {	// Jeron Moore
+					rect				CREDIT_NAMES_XVALUE, MUSIC_Y+300, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42035"
+					CREDIT_DEFINITION_NAME
+				}
+
+// ********** Writing credits *************
+				creditDef CreditWriting1 {	// Writing
+					rect				CREDIT_HEADG_XVALUE, WRITING_Y+0, CREDIT_HEADG_DIMENSIONS
+					text				"#str_42070"
+					CREDIT_DEFINITION_HEADING
+					textscale			0.45
+				}
+
+				creditDef CreditWriting2 {	// Original Story by
+					rect				CREDIT_TITLE_XVALUE, WRITING_Y+40, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20107"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditWriting3 {	// Scott Miller and Human Head Studios
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+60, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20108"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditWriting2 {	// Original Treatment by
+					rect				CREDIT_TITLE_XVALUE, WRITING_Y+100, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42071"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditWriting3 {	// Chris Treagus
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+120, CREDIT_NAMES_DIMENSIONS
+					text				"#str_41184"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditWriting3 {	// Screenplay by
+					rect				CREDIT_TITLE_XVALUE, WRITING_Y+160, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20109"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditWriting3 {	// David Freeman & Dean Orion
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+180, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20110"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditWriting3 {	// and
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+200, CREDIT_NAMES_DIMENSIONS
+					text				"#str_41182"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditWriting3 {	// Gary Whitta
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+220, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20111"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditWriting3 {	// Additional Writing
+					rect				CREDIT_TITLE_XVALUE, WRITING_Y+260, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20112"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditWriting3 {	// Jason L. Blair
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+280, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20113"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditWriting3 {	// Timothy S. Gerritsen
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+300, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20089"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditWriting3 {	// Ted Halsted
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+320, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20024"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditWriting3 {	// Ed Lima
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+340, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20058"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditWriting3 {	// Chris Rhinehart
+					rect				CREDIT_NAMES_XVALUE, WRITING_Y+360, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20022"
+					CREDIT_DEFINITION_NAME
+				}
+
+// ********** Additional credits heading *****************
+
+				creditDef CreditLineAdditional1 {	// Additional Credits
+					rect				CREDIT_HEADG_XVALUE, ADDHEADING_Y+0, CREDIT_HEADG_DIMENSIONS
+					text				"#str_20101"
+					CREDIT_DEFINITION_HEADING
+					textscale			0.45
+				}
+
+
+// ********** 2K credits *****************
+
+				creditDef CreditLine400 {	// 2K Games Special Thanks
+					rect				CREDIT_TITLE_XVALUE, PUBLISHER_Y+0, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42040"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLine401 {	// Christoph Hartmann
+					rect				CREDIT_NAMES_XVALUE, PUBLISHER_Y+20, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42041"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine402 {	// Paul Eibeler
+					rect				CREDIT_NAMES_XVALUE, PUBLISHER_Y+40, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42042"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine403 {	// Tom Bass
+					rect				CREDIT_NAMES_XVALUE, PUBLISHER_Y+60, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42043"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine404 {	// Jason Bergman
+					rect				CREDIT_NAMES_XVALUE, PUBLISHER_Y+80, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42044"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine405 {	// Sean Scott
+					rect				CREDIT_NAMES_XVALUE, PUBLISHER_Y+100, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42045"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine406 {	// Jack Scalici
+					rect				CREDIT_NAMES_XVALUE, PUBLISHER_Y+120, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42046"
+					CREDIT_DEFINITION_NAME
+				}
+
+
+
+// ********** Triton credits *************
+
+				creditDef CreditTriton0 {	// Triton
+					rect				CREDIT_TITLE_XVALUE, TRITON_Y+0, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42036"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditTriton1 {	// Royal O'Brien
+					rect				CREDIT_NAMES_XVALUE, TRITON_Y+20, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42037"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditTriton2 {	// Dan Lutter
+					rect				CREDIT_NAMES_XVALUE, TRITON_Y+40, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42038"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditTriton3 {	// Terry Nagy
+					rect				CREDIT_NAMES_XVALUE, TRITON_Y+60, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42039"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditTriton4 {	// www.PlayTriton.com
+					rect				CREDIT_TITLE_XVALUE, TRITON_Y+80, CREDIT_TITLE_DIMENSIONS
+					text				"#str_42072"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditTriton5 {	// Digital Distribution at its finest
+					rect				CREDIT_NAMES_XVALUE, TRITON_Y+100, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42073"
+					CREDIT_DEFINITION_NAME
+				}
+
+
+
+// ********** Additional credits *************
+				creditDef CreditLineAdditional2a {	// Additional Models
+					rect				CREDIT_TITLE_XVALUE, ADDITIONAL_Y+0, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20102"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineAdditional2b {	// Liquid Development, Inc.
+					rect				CREDIT_NAMES_XVALUE, ADDITIONAL_Y+20, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20103"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLineAdditiona12c {	// Plastic Wax, Inc.
+					rect				CREDIT_NAMES_XVALUE, ADDITIONAL_Y+40, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20104"
+					CREDIT_DEFINITION_NAME
+				}
+
+				creditDef CreditLineAdditional5a {	// Additional Sound
+					rect				CREDIT_TITLE_XVALUE, ADDITIONAL_Y+80, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20105"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditLineAdditional5b {	// David Chan
+					rect				CREDIT_NAMES_XVALUE, ADDITIONAL_Y+100, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20106"
+					CREDIT_DEFINITION_NAME
+				}
+
+
+
+// ********** Special Thanks *****************
+
+				creditDef CreditThanks1 {	// Special Thanks to
+					rect				CREDIT_TITLE_XVALUE, THANKS_Y+0, CREDIT_TITLE_DIMENSIONS
+					text				"#str_20114"
+					CREDIT_DEFINITION_TITLE
+				}
+				creditDef CreditThanks2 {	// All the guys at 3D Realms
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+20, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42074"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks3 {	// All the guys at id Software
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+40, CREDIT_NAMES_DIMENSIONS
+					text				"#str_20115"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks4 {	// Liam Byrne, Jessie Lawrence, and Carlo Vogelsang from Creative Labs
+					rect				50, THANKS_Y+60, 520, 20
+					text				"#str_42075"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks5 {	// Jeff Royal and Emil Persson from ATI
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+80, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42076"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks6 {	// Joe Kreiner from Logitech
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+100, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42077"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks7 {	// VoodooPC
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+120, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42078"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks8 {	// The Come Back In - Madison, WI
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+140, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42079"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks9 {	// Doug Howell - The Original Beta Tester
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+160, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42080"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks10 {	// Voices of Native America
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+180, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42048"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks11 {	// Douglas Spotted Eagle
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+200, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42049"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks12 {	// Douglas Morton
+					rect				CREDIT_NAMES_XVALUE, THANKS_Y+220, CREDIT_NAMES_DIMENSIONS
+					text				"#str_42050"
+					CREDIT_DEFINITION_NAME
+				}
+
+
+				creditDef CreditThanks13 {	// Special thanks to 3D Realms' original 1990's Prey
+					rect				50, THANKS_Y+260, 520, 20
+					text				"#str_42081"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks14 {	// development team. Many of their ideas finally saw
+					rect				50, THANKS_Y+280, 520, 20
+					text				"#str_42082"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks15 {	// light of pixelized magic. This game is dedicated to
+					rect				50, THANKS_Y+300, 520, 20
+					text				"#str_42083"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks16 {	// William Scarboro (1971-2002) - the designer of
+					rect				50, THANKS_Y+320, 520, 20
+					text				"#str_42084"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditThanks17 {	// original portal engine.
+					rect				50, THANKS_Y+340, 520, 20
+					text				"#str_42085"
+					CREDIT_DEFINITION_NAME
+				}
+				
+
+				creditDef CreditThanks17 {	// The Prey brand and trademarks are solely owned by 3D Realms Entertainment
+					rect				50, THANKS_Y+380, 520, 20
+					text				"#str_42086"
+					CREDIT_DEFINITION_NAME
+				}
+
+
+// ********** Copyright credits ****************
+			
+				creditDef CreditLine320 {
+					rect				50, COPYRIGHT_Y+0, 520, 20
+					text				"#str_20117"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine321 {
+					rect				50, COPYRIGHT_Y+20, 520, 20
+					text				"#str_20118"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine322 {
+					rect				50, COPYRIGHT_Y+40, 520, 20
+					text				"#str_20119"
+					CREDIT_DEFINITION_NAME
+				}
+				creditDef CreditLine324 {
+					rect				50, COPYRIGHT_Y+60, 520, 20
+					text				"#str_20120"
+					CREDIT_DEFINITION_NAME
+				}
+
+				
+			}

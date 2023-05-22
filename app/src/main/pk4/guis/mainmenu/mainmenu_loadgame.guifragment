@@ -1,0 +1,371 @@
+
+
+	//------------------------------------------------------
+	//
+	//	Loadgame Menu
+	//
+	//------------------------------------------------------
+
+	windowDef Loadgame_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "Main_Logo::visible" "0" ;
+			set "Main_Menu::visible" "0" ;
+			set "Loadgame_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "Loadgame_Menu::visible" "1" ;
+			transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "Loadgame_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
+			set "Loadgame_Titlebar::visible" "0" ;
+			set "cmd" "play2 guisounds_menu_slidein";
+		}
+		onTime 200 {
+			transition "Loadgame_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_FINAL_RECT_TEXT "500" "500" "500";
+			set "Loadgame_Titlebar::visible" "1" ;
+		}
+		onTime 700 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_LOADGAME;
+		}
+	}
+	windowDef Loadgame_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "MainOG_Title3::noEvents" "1" ;			// Disable the button until anim is done
+			set "MainIG_Title4::noEvents" "1" ;			// Disable the button until anim is done
+			set "Main_Portal::visible" "1" ;
+			set "Main_Logo::visible" "1" ;
+			transition "Loadgame_Menu::rect" MENU_FINAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "500" "500" "500";
+			set "cmd" "play2 guisounds_menu_slideout";
+		}
+		onTime 300 {
+			transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "400" ;
+		}
+		onTime 500 {
+			transition "Loadgame_Menu::rect" MENU_MIDDLE_RECT_TEXT MENU_INITIAL_RECT_TEXT "200" ;
+			set "Loadgame_Titlebar::visible" "0" ;
+		}
+		onTime 700 {
+			set "Loadgame_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+		onTime 800 {
+			set "MainOG_Title3::noEvents" "0" ;			// Enable the button again
+			set "MainIG_Title4::noEvents" "0" ;			// Enable the button again
+		}
+	}
+
+	superWindowDef Loadgame_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.7
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 7, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef Loadgame_Titlebar {
+			rect		32, 8, 556, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.55
+			textalign	1
+			textaligny	-8
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20127"
+			noevents	1
+		}
+
+		buttonDef Loadgame_TitlebarBottom {
+			rect		32, 432, 556, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+			
+			buttonDef Loadgame_BottomButton_Cancel {
+				rect		8, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.4
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "Loadgame_AnimOut" "0";
+				}
+			}
+		}
+
+
+		windowDef Loadgame_Page {
+			rect		30, 50, 555, 370
+			backcolor	TAB_PAGE_BACKCOLOR_COMMA
+
+			superWindowDef LGPageTitleFrame {
+				rect		8, 17, 403, 24
+				cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+				leftMat		"guis/assets/menu/pictureframe_left.tga"
+				topMat		"guis/assets/menu/pictureframe_strip.tga"
+				margins		0, 0, 0, 0	// left, right, top, bottom
+				cornerSize	4, 4
+				edgeSize	4, 4
+				noevents	1
+			}
+			superWindowDef LGPageFrame {
+				rect		8, 41, 403, 300
+				cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+				leftMat		"guis/assets/menu/pictureframe_left.tga"
+				topMat		"guis/assets/menu/pictureframe_strip.tga"
+				margins		0, 0, 0, 0	// left, right, top, bottom
+				cornerSize	4, 4
+				edgeSize	4, 4
+				noevents	1
+			}
+
+			windowDef LGCLoadGames {
+				rect		10, 20, 400, 320
+				backcolor	1, 1, 0, 0
+
+				windowDef LGCText1 {
+					rect		0, 0, 244, 20
+					text		"#str_20128"
+					textscale	0.33
+					textalignx	10
+					textaligny	-3
+					shadow		1
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					bordercolor	0, 0, 0, 1
+					bordersize	1
+				}
+				windowDef LGCText2 {
+					rect		245, 0, 69, 20
+					text		"#str_20129"
+					textscale	0.33
+					textalignx	10
+					textaligny	-3
+					shadow		1
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					bordercolor	0, 0, 0, 1
+					bordersize	1
+				}
+				windowDef LGCText3 {
+					rect		315, 0, 83, 20
+					text		"#str_20130"
+					textscale	0.33
+					textalignx	10
+					textaligny	-3
+					shadow		1
+					backcolor	LISTCONTENT_BACKGROUND
+					forecolor	LISTHEADING_FORECOLOR_COMMA
+					bordercolor	0, 0, 0, 1
+					bordersize	1
+				}
+				windowDef LoadBox1 {
+					rect		0, 22, 244, 300
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor	0, 0, 0, 1
+					bordersize	1
+				}
+				windowDef LoadBox2 {
+					rect		245, 22, 69, 300
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor	0, 0, 0, 1
+					bordersize	1
+				}
+				windowDef LoadBox3 {
+					rect		315, 22, 69, 300
+					backcolor	LISTCONTENT_BACKGROUND
+					bordercolor	0, 0, 0, 1
+					bordersize	1
+				}
+
+				windowDef LoadListCap_Top {
+					rect		384, 22, 16, 4
+					background	"guis/assets/scrollbarv_cap.tga"
+				}
+				windowDef LoadListCap_Top {
+					rect		384, 316, 16, -4
+					background	"guis/assets/scrollbarv_cap.tga"
+				}
+
+				listDef LGCLoadList {
+					rect		0, 25, 400, 292
+					backcolor	1, 1, 0, 0
+					foreColor	LISTCONTENT_FORECOLOR_COMMA
+					bordercolor	LISTCONTENT_SELECTION_COLOR
+					focuscolor	LISTCONTENT_SELECTION_OUTLINE
+					textscale	0.31
+					listName	"loadGame"
+					tabstops	"10, 248, 320"
+
+					onAction {
+						set "cmd" "updateSaveGameInfo" ;
+						resetTime "LGCBtn1" "0" ;
+						resetTime "LGCBtn2" "0" ;
+					}
+
+					onEnter {
+						set "cmd" "play guisounds_menu_tick" ;
+						set "cmd" "loadGame" ;
+					}
+				}
+			}
+			
+			windowDef LGCLevelshot {
+				rect		430, 40, 105, 80
+				background	"gui::loadgame_shot"
+				backcolor	0, 0, 0, 1
+				matcolor 	1, 1, 1, 1
+				bordersize 	1
+				bordercolor 0.4, 0.6, 0.6, 1
+				noevents	1
+			}
+			superWindowDef LGCLevelshotFrame {
+				rect		430, 40, 105, 80
+				cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+				leftMat		"guis/assets/menu/pictureframe_left.tga"
+				topMat		"guis/assets/menu/pictureframe_strip.tga"
+				margins		0, 0, 0, 0	// left, right, top, bottom
+				cornerSize	4, 4
+				edgeSize	4, 4
+				noevents	1
+			}
+
+			windowDef Load_GameInfo {
+				rect		415, 125, 135, 120
+				visible		("gui::loadgame_sel_0" >= 0)
+
+				windowDef Load_GameInfoDesc {
+					rect		0, 0, 135, 40
+					text		"gui::saveGameDescription"
+					textscale	0.3
+					textalign	1
+					textaligny	-2
+					forecolor	EDITABLE_FORECOLOR_COMMA
+					shadow		1
+				}
+				windowDef Load_GameInfoDate {
+					rect		0, 45, 135, 15
+					text		"gui::saveGameDate"
+					textscale	0.3
+					textalign	1
+					textaligny	-5
+					forecolor	EDITABLE_FORECOLOR_COMMA
+					shadow		1
+				}
+				windowDef Load_GameInfoTime {
+					rect		0, 60, 135, 15
+					text		"gui::saveGameTime"
+					textscale	0.3
+					textalign	1
+					textaligny	-5
+					forecolor	EDITABLE_FORECOLOR_COMMA
+					shadow		1
+				}
+				windowDef Load_GameInfoTimePlayedTitle {
+					rect		0, 85, 135, 15
+					text		"#str_41164"
+					textscale	0.3
+					textalign	1
+					textaligny	-5
+					forecolor	EDITABLE_FORECOLOR_COMMA
+					shadow		1
+				}
+				windowDef Load_GameInfoTimePlayed {
+					rect		0, 100, 135, 15
+					text		"gui::saveGameTimePlayed"
+					textscale	0.3
+					textalign	1
+					textaligny	-5
+					forecolor	EDITABLE_FORECOLOR_COMMA
+					shadow		1
+				}
+			}
+
+			//Load Button
+			buttonDef LGCBtn1 {
+				rect			430, 260, 105, 25
+				text			"#str_20131"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+
+				onTime 0 {
+					if ( "gui::loadGame_sel_0" >= 0 ) {
+						set "forecolor" BUTTON_FORECOLOR_STRING ;
+						set "noevents" "0"
+					} else {
+						set "forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+						set "noevents" "1"
+					}
+				}
+		
+				onAction {
+					set "cmd" "play guisounds_menu_clickin" ;
+				}
+				onActionRelease {
+					resetTime "AnimLoadGameConfirmation_Up" "0" ;
+				}			
+			}
+
+			//Delete Button
+			buttonDef LGCBtn2 {
+				rect			430, 290, 105, 25
+				text			"#str_20132"
+				textscale		0.33
+				textalign		1
+				textaligny		0
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+
+				onTime 0 {
+					if ( "gui::loadGame_sel_0" >= 0 ) {
+						set "forecolor" BUTTON_FORECOLOR_STRING ;
+						set "noevents" "0"
+					} else {
+						set "forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+						set "noevents" "1"
+					}
+				}
+		
+				onAction {
+					set "cmd" "play guisounds_menu_clickin" ;
+					resetTime "AnimDeleteSaveGame_Up" "0" ;
+				}
+			}
+
+		}
+	}

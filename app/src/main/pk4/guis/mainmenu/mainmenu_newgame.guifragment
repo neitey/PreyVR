@@ -1,0 +1,333 @@
+
+
+	//------------------------------------------------------
+	//
+	//	Newgame Menu
+	//
+	//------------------------------------------------------
+	windowDef Newgame_AnimIn {
+		rect		0, 0, 0, 0
+		noTime		1
+
+		onTime 0 {
+			resetTime "Anim_ResetMainMenuButtons" "0";
+			set "Main_Menu::visible" "0" ;
+			set "Newgame_Menu::rect" MENU_INITIAL_RECT_TEXT ;
+			set "Newgame_Menu::visible" "1" ;
+			//transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
+			transition "Newgame_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_SMALL_RECT_TEXT "500" "500" "500" ;
+			set "cmd" "play2 guisounds_menu_slideinsmall";
+			set "Skill_PictureNormal::visible" "1";
+			resetTime "Skill_Wicked" "0";
+			resetTime "Skill_Casino" "0";
+		}
+		onTime 500 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NEWGAME;
+		}
+	}
+	windowDef Newgame_AnimOut {
+		rect		0, 0, 0, 0
+		noTime		1
+		onTime 0 {
+			set "desktop::inSubmenu" SUBMENU_INDEX_NONE;
+			set "Main_Portal::visible" "1" ;
+			transition "Newgame_Menu::rect" MENU_SMALL_RECT_TEXT MENU_INITIAL_RECT_TEXT "500" "500" "500";
+			//transition "PortalModelFront::viewOffset" "-15 7 0 0" "-43 7 0 0" "500" ;
+			set "cmd" "play2 guisounds_menu_slideoutsmall";
+		}
+		onTime 500 {
+			set "Newgame_Menu::visible" "0" ;
+			set "Main_Menu::visible" "1" ;
+		}
+	}
+
+	superWindowDef Newgame_Menu {
+		rect		193, 445, 353, 32
+		matcolor	1, 1, 1, 0.7
+		backColor	0, 0, 0, 0
+		cornerMat	"guis/assets/menu/window_cornerUL"
+		topMat		"guis/assets/menu/window_top"
+		background	"_black"
+		margins		25, 25, 1, 0	// left, right, top, bottom
+		cornerSize	38, 32
+		edgeSize	4, 4
+		visible		0
+
+		buttonDef Newgame_Titlebar {
+			rect		32, 8, 312, 24
+			leftMat		"guis/assets/menu/titlebar_corner.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	12
+			forecolor	SUBMENU_TITLEBAR_FORECOLOR_COMMA
+			textscale	0.45
+			textalign	1
+			textaligny	-5
+			shadow		1
+			font		"fonts/menu"
+			text		"#str_20204"
+			noevents	1
+		}
+
+		buttonDef Newgame_TitlebarBottom {
+			rect		32, 243, 312, 19
+			backcolor	0, 0, 0, 0
+			leftMat		"guis/assets/menu/titlebar_corner_inv.tga"
+			middleMat	"guis/assets/menu/titlebarstrip.tga"
+			edgeWidth	8
+
+			buttonDef Newgame_BottomButton_Cancel {
+				rect		19, 0, 250, 19
+				backcolor	0, 0, 0, 0
+				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
+				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
+				textscale	0.4
+				textalign	1
+				textaligny	-6
+				font		"fonts/menu"
+				text		"#str_20018"
+				shadow		1
+				onAction {
+					resetTime "Newgame_AnimOut" "0";
+				}
+			}
+		}
+
+		windowDef Newgame_ChooseSkill {
+			rect		30, 30, 316, 238
+			
+			windowDef Skill_Choose {
+				rect		0, 5, 293, 25
+				text		"#str_20205"
+				textscale	0.45
+				textalign	1
+				textaligny	-5
+				font		"fonts/menu"
+				shadow		1
+				backcolor	0, 0, 0, 0
+				forecolor	0.8, 0.87, 0.98, 1
+			}
+
+			// These pictures are to display as default backgrounds when no rollover is happening
+			// They vary depending on if wicked mode is available or not
+			windowDef Skill_PictureNormal {
+				rect			25, 35, 110, 110
+				background		"guis/assets/menu/players/tommy"
+				visible			("gui::nightmare" == 0)
+			}
+			windowDef Skill_PictureWicked {
+				rect			25, 35, 110, 110
+				background		"guis/assets/menu/players/tommy_wicked"
+				matcolor		1, 1, 1, 1
+				visible			("gui::nightmare" != 0)
+			}
+			
+			// These are pictures displayed on rollovers
+			windowDef Skill_PictureNormal_Mouseover {
+				rect			25, 35, 110, 110
+				background		"guis/assets/menu/players/tommy"
+				visible			0
+			}
+			windowDef Skill_PictureWicked_Mouseover {
+				rect			25, 35, 110, 110
+				background		"guis/assets/menu/players/tommy_wicked"
+				matcolor		1, 1, 1, 1
+				visible			0
+			}
+			windowDef Skill_PictureCasino_Mouseover {
+				rect			25, 35, 110, 110
+				background		"guis/assets/menu/players/tommy_casino"
+				matcolor		1, 1, 1, 1
+				visible			0
+			}
+
+			// The visible buttons, enabled/disabled based on availability
+			buttonDef Skill_Casino {
+				rect			160, 35, 125, 30
+				text			"#str_41173"
+				textscale		0.35
+				textalign		1
+				textaligny		1
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				noevents		1
+				visible			0
+				noTime			1
+				onTime 0 {
+					if ("gui::roadhouseCompleted" != 0) {
+						set "visible" "1";
+						set "noevents" "0";
+					}
+					else {
+						set "visible" "0";
+						set "noevents" "1";
+					}
+				}
+				onMouseEnter {
+					set "Skill_PictureNormal_Mouseover::visible" "0";
+					set "Skill_PictureWicked_Mouseover::visible" "0";
+					set "Skill_PictureCasino_Mouseover::visible" "1";
+
+					set "Skill_DescriptionCasino::visible" "1";
+					set "Skill_DescriptionNormal::visible" "0";
+					set "Skill_DescriptionWicked::visible" "0";
+				}
+				onMouseExit {
+					set "Skill_PictureNormal_Mouseover::visible" "0";
+					set "Skill_PictureWicked_Mouseover::visible" "0";
+					set "Skill_PictureCasino_Mouseover::visible" "0";
+
+					set "Skill_DescriptionCasino::visible" "0";
+					set "Skill_DescriptionNormal::visible" "0";
+					set "Skill_DescriptionWicked::visible" "0";
+				}
+				onAction {
+					if ("gui::roadhouseCompleted" != 0) {
+						set	"cmd" "play guisounds_menu_clickin" ;
+						set "gui::wicked" "0";
+						set "gui::casino" "1";
+						set	"cmd" "startgame game/roadhouse" ;
+					}
+				}
+			}
+			buttonDef Skill_Normal {
+				rect			160, 80, 125, 30
+				text			"#str_20206"
+				textscale		0.35
+				textalign		1
+				textaligny		1
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				onAction {
+					set	"cmd" "play guisounds_menu_clickin" ;
+					set "gui::wicked" "0";
+					set "gui::casino" "0";
+					set	"cmd" "startgame game/roadhouse" ;
+				}
+				onMouseEnter {
+					set "Skill_PictureCasino_Mouseover::visible" "0";
+					set "Skill_PictureNormal_Mouseover::visible" "1";
+					set "Skill_PictureWicked_Mouseover::visible" "0";
+					
+					set "Skill_DescriptionCasino::visible" "0";
+					set "Skill_DescriptionNormal::visible" "1";
+					set "Skill_DescriptionWicked::visible" "0";
+				}
+				onMouseExit {
+					set "Skill_PictureNormal_Mouseover::visible" "0";
+					set "Skill_PictureWicked_Mouseover::visible" "0";
+					set "Skill_PictureCasino_Mouseover::visible" "0";
+
+					set "Skill_DescriptionCasino::visible" "0";
+					set "Skill_DescriptionNormal::visible" "0";
+					set "Skill_DescriptionWicked::visible" "0";
+				}
+			}
+			buttonDef Skill_Wicked {
+				rect			160, 115, 125, 30
+				text			"#str_41158"
+				textscale		0.35
+				textalign		1
+				textaligny		1
+				shadow			1
+				forecolor		BUTTON_FORECOLOR_COMMA
+				hoverColor		BUTTON_HOVERCOLOR_COMMA
+				hoverMatColor	1, 1, 1, 1
+				leftMat			"guis/assets/menu/button/corner"
+				middleMat		"guis/assets/menu/button/strip"
+				leftHoverMat	"guis/assets/menu/button/rollover_corner"
+				middleHoverMat	"guis/assets/menu/button/rollover_strip"
+				rightMat		"guis/assets/menu/button/invcorner"
+				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+				edgeWidth		12
+				noTime			1
+				onTime 0 {
+					if ("gui::nightmare" != 0) {
+						set "forecolor" BUTTON_FORECOLOR_STRING;
+						set "hovercolor" BUTTON_HOVERCOLOR_STRING;
+						set "hoverMatColor" "1 1 1 1";
+					}
+					else {
+						set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
+						set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
+						set "hoverMatColor" "0.5 0.5 0.5 1";
+					}
+				}
+				onMouseEnter {
+					set "Skill_PictureNormal_Mouseover::visible" "0";
+					set "Skill_PictureWicked_Mouseover::visible" "1";
+					set "Skill_PictureCasino_Mouseover::visible" "0";
+
+					set "Skill_DescriptionCasino::visible" "0";
+					set "Skill_DescriptionNormal::visible" "0";
+					set "Skill_DescriptionWicked::visible" "1";
+				}
+				onMouseExit {
+					set "Skill_PictureNormal_Mouseover::visible" "0";
+					set "Skill_PictureWicked_Mouseover::visible" "0";
+					set "Skill_PictureCasino_Mouseover::visible" "0";
+
+					set "Skill_DescriptionCasino::visible" "0";
+					set "Skill_DescriptionNormal::visible" "0";
+					set "Skill_DescriptionWicked::visible" "0";
+				}
+				onAction {
+					if ("gui::nightmare" != 0) {
+						set	"cmd" "play guisounds_menu_clickin" ;
+						set "gui::wicked" "1";
+						set "gui::casino" "0";
+						set	"cmd" "startgame game/roadhouse" ;
+					}
+				}
+			}
+
+			windowDef Skill_DescriptionNormal {
+				rect		0, 150, 316, 65
+				text		"#str_41174"
+				textscale	0.3
+				textalign	1
+				textaligny	-3
+				shadow		1
+				backcolor	0, 0, 0, 0
+				forecolor	0.8, 0.87, 0.98, 1
+				visible		0
+			}
+			windowDef Skill_DescriptionWicked {
+				rect		0, 150, 316, 65
+				text		"#str_41159"
+				textscale	0.3
+				textalign	1
+				textaligny	-3
+				shadow		1
+				backcolor	0, 0, 0, 0
+				forecolor	0.8, 0.87, 0.98, 1
+				visible		0
+			}
+			windowDef Skill_DescriptionCasino {
+				rect		0, 150, 316, 65
+				text		"#str_41175"
+				textscale	0.3
+				textalign	1
+				textaligny	-3
+				shadow		1
+				backcolor	0, 0, 0, 0
+				forecolor	0.8, 0.87, 0.98, 1
+				visible		0
+			}
+		}
+	}

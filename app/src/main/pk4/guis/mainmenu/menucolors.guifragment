@@ -1,0 +1,106 @@
+// MenuColors.guifragment
+//
+// These define all the colors, constants used in the menus
+
+// Main menu
+#define MAIN_FORECOLOR_COMMA				0.7, 0.8, 0.9, 0.9
+#define MAIN_FORECOLOR_STRING				"0.7 0.8 0.9 0.9"
+#define MAIN_FORECOLOR_MOUSEOVER_STRING		"0.8 0.9 1 1"
+
+// Submenu titlebars
+#define SUBMENU_TITLEBAR_FORECOLOR_COMMA	0.7, 0.8, 0.9, 0.9
+#define SUBMENU_BOTTOMBAR_FORECOLOR_COMMA	0.7, 0.8, 0.9, 1
+#define SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA	0.8, 0.9, 1, 1
+
+// settings in submenus that you can change
+#define EDITABLE_FORECOLOR_COMMA			0.72, 0.79, 0.9, 0.9
+#define EDITABLE_FORECOLOR_STRING			"0.72 0.79 0.9 0.9"
+#define EDITABLE_FORECOLOR_GRAYED_COMMA		0.72, 0.79, 0.9, 0.4
+#define EDITABLE_FORECOLOR_GRAYED_STRING	"0.72 0.79 0.9 0.4"
+#define EDITABLE_HOVERCOLOR_COMMA			1, 1, 1, 1
+
+// titles of settings in submenus
+#define STATIC_FORECOLOR_COMMA				1, 1, 1, 0.9
+
+// Sub menu rect transitions
+#define MENU_INITIAL_RECT_TEXT				"180 438 450 32"
+#define MENU_MIDDLE_RECT_TEXT				"10 438 620 32"
+#define MENU_FINAL_RECT_TEXT				"10 10 620 460"
+#define MENU_SMALL_RECT_TEXT				"180 200 376 270"
+
+// Tab page color (should match button graphics)
+#define TAB_PAGE_BACKCOLOR_COMMA			0.29, 0.32, 0.39, 0.1
+
+// Tab button text colors at top of pages
+#define TABTOP_HOVERMAT_COLOR_COMMA			0.7, 0.7, 0.7, 1
+#define TABTOP_FORECOLOR_COMMA				0.71, 0.79, 0.89, 0.7
+#define TABTOP_HOVERCOLOR_COMMA				0.8, 0.87, 0.98, 1
+#define TABTOP_ACTIVECOLOR_COMMA			1, 1, 1, 1
+
+// Tab button text colors at left side of pages
+#define TAB_HOVERMAT_COLOR_COMMA			0.7, 0.7, 0.7, 1
+#define TAB_FORECOLOR_COMMA					0.71, 0.79, 0.89, 0.7
+#define TAB_HOVERCOLOR_COMMA				0.8, 0.87, 0.98, 1
+#define TAB_ACTIVECOLOR_COMMA				1, 1, 1, 1
+
+// Headings on options/multiplayer tab pages
+#define HEADING_BACKCOLOR_COMMA				0.38, 0.46, 0.55, 1
+#define HEADING_FORECOLOR_COMMA				0.15, 0.16, 0.19, 1
+#define HEADING_BORDERCOLOR_COMMA			0.71, 0.79, 0.89, 1
+#define HEADING_BORDERSIZE					1
+#define HEADING_FORECOLOR_DARK_COMMA		0.7, 0.8, 0.9, 0.9
+
+// Lists (loadgames, savegames, servers)
+#define LISTHEADING_FORECOLOR_COMMA			1, 1, 1, 1
+#define LISTHEADING_HOVERCOLOR_COMMA		0.9, 0.8, 0.45, 1
+#define LISTCONTENT_FORECOLOR_COMMA			0.65, 0.73, 0.83, 1
+#define LISTCONTENT_SELECTION_COLOR			0.65, 0.73, 0.83, 0.3
+#define LISTCONTENT_SELECTION_OUTLINE		0.71, 0.79, 0.89, 0.7
+#define LISTCONTENT_BACKGROUND				0.65, 0.77, 0.9, 0.15
+
+// MP model list
+#define MODELLIST_DARKCOLOR_COMMA			0.8, 0.8, 0.8, 1
+#define MODELLIST_DARKCOLOR_STRING			"0.8 0.8 0.8 1"
+#define MODELLIST_LIGHTCOLOR_STRING			"1 1 1 1"
+
+// Button colors
+#define BUTTON_HOVERCOLOR_COMMA				1, 1, 1, 1
+#define BUTTON_HOVERCOLOR_STRING			"1 1 1 1"
+#define BUTTON_FORECOLOR_COMMA				0.8, 0.87, 0.98, 1
+#define BUTTON_FORECOLOR_STRING				"0.8 0.87 0.98 1"
+#define BUTTON_FORECOLOR_GREYED_COMMA		0.71, 0.79, 0.89, 0.3
+#define BUTTON_FORECOLOR_GREYED_STRING		"0.71 0.79 0.89 0.3"
+
+// Radio button colors
+#define RADIO_FORECOLOR_COMMA				0.8, 0.87, 0.98, 1
+#define RADIO_HOVERCOLOR_COMMA				1, 1, 1, 1
+#define RADIO_BORDERCOLOR_COMMA				0.8, 0.87, 0.98, 1
+#define RADIO_ACTIVE_BACKCOLOR_COMMA		0.6, 0.67, 0.78, 0.7
+#define RADIO_ACTIVE_BACKCOLOR_STRING		"0.6 0.67 0.78 0.7"
+#define RADIO_INACTIVE_BACKCOLOR_COMMA		0, 0, 0, 0
+#define RADIO_INACTIVE_BACKCOLOR_STRING		"0 0 0 0"
+
+// Checkbox colors
+#define CHECKBOX_BORDERCOLOR_COMMA			0.72, 0.79, 0.90, 0.9
+#define CHECKBOX_HOVERBORDERCOLOR_COMMA		1, 1, 1, 1
+#define CHECKBOX_MATCOLOR_ON_COMMA			1, 1, 1, 1
+#define CHECKBOX_MATCOLOR_OFF_COMMA			0, 0, 0, 0
+#define CHECKBOX_MATCOLOR_ON_STRING			"1 1 1 1"
+#define CHECKBOX_MATCOLOR_OFF_STRING		"0 0 0 0"
+
+// For pop-up dialog box
+#define DIALOGBOX_BORDERCOLOR_COMMA			0.7, 0.8, 0.9, 0.9
+
+#define SUBMENU_INDEX_NONE					0
+#define SUBMENU_INDEX_NEWGAME				1
+#define SUBMENU_INDEX_LOADGAME				2
+#define SUBMENU_INDEX_SAVEGAME				3
+#define SUBMENU_INDEX_MULTIPLAYER			4
+#define SUBMENU_INDEX_OPTIONS				5
+#define SUBMENU_INDEX_EXIT					6
+#define SUBMENU_INDEX_RESUMEGAME			7
+#define SUBMENU_INDEX_QUITGAME				8
+#define SUBMENU_INDEX_MODS					9
+#define SUBMENU_INDEX_CREDITS				10
+#define SUBMENU_INDEX_ORDER					11
+#define SUBMENU_INDEX_INTRO					12
