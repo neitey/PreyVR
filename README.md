@@ -33,6 +33,12 @@ Running this game require a copy of the original Prey 2006 data. Tested on Engli
 
 [Click here to watch Gamertag's video tutorial](https://www.youtube.com/watch?v=OPXp0RYOSoA&t=542s)
 
+# Compiling
+
+To compile the project open the root repository folder in Android Studio, confirm installation of missing packages and hit run button.
+
+To support demo data, put demo00.pk4 into assets folder.
+
 # Project family tree
 
 PreyVR is based on a combination of the excellent projects created by opensource community.

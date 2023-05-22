@@ -8,14 +8,11 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -53,7 +50,6 @@ import java.util.Vector;
 		externalHapticsServiceDetails.add(Pair.create(HapticsConstants.FORCETUBE_PACKAGE, HapticsConstants.FORCETUBE_ACTION_FILTER));
 	}
 
-	private int permissionCount = 0;
 	private static final int READ_EXTERNAL_STORAGE_PERMISSION_ID = 1;
 	private static final int WRITE_EXTERNAL_STORAGE_PERMISSION_ID = 2;
 
@@ -200,8 +196,7 @@ import java.util.Vector;
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
 		if (requestCode == WRITE_EXTERNAL_STORAGE_PERMISSION_ID) {
-			finish();
-			System.exit(0);
+			checkPermissionsAndInitialize();
 		}
 	}
 
@@ -210,28 +205,15 @@ import java.util.Vector;
 		File root = new File("/sdcard/PreyVR");
 		File base = new File(root, "preybase");
 
-		boolean exitAfterCopy = false;
-
-		//If this is first run on clean system, or user hasn't copied anything yet, just exit after we have copied
-		if (!(new File(base, "pak000.pk4").exists()))
-		{
-			exitAfterCopy = true;
-		}
-		copy_asset(root.getAbsolutePath(), "commandline.txt", false);
-
 		//Base game
 		base.mkdirs();
+		copy_asset(base.getAbsolutePath(), "demo00.pk4", false);
 		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
 
-		if (exitAfterCopy)
-		{
-			finish();
-			System.exit(0);
-		}
-
 		//Read these from a file and pass through
+		copy_asset(root.getAbsolutePath(), "commandline.txt", false);
 		commandLineParams = "doom3quest";
 
 		//See if user is trying to use command line params
