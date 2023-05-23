@@ -193,7 +193,7 @@ class hhWeapon: public hhAnimatedEntity {
 		ID_INLINE virtual hhWeaponFireController* CreateAltFireController();
 		//HUMANHEAD END
 	
-	protected:
+	public://Lubos
 		//HUMANHEAD: aob
 		void				Event_PlayAnimWhenReady( const char* animName );
 		void 				Event_Raise();	// nla

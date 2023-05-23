@@ -4883,6 +4883,10 @@ void hhPlayer::GetPilotInput( usercmd_t& pilotCmds, idAngles& pilotViewAngles ) 
 	pilotViewAngles = DetermineViewAngles( pilotCmds, cmdAngles );
 }
 
+//Lubos BEGIN
+float weaponSpeed = 0;
+//Lubos END
+
 /*
 ==============
 hhPlayer::Think
@@ -4906,6 +4910,18 @@ void hhPlayer::Think( void ) {
 				weap->ZoomOutStep();
 			}
 		}
+	}
+
+	if ( weapon.IsValid() && ( currentWeapon == 1) ) {
+		weaponSpeed += fabs(pVRClientInfo->weaponangles_delta_temp[0]);
+		weaponSpeed += fabs(pVRClientInfo->weaponangles_delta_temp[1]);
+		weaponSpeed *= 0.75f;
+		if ( weaponSpeed > 45 ) {
+			weapon->Event_FireProjectiles();
+			weaponSpeed = 0;
+		}
+	} else {
+		weaponSpeed = 0;
 	}
 	//Lubos END
 
