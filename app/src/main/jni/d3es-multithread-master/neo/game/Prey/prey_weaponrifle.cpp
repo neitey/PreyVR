@@ -274,7 +274,7 @@ void hhWeaponRifle::ZoomIn() {
 		if (!gameLocal.isMultiplayer && g_tips.GetBool()) {
 			gameLocal.SetTip(zoomOverlayGui, "_impulse15", "#str_41156", NULL, NULL, "tip1");
 			gameLocal.SetTip(zoomOverlayGui, "_impulse14", "#str_41157", NULL, NULL, "tip2");
-			zoomOverlayGui->HandleNamedEvent( "tipWindowUp" );
+			//Lubos:zoomOverlayGui->HandleNamedEvent( "tipWindowUp" );
 		}
 	}
 
@@ -306,7 +306,7 @@ void hhWeaponRifle::ZoomOut() {
 
 	// Remove tips
 	if (zoomOverlayGui) {
-		zoomOverlayGui->HandleNamedEvent( "tipWindowDown" );
+		//Lubos:zoomOverlayGui->HandleNamedEvent( "tipWindowDown" );
 	}
 
 	if ( dict ) {
