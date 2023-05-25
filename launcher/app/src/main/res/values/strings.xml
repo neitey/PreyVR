@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">PreyVR launcher</string>
+    <string name="start">Start the game</string>
+    <string name="download_failed">Downloading failed</string>
+    <string name="downloading">Downloading data</string>
+    <string name="no_data">There are no data installed, do you want to download the demo data?</string>
+    <string name="not_installed">The VR package is not installed!\nDo you want to download the APK?</string>
+</resources>
