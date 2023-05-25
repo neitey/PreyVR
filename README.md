@@ -25,7 +25,16 @@ In this repository I port the game on standalone VR headsets.
 
 # Instructions
 
-Running this game require a copy of the original Prey 2006 data. Tested on English version patched with 1.4 patch.
+
+### Demo version
+
+* Download the game and the launcher from [releases](https://github.com/lvonasek/PreyVR/releases).
+* Install both APKs to your headset e.g. using SideQuest.
+* In the headset open the launcher which will download the demo data.
+
+### Full version
+
+Running the full version of this game require a copy of the original Prey 2006 data patched with 1.4 patch:
 
 * Install the APK from github via Sidequest and open it once on your headset. It will close down. It has created the folders `preyvr/preybase`.
 * Go to your steam installation of Prey. Navigate to `prey/base` on your PC. Copy all PK4 files from there to `preyvr/preybase` on your headset.
