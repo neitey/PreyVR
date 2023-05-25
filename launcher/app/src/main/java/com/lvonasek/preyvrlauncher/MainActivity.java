@@ -62,8 +62,8 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onPause() {
+        super.onPause();
         System.exit(0);
     }
 
@@ -73,8 +73,11 @@ public class MainActivity extends Activity {
         base.mkdirs();
     }
 
-    public boolean downloadFile(String url, File target) {
+    public boolean downloadFile(String url, File target, boolean forced) {
         try {
+            if (target.exists() && !forced) {
+                return true;
+            }
             File temp = new File(root, "temp");
             URL u = new URL(url);
             InputStream is = u.openStream();
@@ -110,7 +113,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> pd.setMessage(getString(R.string.downloading) + " " + i1 + "/" + count));
                 String file = "demo0" + i + ".pk4";
                 String url = DEMO_DATA_URL + file;
-                if (!downloadFile(url, new File(base, file))) {
+                if (!downloadFile(url, new File(base, file), false)) {
                     runOnUiThread(() -> {
                         new AlertDialog.Builder(getApplicationContext())
                                 .setTitle(R.string.app_name)
