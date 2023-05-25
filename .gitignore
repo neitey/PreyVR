@@ -36,6 +36,3 @@ drbeef-release-key.keystore
 *.json
 *.bin
 *.ser
-
-#too big files for free github account
-app/src/main/assets/demo00.pk4

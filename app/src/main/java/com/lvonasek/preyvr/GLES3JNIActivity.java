@@ -207,7 +207,6 @@ import java.util.Vector;
 
 		//Base game
 		base.mkdirs();
-		copy_asset(base.getAbsolutePath(), "demo00.pk4", false);
 		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
