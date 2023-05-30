@@ -337,6 +337,11 @@ void idPlayerView::WeaponFireFeedback( const idDict *weaponDef ) {
 	if ( recoilTime && kickFinishTime < gameLocal.time ) {
 		idAngles angles;
 		weaponDef->GetAngles( "recoilAngles", "5 0 0", angles );
+		//Lubos BEGIN
+		if (game->isVR) {
+			angles *= vr_shakeAmplitude.GetFloat();
+		}
+		//Lubos END
 		kickAngles = angles;
 		int	finish = gameLocal.time + g_kickTime.GetFloat() * recoilTime;
 		kickFinishTime = finish;
