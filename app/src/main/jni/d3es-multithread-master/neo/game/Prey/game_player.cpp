@@ -4884,6 +4884,7 @@ void hhPlayer::GetPilotInput( usercmd_t& pilotCmds, idAngles& pilotViewAngles ) 
 }
 
 //Lubos BEGIN
+float hmdSpeed = 0;
 float weaponSpeed = 0;
 //Lubos END
 
@@ -4913,12 +4914,19 @@ void hhPlayer::Think( void ) {
 	}
 
 	if ( weapon.IsValid() && ( currentWeapon == 1) ) {
+		hmdSpeed += fabs(pVRClientInfo->hmdorientation_diff[0]);
+		hmdSpeed += fabs(pVRClientInfo->hmdorientation_diff[1]);
+		hmdSpeed *= 0.75f;
 		weaponSpeed += fabs(pVRClientInfo->weaponangles_delta_temp[0]);
 		weaponSpeed += fabs(pVRClientInfo->weaponangles_delta_temp[1]);
 		weaponSpeed *= 0.75f;
-		if ( weaponSpeed > 45 ) {
+		if ( hmdSpeed > 30 ) {
+			weaponSpeed = 0;
+			hmdSpeed = 0;
+		} else if ( weaponSpeed > 45 ) {
 			weapon->Event_FireProjectiles();
 			weaponSpeed = 0;
+			hmdSpeed = 0;
 		}
 	} else {
 		weaponSpeed = 0;
