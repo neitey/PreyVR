@@ -954,11 +954,15 @@ Doom3Quest_Vibrate
 float vibration_channel_intensity[2][2] = {{0.0f,0.0f},{0.0f,0.0f}};
 int vibration_length[2] = {0, 0};
 
+int Android_GetCVarInteger(const char* cvar);
+
 void Doom3Quest_Vibrate(int channel, float low, float high, int length)
 {
-	vibration_channel_intensity[channel][0] = low;
-	vibration_channel_intensity[channel][1] = high;
-	vibration_length[channel] = length;
+	if (Android_GetCVarInteger("vr_haptics")) {
+		vibration_channel_intensity[channel][0] = low;
+		vibration_channel_intensity[channel][1] = high;
+		vibration_length[channel] = length;
+	}
 }
 
 void jni_haptic_event(const char* event, int position, int flags, int intensity, float angle, float yHeight);

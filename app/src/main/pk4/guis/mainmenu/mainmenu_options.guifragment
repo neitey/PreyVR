@@ -22,7 +22,8 @@
 			transition "Options_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
 			set "Options_Titlebar::visible" "0" ;
 
-			set "Options_GameOptions_Container::visible" "1" ;
+			set "Options_Controller_Container::visible" "1" ;
+			set "Options_GameOptions_Container::visible" "0" ;
 			set "Options_Video_Container::visible" "0" ;
 			set "OA_Options::visible" "0" ;
 
@@ -146,8 +147,28 @@
 			activetab	0
 			tabMargins	100, 0
 			
-			buttonDef Button_Options_Game {
+			buttonDef Button_Options_Controller {
 				rect			0, 20, 100, 70
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			"Controllers"
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onAction {
+					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controller_Container::visible" "1" ;
+					set "Options_GameOptions_Container::visible" "0" ;
+					set "Options_Video_Container::visible" "0" ;
+					set "OA_Options::visible" "0" ;
+				}
+			}
+			
+			buttonDef Button_Options_Game {
+				rect			0, 40, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -159,6 +180,7 @@
 
 				onAction {
 					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controller_Container::visible" "0" ;
 					set "Options_GameOptions_Container::visible" "1" ;
 					set "Options_Video_Container::visible" "0" ;
 					set "OA_Options::visible" "0" ;
@@ -166,7 +188,7 @@
 			}
 			
 			buttonDef Button_Options_Video {
-				rect			0, 40, 100, 70
+				rect			0, 60, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -178,6 +200,7 @@
 
 				onAction {
 					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controller_Container::visible" "0" ;
 					set "Options_GameOptions_Container::visible" "0" ;
 					set "Options_Video_Container::visible" "1" ;
 					set "OA_Options::visible" "0" ;
@@ -185,7 +208,7 @@
 			}
 			
 			buttonDef Button_Options_VR {
-				rect			0, 60, 100, 70
+				rect			0, 80, 100, 70
 				backcolor		0, 0, 0, 0
 				forecolor		TABTOP_FORECOLOR_COMMA
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
@@ -197,9 +220,263 @@
 
 				onAction {
 					set "cmd" "play guisounds_menu_tabflip" ;
+					set "Options_Controller_Container::visible" "0" ;
 					set "Options_GameOptions_Container::visible" "0" ;
 					set "Options_Video_Container::visible" "0" ;
 					set "OA_Options::visible" "1" ;
+				}
+			}
+
+			tabContainerDef Options_Controller_Container {
+				rect			0, 00, 570, 370
+				backcolor		0, 0, 0, 0
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			""
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	0
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+				
+				tabDef Options_Controller {
+					rect		0, 20, 570, 370
+					activetab	0
+					horizontal	1
+					tabHeight	100
+					tabMargins	40, 0
+					sepcolor	0.74, 0.81, 0.88, 1
+
+					tabDef Options_ControllerTab {
+						rect					100, 0, 470, 370
+						backcolor				TAB_PAGE_BACKCOLOR_COMMA
+						background				"guis/assets/menu/fadebg.tga"
+						forecolor				TAB_FORECOLOR_COMMA
+						hovercolor				TAB_HOVERCOLOR_COMMA
+						activeColor				TAB_ACTIVECOLOR_COMMA
+						matcolor				1, 1, 1, 1
+						hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+						buttonLeftMat			"guis/assets/menu/tabtop.tga"
+						buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+						buttonRightMat			"guis/assets/menu/tabbottom.tga"
+						buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+						buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+						buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+						text					""
+						textaligny				30
+						buttonEdgeWidth			16
+						seperatorLines			1, 1, 1, 1
+						seperatorMargin			1
+
+						onTabActivate {
+							set "cmd" "play guisounds_menu_tabflip" ;
+						}
+
+						windowDef Controller_Page {
+							rect		25, 18, 420, 350
+							
+							buttonDef Controller_Headings {
+								rect		0, 0, 420, 30
+								forecolor	HEADING_FORECOLOR_DARK_COMMA
+								leftMat		"guis/assets/menu/text_titlebar_corner.tga"
+								middleMat	"guis/assets/menu/text_titlebarstrip.tga"
+								noevents	1
+								font		"fonts/menu"
+								text		"Controllers"
+								textalign	1
+								textaligny	-3
+								textscale	0.45
+								shadow		1
+							}
+						}
+
+						buttonDef OA_LeftHand {
+							rect			10, 70, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_LeftHand {
+								rect		0, 0, 200, 25
+								text		"Use left hand"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_LeftHand {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"#str_20152"
+								cvar		"vr_weaponHand"
+								choiceType	0
+							}
+						}
+						
+						buttonDef OA_TurnMode {
+							rect			10, 100, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_TurnMode {
+								rect		0, 0, 200, 25
+								text		"Turn mode"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_TurnMode {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"snap;smooth"
+								values		"0;1"
+								cvar		"vr_turnmode"
+								choiceType	1
+							}
+						}
+
+						buttonDef OA_TurnAngle {
+							rect			10, 130, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_TurnAngle {
+								rect		0, 0, 200, 25
+								text		"Turn angle speed"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_TurnAngle {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"15;30;45"
+								values		"15;30;45"
+								cvar		"vr_turnangle"
+								choiceType	1
+							}
+						}
+
+						buttonDef OA_Cursor {
+							rect			10, 160, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_Cursor {
+								rect		0, 0, 200, 25
+								text		"Show aim cursor"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_Cursor {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"No;Yes"
+								values		"0;1"
+								cvar		"g_crosshair"
+								choiceType	1
+							}
+						}
+
+						buttonDef OA_Haptics {
+							rect			10, 190, 400, 50
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_Haptics {
+								rect		0, 0, 200, 25
+								text		"Use haptics"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_Haptics {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"No;Yes"
+								values		"0;1"
+								cvar		"vr_haptics"
+								choiceType	1
+							}
+						}
+
+						buttonDef OA_VehicleInvertY {
+							rect			10, 220, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_VehicleInvertY {
+								rect		0, 0, 200, 25
+								text		"Invert Y in vehicle"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_VehicleInvertY {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"#str_20152"
+								cvar		"vr_invertVehicleY"
+								choiceType	0
+							}
+						}
+					}
 				}
 			}
 
@@ -717,38 +994,8 @@
 							}
 						}
 
-						buttonDef OA_LeftHand {
-							rect			10, 100, 400, 25
-							leftMat			"guis/assets/menu/textbar_corner.tga"
-							middleMat		"guis/assets/menu/textbarstrip.tga"
-							rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							
-							windowDef OAT_LeftHand {
-								rect		0, 0, 200, 25
-								text		"Use left hand"
-								textalign	1
-								textaligny	0
-								textscale	0.33
-								shadow		1
-								forecolor	STATIC_FORECOLOR_COMMA
-							}
-
-							choiceDef OAC_LeftHand {
-								rect		200, 0, 200, 25
-								textscale	0.33
-								textalign	1
-								textaligny	0
-								shadow		1
-								forecolor	EDITABLE_FORECOLOR_COMMA
-								hovercolor	EDITABLE_HOVERCOLOR_COMMA
-								choices		"#str_20152"
-								cvar		"vr_weaponHand"
-								choiceType	0
-							}
-						}
-						
 						buttonDef OA_Refresh {
-							rect			10, 130, 400, 50
+							rect			10, 100, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
@@ -778,100 +1025,8 @@
 							}
 						}
 						
-						buttonDef OA_TurnMode {
-							rect			10, 160, 400, 50
-							leftMat			"guis/assets/menu/textbar_corner.tga"
-							middleMat		"guis/assets/menu/textbarstrip.tga"
-							rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							
-							windowDef OAT_TurnMode {
-								rect		0, 0, 200, 25
-								text		"Turn mode"
-								textalign	1
-								textaligny	0
-								textscale	0.33
-								shadow		1
-								forecolor	STATIC_FORECOLOR_COMMA
-							}
-
-							choiceDef OAC_TurnMode {
-								rect		200, 0, 200, 25
-								textscale	0.33
-								textalign	1
-								textaligny	0
-								shadow		1
-								forecolor	EDITABLE_FORECOLOR_COMMA
-								hovercolor	EDITABLE_HOVERCOLOR_COMMA
-								choices		"snap;smooth"
-								values		"0;1"
-								cvar		"vr_turnmode"
-								choiceType	1
-							}
-						}
-						
-						buttonDef OA_TurnAngle {
-							rect			10, 190, 400, 50
-							leftMat			"guis/assets/menu/textbar_corner.tga"
-							middleMat		"guis/assets/menu/textbarstrip.tga"
-							rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							
-							windowDef OAT_TurnAngle {
-								rect		0, 0, 200, 25
-								text		"Turn angle speed"
-								textalign	1
-								textaligny	0
-								textscale	0.33
-								shadow		1
-								forecolor	STATIC_FORECOLOR_COMMA
-							}
-
-							choiceDef OAC_TurnAngle {
-								rect		200, 0, 200, 25
-								textscale	0.33
-								textalign	1
-								textaligny	0
-								shadow		1
-								forecolor	EDITABLE_FORECOLOR_COMMA
-								hovercolor	EDITABLE_HOVERCOLOR_COMMA
-								choices		"15;30;45"
-								values		"15;30;45"
-								cvar		"vr_turnangle"
-								choiceType	1
-							}
-						}
-						
-						buttonDef OA_VehicleInvertY {
-							rect			10, 220, 400, 25
-							leftMat			"guis/assets/menu/textbar_corner.tga"
-							middleMat		"guis/assets/menu/textbarstrip.tga"
-							rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							
-							windowDef OAT_VehicleInvertY {
-								rect		0, 0, 200, 25
-								text		"Invert Y in vehicle"
-								textalign	1
-								textaligny	0
-								textscale	0.33
-								shadow		1
-								forecolor	STATIC_FORECOLOR_COMMA
-							}
-
-							choiceDef OAC_VehicleInvertY {
-								rect		200, 0, 200, 25
-								textscale	0.33
-								textalign	1
-								textaligny	0
-								shadow		1
-								forecolor	EDITABLE_FORECOLOR_COMMA
-								hovercolor	EDITABLE_HOVERCOLOR_COMMA
-								choices		"#str_20152"
-								cvar		"vr_invertVehicleY"
-								choiceType	0
-							}
-						}
-						
 						buttonDef OA_Vehicle3D {
-							rect			10, 250, 400, 50
+							rect			10, 130, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
