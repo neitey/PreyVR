@@ -16,24 +16,39 @@
         android:scaleType="centerCrop"
         android:background="#80000000"/>
 
-    <Button
-        android:id="@+id/button_start"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:text="@string/start"
-        android:layout_alignParentBottom="true"/>
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="10dp"
-        android:layout_above="@id/button_start">
+        android:layout_margin="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginBottom="15dp"
+                android:text="@string/engines"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+
+            <com.lvonasek.preyvrlauncher.ModView
+                android:id="@+id/game_prey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_launcher"
+                app:title="Prey 2006"
+                app:desc="A Spiritual Awakening Tommy and his girlfriend have become prey, his grandfather killed, and hundreds of his tribal nation have been abducted through space-warping portals. Freeing himself, all Tommy cares about is saving Jenny..."/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="25dp"
+                android:background="@android:color/white"/>
 
             <TextView
                 android:layout_width="match_parent"

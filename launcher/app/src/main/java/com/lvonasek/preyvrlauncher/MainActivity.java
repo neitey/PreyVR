@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         getWindow().addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON );
 
-        findViewById(R.id.button_start).setOnClickListener(view -> startGame(null));
+        findViewById(R.id.game_prey).setOnClickListener(view -> startGame(null));
         mFullWarning = findViewById(R.id.full_warning);
         mFullButton = findViewById(R.id.full_button);
         mFullButton.setOnClickListener(view -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(FULL_URL))));
