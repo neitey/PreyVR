@@ -254,6 +254,7 @@ class idCommon
 		virtual void 				HapticStopEvent(const char* event) = 0;
 		virtual void 				HapticEnable() = 0;
 		virtual void 				HapticDisable() = 0;
+		virtual bool				AddStartupCommands(void) = 0; //Lubos
 
 #ifdef _HUMANHEAD
 	// HUMANHEAD pdm

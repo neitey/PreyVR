@@ -2993,6 +2993,8 @@ int calcFPS(  ) {
 	return fps;
 }
 
+int init = 10; //Lubos
+
 /*
 ===============
 idSessionLocal::Frame
@@ -3000,6 +3002,16 @@ idSessionLocal::Frame
 */
 void idSessionLocal::Frame()
 {
+	//Lubos BEGIN
+	if (init > 0) {
+		init--;
+		if (init == 0) {
+			if (common->AddStartupCommands()) {
+				return;
+			}
+		}
+	}
+	//Lubos END
 
 	if (com_asyncSound.GetInteger() == 0) {
 		soundSystem->AsyncUpdate(Sys_Milliseconds());

@@ -163,6 +163,7 @@ class idCommonLocal : public idCommon
 		virtual void 				HapticStopEvent(const char* event);
 		virtual void                HapticEnable();
 		virtual void                HapticDisable();
+		virtual bool				AddStartupCommands(void); //Lubos
 
 		void						InitGame(void);
 		void						ShutdownGame(bool reloading);
@@ -175,11 +176,11 @@ class idCommonLocal : public idCommon
 
 		void						SetMachineSpec(void);
 
+
 	private:
 		void						InitCommands(void);
 		void						InitRenderSystem(void);
 		void						InitSIMD(void);
-		bool						AddStartupCommands(void);
 		void						ParseCommandLine(int argc, const char **argv);
 		void						ClearCommandLine(void);
 		bool						SafeMode(void);
@@ -1049,6 +1050,8 @@ bool idCommonLocal::AddStartupCommands(void)
 		// directly as tokenized so nothing gets screwed
 		cmdSystem->BufferCommandArgs(CMD_EXEC_APPEND, com_consoleLines[i]);
 	}
+
+	ClearCommandLine();//Lubos
 
 	return added;
 }
@@ -3287,17 +3290,7 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 		// game specific initialization
 		InitGame();
 
-		// don't add startup commands if no CD key is present
-#if ID_ENFORCE_KEY
-
-		if (!session->CDKeysAreValid(false) || !AddStartupCommands()) {
-#else
-
-		if (!AddStartupCommands()) {
-#endif
-			// if the user didn't give any commands, run default action
-			session->StartMenu(true);
-		}
+		session->StartMenu(true); //Lubos
 
 		Printf("--- Common Initialization Complete ---\n");
 
@@ -3311,7 +3304,7 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 		// remove any prints from the notify lines
 		console->ClearNotifyLines();
 
-		ClearCommandLine();
+		//Lubos:ClearCommandLine();
 
 		console->LoadHistory();
 
