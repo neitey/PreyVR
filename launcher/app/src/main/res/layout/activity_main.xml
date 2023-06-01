@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -9,6 +10,12 @@
         android:scaleType="centerCrop"
         android:background="@drawable/background"/>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:background="#80000000"/>
+
     <Button
         android:id="@+id/button_start"
         android:layout_width="match_parent"
@@ -16,4 +23,110 @@
         android:layout_margin="10dp"
         android:text="@string/start"
         android:layout_alignParentBottom="true"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="10dp"
+        android:layout_above="@id/button_start">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginBottom="15dp"
+                android:text="@string/mods"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/full_warning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginBottom="5dp"
+                android:text="@string/mods_full"
+                android:textSize="18sp"/>
+
+            <Button
+                android:id="@+id/full_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/full_how"/>
+
+            <com.lvonasek.preyvrlauncher.ModView
+                android:id="@+id/mod_ar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:file="ar_ep1.pk4"
+                app:map="shrapnelcity"
+                app:icon="@drawable/mod_altered_reality"
+                app:title="Altered Reality"
+                app:desc="The title is Altered Reality because that's what the story is about. A malevolent entity is slowly altering Tommy's reality, and the disruptions will become more and more severe as the story progresses."/>
+
+            <com.lvonasek.preyvrlauncher.ModView
+                android:id="@+id/mod_lp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:file="omapsp_leonprey.pk4"
+                app:map="LeonPreySP"
+                app:icon="@drawable/mod_leon_prey"
+                app:title="LeonPrey"
+                app:desc="There is no real story, Leon build these Prey sp-maps mainly because nobody else made Prey sp-maps."/>
+
+            <com.lvonasek.preyvrlauncher.ModView
+                android:id="@+id/mod_lc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:file="lostcity.pk4"
+                app:map="bja_sp/lostcity"
+                app:icon="@drawable/mod_lost_city"
+                app:title="Lost City"
+                app:desc="Lost City is a single player map for Prey by Robert 'BJA' Hodri."/>
+
+            <com.lvonasek.preyvrlauncher.ModView
+                android:id="@+id/mod_pr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:file="revelations_demo.pk4"
+                app:map="rev01"
+                app:icon="@drawable/mod_prey_revelations"
+                app:title="Prey Revelations"
+                app:desc="The first two levels of Prey: Revelations. Discover the connections between Paul Schuytema's, Human Head's and Arkane's iterations of Prey!"/>
+
+            <com.lvonasek.preyvrlauncher.ModView
+                android:id="@+id/mod_sf"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:file="SurprisinglyFocused.pk4"
+                app:map="focused"
+                app:icon="@drawable/mod_surprisingly_focused"
+                app:title="Surprisingly Focused"
+                app:desc="Challenging adventure aboard the alien ship. Features wallwalks, gravity volumes, portals, spectacular сutscenes."/>
+
+            <com.lvonasek.preyvrlauncher.ModView
+                android:id="@+id/mod_wh"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:file="zPREY_SKY123.pk4"
+                app:map="prey_sky1"
+                app:icon="@drawable/mod_whos_home"
+                app:title="Who's Home?"
+                app:desc="Who's Home? [Skyscraper for Prey] is a full map set for Prey which was converted from the Doom 3 map set 'Skyscraper 2.0'"/>
+        </LinearLayout>
+    </ScrollView>
 </RelativeLayout>

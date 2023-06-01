@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">PreyVR launcher</string>
-    <string name="start">Start the game</string>
+    <string name="start">Start the main game</string>
+    <string name="mods">Game mods</string>
+    <string name="mods_full">The mods require full version of the game</string>
+    <string name="mod_not_installed">The mod is not installed!\nDo you want to download it?</string>
+    <string name="full_how">Tell me how to get the full version of the game</string>
     <string name="download_failed">Downloading failed</string>
     <string name="downloading">Downloading data</string>
     <string name="no_data">There are no data installed, do you want to download the demo data?</string>
