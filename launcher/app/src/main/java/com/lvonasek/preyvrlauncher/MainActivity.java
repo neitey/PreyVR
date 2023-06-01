@@ -195,23 +195,26 @@ public class MainActivity extends Activity {
                         .setTitle(R.string.app_name)
                         .setMessage(R.string.no_data)
                         .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
-                            downloadData(DEMO_DATA);
-                        })
+                        .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> downloadData(DEMO_DATA))
                         .setNegativeButton(android.R.string.no, null).show();
                 return;
             }
 
-            //TODO:set start map
+            String cmd = "Doom3Quest";
+            FileOutputStream fos = new FileOutputStream(new File(root, "commandline.txt"));
+            if (map != null) {
+                cmd += " +map " + map;
+            }
+            fos.write(cmd.getBytes());
+            fos.close();
             getApplicationContext().startActivity(getPackageManager().getLaunchIntentForPackage(GAME_PACKAGE));
         } catch (Exception e) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(UPDATES_URL));
             new AlertDialog.Builder(this)
                     .setTitle(R.string.app_name)
                     .setMessage(R.string.not_installed)
                     .setIcon(android.R.drawable.ic_dialog_alert)
-                    .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
-                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(UPDATES_URL)));
-                    })
+                    .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> startActivity(intent))
                     .setNegativeButton(android.R.string.no, null).show();
             e.printStackTrace();
         }
