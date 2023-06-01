@@ -200,14 +200,11 @@ public class MainActivity extends Activity {
                 return;
             }
 
-            String cmd = "Doom3Quest";
-            FileOutputStream fos = new FileOutputStream(new File(root, "commandline.txt"));
+            Intent intent = getPackageManager().getLaunchIntentForPackage(GAME_PACKAGE);
             if (map != null) {
-                cmd += " +map " + map;
+                intent.putExtra("MAP", map);
             }
-            fos.write(cmd.getBytes());
-            fos.close();
-            getApplicationContext().startActivity(getPackageManager().getLaunchIntentForPackage(GAME_PACKAGE));
+            getApplicationContext().startActivity(intent);
         } catch (Exception e) {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(UPDATES_URL));
             new AlertDialog.Builder(this)

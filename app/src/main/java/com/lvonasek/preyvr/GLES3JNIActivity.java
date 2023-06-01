@@ -212,25 +212,16 @@ import java.util.Vector;
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
 
 		//Read these from a file and pass through
-		copy_asset(root.getAbsolutePath(), "commandline.txt", false);
 		commandLineParams = "doom3quest";
 
-		//See if user is trying to use command line params
-		File cmd = new File(root.getAbsolutePath(), "commandline.txt");
-		if(cmd.exists()) // should exist now!
-		{
-			BufferedReader br;
-			try {
-				br = new BufferedReader(new FileReader(cmd));
-				String s;
-				StringBuilder sb=new StringBuilder(0);
-				while ((s=br.readLine())!=null)
-					sb.append(s).append(" ");
-				br.close();
-
-				commandLineParams = sb.toString();
-			} catch (IOException e) {
-				e.printStackTrace();
+		Intent intent = getIntent();
+		if (intent != null) {
+			Bundle bundle = intent.getExtras();
+			if (bundle != null) {
+				String map = bundle.getString("MAP");
+				if (map != null) {
+					commandLineParams += " +map " + map;
+				}
 			}
 		}
 
