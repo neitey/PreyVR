@@ -16,6 +16,7 @@ public:
 	virtual					~hhItemCabinet();
 
 	void					Spawn();
+	void					Think();//Lubos
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 	

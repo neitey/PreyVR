@@ -545,7 +545,7 @@ public:
 	idPlayer *				GetClientByName( const char *name ) const;
 	idPlayer *				GetClientByCmdArgs( const idCmdArgs &args ) const;
 
-	idPlayer *				GetLocalPlayer() const;
+	virtual idPlayer *		GetLocalPlayer();//Lubos
 	// HUMANHEAD nla
 	bool 					AmLocalClient( idPlayer *player );
 	bool					isCoop;

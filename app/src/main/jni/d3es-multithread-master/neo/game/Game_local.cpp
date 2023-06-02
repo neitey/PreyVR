@@ -2304,7 +2304,7 @@ draw phase even happening.  This just returns client 0, which will
 be correct for single player.
 ================
 */
-idPlayer *idGameLocal::GetLocalPlayer() const {
+idPlayer *idGameLocal::GetLocalPlayer() {
 	if ( localClientNum < 0 ) {
 		return NULL;
 	}

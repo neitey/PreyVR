@@ -49,6 +49,19 @@ void hhItemCabinet::Spawn() {
 	StartSound( "snd_idle", SND_CHANNEL_IDLE );
 }
 
+//Lubos BEGIN
+void hhItemCabinet::Think() {
+	hhAnimatedEntity::Think();
+
+	if (animDoneTime == 0) {
+		idPlayer* player = game->GetLocalPlayer();
+		if (player && ((player->GetEyePosition() - GetOrigin()).Length() < 200)) {
+			Event_Activate( NULL );
+		}
+	}
+}
+//Lubos END
+
 /*
 ================
 hhItemCabinet::Event_PostSpawn

@@ -46,6 +46,8 @@ typedef enum {
 #define TIME_GROUP1		0
 #define TIME_GROUP2		1
 
+class idPlayer; //Lubos
+
 class idGame {
 public:
 	virtual						~idGame() {}
@@ -190,6 +192,8 @@ public:
 	virtual bool				PlayerIsDeathwalking( void ) = 0;
 	virtual unsigned int		GetTimePlayed( void ) = 0;
 	virtual void				ClearTimePlayed( void ) = 0;
+
+	virtual idPlayer *			GetLocalPlayer() = 0;//Lubos
 };
 
 extern idGame *					game;
