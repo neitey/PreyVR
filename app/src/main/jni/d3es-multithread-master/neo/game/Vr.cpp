@@ -180,7 +180,7 @@ idCVar vr_rumbleChainsaw( "vr_rumbleChainsaw", "1", CVAR_BOOL | CVAR_GAME | CVAR
 
 //Lubos BEGIN
 idCVar vr_haptics( "vr_haptics", "1", CVAR_INTEGER | CVAR_GAME, "Enable controller haptics" );
-idCVar vr_vehicle3d( "vr_vehicle3d", "0", CVAR_BOOL | CVAR_GAME, "Render vehicle scenes in 3D" );
+idCVar vr_vehicle3d( "vr_vehicle3d", "1", CVAR_BOOL | CVAR_GAME, "Render vehicle scenes in 3D" );
 
 void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
 {

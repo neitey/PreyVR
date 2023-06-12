@@ -1072,6 +1072,9 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 		pVRClientInfo->uiOffset[1] = 180;
 		pVRClientInfo->uiScale[0] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
 		pVRClientInfo->uiScale[1] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
+		if (pVRClientInfo->vehicleMode && vr_vehicle3d.GetBool()) {
+			pVRClientInfo->uiOffset[1] = 150;
+		}
 	}
 	//Lubos END
 

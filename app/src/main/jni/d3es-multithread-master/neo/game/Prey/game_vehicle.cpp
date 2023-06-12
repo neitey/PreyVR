@@ -2,6 +2,7 @@
 #pragma hdrstop
 
 #include "prey_local.h"
+#include "Vr.h"
 
 
 //==========================================================================
@@ -1137,9 +1138,19 @@ void hhVehicle::SetThrustBooster(float minBooster, float maxBooster, float accel
 void hhVehicle::ProcessPilotInput( const usercmd_t* cmds, const idAngles* viewAngles ) {
 	idVec3 impulse;
 
+	//Lubos BEGIN
 	if( viewAngles ) {
-		SetAxis( viewAngles->ToMat3() );
+		if (game->isVR && pVRClientInfo->vehicleMode && !pVRClientInfo->inMenu && vr_vehicle3d.GetBool()) {
+			idAngles angles;
+			angles.pitch = pVRClientInfo->hmdorientation_temp[ PITCH ];
+			angles.yaw = pVRClientInfo->hmdorientation_temp[ YAW ] - pVRClientInfo->vehicleYaw;
+			angles.roll = pVRClientInfo->hmdorientation_temp[ ROLL ];
+			SetAxis( angles.ToMat3() * viewAngles->ToMat3() );
+		} else {
+			SetAxis( viewAngles->ToMat3() );
+		}
 	}
+	//Lubos END
 
 	if( !cmds ) {
 		return;

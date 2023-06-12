@@ -46,6 +46,7 @@ typedef struct {
     bool inMenu;
     bool vehicleMode;
     bool weaponZoom;
+    float vehicleYaw;
     vec3_t weaponOffset;
     vec3_t hmdorientation_diff;
     vec3_t hmdorientation_offset;

@@ -868,6 +868,7 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		static bool wasVehicleMode = false;
 		if (pVRClientInfo->vehicleMode) {
 			if (!wasVehicleMode) {
+				pVRClientInfo->vehicleYaw = pVRClientInfo->hmdorientation_temp[ PITCH ];
 				VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 				viewangles[PITCH] = pitch;
 				viewangles[YAW] = yaw;
