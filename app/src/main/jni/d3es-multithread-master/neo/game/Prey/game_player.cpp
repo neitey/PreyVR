@@ -1072,7 +1072,7 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 		pVRClientInfo->uiOffset[1] = 180;
 		pVRClientInfo->uiScale[0] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
 		pVRClientInfo->uiScale[1] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
-		if (pVRClientInfo->vehicleMode && vr_vehicle3d.GetBool()) {
+		if (pVRClientInfo->vehicleMode) {
 			pVRClientInfo->uiOffset[1] = 150;
 		}
 	}
@@ -2646,7 +2646,7 @@ idAngles hhPlayer::DetermineViewAngles( const usercmd_t& cmd, idAngles& cmdAngle
 		}
 		else {
 		//HUMANHEAD END
-			localViewAngles.pitch = hhMath::ClampFloat( pm_minviewpitch.GetFloat(), pm_maxviewpitch.GetFloat(), localViewAngles.pitch );
+			//Lubos:localViewAngles.pitch = hhMath::ClampFloat( pm_minviewpitch.GetFloat(), pm_maxviewpitch.GetFloat(), localViewAngles.pitch );
 		}
 	}
 

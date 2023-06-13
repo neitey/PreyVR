@@ -1140,12 +1140,12 @@ void hhVehicle::ProcessPilotInput( const usercmd_t* cmds, const idAngles* viewAn
 
 	//Lubos BEGIN
 	if( viewAngles ) {
-		if (game->isVR && pVRClientInfo->vehicleMode && !pVRClientInfo->inMenu && vr_vehicle3d.GetBool()) {
-			idAngles angles;
-			angles.pitch = pVRClientInfo->hmdorientation_temp[ PITCH ];
-			angles.yaw = pVRClientInfo->hmdorientation_temp[ YAW ] - pVRClientInfo->vehicleYaw;
-			angles.roll = pVRClientInfo->hmdorientation_temp[ ROLL ];
-			SetAxis( angles.ToMat3() * viewAngles->ToMat3() );
+		if (game->isVR && pVRClientInfo->vehicleMode && !pVRClientInfo->inMenu) {
+			idAngles hmd;
+			hmd.pitch = pVRClientInfo->hmdorientation_temp[ PITCH ];
+			hmd.yaw = pVRClientInfo->hmdorientation_temp[ YAW ] - pVRClientInfo->vehicleYaw;
+			hmd.roll = pVRClientInfo->hmdorientation_temp[ ROLL ];
+			SetAxis( hmd.ToMat3() * viewAngles->ToMat3() );
 		} else {
 			SetAxis( viewAngles->ToMat3() );
 		}

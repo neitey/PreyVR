@@ -868,7 +868,7 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		static bool wasVehicleMode = false;
 		if (pVRClientInfo->vehicleMode) {
 			if (!wasVehicleMode) {
-				pVRClientInfo->vehicleYaw = pVRClientInfo->hmdorientation_temp[ PITCH ];
+				pVRClientInfo->vehicleYaw = pVRClientInfo->hmdorientation_temp[ YAW ];
 				VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 				viewangles[PITCH] = pitch;
 				viewangles[YAW] = yaw;
@@ -879,8 +879,11 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			if (vr_invertVehicleY.GetBool()) {
 				pitch *= -1.0f;
 			}
-			viewangles[PITCH] += pitch;
-			viewangles[YAW] += yaw;
+			if (cos(DEG2RAD(viewangles[ PITCH ])) < 0) {
+				yaw *= -1.0f;
+			}
+			viewangles[ PITCH ] += pitch;
+			viewangles[ YAW ] += yaw;
 			wasVehicleMode = true;
 		} else {
 			VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);

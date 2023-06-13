@@ -1466,8 +1466,7 @@ void hhGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
 }
 
 bool hhGameLocal::InCinematic() {
-	bool vehicle = !vr_vehicle3d.GetBool() && pVRClientInfo->vehicleMode;
-	if( (GetLocalPlayer() && GetLocalPlayer()->GetPrivateCameraView()) || vehicle )
+	if( (GetLocalPlayer() && GetLocalPlayer()->GetPrivateCameraView()) )
 		return true;
 	else
 		return false;
