@@ -68,7 +68,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		idStr texture(surf->material->GetName());
 
 		//modify gl state function to fix glass and cavepaints
-		if((texture.CmpPrefix("textures/dreamworld/cavepaint") == 0) || (texture.CmpPrefix("textures/sfx/glass") == 0)) {
+		if((texture.CmpPrefix("textures/dreamworld/cavepaint") == 0) || (texture.CmpPrefix("textures/sfx/glass") == 0) || (texture.CmpPrefix("textures/sfx/nonbreakglass") == 0)) {
 			GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
 			glStateUpdated = true;
 		}
