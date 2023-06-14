@@ -499,7 +499,10 @@ bool idSessionLocal::HandleSaveGameMenuCommand(idCmdArgs &args, int &icmd)
 			}
 
 			if (screenshot.Length() == 0) {
-				screenshot = va("savegames/%s.tga", loadGameList[choice].c_str());
+				//Lubos BEGIN
+				//screenshot = va("savegames/%s.tga", loadGameList[choice].c_str());
+				screenshot = "guis/assets/loading/loading.tga";
+				//Lubos END
 			}
 
 			material = declManager->FindMaterial(screenshot);

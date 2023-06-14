@@ -2372,7 +2372,7 @@ bool idSessionLocal::SaveGame(const char *saveName, bool autosave)
 	fileDesc->Printf("\"%s\"\n", description.c_str());
 	fileDesc->Printf("\"%s\"\n", mapName.c_str());
 
-	if (autosave) {
+	if (autosave || true/*Lubos*/) {
 		idStr sshot = mapSpawnData.serverInfo.GetString("si_map");
 		sshot.StripPath();
 		sshot.StripFileExtension();
