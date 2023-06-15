@@ -50,10 +50,6 @@ float screenYaw;
 bool Doom3Quest_initialised;
 float playerYaw;
 float vrFOV = 0.0f;
-bool vr_moveuseoffhand;
-float vr_snapturn_angle;
-bool vr_secondarybuttonmappings;
-bool vr_twohandedweapons;
 bool shutdown;
 
 #if !defined( EGL_OPENGL_ES3_BIT_KHR )
@@ -89,13 +85,11 @@ const int GPU_LEVEL			= 4;
 //Passed in from the Java code
 int NUM_MULTI_SAMPLES	= -1;
 float SS_MULTIPLIER    = -1.0f;
-int DISPLAY_REFRESH		= -1;
 
 vrClientInfo vr;
 vrClientInfo *pVRClientInfo;
 
 jclass clazz;
-static jobject d3questCallbackObj=0;
 
 float radians(float deg) {
 	return (deg * M_PI) / 180.0;
@@ -107,11 +101,6 @@ float degrees(float rad) {
 
 char **argv;
 int argc=0;
-
-enum control_scheme {
-	RIGHT_HANDED_DEFAULT = 0,
-	LEFT_HANDED_DEFAULT = 1
-};
 
 /*
 ================================================================================
@@ -498,9 +487,6 @@ typedef void (GL_APIENTRYP PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC) (GLenum t
 typedef void (GL_APIENTRYP PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLsizei samples);
 
 #if !defined(GL_OVR_multiview)
-/// static const int GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_NUM_VIEWS_OVR       = 0x9630;
-/// static const int GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_BASE_VIEW_INDEX_OVR = 0x9632;
-/// static const int GL_MAX_VIEWS_OVR                                      = 0x9631;
 typedef void(GL_APIENTRY* PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC)(
 		GLenum target,
 		GLenum attachment,
@@ -916,7 +902,6 @@ void QuatToYawPitchRoll(ovrQuatf q, vec3_t rotation, vec3_t out) {
 	ovrVector3f upNormal = normalizeVec(up);
 
 	GetAnglesFromVectors(forwardNormal, rightNormal, upNormal, out);
-	return;
 }
 
 void updateHMDOrientation()
@@ -936,11 +921,6 @@ void setHMDPosition( float x, float y, float z, float yaw )
 void setHMDOrientation( float x, float y, float z, float w )
 {
     Vector4Set(vr.hmdorientation_quat, x, y, z, w);
-}
-
-void setHMDTranslation( float x, float y, float z)
-{
-    VectorSet(vr.hmdtranslation, x, y, z);
 }
 
 
@@ -1405,8 +1385,6 @@ typedef struct
 	ANativeWindow * NativeWindow;
 } ovrAppThread;
 
-long shutdownCountdown;
-
 int m_width;
 int m_height;
 
@@ -1414,11 +1392,6 @@ void Doom3Quest_GetScreenRes(int *width, int *height)
 {
     *width = m_width;
     *height = m_height;
-}
-
-void Android_MessageBox(const char *title, const char *text)
-{
-    ALOGE("%s %s", title, text);
 }
 
 //void initialize_gl4es();
@@ -1637,7 +1610,6 @@ void * AppThreadFunction(void * parm ) {
 	if (vrapi_GetSystemPropertyInt(&java, VRAPI_SYS_PROP_DEVICE_TYPE) == VRAPI_DEVICE_TYPE_OCULUSQUEST)
 	{
 		questType = 1;
-        DISPLAY_REFRESH = 60; // Fixed to 60 for oculus 1
 		if (SS_MULTIPLIER == -1.0f)
 		{
 			SS_MULTIPLIER = 1.0f;
@@ -1814,7 +1786,6 @@ void Doom3Quest_getHMDOrientation() {
     setHMDPosition(positionHmd.x, positionHmd.y, positionHmd.z, 0);
     //GB
     setHMDOrientation(quatHmd.x, quatHmd.y, quatHmd.z, quatHmd.w);
-    //setHMDTranslation(translationHmd.x, translationHmd.y, translationHmd.z);
     //End GB
     updateHMDOrientation();
 }
@@ -1825,23 +1796,23 @@ void Doom3Quest_getTrackedRemotesOrientation(int controlscheme, int switch_stick
     acquireTrackedRemotesData(gAppState.Ovr, gAppState.DisplayTime[gAppState.MainThreadFrameIndex % MAX_TRACKING_SAMPLES]);
 
     //Call additional control schemes here
-    if (controlscheme == RIGHT_HANDED_DEFAULT) {
-		HandleInput_Default(controlscheme, switch_sticks,
-							&footTrackedRemoteState_new, &footTrackedRemoteState_old,
-							&rightTrackedRemoteState_new, &rightTrackedRemoteState_old,
-							&rightRemoteTracking_new,
-							&leftTrackedRemoteState_new, &leftTrackedRemoteState_old,
-							&leftRemoteTracking_new,
-							ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);
+    if (controlscheme == 0) {
+	    HandleInput_Default(controlscheme, switch_sticks,
+	                        &footTrackedRemoteState_new,
+	                        &rightTrackedRemoteState_new, &rightTrackedRemoteState_old,
+	                        &rightRemoteTracking_new,
+	                        &leftTrackedRemoteState_new, &leftTrackedRemoteState_old,
+	                        &leftRemoteTracking_new,
+	                        ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);
 	} else {
 		//Left handed
-		HandleInput_Default(controlscheme, switch_sticks,
-							&footTrackedRemoteState_new, &footTrackedRemoteState_old,
-							&leftTrackedRemoteState_new, &leftTrackedRemoteState_old,
-							&leftRemoteTracking_new,
-							&rightTrackedRemoteState_new, &rightTrackedRemoteState_old,
-							&rightRemoteTracking_new,
-							ovrButton_X, ovrButton_Y, ovrButton_A, ovrButton_B);
+	    HandleInput_Default(controlscheme, switch_sticks,
+	                        &footTrackedRemoteState_new,
+	                        &leftTrackedRemoteState_new, &leftTrackedRemoteState_old,
+	                        &leftRemoteTracking_new,
+	                        &rightTrackedRemoteState_new, &rightTrackedRemoteState_old,
+	                        &rightRemoteTracking_new,
+	                        ovrButton_X, ovrButton_Y, ovrButton_A, ovrButton_B);
 	}
 }
 
@@ -2116,13 +2087,6 @@ JNIEXPORT jlong JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * 
 	{
 		NUM_MULTI_SAMPLES = msaa;
 	}
-
-	if (refresh != -1)
-	{
-		//unused at the moment
-		DISPLAY_REFRESH = refresh;
-	}
-
 
 	ovrAppThread * appThread = (ovrAppThread *) malloc( sizeof( ovrAppThread ) );
 	ovrAppThread_Create( appThread, env, activity, activityClass );

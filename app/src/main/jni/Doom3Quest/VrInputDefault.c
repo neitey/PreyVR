@@ -20,11 +20,7 @@ Authors		:	Simon Brown
 #include "doomkeys.h"
 
 float	vr_reloadtimeoutms = 300.0f;
-float	vr_walkdirection = 0;
 float	vr_weapon_pitchadjust = -30.0f;
-float	vr_teleport;
-float	vr_switch_sticks = 0;
-int     give_weapon_count = 1;
 
 extern bool forceVirtualScreen;
 
@@ -64,24 +60,25 @@ extern bool inCinematic;
 //All this to allow stick and button switching!
 ovrVector2f *pPrimaryJoystick;
 ovrVector2f *pSecondaryJoystick;
-uint32_t primaryButtonsNew;
-uint32_t primaryButtonsOld;
 uint32_t secondaryButtonsNew;
 uint32_t secondaryButtonsOld;
 uint32_t weaponButtonsNew;
 uint32_t weaponButtonsOld;
 uint32_t offhandButtonsNew;
 uint32_t offhandButtonsOld;
-int primaryButton1;
-int primaryButton2;
 int secondaryButton1;
 int secondaryButton2;
 
 void Doom3Quest_HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight );
 
-void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGamepad *pFootTrackingNew, ovrInputStateGamepad *pFootTrackingOld, ovrInputStateTrackedRemote *pDominantTrackedRemoteNew, ovrInputStateTrackedRemote *pDominantTrackedRemoteOld, ovrTracking* pDominantTracking,
-                          ovrInputStateTrackedRemote *pOffTrackedRemoteNew, ovrInputStateTrackedRemote *pOffTrackedRemoteOld, ovrTracking* pOffTracking,
-                          int domButton1, int domButton2, int offButton1, int offButton2 )
+void
+HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *pFootTrackingNew,
+                    ovrInputStateTrackedRemote *pDominantTrackedRemoteNew,
+                    ovrInputStateTrackedRemote *pDominantTrackedRemoteOld,
+                    ovrTracking *pDominantTracking,
+                    ovrInputStateTrackedRemote *pOffTrackedRemoteNew,
+                    ovrInputStateTrackedRemote *pOffTrackedRemoteOld, ovrTracking *pOffTracking,
+                    int domButton1, int domButton2, int offButton1, int offButton2)
 
 {
     static bool dominantGripPushed = false;
@@ -104,21 +101,13 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
         pPrimaryJoystick = &pOffTrackedRemoteNew->Joystick;
         secondaryButtonsNew = pDominantTrackedRemoteNew->Buttons;
         secondaryButtonsOld = pDominantTrackedRemoteOld->Buttons;
-        primaryButtonsNew = pOffTrackedRemoteNew->Buttons;
-        primaryButtonsOld = pOffTrackedRemoteOld->Buttons;
-        primaryButton1 = offButton1;
-        primaryButton2 = offButton2;
         secondaryButton1 = domButton1;
         secondaryButton2 = domButton2;
     } else {
         pPrimaryJoystick = &pDominantTrackedRemoteNew->Joystick;
         pSecondaryJoystick = &pOffTrackedRemoteNew->Joystick;
-        primaryButtonsNew = pDominantTrackedRemoteNew->Buttons;
-        primaryButtonsOld = pDominantTrackedRemoteOld->Buttons;
         secondaryButtonsNew = pOffTrackedRemoteNew->Buttons;
         secondaryButtonsOld = pOffTrackedRemoteOld->Buttons;
-        primaryButton1 = domButton1;
-        primaryButton2 = domButton2;
         secondaryButton1 = offButton1;
         secondaryButton2 = offButton2;
     }
@@ -129,11 +118,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
         const ovrVector3f positionRHand = pWeapon->HeadPose.Pose.Position;
         const ovrQuatf quatLHand = pOff->HeadPose.Pose.Orientation;
         const ovrVector3f positionLHand = pOff->HeadPose.Pose.Position;
-
-        /*VectorSet(pVRClientInfo->rhandposition, positionRHand.x, positionRHand.y, positionRHand.z);
-        Vector4Set(pVRClientInfo->rhand_orientation_quat, quatRHand.x, quatRHand.y, quatRHand.z, quatRHand.w);
-        VectorSet(pVRClientInfo->lhandposition, positionLHand.x, positionLHand.y, positionLHand.z);
-        Vector4Set(pVRClientInfo->lhand_orientation_quat, quatLHand.x, quatLHand.y, quatLHand.z, quatLHand.w);*/
 
         //Right Hand
         //GB - FP Already does this so we end up with backward hands
@@ -157,17 +141,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
         QuatToYawPitchRoll(pWeapon->HeadPose.Pose.Orientation, rotation, pVRClientInfo->weaponangles_temp);
         VectorSubtract(pVRClientInfo->weaponangles_last_temp, pVRClientInfo->weaponangles_temp, pVRClientInfo->weaponangles_delta_temp);
         VectorCopy(pVRClientInfo->weaponangles_temp, pVRClientInfo->weaponangles_last_temp);
-        /*
-        vec3_t rotation = {0};
-        rotation[PITCH] = 30;
-        QuatToYawPitchRoll(pWeapon->HeadPose.Pose.Orientation, rotation, pVRClientInfo->weaponangles_unadjusted);
-
-        rotation[PITCH] = vr_weapon_pitchadjust;
-        QuatToYawPitchRoll(pWeapon->HeadPose.Pose.Orientation, rotation, pVRClientInfo->weaponangles);
-
-        VectorSubtract(pVRClientInfo->weaponangles_last, pVRClientInfo->weaponangles, pVRClientInfo->weaponangles_delta);
-        VectorCopy(pVRClientInfo->weaponangles, pVRClientInfo->weaponangles_last);
-         */
     }
 
     //Menu button - can be used in all modes
@@ -284,8 +257,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                     if (firedOffHand != velocityTriggeredAttackOffHand) {
                         ALOGV("**WEAPON EVENT** velocity triggered (offhand) %s",
                               velocityTriggeredAttackOffHand ? "+attack" : "-attack");
-                        //Android_ButtonChange(UB_IMPULSE37, velocityTriggeredAttackOffHand ? 1 : 0);
-                        //Android_SetImpulse(UB_IMPULSE37);
                         pVRClientInfo->velocitytriggeredoffhandstate = firedOffHand;
                         firedOffHand = velocityTriggeredAttackOffHand;
                     }
@@ -299,7 +270,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                 //send a stop attack as we have an unfinished velocity attack
                 velocityTriggeredAttackOffHand = false;
                 ALOGV("**WEAPON EVENT**  velocity triggered -attack (offhand)");
-                //Android_ButtonChange(UB_IMPULSE37, velocityTriggeredAttackOffHand ? 1 : 0);
                 pVRClientInfo->velocitytriggeredoffhandstate = false;
             }
         }
@@ -333,25 +303,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
             rotation[PITCH] = -45;
             QuatToYawPitchRoll(pOff->HeadPose.Pose.Orientation, rotation, pVRClientInfo->offhandangles_temp);
         }
-        /*
-        //off-hand stuff
-        {
-            pVRClientInfo->offhandoffset[0] = pOff->HeadPose.Pose.Position.x - pVRClientInfo->hmdposition[0];
-            pVRClientInfo->offhandoffset[1] = pOff->HeadPose.Pose.Position.y - pVRClientInfo->hmdposition[1];
-            pVRClientInfo->offhandoffset[2] = pOff->HeadPose.Pose.Position.z - pVRClientInfo->hmdposition[2];
-
-            vec3_t rotation = {0};
-            rotation[PITCH] = -45;
-            QuatToYawPitchRoll(pOff->HeadPose.Pose.Orientation, rotation, pVRClientInfo->offhandangles);
-
-			if (vr_walkdirection == 0) {
-				controllerYawHeading = pVRClientInfo->offhandangles[YAW] - pVRClientInfo->hmdorientation[YAW];
-			}
-			else
-			{
-				controllerYawHeading = 0.0f;
-			}
-        }*/
 
         //Right-hand specific stuff
         {
@@ -436,54 +387,6 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                      (offhandButtonsOld & ovrButton_Joystick)) &&
                     (offhandButtonsNew & ovrButton_Joystick)) {
 
-#ifdef DEBUG
-                    Android_SetCommand("give all");
-
-                    if(give_weapon_count == 1){
-                        Android_SetCommand("give weapon_pistol");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 2){
-                        Android_SetCommand("give weapon_shotgun");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 3){
-                        Android_SetCommand("give weapon_shotgun");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 4){
-                        Android_SetCommand("give weapon_machinegun");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 5){
-                        Android_SetCommand("give weapon_chaingun");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 6){
-                        Android_SetCommand("give weapon_rocketlauncher");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 7){
-                        Android_SetCommand("give weapon_plasmagun");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 8){
-                        Android_SetCommand("give weapon_chainsaw");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 9){
-                        Android_SetCommand("give weapon_soulcube");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 10){
-                        Android_SetCommand("give weapon_bfg");
-                        give_weapon_count = give_weapon_count + 1;
-                    }
-                    else if(give_weapon_count == 11){
-                        Android_SetCommand("give ammo_grenade_small");
-                        give_weapon_count = 1;
-                    }
-#endif
                         //Recenter Body
                         Android_SetImpulse(UB_IMPULSE32);
                 }

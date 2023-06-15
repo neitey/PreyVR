@@ -22,7 +22,6 @@ ovrInputStateTrackedRemote rightTrackedRemoteState_old;
 ovrInputStateTrackedRemote rightTrackedRemoteState_new;
 ovrTracking rightRemoteTracking_new;
 
-ovrInputStateGamepad footTrackedRemoteState_old;
 ovrInputStateGamepad footTrackedRemoteState_new;
 
 ovrDeviceID controllerIDs[2];
@@ -70,9 +69,6 @@ handleTrackedControllerButton_AsToggleButton(uint32_t buttonsNew, uint32_t butto
         Android_ButtonChange(key, Android_GetButton(key) ? 0 : 1);
     }
 }
-
-void sendButtonAction(const char* action, long buttonDown) {}
-void sendButtonActionSimple(const char* action) {}
 
 void rotateAboutOrigin(float x, float y, float rotation, vec2_t out)
 {
@@ -163,32 +159,6 @@ void acquireTrackedRemotesData(ovrMobile *Ovr, double displayTime) {//The amount
                     }
                 }
             }
-
-            //GB Old code sans error checking
-            /*
-             * ovrTracking remoteTracking;
-            ovrInputStateTrackedRemote trackedRemoteState;
-            trackedRemoteState.Header.ControllerType = ovrControllerType_TrackedRemote;
-            result = vrapi_GetCurrentInputState(Ovr, cap.DeviceID, &trackedRemoteState.Header);
-
-            if (result == ovrSuccess) {
-                ovrInputTrackedRemoteCapabilities remoteCapabilities;
-                remoteCapabilities.Header = cap;
-                result = vrapi_GetInputDeviceCapabilities(Ovr, &remoteCapabilities.Header);
-
-                result = vrapi_GetInputTrackingState(Ovr, cap.DeviceID, displayTime,
-                                                     &remoteTracking);
-
-                if (remoteCapabilities.ControllerCapabilities & ovrControllerCaps_RightHand) {
-                    rightTrackedRemoteState_new = trackedRemoteState;
-                    rightRemoteTracking_new = remoteTracking;
-                    controllerIDs[1] = cap.DeviceID;
-                } else{
-                    leftTrackedRemoteState_new = trackedRemoteState;
-                    leftRemoteTracking_new = remoteTracking;
-                    controllerIDs[0] = cap.DeviceID;
-                }
-            }*/
         }
     }
 }

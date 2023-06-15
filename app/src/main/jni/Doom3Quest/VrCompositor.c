@@ -58,13 +58,6 @@ void ovrScene_Create( int width, int height, ovrScene * scene, const ovrJava * j
 	scene->CreatedScene = true;
 }
 
-void ovrScene_Destroy( ovrScene * scene )
-{
-	ovrRenderer_Destroy( &scene->CylinderRenderer );
-
-	scene->CreatedScene = false;
-}
-
 
 // Assumes landscape cylinder shape.
 static ovrMatrix4f CylinderModelMatrix( const int texWidth, const int texHeight,
@@ -98,12 +91,6 @@ ovrLayerCylinder2 BuildCylinderLayer( ovrRenderer * cylinderRenderer,
 		layer.Header.ColorScale.y =
 		layer.Header.ColorScale.z =
 		layer.Header.ColorScale.w = fadeLevel;
-
-	//Alpha issues!! ??
-	//layer.Header.SrcBlend = VRAPI_FRAME_LAYER_BLEND_SRC_ALPHA;
-	//layer.Header.DstBlend = VRAPI_FRAME_LAYER_BLEND_ONE_MINUS_SRC_ALPHA;
-
-	//layer.Header.Flags = VRAPI_FRAME_LAYER_FLAG_CLIP_TO_TEXTURE_RECT;
 
 	layer.HeadPose = tracking->HeadPose;
 

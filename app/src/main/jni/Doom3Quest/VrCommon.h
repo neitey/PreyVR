@@ -55,8 +55,6 @@ void handleTrackedControllerButton_AsKey(uint32_t buttonsNew, uint32_t buttonsOl
 void handleTrackedControllerButton_AsToggleButton(uint32_t buttonsNew, uint32_t buttonsOld,
                                    uint32_t button, int key);
 
-void handleTrackedControllerButton_AsImpulse(uint32_t buttonsNew, uint32_t buttonsOld, uint32_t button, int key);
-
 
 void controlMouse(bool reset, ovrInputStateTrackedRemote *newState, ovrInputStateTrackedRemote *oldState);
 
