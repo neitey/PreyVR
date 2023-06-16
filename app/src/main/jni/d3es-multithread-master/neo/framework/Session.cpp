@@ -2059,6 +2059,13 @@ void LoadGame_f(const idCmdArgs &args)
 	} else {
 		sessLocal.LoadGame(args.Argv(1));
 	}
+
+	//Lubos BEGIN
+	for (int axis = 0; axis < 3; axis++) {
+		pVRClientInfo->hmdorientation_diff[axis] = 0;
+		pVRClientInfo->hmdorientation_offset[axis] = 0;
+	}
+	//Lubos END
 }
 
 /*
