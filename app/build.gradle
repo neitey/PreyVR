@@ -24,7 +24,7 @@ android {
 
     sourceSets {
         main {
-            jniLibs.srcDirs = ['../ext/openxr/android']
+            jniLibs.srcDirs = ['src/main/jni/OpenXR/android']
         }
     }
 

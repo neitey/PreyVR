@@ -931,6 +931,7 @@ void Doom3Quest_GetScreenRes(int *width, int *height)
     *height = m_height;
 }
 
+bool frameValid = false;
 long renderThreadCPUTime = 0;
 
 void Doom3Quest_prepareEyeBuffer( )
@@ -944,8 +945,10 @@ void Doom3Quest_prepareEyeBuffer( )
 	VR_SetConfigFloat(VR_CONFIG_CANVAS_DISTANCE, 12);
 	VR_SetConfig(VR_CONFIG_MODE, Doom3Quest_useScreenLayer() ? VR_MODE_MONO_SCREEN : VR_MODE_STEREO_6DOF);
 
-	VR_InitFrame(VR_GetEngine());
-	VR_BeginFrame(VR_GetEngine(), 0);
+	frameValid = VR_InitFrame(VR_GetEngine());
+	if (frameValid) {
+		VR_BeginFrame(VR_GetEngine(), 0);
+	}
 
 	renderThreadCPUTime = GetTimeInMilliSeconds();
 }
@@ -954,8 +957,11 @@ void Doom3Quest_finishEyeBuffer( )
 {
     renderThreadCPUTime = GetTimeInMilliSeconds() - renderThreadCPUTime;
 
-	VR_EndFrame(VR_GetEngine());
-	VR_FinishFrame(VR_GetEngine());
+	if (frameValid) {
+		VR_EndFrame(VR_GetEngine());
+		VR_FinishFrame(VR_GetEngine());
+		frameValid = false;
+	}
 
 	Doom3Quest_HapticEndFrame();
 }
@@ -966,8 +972,7 @@ bool Doom3Quest_processMessageQueue() {
 	for ( ; ; )
 	{
 		ovrMessage message;
-		const bool waitForMessages = ( destroyed == false );
-		if ( !ovrMessageQueue_GetNextMessage( &gAppThread->MessageQueue, &message, waitForMessages ) )
+		if ( !ovrMessageQueue_GetNextMessage( &gAppThread->MessageQueue, &message, false ) )
 		{
 			break;
 		}
@@ -982,17 +987,6 @@ bool Doom3Quest_processMessageQueue() {
 			{
 				if (!Doom3Quest_initialised)
 				{
-					//Set command line arguments here
-					if (argc != 0)
-					{
-						//TODO
-					}
-					else
-					{
-						int argc = 1; char *argv[] = { "qzdoom" };
-
-					}
-
 					Doom3Quest_initialised = true;
 				}
 				break;
@@ -1054,9 +1048,12 @@ void ActivateContext()
 void * AppThreadFunction(void * parm ) {
 	gAppThread = (XrAppThread *) parm;
 
+	//TODO:get device name
+	char devicename[32] = "oculus";
+
 	//Get device vendor (uppercase)
 	char vendor[64];
-	//TODO:get device name - sscanf(devicename, "%[^:]", vendor);
+	sscanf(devicename, "%[^:]", vendor);
 	for (unsigned int i = 0; i < strlen(vendor); i++) {
 		if ((vendor[i] >= 'a') && (vendor[i] <= 'z')) {
 			vendor[i] = vendor[i] - 'a' + 'A';
@@ -1117,7 +1114,6 @@ void * AppThreadFunction(void * parm ) {
     //Run loading loop until we are ready to start QzDoom
     while (!destroyed && !Doom3Quest_initialised) {
         Doom3Quest_processMessageQueue();
-        Doom3Quest_getHMDOrientation();
     }
 
     //Should now be all set up and ready - start the Doom3 main loop
