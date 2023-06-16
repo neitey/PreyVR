@@ -884,6 +884,9 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			}
 			viewangles[ PITCH ] += pitch;
 			viewangles[ YAW ] += yaw;
+
+			if (viewangles[ YAW ] > 180) viewangles[ YAW ] -= 360;
+			if (viewangles[ YAW ] < -180) viewangles[ YAW ] += 360;
 			wasVehicleMode = true;
 		} else {
 			VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
