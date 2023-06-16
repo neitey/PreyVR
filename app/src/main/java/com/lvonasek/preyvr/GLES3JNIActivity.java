@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
@@ -31,6 +32,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Locale;
 import java.util.Vector;
 
 @SuppressLint("SdCardPath") public class GLES3JNIActivity extends Activity implements SurfaceHolder.Callback
@@ -43,6 +45,14 @@ import java.util.Vector;
 
 	static
 	{
+		String manufacturer = Build.MANUFACTURER.toLowerCase(Locale.ROOT);
+		if (manufacturer.contains("oculus")) // rename oculus to meta as this will probably happen in the future anyway
+			manufacturer = "meta";
+
+		//Load manufacturer specific loader
+		System.loadLibrary("openxr_" + manufacturer);
+
+		//Load the game
 		System.loadLibrary( "doom3" );
 
 		//Add possible external haptic service details here
@@ -235,38 +245,6 @@ import java.util.Vector;
 			e.printStackTrace();
 		}
 
-		//Parse the config file for these values
-		long refresh = 60; // Default to 60
-		float ss = -1.0F;
-		long msaa = 1; // default for both HMDs
-		File config = new File(base, "preyconfig.cfg");
-		if(config.exists())
-		{
-			BufferedReader br;
-			try {
-				br = new BufferedReader(new FileReader(config));
-				String s;
-				while ((s=br.readLine())!=null) {
-					int i1 = s.indexOf("\"");
-					int i2 = s.lastIndexOf("\"");
-					if (i1 != -1 && i2 != -1) {
-						String value = s.substring(i1+1, i2);
-						if (s.contains("vr_refresh")) {
-							refresh = Long.parseLong(value);
-						} else if (s.contains("vr_msaa")) {
-							msaa = Long.parseLong(value);
-						} else if (s.contains("vr_supersampling")) {
-							ss = Float.parseFloat(value);
-						}
-					}
-				}
-				br.close();
-			} catch (IOException | NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
 		for (Pair<String, String> serviceDetail : externalHapticsServiceDetails) {
 			HapticServiceClient client = new HapticServiceClient(this, (state, desc) -> {
 				Log.v(APPLICATION, "ExternalHapticsService " + serviceDetail.second + ": " + desc);
@@ -277,7 +255,7 @@ import java.util.Vector;
 			externalHapticsServiceClients.add(client);
 		}
 
-		mNativeHandle = GLES3JNILib.onCreate( this, commandLineParams, refresh, ss, msaa );
+		mNativeHandle = GLES3JNILib.onCreate( this, commandLineParams );
 	}
 	
 	public void copy_asset(String path, String name, boolean force) {

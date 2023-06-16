@@ -7,45 +7,30 @@ Authors		:	Simon Brown
 
 *************************************************************************************/
 
-#include "../../../VrApi/Include/VrApi.h"
-#include "../../../VrApi/Include/VrApi_Helpers.h"
-#include "../../../VrApi/Include/VrApi_SystemUtils.h"
-#include "../../../VrApi/Include/VrApi_Input.h"
-#include "../../../VrApi/Include/VrApi_Types.h"
 #include <android/keycodes.h>
 #include <sys/time.h>
 
 #include "VrInput.h"
 
 #include "doomkeys.h"
+#include "VrCommon.h"
 
 float	vr_reloadtimeoutms = 300.0f;
 float	vr_weapon_pitchadjust = -30.0f;
 
 extern bool forceVirtualScreen;
 
-/*
-================
-Sys_Milliseconds
-================
-*/
-int curtime;
-int sys_timeBase;
-int Sys_Milliseconds( void ) {
-    struct timeval tp;
-    struct timezone tzp;
+uint32_t leftTrackedRemoteState_old;
+uint32_t leftTrackedRemoteState_new;
+XrPosef leftRemoteTracking_new;
 
-    gettimeofday( &tp, &tzp );
+uint32_t rightTrackedRemoteState_old;
+uint32_t rightTrackedRemoteState_new;
+XrPosef rightRemoteTracking_new;
 
-    if ( !sys_timeBase ) {
-        sys_timeBase = tp.tv_sec;
-        return tp.tv_usec / 1000;
-    }
+float remote_movementSideways;
+float remote_movementForward;
 
-    curtime = ( tp.tv_sec - sys_timeBase ) * 1000 + tp.tv_usec / 1000;
-
-    return curtime;
-}
 
 void Android_SetImpulse(int impulse);
 void Android_SetCommand(const char * cmd);
@@ -58,56 +43,52 @@ extern bool objectiveSystemActive;
 extern bool inCinematic;
 
 //All this to allow stick and button switching!
-ovrVector2f *pPrimaryJoystick;
-ovrVector2f *pSecondaryJoystick;
+XrVector2f *pPrimaryJoystick;
+XrVector2f *pSecondaryJoystick;
 uint32_t secondaryButtonsNew;
 uint32_t secondaryButtonsOld;
 uint32_t weaponButtonsNew;
 uint32_t weaponButtonsOld;
 uint32_t offhandButtonsNew;
 uint32_t offhandButtonsOld;
+uint32_t pDominantTrackedRemoteOld;
 int secondaryButton1;
 int secondaryButton2;
 
 void Doom3Quest_HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight );
 
 void
-HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *pFootTrackingNew,
-                    ovrInputStateTrackedRemote *pDominantTrackedRemoteNew,
-                    ovrInputStateTrackedRemote *pDominantTrackedRemoteOld,
-                    ovrTracking *pDominantTracking,
-                    ovrInputStateTrackedRemote *pOffTrackedRemoteNew,
-                    ovrInputStateTrackedRemote *pOffTrackedRemoteOld, ovrTracking *pOffTracking,
-                    int domButton1, int domButton2, int offButton1, int offButton2)
+HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int domButton2, int offButton1, int offButton2)
 
 {
-    static bool dominantGripPushed = false;
+    //TODO:implement
+    /*static bool dominantGripPushed = false;
 	static float dominantGripPushTime = 0.0f;
 
 
     //Need this for the touch screen
-    ovrTracking * pWeapon = pDominantTracking;
-    ovrTracking * pOff = pOffTracking;
+    XrPosef pWeapon = pDominantTracking;
+    XrPosef pOff = pOffTracking;
 
-    weaponButtonsNew = pDominantTrackedRemoteNew->Buttons;
-    weaponButtonsOld = pDominantTrackedRemoteOld->Buttons;
-    offhandButtonsNew = pOffTrackedRemoteNew->Buttons;
-    offhandButtonsOld = pOffTrackedRemoteOld->Buttons;
+    weaponButtonsNew = pDominantTrackedRemoteNew;
+    weaponButtonsOld = pDominantTrackedRemoteOld;
+    offhandButtonsNew = pOffTrackedRemoteNew;
+    offhandButtonsOld = pOffTrackedRemoteOld;
 
     if ((controlscheme == 0 &&switchsticks == 1) ||
        (controlscheme == 1 &&switchsticks == 0))
     {
         pSecondaryJoystick = &pDominantTrackedRemoteNew->Joystick;
         pPrimaryJoystick = &pOffTrackedRemoteNew->Joystick;
-        secondaryButtonsNew = pDominantTrackedRemoteNew->Buttons;
-        secondaryButtonsOld = pDominantTrackedRemoteOld->Buttons;
+        secondaryButtonsNew = pDominantTrackedRemoteNew;
+        secondaryButtonsOld = pDominantTrackedRemoteOld;
         secondaryButton1 = domButton1;
         secondaryButton2 = domButton2;
     } else {
         pPrimaryJoystick = &pDominantTrackedRemoteNew->Joystick;
         pSecondaryJoystick = &pOffTrackedRemoteNew->Joystick;
-        secondaryButtonsNew = pOffTrackedRemoteNew->Buttons;
-        secondaryButtonsOld = pOffTrackedRemoteOld->Buttons;
+        secondaryButtonsNew = pOffTrackedRemoteNew;
+        secondaryButtonsOld = pOffTrackedRemoteOld;
         secondaryButton1 = offButton1;
         secondaryButton2 = offButton2;
     }
@@ -144,16 +125,16 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
     }
 
     //Menu button - can be used in all modes
-    handleTrackedControllerButton_AsKey(leftTrackedRemoteState_new.Buttons, leftTrackedRemoteState_old.Buttons, ovrButton_Enter, K_ESCAPE);
-    handleTrackedControllerButton_AsKey(rightTrackedRemoteState_new.Buttons, rightTrackedRemoteState_old.Buttons, ovrButton_Enter, K_ESCAPE); // in case user has switched menu/home buttons
+    handleTrackedControllerButton_AsKey(leftTrackedRemoteState_new, leftTrackedRemoteState_old, ovrButton_Enter, K_ESCAPE);
+    handleTrackedControllerButton_AsKey(rightTrackedRemoteState_new, rightTrackedRemoteState_old, ovrButton_Enter, K_ESCAPE); // in case user has switched menu/home buttons
 
-    controlMouse(inMenu, pDominantTrackedRemoteNew, pDominantTrackedRemoteOld);
+    controlMouse(inMenu);
 
     if ( inMenu || inCinematic ) // Specific cases where we need to interact using mouse etc
     {
 	    //Lubos BEGIN
-	    handleTrackedControllerButton_AsButton(leftTrackedRemoteState_new.Buttons, leftTrackedRemoteState_old.Buttons, true, ovrButton_Trigger, 1);
-	    handleTrackedControllerButton_AsButton(rightTrackedRemoteState_new.Buttons, rightTrackedRemoteState_old.Buttons, true, ovrButton_Trigger, 1);
+	    handleTrackedControllerButton_AsButton(leftTrackedRemoteState_new, leftTrackedRemoteState_old, true, ovrButton_Trigger, 1);
+	    handleTrackedControllerButton_AsButton(rightTrackedRemoteState_new, rightTrackedRemoteState_old, true, ovrButton_Trigger, 1);
 	    //Lubos END
     }
 
@@ -204,7 +185,7 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
         //Turn on weapon stabilisation?
         bool stabilised = false;
         if (!pVRClientInfo->oneHandOnly &&
-            (pOffTrackedRemoteNew->Buttons & ovrButton_GripTrigger) && (distance < STABILISATION_DISTANCE))
+            (pOffTrackedRemoteNew & ovrButton_GripTrigger) && (distance < STABILISATION_DISTANCE))
         {
             stabilised = true;
         }
@@ -274,7 +255,7 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
             }
         }
 
-        dominantGripPushed = (pDominantTrackedRemoteNew->Buttons &
+        dominantGripPushed = (pDominantTrackedRemoteNew &
                               ovrButton_GripTrigger) != 0;
 
         if (dominantGripPushed) {
@@ -307,21 +288,21 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
         //Right-hand specific stuff
         {
             //Fire Primary
-            if ((pDominantTrackedRemoteNew->Buttons & ovrButton_Trigger) !=
-                (pDominantTrackedRemoteOld->Buttons & ovrButton_Trigger)) {
+            if ((pDominantTrackedRemoteNew & ovrButton_Trigger) !=
+                (pDominantTrackedRemoteOld & ovrButton_Trigger)) {
 
-                ALOGV("**WEAPON EVENT**  Trigger Pushed %sattack", (pDominantTrackedRemoteNew->Buttons & ovrButton_Trigger) ? "+" : "-");
+                ALOGV("**WEAPON EVENT**  Trigger Pushed %sattack", (pDominantTrackedRemoteNew & ovrButton_Trigger) ? "+" : "-");
 
-                handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_ATTACK);
+                handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew, pDominantTrackedRemoteOld, false, ovrButton_Trigger, UB_ATTACK);
             }
 
             //Lubos BEGIN
-            if ((pDominantTrackedRemoteNew->Buttons & ovrButton_GripTrigger) !=
-                (pDominantTrackedRemoteOld->Buttons & ovrButton_GripTrigger)) {
+            if ((pDominantTrackedRemoteNew & ovrButton_GripTrigger) !=
+                (pDominantTrackedRemoteOld & ovrButton_GripTrigger)) {
 
-                ALOGV("**WEAPON EVENT**  Grip Pushed %sattack", (pDominantTrackedRemoteNew->Buttons & ovrButton_GripTrigger) ? "+" : "-");
+                ALOGV("**WEAPON EVENT**  Grip Pushed %sattack", (pDominantTrackedRemoteNew & ovrButton_GripTrigger) ? "+" : "-");
 
-                handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew->Buttons, pDominantTrackedRemoteOld->Buttons, false, ovrButton_GripTrigger, UB_ATTACK_ALT);
+                handleTrackedControllerButton_AsButton(pDominantTrackedRemoteNew, pDominantTrackedRemoteOld, false, ovrButton_GripTrigger, UB_ATTACK_ALT);
             }
             //Lubos END
 
@@ -367,8 +348,8 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
             //Apply a filter and quadratic scaler so small movements are easier to make
             float dist = length(pSecondaryJoystick->x, pSecondaryJoystick->y);
             float nlf = nonLinearFilter(dist);
-            float x = (nlf * pSecondaryJoystick->x) + pFootTrackingNew->LeftJoystick.x;
-            float y = (nlf * pSecondaryJoystick->y) - pFootTrackingNew->LeftJoystick.y;
+            float x = (nlf * pSecondaryJoystick->x);
+            float y = (nlf * pSecondaryJoystick->y);
 
             pVRClientInfo->player_moving = (fabs(x) + fabs(y)) > 0.05f;
 
@@ -435,7 +416,7 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
 
             //We need to record if we have started firing primary so that releasing trigger will stop definitely firing, if user has pushed grip
             //in meantime, then it wouldn't stop the gun firing and it would get stuck
-            handleTrackedControllerButton_AsButton(pOffTrackedRemoteNew->Buttons, pOffTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_SPEED);
+            handleTrackedControllerButton_AsButton(pOffTrackedRemoteNew, pOffTrackedRemoteOld, false, ovrButton_Trigger, UB_SPEED);
 
             int vr_turn_mode = Android_GetCVarInteger("vr_turnmode");
             float vr_turn_angle = Android_GetCVarInteger("vr_turnangle");
@@ -496,5 +477,5 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
 
     //Save state
     rightTrackedRemoteState_old = rightTrackedRemoteState_new;
-    leftTrackedRemoteState_old = leftTrackedRemoteState_new;
+    leftTrackedRemoteState_old = leftTrackedRemoteState_new;*/
 }
