@@ -884,12 +884,19 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			}
 			viewangles[ PITCH ] += pitch;
 			viewangles[ YAW ] += yaw;
+
+			if (viewangles[ YAW ] > 180) viewangles[ YAW ] -= 360;
+			if (viewangles[ YAW ] < -180) viewangles[ YAW ] += 360;
 			wasVehicleMode = true;
 		} else {
 			VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 			viewangles[PITCH] = pitch;
 			viewangles[YAW] = yaw;
 			viewangles[ROLL] = roll;
+			for (int axis = 0; axis < 3; axis++) {
+				pVRClientInfo->hmdorientation_diff[axis] = 0;
+				pVRClientInfo->hmdorientation_offset[axis] = 0;
+			}
 			wasVehicleMode = false;
 		}
 		hmd_forward *= vr_trackingScale.GetFloat();

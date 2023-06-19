@@ -248,6 +248,7 @@ void hhRenderModelBeam::UpdateSurface( const struct renderEntity_s *renderEntity
 		tri->verts[4 * i + 2].xyz = target - minor;
 		tri->verts[4 * i + 3].xyz = target + minor;
 	}
+	tri->bounds = Bounds(renderEntity);//Lubos
 }
 
 void hhRenderModelBeam::UpdateQuadSurface( const struct renderEntity_s *renderEntity, const int index, int quadIndex, const hhBeamNodes_t *beam, modelSurface_t *surf )
@@ -266,4 +267,5 @@ void hhRenderModelBeam::UpdateQuadSurface( const struct renderEntity_s *renderEn
 	tri->verts[1].xyz = target - rightw + upw;
 	tri->verts[2].xyz = target + rightw - upw;
 	tri->verts[3].xyz = target + rightw + upw;
+	tri->bounds = Bounds(renderEntity);//Lubos
 }

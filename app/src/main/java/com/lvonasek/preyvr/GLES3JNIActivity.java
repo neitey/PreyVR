@@ -332,18 +332,6 @@ import java.util.Vector;
 		super.onPause();
 	}
 
-	@Override protected void onStop()
-	{
-		Log.v(APPLICATION, "GLES3JNIActivity::onStop()" );
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onStop(mNativeHandle);
-		}
-
-
-		super.onStop();
-	}
-
 	@Override protected void onDestroy()
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::onDestroy()" );

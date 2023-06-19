@@ -1140,7 +1140,7 @@ void hhVehicle::ProcessPilotInput( const usercmd_t* cmds, const idAngles* viewAn
 
 	//Lubos BEGIN
 	if( viewAngles ) {
-		if (game->isVR && pVRClientInfo->vehicleMode && !pVRClientInfo->inMenu) {
+		if( game->isVR && pVRClientInfo->vehicleMode && !pVRClientInfo->inMenu && GetPilot() && GetPilot()->IsType(hhPlayer::Type) ) {
 			idAngles hmd;
 			hmd.pitch = pVRClientInfo->hmdorientation_temp[ PITCH ];
 			hmd.yaw = pVRClientInfo->hmdorientation_temp[ YAW ] - pVRClientInfo->vehicleYaw;
