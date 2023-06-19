@@ -59,8 +59,6 @@ import java.util.Vector;
 	private String commandLineParams;
 
 	private SurfaceView mView;
-	private SurfaceHolder mSurfaceHolder;
-	private long mNativeHandle;
 
 
 	public void shutdown() {
@@ -277,7 +275,7 @@ import java.util.Vector;
 			externalHapticsServiceClients.add(client);
 		}
 
-		mNativeHandle = GLES3JNILib.onCreate( this, commandLineParams, refresh, ss, msaa );
+		GLES3JNILib.onCreate( this, commandLineParams, refresh, ss, msaa );
 	}
 	
 	public void copy_asset(String path, String name, boolean force) {
@@ -326,83 +324,49 @@ import java.util.Vector;
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::onStart()" );
 		super.onStart();
-
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onStart(mNativeHandle, this);
-		}
+		GLES3JNILib.onStart(this);
 	}
 
 	@Override protected void onResume()
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::onResume()" );
 		super.onResume();
-
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onResume(mNativeHandle);
-		}
+		GLES3JNILib.onResume();
 	}
 
 	@Override protected void onPause()
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::onPause()" );
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onPause(mNativeHandle);
-		}
+		GLES3JNILib.onPause();
 		super.onPause();
 	}
 
 	@Override protected void onDestroy()
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::onDestroy()" );
-
-		if ( mSurfaceHolder != null )
-		{
-			GLES3JNILib.onSurfaceDestroyed( mNativeHandle );
-		}
-
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onDestroy(mNativeHandle);
-		}
+		GLES3JNILib.onDestroy();
 
 		for (HapticServiceClient externalHapticsServiceClient : externalHapticsServiceClients) {
 			externalHapticsServiceClient.stopBinding();
 		}
 
 		super.onDestroy();
-		mNativeHandle = 0;
 	}
 
 	@Override public void surfaceCreated( SurfaceHolder holder )
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::surfaceCreated()" );
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onSurfaceCreated( mNativeHandle, holder.getSurface() );
-			mSurfaceHolder = holder;
-		}
+		GLES3JNILib.onSurfaceCreated( holder.getSurface() );
 	}
 
 	@Override public void surfaceChanged( SurfaceHolder holder, int format, int width, int height )
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::surfaceChanged()" );
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onSurfaceChanged( mNativeHandle, holder.getSurface() );
-			mSurfaceHolder = holder;
-		}
+		GLES3JNILib.onSurfaceChanged( holder.getSurface() );
 	}
 	
 	@Override public void surfaceDestroyed( SurfaceHolder holder )
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::surfaceDestroyed()" );
-		if ( mNativeHandle != 0 )
-		{
-			GLES3JNILib.onSurfaceDestroyed( mNativeHandle );
-			mSurfaceHolder = null;
-		}
 	}
 }

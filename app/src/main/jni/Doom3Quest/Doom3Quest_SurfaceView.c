@@ -47,7 +47,6 @@ float screenYaw;
 
 
 //Define all variables here that were externs in the VrCommon.h
-bool Doom3Quest_initialised;
 float playerYaw;
 float vrFOV = 0.0f;
 bool shutdown;
@@ -213,80 +212,6 @@ static int ParseCommandLine(char *cmdline, char **argv)
 /*
 ================================================================================
 
-OpenGL-ES Utility Functions
-
-================================================================================
-*/
-
-typedef struct
-{
-	bool multi_view;						// GL_OVR_multiview, GL_OVR_multiview2
-	bool EXT_texture_border_clamp;			// GL_EXT_texture_border_clamp, GL_OES_texture_border_clamp
-} OpenGLExtensions_t;
-
-OpenGLExtensions_t glExtensions;
-
-static void EglInitExtensions()
-{
-#if defined EGL_SYNC
-	eglCreateSyncKHR		= (PFNEGLCREATESYNCKHRPROC)			eglGetProcAddress( "eglCreateSyncKHR" );
-	eglDestroySyncKHR		= (PFNEGLDESTROYSYNCKHRPROC)		eglGetProcAddress( "eglDestroySyncKHR" );
-	eglClientWaitSyncKHR	= (PFNEGLCLIENTWAITSYNCKHRPROC)		eglGetProcAddress( "eglClientWaitSyncKHR" );
-	eglSignalSyncKHR		= (PFNEGLSIGNALSYNCKHRPROC)			eglGetProcAddress( "eglSignalSyncKHR" );
-	eglGetSyncAttribKHR		= (PFNEGLGETSYNCATTRIBKHRPROC)		eglGetProcAddress( "eglGetSyncAttribKHR" );
-#endif
-
-	const char * allExtensions = (const char *)glGetString( GL_EXTENSIONS );
-	if ( allExtensions != NULL )
-	{
-		glExtensions.multi_view = strstr( allExtensions, "GL_OVR_multiview2" ) &&
-								  strstr( allExtensions, "GL_OVR_multiview_multisampled_render_to_texture" );
-
-		glExtensions.EXT_texture_border_clamp = strstr( allExtensions, "GL_EXT_texture_border_clamp" ) ||
-												strstr( allExtensions, "GL_OES_texture_border_clamp" );
-	}
-}
-
-static const char * EglErrorString( const EGLint error )
-{
-	switch ( error )
-	{
-		case EGL_SUCCESS:				return "EGL_SUCCESS";
-		case EGL_NOT_INITIALIZED:		return "EGL_NOT_INITIALIZED";
-		case EGL_BAD_ACCESS:			return "EGL_BAD_ACCESS";
-		case EGL_BAD_ALLOC:				return "EGL_BAD_ALLOC";
-		case EGL_BAD_ATTRIBUTE:			return "EGL_BAD_ATTRIBUTE";
-		case EGL_BAD_CONTEXT:			return "EGL_BAD_CONTEXT";
-		case EGL_BAD_CONFIG:			return "EGL_BAD_CONFIG";
-		case EGL_BAD_CURRENT_SURFACE:	return "EGL_BAD_CURRENT_SURFACE";
-		case EGL_BAD_DISPLAY:			return "EGL_BAD_DISPLAY";
-		case EGL_BAD_SURFACE:			return "EGL_BAD_SURFACE";
-		case EGL_BAD_MATCH:				return "EGL_BAD_MATCH";
-		case EGL_BAD_PARAMETER:			return "EGL_BAD_PARAMETER";
-		case EGL_BAD_NATIVE_PIXMAP:		return "EGL_BAD_NATIVE_PIXMAP";
-		case EGL_BAD_NATIVE_WINDOW:		return "EGL_BAD_NATIVE_WINDOW";
-		case EGL_CONTEXT_LOST:			return "EGL_CONTEXT_LOST";
-		default:						return "unknown";
-	}
-}
-
-static const char * GlFrameBufferStatusString( GLenum status )
-{
-	switch ( status )
-	{
-		case GL_FRAMEBUFFER_UNDEFINED:						return "GL_FRAMEBUFFER_UNDEFINED";
-		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:			return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
-		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:	return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
-		case GL_FRAMEBUFFER_UNSUPPORTED:					return "GL_FRAMEBUFFER_UNSUPPORTED";
-		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:			return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
-		default:											return "unknown";
-	}
-}
-
-
-/*
-================================================================================
-
 ovrEgl
 
 ================================================================================
@@ -299,7 +224,6 @@ typedef struct
 	EGLDisplay	Display;
 	EGLConfig	Config;
 	EGLSurface	TinySurface;
-	EGLSurface	MainSurface;
 	EGLContext	Context;
 } ovrEgl;
 
@@ -310,7 +234,6 @@ static void ovrEgl_Clear( ovrEgl * egl )
 	egl->Display = 0;
 	egl->Config = 0;
 	egl->TinySurface = EGL_NO_SURFACE;
-	egl->MainSurface = EGL_NO_SURFACE;
 	egl->Context = EGL_NO_CONTEXT;
 }
 
@@ -331,7 +254,7 @@ static void ovrEgl_CreateContext( ovrEgl * egl, const ovrEgl * shareEgl )
 	EGLint numConfigs = 0;
 	if ( eglGetConfigs( egl->Display, configs, MAX_CONFIGS, &numConfigs ) == EGL_FALSE )
 	{
-		ALOGE( "        eglGetConfigs() failed: %s", EglErrorString( eglGetError() ) );
+		ALOGE( "        eglGetConfigs() failed: %d", eglGetError() );
 		return;
 	}
 	const EGLint configAttribs[] =
@@ -381,7 +304,7 @@ static void ovrEgl_CreateContext( ovrEgl * egl, const ovrEgl * shareEgl )
 	}
 	if ( egl->Config == 0 )
 	{
-		ALOGE( "        eglChooseConfig() failed: %s", EglErrorString( eglGetError() ) );
+		ALOGE( "        eglChooseConfig() failed: %d", eglGetError() );
 		return;
 	}
 	EGLint contextAttribs[] =
@@ -393,7 +316,7 @@ static void ovrEgl_CreateContext( ovrEgl * egl, const ovrEgl * shareEgl )
 	egl->Context = eglCreateContext( egl->Display, egl->Config, ( shareEgl != NULL ) ? shareEgl->Context : EGL_NO_CONTEXT, contextAttribs );
 	if ( egl->Context == EGL_NO_CONTEXT )
 	{
-		ALOGE( "        eglCreateContext() failed: %s", EglErrorString( eglGetError() ) );
+		ALOGE( "        eglCreateContext() failed: %d", eglGetError() );
 		return;
 	}
 	const EGLint surfaceAttribs[] =
@@ -406,7 +329,7 @@ static void ovrEgl_CreateContext( ovrEgl * egl, const ovrEgl * shareEgl )
 	egl->TinySurface = eglCreatePbufferSurface( egl->Display, egl->Config, surfaceAttribs );
 	if ( egl->TinySurface == EGL_NO_SURFACE )
 	{
-		ALOGE( "        eglCreatePbufferSurface() failed: %s", EglErrorString( eglGetError() ) );
+		ALOGE( "        eglCreatePbufferSurface() failed: %d", eglGetError() );
 		eglDestroyContext( egl->Display, egl->Context );
 		egl->Context = EGL_NO_CONTEXT;
 		return;
@@ -414,50 +337,11 @@ static void ovrEgl_CreateContext( ovrEgl * egl, const ovrEgl * shareEgl )
 	ALOGV( "        eglMakeCurrent( Display, TinySurface, TinySurface, Context )" );
 	if ( eglMakeCurrent( egl->Display, egl->TinySurface, egl->TinySurface, egl->Context ) == EGL_FALSE )
 	{
-		ALOGE( "        eglMakeCurrent() failed: %s", EglErrorString( eglGetError() ) );
+		ALOGE( "        eglMakeCurrent() failed: %d", eglGetError() );
 		eglDestroySurface( egl->Display, egl->TinySurface );
 		eglDestroyContext( egl->Display, egl->Context );
 		egl->Context = EGL_NO_CONTEXT;
 		return;
-	}
-}
-
-static void ovrEgl_DestroyContext( ovrEgl * egl )
-{
-	if ( egl->Display != 0 )
-	{
-		ALOGE( "        eglMakeCurrent( Display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT )" );
-		if ( eglMakeCurrent( egl->Display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT ) == EGL_FALSE )
-		{
-			ALOGE( "        eglMakeCurrent() failed: %s", EglErrorString( eglGetError() ) );
-		}
-	}
-	if ( egl->Context != EGL_NO_CONTEXT )
-	{
-		ALOGE( "        eglDestroyContext( Display, Context )" );
-		if ( eglDestroyContext( egl->Display, egl->Context ) == EGL_FALSE )
-		{
-			ALOGE( "        eglDestroyContext() failed: %s", EglErrorString( eglGetError() ) );
-		}
-		egl->Context = EGL_NO_CONTEXT;
-	}
-	if ( egl->TinySurface != EGL_NO_SURFACE )
-	{
-		ALOGE( "        eglDestroySurface( Display, TinySurface )" );
-		if ( eglDestroySurface( egl->Display, egl->TinySurface ) == EGL_FALSE )
-		{
-			ALOGE( "        eglDestroySurface() failed: %s", EglErrorString( eglGetError() ) );
-		}
-		egl->TinySurface = EGL_NO_SURFACE;
-	}
-	if ( egl->Display != 0 )
-	{
-		ALOGE( "        eglTerminate( Display )" );
-		if ( eglTerminate( egl->Display ) == EGL_FALSE )
-		{
-			ALOGE( "        eglTerminate() failed: %s", EglErrorString( eglGetError() ) );
-		}
-		egl->Display = 0;
 	}
 }
 
@@ -612,8 +496,7 @@ static bool ovrFramebuffer_Create(
 			GL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0));
 			if (renderFramebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
 				ALOGE(
-						"Incomplete frame buffer object: %s",
-						GlFrameBufferStatusString(renderFramebufferStatus));
+						"Incomplete frame buffer object: %d", renderFramebufferStatus);
 				return false;
 			}
 		} else {
@@ -646,8 +529,7 @@ static bool ovrFramebuffer_Create(
 				GL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 				if (renderFramebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
 					ALOGE(
-							"Incomplete frame buffer object: %s",
-							GlFrameBufferStatusString(renderFramebufferStatus));
+							"Incomplete frame buffer object: %d", renderFramebufferStatus);
 					return false;
 				}
 			} else {
@@ -671,8 +553,7 @@ static bool ovrFramebuffer_Create(
 				GL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0));
 				if (renderFramebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
 					ALOGE(
-							"Incomplete frame buffer object: %s",
-							GlFrameBufferStatusString(renderFramebufferStatus));
+							"Incomplete frame buffer object: %d", renderFramebufferStatus);
 					return false;
 				}
 			}
@@ -1092,6 +973,7 @@ static void ovrApp_Clear( ovrApp * app )
 
 static ovrApp gAppState;
 static ovrJava java;
+static JavaVM *jVM;
 static bool destroyed = false;
 
 float Doom3Quest_GetFOV()
@@ -1103,7 +985,7 @@ float Doom3Quest_GetFOV()
 
 int Doom3Quest_GetRefresh()
 {
-	return Doom3Quest_initialised ? vrapi_GetSystemPropertyInt(&gAppState.Java, VRAPI_SYS_PROP_DISPLAY_REFRESH_RATE) : 60;
+	return vrapi_GetSystemPropertyInt(&gAppState.Java, VRAPI_SYS_PROP_DISPLAY_REFRESH_RATE);
 }
 
 static void ovrApp_HandleVrModeChanges( ovrApp * app )
@@ -1175,23 +1057,6 @@ static void ovrApp_HandleVrModeChanges( ovrApp * app )
 		}
 	}
 }
-
-/*
-================================================================================
-
-ovrAppThread
-
-================================================================================
-*/
-
-typedef struct
-{
-	JavaVM *		JavaVm;
-	jobject			ActivityObject;
-	jclass          ActivityClass;
-	pthread_t		Thread;
-	ANativeWindow * NativeWindow;
-} ovrAppThread;
 
 int m_width;
 int m_height;
@@ -1266,8 +1131,6 @@ void Doom3Quest_finishEyeBuffer( )
 	ovrFramebuffer_SetNone();
 }
 
-static ovrAppThread * gAppThread = NULL;
-
 void Doom3Quest_processMessageQueue() {
 	if ( gAppState.Ovr == NULL && destroyed == false )
 	{
@@ -1279,11 +1142,9 @@ void Doom3Quest_processMessageQueue() {
 void shutdownVR() {
     SDL_DestroyMutex(gAppState.RenderThreadFrameIndex_Mutex);
 	ovrRenderer_Destroy( &gAppState.Renderer );
-	ovrEgl_DestroyContext( &gAppState.Egl );
 	(*java.Vm)->DetachCurrentThread( java.Vm );
 }
 
-void showLoadingIcon();
 void jni_shutdown();
 
 /* Called before SDL_main() to initialize JNI bindings in SDL library */
@@ -1306,25 +1167,14 @@ void ActivateContext()
 int questType;
 
 void * AppThreadFunction(void * parm ) {
-	gAppThread = (ovrAppThread *) parm;
 
-	java.Vm = gAppThread->JavaVm;
+	java.Vm = jVM;
 	(*java.Vm)->AttachCurrentThread(java.Vm, &java.Env, NULL);
-	java.ActivityObject = gAppThread->ActivityObject;
-
-	jclass cls = (*java.Env)->GetObjectClass(java.Env, java.ActivityObject);
-
-    /* This interface could expand with ABI negotiation, callbacks, etc. */
-    SDL_Android_Init(java.Env, cls);
-
-    SDL_SetMainReady();
 
     pVRClientInfo = &vr;
 
 	// Note that AttachCurrentThread will reset the thread name.
 	prctl(PR_SET_NAME, (long) "OVR::Main", 0, 0, 0);
-
-	Doom3Quest_initialised = false;
 
 	const ovrInitParms initParms = vrapi_DefaultInitParms(&java);
 	int32_t initResult = vrapi_Initialize(&initParms);
@@ -1346,8 +1196,6 @@ void * AppThreadFunction(void * parm ) {
 	gAppState.MainThreadTid = gettid();
 
 	ovrEgl_CreateContext(&gAppState.Egl, NULL);
-
-	EglInitExtensions();
 
     chdir("/sdcard/PreyVR");
 
@@ -1402,13 +1250,6 @@ void * AppThreadFunction(void * parm ) {
 
     // Create the scene if not yet created.
     ovrScene_Create( m_width, m_height, &gAppState.Scene, &java );
-
-    //Run loading loop until we are ready to start QzDoom
-    while (!destroyed && !Doom3Quest_initialised) {
-        Doom3Quest_processMessageQueue();
-        Doom3Quest_getHMDOrientation();
-        showLoadingIcon();
-    }
 
     //Should now be all set up and ready - start the Doom3 main loop
     VR_Doom3Main(argc, argv);
@@ -1469,43 +1310,6 @@ void Doom3Quest_processHaptics() {//Handle haptics
 		else
 			vrapi_SetHapticVibrationSimple(gAppState.Ovr, controllerIDs[1 - h], 0.0f);
 	}
-}
-
-void showLoadingIcon()
-{
-	int frameFlags = 0;
-	frameFlags |= VRAPI_FRAME_FLAG_FLUSH;
-
-	ovrLayerProjection2 blackLayer = vrapi_DefaultLayerBlackProjection2();
-	blackLayer.Header.Flags |= VRAPI_FRAME_LAYER_FLAG_INHIBIT_SRGB_FRAMEBUFFER;
-
-	ovrLayerLoadingIcon2 iconLayer = vrapi_DefaultLayerLoadingIcon2();
-	iconLayer.Header.Flags |= VRAPI_FRAME_LAYER_FLAG_INHIBIT_SRGB_FRAMEBUFFER;
-
-	const ovrLayerHeader2 * layers[] =
-	{
-		&blackLayer.Header,
-		&iconLayer.Header,
-	};
-
-	ovrSubmitFrameDescription2 frameDesc = {};
-	{
-		SDL_LockMutex(gAppState.RenderThreadFrameIndex_Mutex);
-
-		frameDesc.Flags = frameFlags;
-		frameDesc.SwapInterval = 1;
-		frameDesc.FrameIndex = gAppState.RenderThreadFrameIndex;
-		frameDesc.DisplayTime = gAppState.DisplayTime[gAppState.RenderThreadFrameIndex %
-													  MAX_TRACKING_SAMPLES];
-		frameDesc.LayerCount = 2;
-		frameDesc.Layers = layers;
-
-		gAppState.RenderThreadFrameIndex++;
-
-		SDL_UnlockMutex(gAppState.RenderThreadFrameIndex_Mutex);
-	}
-
-	vrapi_SubmitFrame2( gAppState.Ovr, &frameDesc );
 }
 
 void Doom3Quest_getHMDOrientation() {
@@ -1654,29 +1458,6 @@ void Doom3Quest_submitFrame()
 	Doom3Quest_HapticEndFrame();
 }
 
-
-static void ovrAppThread_Create( ovrAppThread * appThread, JNIEnv * env, jobject activityObject, jclass activityClass )
-{
-	(*env)->GetJavaVM( env, &appThread->JavaVm );
-	appThread->ActivityObject = (*env)->NewGlobalRef( env, activityObject );
-	appThread->ActivityClass = (*env)->NewGlobalRef( env, activityClass );
-	appThread->Thread = 0;
-	appThread->NativeWindow = NULL;
-
-	const int createErr = pthread_create( &appThread->Thread, NULL, AppThreadFunction, appThread );
-	if ( createErr != 0 )
-	{
-		ALOGE( "pthread_create returned %i", createErr );
-	}
-}
-
-static void ovrAppThread_Destroy( ovrAppThread * appThread, JNIEnv * env )
-{
-	pthread_join( appThread->Thread, NULL );
-	(*env)->DeleteGlobalRef( env, appThread->ActivityObject );
-	(*env)->DeleteGlobalRef( env, appThread->ActivityClass );
-}
-
 /*
 ================================================================================
 
@@ -1692,7 +1473,6 @@ jmethodID android_haptic_stopevent;
 jmethodID android_haptic_endframe;
 jmethodID android_haptic_enable;
 jmethodID android_haptic_disable;
-static JavaVM *jVM;
 static jobject jniCallbackObj=0;
 
 void jni_shutdown()
@@ -1803,7 +1583,7 @@ int JNI_OnLoad(JavaVM* vm, void* reserved)
 	return SDL_JNI_OnLoad(vm, reserved);
 }
 
-JNIEXPORT jlong JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * env, jclass activityClass, jobject activity,
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * env, jclass activityClass, jobject activity,
 																	   jstring commandLineParams, jlong refresh, jfloat ss, jlong msaa)
 {
 	ALOGV( "    GLES3JNILib::onCreate()" );
@@ -1834,13 +1614,11 @@ JNIEXPORT jlong JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * 
 		NUM_MULTI_SAMPLES = msaa;
 	}
 
-	ovrAppThread * appThread = (ovrAppThread *) malloc( sizeof( ovrAppThread ) );
-	ovrAppThread_Create( appThread, env, activity, activityClass );
-	return (jlong)((size_t)appThread);
+	java.ActivityObject = (*env)->NewGlobalRef( env, activity );
 }
 
 
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onStart( JNIEnv * env, jobject obj, jlong handle, jobject obj1)
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onStart( JNIEnv * env, jobject obj, jobject obj1)
 {
 	ALOGV( "    GLES3JNILib::onStart()" );
 
@@ -1854,32 +1632,26 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onStart( JNIEnv * en
 	android_haptic_endframe = (*env)->GetMethodID(env, callbackClass, "haptic_endframe", "()V");
     android_haptic_enable = (*env)->GetMethodID(env, callbackClass, "haptic_enable", "()V");
     android_haptic_disable = (*env)->GetMethodID(env, callbackClass, "haptic_disable", "()V");
-
-	Doom3Quest_initialised = true;
 }
 
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onResume( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onResume( JNIEnv * env, jobject obj )
 {
 	ALOGV( "    GLES3JNILib::onResume()" );
 	gAppState.Resumed = true;
 }
 
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onPause( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onPause( JNIEnv * env, jobject obj )
 {
 	ALOGV( "    GLES3JNILib::onPause()" );
 	gAppState.Resumed = false;
 }
 
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onDestroy( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onDestroy( JNIEnv * env, jobject obj )
 {
 	ALOGV( "    GLES3JNILib::onDestroy()" );
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
 	gAppState.NativeWindow = NULL;
 	destroyed = true;
 	shutdown = true;
-
-	ovrAppThread_Destroy( appThread, env );
-	free( appThread );
 }
 
 /*
@@ -1890,11 +1662,9 @@ Surface lifecycle
 ================================================================================
 */
 
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JNIEnv * env, jobject obj, jlong handle, jobject surface )
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JNIEnv * env, jobject obj, jobject surface )
 {
 	ALOGV( "    GLES3JNILib::onSurfaceCreated()" );
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-
 	ANativeWindow * newNativeWindow = ANativeWindow_fromSurface( env, surface );
 	if ( ANativeWindow_getWidth( newNativeWindow ) < ANativeWindow_getHeight( newNativeWindow ) )
 	{
@@ -1906,15 +1676,19 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JN
 	}
 
 	ALOGV( "        NativeWindow = ANativeWindow_fromSurface( env, surface )" );
-	appThread->NativeWindow = newNativeWindow;
 	gAppState.NativeWindow = newNativeWindow;
+
+	pthread_t thread = 0;
+	const int createErr = pthread_create( &thread, NULL, AppThreadFunction, NULL );
+	if ( createErr != 0 )
+	{
+		ALOGE( "pthread_create returned %i", createErr );
+	}
 }
 
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JNIEnv * env, jobject obj, jlong handle, jobject surface )
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JNIEnv * env, jobject obj, jobject surface )
 {
 	ALOGV( "    GLES3JNILib::onSurfaceChanged()" );
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-
 	ANativeWindow * newNativeWindow = ANativeWindow_fromSurface( env, surface );
 	if ( ANativeWindow_getWidth( newNativeWindow ) < ANativeWindow_getHeight( newNativeWindow ) )
 	{
@@ -1925,32 +1699,5 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JN
 		ALOGE( "        Surface not in landscape mode!" );
 	}
 
-	if ( newNativeWindow != appThread->NativeWindow )
-	{
-		if ( appThread->NativeWindow != NULL )
-		{
-			ALOGV( "        ANativeWindow_release( NativeWindow )" );
-			ANativeWindow_release( appThread->NativeWindow );
-			appThread->NativeWindow = NULL;
-		}
-		if ( newNativeWindow != NULL )
-		{
-			ALOGV( "        NativeWindow = ANativeWindow_fromSurface( env, surface )" );
-			appThread->NativeWindow = newNativeWindow;
-			gAppState.NativeWindow = newNativeWindow;
-		}
-	}
-	else if ( newNativeWindow != NULL )
-	{
-		ANativeWindow_release( newNativeWindow );
-	}
+	gAppState.NativeWindow = newNativeWindow;
 }
-
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceDestroyed( JNIEnv * env, jobject obj, jlong handle )
-{
-	ALOGV( "    GLES3JNILib::onSurfaceDestroyed()" );
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-	ANativeWindow_release( appThread->NativeWindow );
-	appThread->NativeWindow = NULL;
-}
-
