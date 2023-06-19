@@ -1176,185 +1176,6 @@ static void ovrApp_HandleVrModeChanges( ovrApp * app )
 	}
 }
 
-
-/*
-================================================================================
-
-ovrMessageQueue
-
-================================================================================
-*/
-
-typedef enum
-{
-	MQ_WAIT_NONE,		// don't wait
-	MQ_WAIT_RECEIVED,	// wait until the consumer thread has received the message
-	MQ_WAIT_PROCESSED	// wait until the consumer thread has processed the message
-} ovrMQWait;
-
-#define MAX_MESSAGE_PARMS	8
-#define MAX_MESSAGES		1024
-
-typedef struct
-{
-	int			Id;
-	ovrMQWait	Wait;
-	long long	Parms[MAX_MESSAGE_PARMS];
-} ovrMessage;
-
-static void ovrMessage_Init( ovrMessage * message, const int id, const int wait )
-{
-	message->Id = id;
-	message->Wait = wait;
-	memset( message->Parms, 0, sizeof( message->Parms ) );
-}
-
-static void		ovrMessage_SetPointerParm( ovrMessage * message, int index, void * ptr ) { *(void **)&message->Parms[index] = ptr; }
-static void *	ovrMessage_GetPointerParm( ovrMessage * message, int index ) { return *(void **)&message->Parms[index]; }
-static void		ovrMessage_SetIntegerParm( ovrMessage * message, int index, int value ) { message->Parms[index] = value; }
-static int		ovrMessage_GetIntegerParm( ovrMessage * message, int index ) { return (int)message->Parms[index]; }
-static void		ovrMessage_SetFloatParm( ovrMessage * message, int index, float value ) { *(float *)&message->Parms[index] = value; }
-static float	ovrMessage_GetFloatParm( ovrMessage * message, int index ) { return *(float *)&message->Parms[index]; }
-
-// Cyclic queue with messages.
-typedef struct
-{
-	ovrMessage	 		Messages[MAX_MESSAGES];
-	volatile int		Head;	// dequeue at the head
-	volatile int		Tail;	// enqueue at the tail
-	ovrMQWait			Wait;
-	volatile bool		EnabledFlag;
-	volatile bool		PostedFlag;
-	volatile bool		ReceivedFlag;
-	volatile bool		ProcessedFlag;
-	pthread_mutex_t		Mutex;
-	pthread_cond_t		PostedCondition;
-	pthread_cond_t		ReceivedCondition;
-	pthread_cond_t		ProcessedCondition;
-} ovrMessageQueue;
-
-static void ovrMessageQueue_Create( ovrMessageQueue * messageQueue )
-{
-	messageQueue->Head = 0;
-	messageQueue->Tail = 0;
-	messageQueue->Wait = MQ_WAIT_NONE;
-	messageQueue->EnabledFlag = false;
-	messageQueue->PostedFlag = false;
-	messageQueue->ReceivedFlag = false;
-	messageQueue->ProcessedFlag = false;
-
-	pthread_mutexattr_t	attr;
-	pthread_mutexattr_init( &attr );
-	pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_ERRORCHECK );
-	pthread_mutex_init( &messageQueue->Mutex, &attr );
-	pthread_mutexattr_destroy( &attr );
-	pthread_cond_init( &messageQueue->PostedCondition, NULL );
-	pthread_cond_init( &messageQueue->ReceivedCondition, NULL );
-	pthread_cond_init( &messageQueue->ProcessedCondition, NULL );
-}
-
-static void ovrMessageQueue_Destroy( ovrMessageQueue * messageQueue )
-{
-	pthread_mutex_destroy( &messageQueue->Mutex );
-	pthread_cond_destroy( &messageQueue->PostedCondition );
-	pthread_cond_destroy( &messageQueue->ReceivedCondition );
-	pthread_cond_destroy( &messageQueue->ProcessedCondition );
-}
-
-static void ovrMessageQueue_Enable( ovrMessageQueue * messageQueue, const bool set )
-{
-	messageQueue->EnabledFlag = set;
-}
-
-static void ovrMessageQueue_PostMessage( ovrMessageQueue * messageQueue, const ovrMessage * message )
-{
-	if ( !messageQueue->EnabledFlag )
-	{
-		return;
-	}
-	while ( messageQueue->Tail - messageQueue->Head >= MAX_MESSAGES )
-	{
-		usleep( 1000 );
-	}
-	pthread_mutex_lock( &messageQueue->Mutex );
-	messageQueue->Messages[messageQueue->Tail & ( MAX_MESSAGES - 1 )] = *message;
-	messageQueue->Tail++;
-	messageQueue->PostedFlag = true;
-	pthread_cond_broadcast( &messageQueue->PostedCondition );
-	if ( message->Wait == MQ_WAIT_RECEIVED )
-	{
-		while ( !messageQueue->ReceivedFlag )
-		{
-			pthread_cond_wait( &messageQueue->ReceivedCondition, &messageQueue->Mutex );
-		}
-		messageQueue->ReceivedFlag = false;
-	}
-	else if ( message->Wait == MQ_WAIT_PROCESSED )
-	{
-		while ( !messageQueue->ProcessedFlag )
-		{
-			pthread_cond_wait( &messageQueue->ProcessedCondition, &messageQueue->Mutex );
-		}
-		messageQueue->ProcessedFlag = false;
-	}
-	pthread_mutex_unlock( &messageQueue->Mutex );
-}
-
-static void ovrMessageQueue_SleepUntilMessage( ovrMessageQueue * messageQueue )
-{
-	if ( messageQueue->Wait == MQ_WAIT_PROCESSED )
-	{
-		messageQueue->ProcessedFlag = true;
-		pthread_cond_broadcast( &messageQueue->ProcessedCondition );
-		messageQueue->Wait = MQ_WAIT_NONE;
-	}
-	pthread_mutex_lock( &messageQueue->Mutex );
-	if ( messageQueue->Tail > messageQueue->Head )
-	{
-		pthread_mutex_unlock( &messageQueue->Mutex );
-		return;
-	}
-	while ( !messageQueue->PostedFlag )
-	{
-		pthread_cond_wait( &messageQueue->PostedCondition, &messageQueue->Mutex );
-	}
-	messageQueue->PostedFlag = false;
-	pthread_mutex_unlock( &messageQueue->Mutex );
-}
-
-static bool ovrMessageQueue_GetNextMessage( ovrMessageQueue * messageQueue, ovrMessage * message, bool waitForMessages )
-{
-	if ( messageQueue->Wait == MQ_WAIT_PROCESSED )
-	{
-		messageQueue->ProcessedFlag = true;
-		pthread_cond_broadcast( &messageQueue->ProcessedCondition );
-		messageQueue->Wait = MQ_WAIT_NONE;
-	}
-	if ( waitForMessages )
-	{
-		ovrMessageQueue_SleepUntilMessage( messageQueue );
-	}
-	pthread_mutex_lock( &messageQueue->Mutex );
-	if ( messageQueue->Tail <= messageQueue->Head )
-	{
-		pthread_mutex_unlock( &messageQueue->Mutex );
-		return false;
-	}
-	*message = messageQueue->Messages[messageQueue->Head & ( MAX_MESSAGES - 1 )];
-	messageQueue->Head++;
-	pthread_mutex_unlock( &messageQueue->Mutex );
-	if ( message->Wait == MQ_WAIT_RECEIVED )
-	{
-		messageQueue->ReceivedFlag = true;
-		pthread_cond_broadcast( &messageQueue->ReceivedCondition );
-	}
-	else if ( message->Wait == MQ_WAIT_PROCESSED )
-	{
-		messageQueue->Wait = MQ_WAIT_PROCESSED;
-	}
-	return true;
-}
-
 /*
 ================================================================================
 
@@ -1363,25 +1184,12 @@ ovrAppThread
 ================================================================================
 */
 
-enum
-{
-	MESSAGE_ON_CREATE,
-	MESSAGE_ON_START,
-	MESSAGE_ON_RESUME,
-	MESSAGE_ON_PAUSE,
-	MESSAGE_ON_STOP,
-	MESSAGE_ON_DESTROY,
-	MESSAGE_ON_SURFACE_CREATED,
-	MESSAGE_ON_SURFACE_DESTROYED
-};
-
 typedef struct
 {
 	JavaVM *		JavaVm;
 	jobject			ActivityObject;
 	jclass          ActivityClass;
 	pthread_t		Thread;
-	ovrMessageQueue	MessageQueue;
 	ANativeWindow * NativeWindow;
 } ovrAppThread;
 
@@ -1460,71 +1268,11 @@ void Doom3Quest_finishEyeBuffer( )
 
 static ovrAppThread * gAppThread = NULL;
 
-bool Doom3Quest_processMessageQueue() {
-	for ( ; ; )
+void Doom3Quest_processMessageQueue() {
+	if ( gAppState.Ovr == NULL && destroyed == false )
 	{
-		ovrMessage message;
-		const bool waitForMessages = ( gAppState.Ovr == NULL && destroyed == false );
-		if ( !ovrMessageQueue_GetNextMessage( &gAppThread->MessageQueue, &message, waitForMessages ) )
-		{
-			break;
-		}
-
-		switch ( message.Id )
-		{
-			case MESSAGE_ON_CREATE:
-			{
-				break;
-			}
-			case MESSAGE_ON_START:
-			{
-				if (!Doom3Quest_initialised)
-				{
-					//Set command line arguments here
-					if (argc != 0)
-					{
-						//TODO
-					}
-					else
-					{
-						int argc = 1; char *argv[] = { "qzdoom" };
-
-					}
-
-					Doom3Quest_initialised = true;
-				}
-				break;
-			}
-			case MESSAGE_ON_RESUME:
-			{
-				//If we get here, then user has opted not to quit
-				gAppState.Resumed = true;
-				break;
-			}
-			case MESSAGE_ON_PAUSE:
-			{
-				gAppState.Resumed = false;
-				break;
-			}
-			case MESSAGE_ON_STOP:
-			{
-				break;
-			}
-			case MESSAGE_ON_DESTROY:
-			{
-				gAppState.NativeWindow = NULL;
-				destroyed = true;
-				shutdown = true;
-				break;
-			}
-			case MESSAGE_ON_SURFACE_CREATED:	{ gAppState.NativeWindow = (ANativeWindow *)ovrMessage_GetPointerParm( &message, 0 ); break; }
-			case MESSAGE_ON_SURFACE_DESTROYED:	{ gAppState.NativeWindow = NULL; break; }
-		}
-
 		ovrApp_HandleVrModeChanges( &gAppState );
 	}
-
-	return true;
 }
 
 
@@ -1914,7 +1662,6 @@ static void ovrAppThread_Create( ovrAppThread * appThread, JNIEnv * env, jobject
 	appThread->ActivityClass = (*env)->NewGlobalRef( env, activityClass );
 	appThread->Thread = 0;
 	appThread->NativeWindow = NULL;
-	ovrMessageQueue_Create( &appThread->MessageQueue );
 
 	const int createErr = pthread_create( &appThread->Thread, NULL, AppThreadFunction, appThread );
 	if ( createErr != 0 )
@@ -1928,7 +1675,6 @@ static void ovrAppThread_Destroy( ovrAppThread * appThread, JNIEnv * env )
 	pthread_join( appThread->Thread, NULL );
 	(*env)->DeleteGlobalRef( env, appThread->ActivityObject );
 	(*env)->DeleteGlobalRef( env, appThread->ActivityClass );
-	ovrMessageQueue_Destroy( &appThread->MessageQueue );
 }
 
 /*
@@ -2090,12 +1836,6 @@ JNIEXPORT jlong JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * 
 
 	ovrAppThread * appThread = (ovrAppThread *) malloc( sizeof( ovrAppThread ) );
 	ovrAppThread_Create( appThread, env, activity, activityClass );
-
-	ovrMessageQueue_Enable( &appThread->MessageQueue, true );
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_CREATE, MQ_WAIT_PROCESSED );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
-
 	return (jlong)((size_t)appThread);
 }
 
@@ -2115,47 +1855,28 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onStart( JNIEnv * en
     android_haptic_enable = (*env)->GetMethodID(env, callbackClass, "haptic_enable", "()V");
     android_haptic_disable = (*env)->GetMethodID(env, callbackClass, "haptic_disable", "()V");
 
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_START, MQ_WAIT_PROCESSED );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
+	Doom3Quest_initialised = true;
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onResume( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onResume()" );
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_RESUME, MQ_WAIT_PROCESSED );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
+	gAppState.Resumed = true;
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onPause( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onPause()" );
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_PAUSE, MQ_WAIT_PROCESSED );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
-}
-
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onStop( JNIEnv * env, jobject obj, jlong handle )
-{
-	ALOGV( "    GLES3JNILib::onStop()" );
-	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_STOP, MQ_WAIT_PROCESSED );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
+	gAppState.Resumed = false;
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onDestroy( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onDestroy()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_DESTROY, MQ_WAIT_PROCESSED );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
-	ovrMessageQueue_Enable( &appThread->MessageQueue, false );
+	gAppState.NativeWindow = NULL;
+	destroyed = true;
+	shutdown = true;
 
 	ovrAppThread_Destroy( appThread, env );
 	free( appThread );
@@ -2186,10 +1907,7 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JN
 
 	ALOGV( "        NativeWindow = ANativeWindow_fromSurface( env, surface )" );
 	appThread->NativeWindow = newNativeWindow;
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_SURFACE_CREATED, MQ_WAIT_PROCESSED );
-	ovrMessage_SetPointerParm( &message, 0, appThread->NativeWindow );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
+	gAppState.NativeWindow = newNativeWindow;
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JNIEnv * env, jobject obj, jlong handle, jobject surface )
@@ -2211,9 +1929,6 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JN
 	{
 		if ( appThread->NativeWindow != NULL )
 		{
-			ovrMessage message;
-			ovrMessage_Init( &message, MESSAGE_ON_SURFACE_DESTROYED, MQ_WAIT_PROCESSED );
-			ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
 			ALOGV( "        ANativeWindow_release( NativeWindow )" );
 			ANativeWindow_release( appThread->NativeWindow );
 			appThread->NativeWindow = NULL;
@@ -2222,10 +1937,7 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JN
 		{
 			ALOGV( "        NativeWindow = ANativeWindow_fromSurface( env, surface )" );
 			appThread->NativeWindow = newNativeWindow;
-			ovrMessage message;
-			ovrMessage_Init( &message, MESSAGE_ON_SURFACE_CREATED, MQ_WAIT_PROCESSED );
-			ovrMessage_SetPointerParm( &message, 0, appThread->NativeWindow );
-			ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
+			gAppState.NativeWindow = newNativeWindow;
 		}
 	}
 	else if ( newNativeWindow != NULL )
@@ -2238,10 +1950,6 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceDestroyed( 
 {
 	ALOGV( "    GLES3JNILib::onSurfaceDestroyed()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
-	ovrMessage message;
-	ovrMessage_Init( &message, MESSAGE_ON_SURFACE_DESTROYED, MQ_WAIT_PROCESSED );
-	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
-	ALOGV( "        ANativeWindow_release( NativeWindow )" );
 	ANativeWindow_release( appThread->NativeWindow );
 	appThread->NativeWindow = NULL;
 }
