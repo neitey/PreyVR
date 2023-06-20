@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
     private TextView mFullWarning;
 
     private ModView[] mModsView;
+    private ProgressDialog mProgress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +64,14 @@ public class MainActivity extends Activity {
         };
 
         checkPermissionsAndInitialize(true);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mProgress != null) {
+            mProgress.show();
+        }
     }
 
     private void checkPermissionsAndInitialize(boolean ask) {
@@ -87,12 +96,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        System.exit(0);
-    }
-
     private void create() {
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
@@ -105,7 +108,7 @@ public class MainActivity extends Activity {
                 mod.setOnClickListener(view -> startModGame(mod.getFilename(), mod.getMapname()));
                 mod.setVisibility(View.VISIBLE);
             }
-        }
+        }super.onResume();
     }
 
     public boolean downloadFile(String url, File target, boolean forced) {
@@ -136,10 +139,10 @@ public class MainActivity extends Activity {
     }
 
     private void downloadData(String[] data) {
-        ProgressDialog pd = new ProgressDialog(this);
-        pd.setMessage(getString(R.string.downloading));
-        pd.setCancelable(false);
-        pd.show();
+        mProgress = new ProgressDialog(this);
+        mProgress.setMessage(getString(R.string.downloading));
+        mProgress.setCancelable(false);
+        mProgress.show();
 
         new Thread(() -> {
             int index = 0;
@@ -147,7 +150,7 @@ public class MainActivity extends Activity {
             for (String file : data) {
                 index++;
                 String progress = index + "/" + count;
-                runOnUiThread(() -> pd.setMessage(getString(R.string.downloading) + " " + progress));
+                runOnUiThread(() -> mProgress.setMessage(getString(R.string.downloading) + " " + progress));
                 String url = DATA_URL + file;
                 if (!downloadFile(url, new File(base, file), false)) {
                     runOnUiThread(() -> {
@@ -156,12 +159,16 @@ public class MainActivity extends Activity {
                                 .setMessage(R.string.download_failed)
                                 .setIcon(android.R.drawable.ic_dialog_alert)
                                 .setNegativeButton(android.R.string.no, null).show();
-                        pd.dismiss();
+                        mProgress.dismiss();
+                        mProgress = null;
                     });
                     return;
                 }
             }
-            runOnUiThread(pd::dismiss);
+            runOnUiThread(() -> {
+                mProgress.dismiss();
+                mProgress = null;
+            });
         }).start();
     }
 
