@@ -116,17 +116,16 @@ void controlMouse(bool showingMenu) {
     bool toggledMenuOn = !previousShowingMenu && showingMenu;
     previousShowingMenu = showingMenu;
 
-    int height = 0;
-    int width = 0;
-    Doom3Quest_GetScreenRes(&width, &height);
+    static int width = 0;
+    static int height = 0;
+    if ((width == 0) || (height == 0)) {
+        Doom3Quest_GetScreenRes(&width, &height);
+    }
 
     if (toggledMenuOn || waitForLevelController)
     {
-        float cx = width / 2;
-        float cy = height / 2;
-        float speed = (cx + cy) / 2;
-        cursorX = cx - tan(ToRadians(pVRClientInfo->weaponangles_temp[YAW] - VR_GetConfigFloat(VR_CONFIG_MENU_YAW))) * speed;
-        cursorY = cy - tan(ToRadians(pVRClientInfo->weaponangles_temp[PITCH])) * speed * VR_GetConfigFloat(VR_CONFIG_CANVAS_ASPECT);
+        cursorX = (float)((-(pVRClientInfo->weaponangles_temp[YAW]-yaw) * width) / 70.0F);
+        cursorY = (float)((pVRClientInfo->weaponangles_temp[PITCH] * height) / 70.0F);
         yaw = pVRClientInfo->weaponangles_temp[YAW];
 
         Sys_AddMouseMoveEvent(-10000, -10000);
