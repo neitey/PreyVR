@@ -17,8 +17,11 @@ enum VRConfig {
 
 enum VRConfigFloat {
 	// 2D canvas positioning
-	VR_CONFIG_CANVAS_DISTANCE, VR_CONFIG_MENU_PITCH, VR_CONFIG_MENU_YAW, VR_CONFIG_RECENTER_YAW,
+	VR_CONFIG_CANVAS_DISTANCE, VR_CONFIG_MENU_YAW, VR_CONFIG_RECENTER_YAW,
 	VR_CONFIG_CANVAS_ASPECT,
+
+	// Field of view
+	VR_CONFIG_FOVX, VR_CONFIG_FOVY,
 
 	VR_CONFIG_FLOAT_MAX
 };
@@ -47,3 +50,4 @@ void VR_SetConfigFloat( enum VRConfigFloat config, float value );
 void VR_BindFramebuffer(engine_t *engine);
 XrView VR_GetView(int eye);
 XrVector3f VR_GetHMDAngles();
+void VR_SetRefreshRate(int refresh);

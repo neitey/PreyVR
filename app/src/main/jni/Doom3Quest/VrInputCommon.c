@@ -3,13 +3,15 @@
 Filename	:	VrInputRight.c 
 Content		:	Handles common controller input functionality
 Created		:	September 2019
-Authors		:	Simon Brown
+Authors		:	Simon Brown, Lubos Vonasek
 
 *************************************************************************************/
 
 #include "VrInput.h"
 #include "mathlib.h"
 #include "VrClientInfo.h"
+#include "VrMath.h"
+#include "VrRenderer.h"
 
 void Sys_AddMouseMoveEvent(int dx, int dy);
 void Sys_AddMouseButtonEvent(int button, bool pressed);
@@ -120,8 +122,11 @@ void controlMouse(bool showingMenu) {
 
     if (toggledMenuOn || waitForLevelController)
     {
-        cursorX = (float)(((pVRClientInfo->weaponangles_temp[YAW]-yaw) * width) / 60.0F);
-        cursorY = (float)((pVRClientInfo->weaponangles_temp[PITCH] * height) / 70.0F);
+        float cx = width / 2;
+        float cy = height / 2;
+        float speed = (cx + cy) / 2;
+        cursorX = cx - tan(ToRadians(pVRClientInfo->weaponangles_temp[YAW] - VR_GetConfigFloat(VR_CONFIG_MENU_YAW))) * speed;
+        cursorY = cy - tan(ToRadians(pVRClientInfo->weaponangles_temp[PITCH])) * speed * VR_GetConfigFloat(VR_CONFIG_CANVAS_ASPECT);
         yaw = pVRClientInfo->weaponangles_temp[YAW];
 
         Sys_AddMouseMoveEvent(-10000, -10000);

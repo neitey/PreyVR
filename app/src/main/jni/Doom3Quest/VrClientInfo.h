@@ -12,7 +12,6 @@ typedef float vec4_t[4];
 typedef struct {
     bool screen;
     float fov;
-    bool weapon_stabilised;
     bool oneHandOnly;
     bool right_handed;
     bool player_moving;
@@ -59,10 +58,6 @@ typedef struct {
     vec3_t throw_origin;
     vec3_t throw_trajectory;
     float throw_power;
-
-    bool velocitytriggered; // Weapon attack triggered by velocity (knife)
-    bool velocitytriggeredoffhand; // Weapon attack triggered by velocity (puncher)
-    bool velocitytriggeredoffhandstate; // Weapon attack triggered by velocity (puncher)
 
     vec3_t offhandangles_temp;
     vec3_t offhandoffset_temp;

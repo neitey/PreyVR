@@ -32,7 +32,7 @@ void GLCheckErrors(const char* file, int line);
 #define GL(func) func;
 #endif
 
-#if !defined(_DEBUG)
+#if defined(_DEBUG)
 static void OXR_CheckErrors(XrInstance instance, XrResult result, const char* function, bool failOnError) {
 	if (XR_FAILED(result)) {
 		char errorBuffer[XR_MAX_RESULT_STRING_SIZE];
@@ -133,6 +133,7 @@ enum VRPlatformFlag {
 	VR_PLATFORM_EXTENSION_FOVEATION,
 	VR_PLATFORM_EXTENSION_INSTANCE,
 	VR_PLATFORM_EXTENSION_PERFORMANCE,
+	VR_PLATFORM_EXTENSION_REFRESH,
 	VR_PLATFORM_TRACKING_FLOOR,
 	VR_PLATFORM_MAX
 };

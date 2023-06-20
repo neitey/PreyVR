@@ -2,11 +2,9 @@
 
 Filename	:	Q2VR_SurfaceView.c based on VrCubeWorld_SurfaceView.c
 Content		:	This sample uses a plain Android SurfaceView and handles all
-				Activity and Surface life cycle events in native code. This sample
-				does not use the application framework and also does not use LibOVR.
-				This sample only uses the VrApi.
+				Activity and Surface life cycle events in native code.
 Created		:	March, 2015
-Authors		:	J.M.P. van Waveren / Simon Brown
+Authors		:	J.M.P. van Waveren, Simon Brown, Lubos Vonasek
 
 Copyright	:	Copyright 2015 Oculus VR, LLC. All Rights reserved.
 
@@ -435,33 +433,43 @@ static ovrJava java;
 static JavaVM *jVM;
 static bool destroyed = false;
 
-float Doom3Quest_GetFOV()
+bool frameValid = false;
+long renderThreadCPUTime = 0;
+time_t seconds;
+int lastFPS = 0;
+int FPS = 0;
+
+float Doom3Quest_GetFOV(int axis)
 {
-	//TODO:implement
-	return 90;
+	switch (axis) {
+		case 0:
+			return VR_GetConfigFloat(VR_CONFIG_FOVX);
+		case 1:
+			return VR_GetConfigFloat(VR_CONFIG_FOVY);
+		default:
+			return 0;
+	}
 }
 
 int Doom3Quest_GetRefresh()
 {
-	//TODO:implement
-	return 60;
+	return lastFPS;
 }
-
-int m_width;
-int m_height;
 
 void Doom3Quest_GetScreenRes(int *width, int *height)
 {
-    VR_GetResolution(VR_GetEngine(), &m_width, &m_height);
-    *width = m_width;
-    *height = m_height;
+	VR_GetResolution(VR_GetEngine(), width, height);
 }
-
-bool frameValid = false;
-long renderThreadCPUTime = 0;
 
 void Doom3Quest_prepareEyeBuffer( )
 {
+	if (seconds != time(NULL)) {
+		seconds = time(NULL);
+		lastFPS = FPS;
+		FPS = 0;
+	}
+	FPS++;
+
 	if (!VR_GetConfig(VR_CONFIG_VIEWPORT_VALID)) {
 		VR_InitRenderer(VR_GetEngine(), true);
 		VR_SetConfig(VR_CONFIG_VIEWPORT_VALID, true);
@@ -469,7 +477,7 @@ void Doom3Quest_prepareEyeBuffer( )
 
 	VR_SetConfigFloat(VR_CONFIG_CANVAS_ASPECT, 1);
 	VR_SetConfigFloat(VR_CONFIG_CANVAS_DISTANCE, 6);
-	VR_SetConfig(VR_CONFIG_MODE, Doom3Quest_useScreenLayer() ? VR_MODE_MONO_SCREEN : VR_MODE_STEREO_6DOF);
+	VR_SetConfig(VR_CONFIG_MODE, Doom3Quest_useScreenLayer() ? VR_MODE_STEREO_SCREEN : VR_MODE_STEREO_6DOF);
 
 	frameValid = VR_InitFrame(VR_GetEngine());
 	if (frameValid) {
@@ -514,27 +522,7 @@ void ActivateContext()
     eglMakeCurrent( gAppState.Egl.Display, gAppState.Egl.TinySurface, gAppState.Egl.TinySurface, gAppState.Egl.Context );
 }
 
-void * AppThreadFunction(void * parm ) {
-	//TODO:get device name
-	char devicename[32] = "oculus";
-
-	//Get device vendor (uppercase)
-	char vendor[64];
-	sscanf(devicename, "%[^:]", vendor);
-	for (unsigned int i = 0; i < strlen(vendor); i++) {
-		if ((vendor[i] >= 'a') && (vendor[i] <= 'z')) {
-			vendor[i] = vendor[i] - 'a' + 'A';
-		}
-	}
-
-	//Set platform flags
-	if (strcmp(vendor, "PICO") == 0) {
-		VR_SetPlatformFLag(VR_PLATFORM_CONTROLLER_PICO, true);
-		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_INSTANCE, true);
-	} else if ((strcmp(vendor, "META") == 0) || (strcmp(vendor, "OCULUS") == 0)) {
-		VR_SetPlatformFLag(VR_PLATFORM_CONTROLLER_QUEST, true);
-	}
-
+void * AppThreadFunction(void * parm) {
 	//Initialise all our variables
 	vr.snapTurn = 0.0f;
 	vr.visible_hud = true;
@@ -580,9 +568,8 @@ void * AppThreadFunction(void * parm ) {
 //All the stuff we want to do each frame
 void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
 {
-	//TODO:set refresh
-
-    Doom3Quest_processHaptics();
+	VR_SetRefreshRate(refresh);
+	Doom3Quest_processHaptics();
     Doom3Quest_getHMDOrientation();
     Doom3Quest_getTrackedRemotesOrientation(controlscheme, switch_sticks);
 }
@@ -753,7 +740,7 @@ int JNI_OnLoad(JavaVM* vm, void* reserved)
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * env, jclass activityClass, jobject activity,
-																	   jstring commandLineParams)
+																	   jstring commandLineParams, jstring device)
 {
 	ALOGV( "    GLES3JNILib::onCreate()" );
 
@@ -772,6 +759,29 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * e
 	ALOGV("Command line %s", cmdLine);
 	argv = malloc(sizeof(char*) * 255);
 	argc = ParseCommandLine(strdup(cmdLine), argv);
+
+
+	//Get device vendor (uppercase)
+	const char *devicename = (*env)->GetStringUTFChars(env, device, &iscopy);
+	char vendor[64];
+	sscanf(devicename, "%[^:]", vendor);
+	for (unsigned int i = 0; i < strlen(vendor); i++) {
+		if ((vendor[i] >= 'a') && (vendor[i] <= 'z')) {
+			vendor[i] = vendor[i] - 'a' + 'A';
+		}
+	}
+
+	//Set platform flags
+	if (strcmp(vendor, "PICO") == 0) {
+		VR_SetPlatformFLag(VR_PLATFORM_CONTROLLER_PICO, true);
+		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_INSTANCE, true);
+	} else if ((strcmp(vendor, "META") == 0) || (strcmp(vendor, "OCULUS") == 0)) {
+		VR_SetPlatformFLag(VR_PLATFORM_CONTROLLER_QUEST, true);
+		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_FOVEATION, true);
+		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_PERFORMANCE, true);
+		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_REFRESH, true);
+	}
+	VR_SetPlatformFLag(VR_PLATFORM_TRACKING_FLOOR, true);
 
 
 	//Init VR
@@ -828,14 +838,15 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JN
 	}
 
 	ALOGV( "        NativeWindow = ANativeWindow_fromSurface( env, surface )" );
-	gAppState.NativeWindow = newNativeWindow;
-
-	pthread_t thread = 0;
-	const int createErr = pthread_create( &thread, NULL, AppThreadFunction, NULL );
-	if ( createErr != 0 )
-	{
-		ALOGE( "pthread_create returned %i", createErr );
+	if (!gAppState.NativeWindow) {
+		pthread_t thread = 0;
+		const int createErr = pthread_create( &thread, NULL, AppThreadFunction, NULL );
+		if ( createErr != 0 )
+		{
+			ALOGE( "pthread_create returned %i", createErr );
+		}
 	}
+	gAppState.NativeWindow = newNativeWindow;
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JNIEnv * env, jobject obj, jobject surface )

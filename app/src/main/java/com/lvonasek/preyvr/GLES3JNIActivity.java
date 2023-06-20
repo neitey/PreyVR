@@ -25,10 +25,8 @@ import android.view.WindowManager;
 import com.drbeef.externalhapticsservice.HapticServiceClient;
 import com.drbeef.externalhapticsservice.HapticsConstants;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,6 +40,8 @@ import java.util.Vector;
 	//Use a vector of pairs, it is possible a given package _could_ in the future support more than one haptic service
 	//so a map here of Package -> Action would not work.
 	private static Vector<Pair<String, String>> externalHapticsServiceDetails = new Vector<>();
+
+	private static boolean started = false;
 
 	static
 	{
@@ -180,7 +180,10 @@ import java.util.Vector;
 		params.screenBrightness = 1.0f;
 		getWindow().setAttributes( params );
 
-		checkPermissionsAndInitialize();
+		if (!started) {
+			checkPermissionsAndInitialize();
+			started = true;
+		}
 	}
 
 	/** Initializes the Activity only if the permission has been granted. */
@@ -212,12 +215,15 @@ import java.util.Vector;
 
 		File root = new File("/sdcard/PreyVR");
 		File base = new File(root, "preybase");
+		File saves = new File(root, "saves/preybase");
 
 		//Base game
 		base.mkdirs();
-		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
-		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
+
+		//Config
+		saves.mkdirs();
+		copy_asset(base.getAbsolutePath(), "preyconfig.cfg", false);
 
 		//Read these from a file and pass through
 		commandLineParams = "doom3quest";
@@ -253,7 +259,7 @@ import java.util.Vector;
 			externalHapticsServiceClients.add(client);
 		}
 
-		GLES3JNILib.onCreate( this, commandLineParams );
+		GLES3JNILib.onCreate( this, commandLineParams, Build.MANUFACTURER );
 	}
 	
 	public void copy_asset(String path, String name, boolean force) {
@@ -328,7 +334,7 @@ import java.util.Vector;
 		Log.v(APPLICATION, "GLES3JNIActivity::surfaceChanged()" );
 		GLES3JNILib.onSurfaceChanged( holder.getSurface() );
 	}
-	
+
 	@Override public void surfaceDestroyed( SurfaceHolder holder )
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::surfaceDestroyed()" );

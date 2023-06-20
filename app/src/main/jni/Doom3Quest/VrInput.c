@@ -413,13 +413,13 @@ void IN_VRInputFrame( engine_t* engine ) {
 	if (GetActionStateBoolean(buttonYAction).currentState) lButtons |= ovrButton_Y;
 	if (GetActionStateBoolean(indexLeftAction).currentState) lButtons |= ovrButton_Trigger;
 	if (GetActionStateFloat(gripLeftAction).currentState > 0.5f) lButtons |= ovrButton_GripTrigger;
-	if (GetActionStateBoolean(thumbstickLeftClickAction).currentState) lButtons |= ovrButton_LThumb;
+	if (GetActionStateBoolean(thumbstickLeftClickAction).currentState) lButtons |= ovrButton_Joystick;
 	rButtons = 0;
 	if (GetActionStateBoolean(buttonAAction).currentState) rButtons |= ovrButton_A;
 	if (GetActionStateBoolean(buttonBAction).currentState) rButtons |= ovrButton_B;
 	if (GetActionStateBoolean(indexRightAction).currentState) rButtons |= ovrButton_Trigger;
 	if (GetActionStateFloat(gripRightAction).currentState > 0.5f) rButtons |= ovrButton_GripTrigger;
-	if (GetActionStateBoolean(thumbstickRightClickAction).currentState) rButtons |= ovrButton_RThumb;
+	if (GetActionStateBoolean(thumbstickRightClickAction).currentState) rButtons |= ovrButton_Joystick;
 
 	//thumbstick
 	moveJoystickState[0] = GetActionStateVector2(moveOnLeftJoystickAction);

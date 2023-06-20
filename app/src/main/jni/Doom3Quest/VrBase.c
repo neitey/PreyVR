@@ -51,6 +51,9 @@ void VR_Init( void* system, const char* name, int version ) {
 		extensions[extensionsCount++] = XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME;
 		extensions[extensionsCount++] = XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME;
 	}
+	if (VR_GetPlatformFlag(VR_PLATFORM_EXTENSION_REFRESH)) {
+		extensions[extensionsCount++] = XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME;
+	}
 #endif
 
 	// Create the OpenXR instance.
@@ -177,6 +180,32 @@ void VR_EnterVR( engine_t* engine, ovrEgl egl ) {
 	spaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
 	spaceCreateInfo.poseInReferenceSpace.orientation.w = 1.0f;
 	OXR(xrCreateReferenceSpace(engine->appState.Session, &spaceCreateInfo, &engine->appState.HeadSpace));
+	engine->appState.RenderThreadTid = gettid();
+
+#ifdef ANDROID
+	if (VR_GetPlatformFlag(VR_PLATFORM_EXTENSION_PERFORMANCE)) {
+		XrPerfSettingsLevelEXT cpuPerfLevel = XR_PERF_SETTINGS_LEVEL_BOOST_EXT;
+		XrPerfSettingsLevelEXT gpuPerfLevel = XR_PERF_SETTINGS_LEVEL_BOOST_EXT;
+
+		PFN_xrPerfSettingsSetPerformanceLevelEXT pfnPerfSettingsSetPerformanceLevelEXT = NULL;
+		OXR(xrGetInstanceProcAddr(
+				engine->appState.Instance,
+				"xrPerfSettingsSetPerformanceLevelEXT",
+				(PFN_xrVoidFunction*)(&pfnPerfSettingsSetPerformanceLevelEXT)));
+
+		OXR(pfnPerfSettingsSetPerformanceLevelEXT(engine->appState.Session, XR_PERF_SETTINGS_DOMAIN_CPU_EXT, cpuPerfLevel));
+		OXR(pfnPerfSettingsSetPerformanceLevelEXT(engine->appState.Session, XR_PERF_SETTINGS_DOMAIN_GPU_EXT, gpuPerfLevel));
+
+		PFN_xrSetAndroidApplicationThreadKHR pfnSetAndroidApplicationThreadKHR = NULL;
+		OXR(xrGetInstanceProcAddr(
+				engine->appState.Instance,
+				"xrSetAndroidApplicationThreadKHR",
+				(PFN_xrVoidFunction*)(&pfnSetAndroidApplicationThreadKHR)));
+
+		OXR(pfnSetAndroidApplicationThreadKHR(engine->appState.Session, XR_ANDROID_THREAD_TYPE_APPLICATION_MAIN_KHR, engine->appState.MainThreadTid));
+		OXR(pfnSetAndroidApplicationThreadKHR(engine->appState.Session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, engine->appState.RenderThreadTid));
+	}
+#endif
 }
 
 void VR_LeaveVR( engine_t* engine ) {

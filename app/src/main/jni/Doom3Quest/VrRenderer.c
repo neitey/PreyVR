@@ -12,6 +12,7 @@ bool initialized = false;
 bool stageSupported = false;
 int vrConfig[VR_CONFIG_MAX] = {};
 float vrConfigFloat[VR_CONFIG_FLOAT_MAX] = {};
+PFN_xrRequestDisplayRefreshRateFB pfnRequestDisplayRefreshRate = NULL;
 
 XrVector3f hmdorientation;
 
@@ -165,7 +166,6 @@ void VR_Recenter(engine_t* engine) {
 	}
 
 	// Update menu orientation
-	VR_SetConfigFloat(VR_CONFIG_MENU_PITCH, hmdorientation.x);
 	VR_SetConfigFloat(VR_CONFIG_MENU_YAW, 0.0f);
 }
 
@@ -208,7 +208,7 @@ void VR_InitRenderer( engine_t* engine, bool multiview ) {
 			engine->appState.ViewConfigurationView[0].recommendedImageRectHeight);
 #ifdef ANDROID
 	if (VR_GetPlatformFlag(VR_PLATFORM_EXTENSION_FOVEATION)) {
-		ovrRenderer_SetFoveation(&engine->appState.Instance, &engine->appState.Session, &engine->appState.Renderer, XR_FOVEATION_LEVEL_HIGH_TOP_FB, 0, XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB);
+		ovrRenderer_SetFoveation(&engine->appState.Instance, &engine->appState.Session, &engine->appState.Renderer, XR_FOVEATION_LEVEL_HIGH_FB, 0, XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB);
 	}
 #endif
 	initialized = true;
@@ -286,6 +286,8 @@ bool VR_InitFrame( engine_t* engine ) {
 		fov.angleDown += projections[eye].fov.angleDown / 2.0f;
 		invViewTransform[eye] = projections[eye].pose;
 	}
+	VR_SetConfigFloat(VR_CONFIG_FOVX, ToDegrees(fabs(fov.angleLeft) + fabs(fov.angleRight)));
+	VR_SetConfigFloat(VR_CONFIG_FOVY, ToDegrees(fabs(fov.angleUp) + fabs(fov.angleDown)));
 
 	// Update HMD and controllers
 	hmdorientation = XrQuaternionf_ToEulerAngles(invViewTransform[0].orientation);
@@ -361,16 +363,13 @@ void VR_FinishFrame( engine_t* engine ) {
 
 		// Flat screen pose
 		float distance = VR_GetConfigFloat(VR_CONFIG_CANVAS_DISTANCE);
-		float menuPitch = ToRadians(VR_GetConfigFloat(VR_CONFIG_MENU_PITCH));
 		float menuYaw = ToRadians(VR_GetConfigFloat(VR_CONFIG_MENU_YAW));
 		XrVector3f pos = {
 				invViewTransform[0].position.x - sinf(menuYaw) * distance,
 				invViewTransform[0].position.y,
 				invViewTransform[0].position.z - cosf(menuYaw) * distance
 		};
-		XrVector3f pitchAxis = {1, 0, 0};
 		XrVector3f yawAxis = {0, 1, 0};
-		XrQuaternionf pitch = XrQuaternionf_CreateFromVectorAngle(pitchAxis, -menuPitch);
 		XrQuaternionf yaw = XrQuaternionf_CreateFromVectorAngle(yawAxis, menuYaw);
 
 		// Setup the cylinder layer
@@ -385,7 +384,7 @@ void VR_FinishFrame( engine_t* engine ) {
 		cylinder_layer.subImage.imageRect.extent.height = engine->appState.Renderer.FrameBuffer.ColorSwapChain.Height;
 		cylinder_layer.subImage.swapchain = engine->appState.Renderer.FrameBuffer.ColorSwapChain.Handle;
 		cylinder_layer.subImage.imageArrayIndex = 0;
-		cylinder_layer.pose.orientation = XrQuaternionf_Multiply(pitch, yaw);
+		cylinder_layer.pose.orientation = yaw;
 		cylinder_layer.pose.position = pos;
 		cylinder_layer.radius = 12.0f;
 		cylinder_layer.centralAngle = (float)(M_PI * 0.5);
@@ -452,4 +451,16 @@ XrView VR_GetView(int eye) {
 
 XrVector3f VR_GetHMDAngles() {
 	return hmdorientation;
+}
+
+void VR_SetRefreshRate(int refresh) {
+	if (VR_GetPlatformFlag(VR_PLATFORM_EXTENSION_REFRESH)) {
+		if (!pfnRequestDisplayRefreshRate) {
+			OXR(xrGetInstanceProcAddr(
+					VR_GetEngine()->appState.Instance,
+					"xrRequestDisplayRefreshRateFB",
+					(PFN_xrVoidFunction*)(&pfnRequestDisplayRefreshRate)));
+		}
+		OXR(pfnRequestDisplayRefreshRate(VR_GetEngine()->appState.Session, (float)refresh));
+	}
 }
