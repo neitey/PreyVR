@@ -37,11 +37,6 @@ Copyright	:	Copyright 2015 Oculus VR, LLC. All Rights reserved.
 #include "VrMath.h"
 #include "VrRenderer.h"
 
-bool shutdown;
-
-#if !defined( EGL_OPENGL_ES3_BIT_KHR )
-#define EGL_OPENGL_ES3_BIT_KHR		0x0040
-#endif
 
 // EXT_texture_border_clamp
 #ifndef GL_CLAMP_TO_BORDER
@@ -55,26 +50,9 @@ bool shutdown;
 vrClientInfo vr;
 vrClientInfo *pVRClientInfo;
 
-jclass clazz;
-
 char **argv;
 int argc=0;
-
-/*
-================================================================================
-
-System Clock Time in millis
-
-================================================================================
-*/
-
-double GetTimeInMilliSeconds()
-{
-	struct timespec now;
-	clock_gettime( CLOCK_MONOTONIC, &now );
-	return ( now.tv_sec * 1e9 + now.tv_nsec ) * (double)(1e-6);
-}
-
+bool shutdown;
 
 bool forceVirtualScreen = false;
 bool inMenu = true;
@@ -272,26 +250,6 @@ void QuatToYawPitchRoll(XrQuaternionf q, vec3_t rotation, vec3_t out) {
 	GetAnglesFromVectors(forwardNormal, rightNormal, upNormal, out);
 }
 
-void updateHMDOrientation()
-{
-    //Position
-    VectorSubtract(vr.hmdposition_last, vr.hmdposition, vr.hmdposition_delta);
-
-    //Keep this for our records
-    VectorCopy(vr.hmdposition, vr.hmdposition_last);
-}
-
-void setHMDPosition( float x, float y, float z, float yaw )
-{
-	VectorSet(vr.hmdposition, x, y, z);
-}
-
-void setHMDOrientation( float x, float y, float z, float w )
-{
-    Vector4Set(vr.hmdorientation_quat, x, y, z, w);
-}
-
-
 /*
 ========================
 Doom3Quest_Vibrate
@@ -395,46 +353,12 @@ void VR_GetJoystick( float *x, float *y ) {
 }
 //Lubos END
 
-/*
-================================================================================
-
-ovrRenderThread
-
-================================================================================
-*/
-
-
-/*
-================================================================================
-
-XrApp
-
-================================================================================
-*/
-
-typedef struct
-{
-	ovrJava				Java;
-	ovrEgl				Egl;
-	ANativeWindow *		NativeWindow;
-} XrApp;
-
-static void XrApp_Clear( XrApp * app )
-{
-	app->Java.Vm = NULL;
-	app->Java.Env = NULL;
-	app->Java.ActivityObject = NULL;
-
-	ovrEgl_Clear( &app->Egl );
-}
-
-static XrApp gAppState;
-static ovrJava java;
+static ovrEgl Egl;
+static ANativeWindow *NativeWindow;
 static JavaVM *jVM;
 static bool destroyed = false;
 
 bool frameValid = false;
-long renderThreadCPUTime = 0;
 time_t seconds;
 int lastFPS = 0;
 int FPS = 0;
@@ -483,15 +407,12 @@ void Doom3Quest_prepareEyeBuffer( )
 	if (frameValid) {
 		VR_BeginFrame(VR_GetEngine());
 		VR_BindFramebuffer(VR_GetEngine());
+		Doom3Quest_getHMDOrientation();
 	}
-
-	renderThreadCPUTime = GetTimeInMilliSeconds();
 }
 
 void Doom3Quest_finishEyeBuffer( )
 {
-    renderThreadCPUTime = GetTimeInMilliSeconds() - renderThreadCPUTime;
-
 	if (frameValid) {
 		VR_EndFrame(VR_GetEngine());
 		VR_FinishFrame(VR_GetEngine());
@@ -513,13 +434,13 @@ extern void SDL_Android_Init(JNIEnv* env, jclass cls);
 //Calld on the main thread before the rendering thread is started
 void DeactivateContext()
 {
-    eglMakeCurrent( gAppState.Egl.Display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT );
+    eglMakeCurrent( Egl.Display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT );
 }
 
 //Caled by the rendering thread to take charge of the context
 void ActivateContext()
 {
-    eglMakeCurrent( gAppState.Egl.Display, gAppState.Egl.TinySurface, gAppState.Egl.TinySurface, gAppState.Egl.Context );
+    eglMakeCurrent( Egl.Display, Egl.TinySurface, Egl.TinySurface, Egl.Context );
 }
 
 void * AppThreadFunction(void * parm) {
@@ -530,9 +451,6 @@ void * AppThreadFunction(void * parm) {
 	//init randomiser
 	srand(time(NULL));
 
-	java.Vm = jVM;
-	(*java.Vm)->AttachCurrentThread(java.Vm, &java.Env, NULL);
-
     pVRClientInfo = &vr;
 
 	// Note that AttachCurrentThread will reset the thread name.
@@ -540,14 +458,12 @@ void * AppThreadFunction(void * parm) {
 
 	shutdown = false;
 
-	XrApp_Clear(&gAppState);
-	gAppState.Java = java;
-
-	ovrEgl_CreateContext(&gAppState.Egl, NULL);
+	ovrEgl_Clear( &Egl );
+	ovrEgl_CreateContext(&Egl, NULL);
 
     chdir("/sdcard/PreyVR");
 
-	VR_EnterVR(VR_GetEngine(), gAppState.Egl);
+	VR_EnterVR(VR_GetEngine(), Egl);
 	IN_VRInit(VR_GetEngine());
 
     //Should now be all set up and ready - start the Doom3 main loop
@@ -570,8 +486,7 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
 {
 	VR_SetRefreshRate(refresh);
 	Doom3Quest_processHaptics();
-    Doom3Quest_getHMDOrientation();
-    Doom3Quest_getTrackedRemotesOrientation(controlscheme, switch_sticks);
+	HandleInput_Default(controlscheme, switch_sticks, ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);
 }
 
 void Doom3Quest_processHaptics() {//Handle haptics
@@ -603,15 +518,11 @@ void Doom3Quest_getHMDOrientation() {
     //const XrVector3f translationHmd = tracking->HeadPose.Pose.Translation;
     vec3_t rotation = {0};
     QuatToYawPitchRoll(quatHmd, rotation, vr.hmdorientation_temp);
-    setHMDPosition(positionHmd.x, positionHmd.y, positionHmd.z, 0);
-    //GB
-    setHMDOrientation(quatHmd.x, quatHmd.y, quatHmd.z, quatHmd.w);
-    //End GB
-    updateHMDOrientation();
-}
 
-void Doom3Quest_getTrackedRemotesOrientation(int controlscheme, int switch_sticks) {
-	HandleInput_Default(controlscheme, switch_sticks, ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);
+	VectorSet(vr.hmdposition, positionHmd.x, positionHmd.y, positionHmd.z);
+	Vector4Set(vr.hmdorientation_quat, quatHmd.x, quatHmd.y, quatHmd.z, quatHmd.w);
+	VectorSubtract(vr.hmdposition_last, vr.hmdposition, vr.hmdposition_delta);
+	VectorCopy(vr.hmdposition, vr.hmdposition_last);
 }
 
 /*
@@ -785,6 +696,7 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * e
 
 
 	//Init VR
+	ovrJava java;
 	java.Vm = (JavaVM*)jVM;
 	java.ActivityObject = (*env)->NewGlobalRef( env, activity );
 	(*java.Vm)->AttachCurrentThread(java.Vm, &java.Env, NULL);
@@ -811,7 +723,7 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onStart( JNIEnv * en
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onDestroy( JNIEnv * env, jobject obj )
 {
 	ALOGV( "    GLES3JNILib::onDestroy()" );
-	gAppState.NativeWindow = NULL;
+	NativeWindow = NULL;
 	destroyed = true;
 	shutdown = true;
 }
@@ -838,7 +750,7 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JN
 	}
 
 	ALOGV( "        NativeWindow = ANativeWindow_fromSurface( env, surface )" );
-	if (!gAppState.NativeWindow) {
+	if (!NativeWindow) {
 		pthread_t thread = 0;
 		const int createErr = pthread_create( &thread, NULL, AppThreadFunction, NULL );
 		if ( createErr != 0 )
@@ -846,7 +758,7 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JN
 			ALOGE( "pthread_create returned %i", createErr );
 		}
 	}
-	gAppState.NativeWindow = newNativeWindow;
+	NativeWindow = newNativeWindow;
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JNIEnv * env, jobject obj, jobject surface )
@@ -861,6 +773,5 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JN
 		// the surface is immediately replaced with a new surface with the correct orientation.
 		ALOGE( "        Surface not in landscape mode!" );
 	}
-
-	gAppState.NativeWindow = newNativeWindow;
+	NativeWindow = newNativeWindow;
 }

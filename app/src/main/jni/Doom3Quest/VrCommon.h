@@ -71,8 +71,6 @@ void Doom3Quest_processHaptics();
 
 void Doom3Quest_getHMDOrientation();
 
-void Doom3Quest_getTrackedRemotesOrientation(int controlscheme, int switch_sticks);
-
 void Doom3Quest_prepareEyeBuffer();
 
 void Doom3Quest_finishEyeBuffer();

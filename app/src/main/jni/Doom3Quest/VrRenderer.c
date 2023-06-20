@@ -352,8 +352,6 @@ void VR_FinishFrame( engine_t* engine ) {
 
 		XrCompositionLayerProjection projection_layer = {};
 		projection_layer.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION;
-		projection_layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-		projection_layer.layerFlags |= XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
 		projection_layer.space = engine->appState.CurrentSpace;
 		projection_layer.viewCount = ovrMaxNumEyes;
 		projection_layer.views = projection_layer_elements;
@@ -375,7 +373,6 @@ void VR_FinishFrame( engine_t* engine ) {
 		// Setup the cylinder layer
 		XrCompositionLayerCylinderKHR cylinder_layer = {};
 		cylinder_layer.type = XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR;
-		cylinder_layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
 		cylinder_layer.space = engine->appState.CurrentSpace;
 		memset(&cylinder_layer.subImage, 0, sizeof(XrSwapchainSubImage));
 		cylinder_layer.subImage.imageRect.offset.x = 0;
