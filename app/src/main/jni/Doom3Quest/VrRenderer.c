@@ -298,6 +298,7 @@ bool VR_InitFrame( engine_t* engine ) {
 
 void VR_BeginFrame( engine_t* engine ) {
 	ovrFramebuffer_Acquire(&engine->appState.Renderer.FrameBuffer);
+	ovrFramebuffer_SetCurrent(&engine->appState.Renderer.FrameBuffer);
 }
 
 void VR_EndFrame( engine_t* engine ) {
@@ -314,7 +315,9 @@ void VR_EndFrame( engine_t* engine ) {
 		ovrRenderer_MouseCursor(&engine->appState.Renderer, x, y, sx, sy);
 	}
 
+	ovrFramebuffer_Resolve(&engine->appState.Renderer.FrameBuffer);
 	ovrFramebuffer_Release(&engine->appState.Renderer.FrameBuffer);
+	ovrFramebuffer_SetNone();
 }
 
 void VR_FinishFrame( engine_t* engine ) {

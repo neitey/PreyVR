@@ -10,8 +10,10 @@ void ovrEgl_Clear( ovrEgl * egl );
 void ovrEgl_CreateContext( ovrEgl * egl, const ovrEgl * shareEgl );
 
 void ovrFramebuffer_Acquire(ovrFramebuffer* frameBuffer);
+void ovrFramebuffer_Resolve(ovrFramebuffer* frameBuffer);
 void ovrFramebuffer_Release(ovrFramebuffer* frameBuffer);
 void ovrFramebuffer_SetCurrent(ovrFramebuffer* frameBuffer);
+void ovrFramebuffer_SetNone();
 
 void ovrRenderer_Create(XrSession session, ovrRenderer* renderer, int width, int height);
 void ovrRenderer_Destroy(ovrRenderer* renderer);

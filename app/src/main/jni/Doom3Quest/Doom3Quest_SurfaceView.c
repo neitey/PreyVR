@@ -414,8 +414,6 @@ XrApp
 ================================================================================
 */
 
-#define MAX_TRACKING_SAMPLES 4
-
 typedef struct
 {
 	ovrJava				Java;
