@@ -458,6 +458,7 @@ void VR_SetRefreshRate(int refresh) {
 					"xrRequestDisplayRefreshRateFB",
 					(PFN_xrVoidFunction*)(&pfnRequestDisplayRefreshRate)));
 		}
+		OXR(pfnRequestDisplayRefreshRate(VR_GetEngine()->appState.Session, 72.0f));
 		OXR(pfnRequestDisplayRefreshRate(VR_GetEngine()->appState.Session, (float)refresh));
 	}
 }

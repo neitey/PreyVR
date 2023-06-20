@@ -360,6 +360,7 @@ static bool destroyed = false;
 
 bool frameValid = false;
 time_t seconds;
+int lastRefresh = 0;
 int lastFPS = 0;
 int FPS = 0;
 
@@ -484,7 +485,10 @@ void * AppThreadFunction(void * parm) {
 //All the stuff we want to do each frame
 void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
 {
-	VR_SetRefreshRate(refresh);
+	if (lastRefresh != refresh) {
+		lastRefresh = refresh;
+		VR_SetRefreshRate(refresh);
+	}
 	Doom3Quest_processHaptics();
 	HandleInput_Default(controlscheme, switch_sticks, ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);
 }
@@ -686,6 +690,7 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * e
 	if (strcmp(vendor, "PICO") == 0) {
 		VR_SetPlatformFLag(VR_PLATFORM_CONTROLLER_PICO, true);
 		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_INSTANCE, true);
+		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_REFRESH, true);
 	} else if ((strcmp(vendor, "META") == 0) || (strcmp(vendor, "OCULUS") == 0)) {
 		VR_SetPlatformFLag(VR_PLATFORM_CONTROLLER_QUEST, true);
 		VR_SetPlatformFLag(VR_PLATFORM_EXTENSION_FOVEATION, true);
