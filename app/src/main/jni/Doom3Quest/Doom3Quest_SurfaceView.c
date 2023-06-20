@@ -79,7 +79,7 @@ double GetTimeInMilliSeconds()
 
 
 bool forceVirtualScreen = false;
-bool inMenu = false;
+bool inMenu = true;
 bool inGameGuiActive = false;
 bool objectiveSystemActive = false;
 bool inCinematic = false;
@@ -452,6 +452,7 @@ int m_height;
 
 void Doom3Quest_GetScreenRes(int *width, int *height)
 {
+    VR_GetResolution(VR_GetEngine(), &m_width, &m_height);
     *width = m_width;
     *height = m_height;
 }
@@ -467,7 +468,7 @@ void Doom3Quest_prepareEyeBuffer( )
 	}
 
 	VR_SetConfigFloat(VR_CONFIG_CANVAS_ASPECT, 1);
-	VR_SetConfigFloat(VR_CONFIG_CANVAS_DISTANCE, 12);
+	VR_SetConfigFloat(VR_CONFIG_CANVAS_DISTANCE, 6);
 	VR_SetConfig(VR_CONFIG_MODE, Doom3Quest_useScreenLayer() ? VR_MODE_MONO_SCREEN : VR_MODE_STEREO_6DOF);
 
 	frameValid = VR_InitFrame(VR_GetEngine());
@@ -477,21 +478,6 @@ void Doom3Quest_prepareEyeBuffer( )
 	}
 
 	renderThreadCPUTime = GetTimeInMilliSeconds();
-
-	GL(glEnable(GL_SCISSOR_TEST));
-	GL(glDepthMask(GL_TRUE));
-	GL(glEnable(GL_DEPTH_TEST));
-	GL(glDepthFunc(GL_LEQUAL));
-
-	//Weusing the size of the render target
-	int w, h;
-	VR_GetResolution(VR_GetEngine(), &w, &h);
-	GL(glViewport(0, 0, w, h));
-	GL(glScissor(0, 0, w, h));
-
-	GL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
-	GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-	GL(glDisable(GL_SCISSOR_TEST));
 }
 
 void Doom3Quest_finishEyeBuffer( )
