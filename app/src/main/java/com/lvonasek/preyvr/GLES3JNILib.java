@@ -11,8 +11,6 @@ public class GLES3JNILib
 	// Activity lifecycle
 	public static native void onCreate( Activity obj, String commandLineParams );
 	public static native void onStart( Object obj );
-	public static native void onResume();
-	public static native void onPause();
 	public static native void onDestroy();
 
 	// Surface lifecycle

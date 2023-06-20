@@ -205,8 +205,7 @@ void VR_InitRenderer( engine_t* engine, bool multiview ) {
 
 	ovrRenderer_Create(engine->appState.Session, &engine->appState.Renderer,
 			engine->appState.ViewConfigurationView[0].recommendedImageRectWidth,
-			engine->appState.ViewConfigurationView[0].recommendedImageRectHeight,
-			multiview);
+			engine->appState.ViewConfigurationView[0].recommendedImageRectHeight);
 #ifdef ANDROID
 	if (VR_GetPlatformFlag(VR_PLATFORM_EXTENSION_FOVEATION)) {
 		ovrRenderer_SetFoveation(&engine->appState.Instance, &engine->appState.Session, &engine->appState.Renderer, XR_FOVEATION_LEVEL_HIGH_TOP_FB, 0, XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB);
@@ -297,13 +296,11 @@ bool VR_InitFrame( engine_t* engine ) {
 	return true;
 }
 
-void VR_BeginFrame( engine_t* engine, int fboIndex ) {
-	vrConfig[VR_CONFIG_CURRENT_FBO] = fboIndex;
-	ovrFramebuffer_Acquire(&engine->appState.Renderer.FrameBuffer[fboIndex]);
+void VR_BeginFrame( engine_t* engine ) {
+	ovrFramebuffer_Acquire(&engine->appState.Renderer.FrameBuffer);
 }
 
 void VR_EndFrame( engine_t* engine ) {
-	int fboIndex = vrConfig[VR_CONFIG_CURRENT_FBO];
 	VR_BindFramebuffer(engine);
 
 	// Show mouse cursor
@@ -317,7 +314,7 @@ void VR_EndFrame( engine_t* engine ) {
 		ovrRenderer_MouseCursor(&engine->appState.Renderer, x, y, sx, sy);
 	}
 
-	ovrFramebuffer_Release(&engine->appState.Renderer.FrameBuffer[fboIndex]);
+	ovrFramebuffer_Release(&engine->appState.Renderer.FrameBuffer);
 }
 
 void VR_FinishFrame( engine_t* engine ) {
@@ -328,13 +325,9 @@ void VR_FinishFrame( engine_t* engine ) {
 		VR_SetConfigFloat(VR_CONFIG_MENU_YAW, hmdorientation.y);
 
 		for (int eye = 0; eye < ovrMaxNumEyes; eye++) {
-			int imageLayer = engine->appState.Renderer.Multiview ? eye : 0;
-			ovrFramebuffer* frameBuffer = &engine->appState.Renderer.FrameBuffer[0];
+			ovrFramebuffer* frameBuffer = &engine->appState.Renderer.FrameBuffer;
 			XrPosef pose = invViewTransform[0];
 			if (vrMode != VR_MODE_MONO_6DOF) {
-				if (!engine->appState.Renderer.Multiview) {
-					frameBuffer = &engine->appState.Renderer.FrameBuffer[eye];
-				}
 				pose = invViewTransform[eye];
 			}
 
@@ -349,7 +342,7 @@ void VR_FinishFrame( engine_t* engine ) {
 			projection_layer_elements[eye].subImage.imageRect.offset.y = 0;
 			projection_layer_elements[eye].subImage.imageRect.extent.width = frameBuffer->ColorSwapChain.Width;
 			projection_layer_elements[eye].subImage.imageRect.extent.height = frameBuffer->ColorSwapChain.Height;
-			projection_layer_elements[eye].subImage.imageArrayIndex = imageLayer;
+			projection_layer_elements[eye].subImage.imageArrayIndex = 0;
 		}
 
 		XrCompositionLayerProjection projection_layer = {};
@@ -385,9 +378,9 @@ void VR_FinishFrame( engine_t* engine ) {
 		memset(&cylinder_layer.subImage, 0, sizeof(XrSwapchainSubImage));
 		cylinder_layer.subImage.imageRect.offset.x = 0;
 		cylinder_layer.subImage.imageRect.offset.y = 0;
-		cylinder_layer.subImage.imageRect.extent.width = engine->appState.Renderer.FrameBuffer[0].ColorSwapChain.Width;
-		cylinder_layer.subImage.imageRect.extent.height = engine->appState.Renderer.FrameBuffer[0].ColorSwapChain.Height;
-		cylinder_layer.subImage.swapchain = engine->appState.Renderer.FrameBuffer[0].ColorSwapChain.Handle;
+		cylinder_layer.subImage.imageRect.extent.width = engine->appState.Renderer.FrameBuffer.ColorSwapChain.Width;
+		cylinder_layer.subImage.imageRect.extent.height = engine->appState.Renderer.FrameBuffer.ColorSwapChain.Height;
+		cylinder_layer.subImage.swapchain = engine->appState.Renderer.FrameBuffer.ColorSwapChain.Handle;
 		cylinder_layer.subImage.imageArrayIndex = 0;
 		cylinder_layer.pose.orientation = XrQuaternionf_Multiply(pitch, yaw);
 		cylinder_layer.pose.position = pos;
@@ -399,17 +392,11 @@ void VR_FinishFrame( engine_t* engine ) {
 		if (vrMode == VR_MODE_MONO_SCREEN) {
 			cylinder_layer.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
 			engine->appState.Layers[engine->appState.LayerCount++].Cylinder = cylinder_layer;
-		} else if (engine->appState.Renderer.Multiview) {
-			cylinder_layer.eyeVisibility = XR_EYE_VISIBILITY_LEFT;
-			engine->appState.Layers[engine->appState.LayerCount++].Cylinder = cylinder_layer;
-			cylinder_layer.eyeVisibility = XR_EYE_VISIBILITY_RIGHT;
-			cylinder_layer.subImage.imageArrayIndex = 1;
-			engine->appState.Layers[engine->appState.LayerCount++].Cylinder = cylinder_layer;
 		} else {
 			cylinder_layer.eyeVisibility = XR_EYE_VISIBILITY_LEFT;
 			engine->appState.Layers[engine->appState.LayerCount++].Cylinder = cylinder_layer;
 			cylinder_layer.eyeVisibility = XR_EYE_VISIBILITY_RIGHT;
-			cylinder_layer.subImage.swapchain = engine->appState.Renderer.FrameBuffer[1].ColorSwapChain.Handle;
+			cylinder_layer.subImage.imageArrayIndex = 0;
 			engine->appState.Layers[engine->appState.LayerCount++].Cylinder = cylinder_layer;
 		}
 	} else {
@@ -430,12 +417,9 @@ void VR_FinishFrame( engine_t* engine ) {
 	endFrameInfo.layers = layers;
 
 	OXR(xrEndFrame(engine->appState.Session, &endFrameInfo));
-	int instances = engine->appState.Renderer.Multiview ? 1 : ovrMaxNumEyes;
-	for (int i = 0; i < instances; i++) {
-		ovrFramebuffer* frameBuffer = &engine->appState.Renderer.FrameBuffer[instances];
-		frameBuffer->TextureSwapChainIndex++;
-		frameBuffer->TextureSwapChainIndex %= frameBuffer->TextureSwapChainLength;
-	}
+	ovrFramebuffer* frameBuffer = &engine->appState.Renderer.FrameBuffer;
+	frameBuffer->TextureSwapChainIndex++;
+	frameBuffer->TextureSwapChainIndex %= frameBuffer->TextureSwapChainLength;
 }
 
 int VR_GetConfig(enum VRConfig config ) {
@@ -456,8 +440,7 @@ void VR_SetConfigFloat(enum VRConfigFloat config, float value) {
 
 void VR_BindFramebuffer(engine_t *engine) {
 	if (!initialized) return;
-	int fboIndex = VR_GetConfig(VR_CONFIG_CURRENT_FBO);
-	ovrFramebuffer_SetCurrent(&engine->appState.Renderer.FrameBuffer[fboIndex]);
+	ovrFramebuffer_SetCurrent(&engine->appState.Renderer.FrameBuffer);
 }
 
 XrView VR_GetView(int eye) {

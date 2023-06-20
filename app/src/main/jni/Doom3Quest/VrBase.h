@@ -32,7 +32,7 @@ void GLCheckErrors(const char* file, int line);
 #define GL(func) func;
 #endif
 
-#if defined(_DEBUG)
+#if !defined(_DEBUG)
 static void OXR_CheckErrors(XrInstance instance, XrResult result, const char* function, bool failOnError) {
 	if (XR_FAILED(result)) {
 		char errorBuffer[XR_MAX_RESULT_STRING_SIZE];
@@ -63,22 +63,30 @@ typedef struct {
 	uint32_t Height;
 } ovrSwapChain;
 
+typedef struct
+{
+	EGLint		MajorVersion;
+	EGLint		MinorVersion;
+	EGLDisplay	Display;
+	EGLConfig	Config;
+	EGLSurface	TinySurface;
+	EGLContext	Context;
+} ovrEgl;
+
 typedef struct {
 	int Width;
 	int Height;
 	uint32_t TextureSwapChainLength;
 	uint32_t TextureSwapChainIndex;
 	ovrSwapChain ColorSwapChain;
-	void* ColorSwapChainImage;
-	unsigned int* GLDepthBuffers;
-	unsigned int* GLFrameBuffers;
-
-	bool Acquired;
+	ovrSwapChain DepthSwapChain;
+	XrSwapchainImageOpenGLESKHR* ColorSwapChainImage;
+	XrSwapchainImageOpenGLESKHR* DepthSwapChainImage;
+	unsigned int* FrameBuffers;
 } ovrFramebuffer;
 
 typedef struct {
-	bool Multiview;
-	ovrFramebuffer FrameBuffer[ovrMaxNumEyes];
+	ovrFramebuffer FrameBuffer;
 } ovrRenderer;
 
 typedef struct {
@@ -131,7 +139,7 @@ enum VRPlatformFlag {
 
 void VR_Init( void* system, const char* name, int version );
 void VR_Destroy( engine_t* engine );
-void VR_EnterVR( engine_t* engine );
+void VR_EnterVR( engine_t* engine, ovrEgl egl );
 void VR_LeaveVR( engine_t* engine );
 
 engine_t* VR_GetEngine( void );

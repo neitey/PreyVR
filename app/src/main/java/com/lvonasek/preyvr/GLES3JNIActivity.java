@@ -305,20 +305,6 @@ import java.util.Vector;
 		GLES3JNILib.onStart(this);
 	}
 
-	@Override protected void onResume()
-	{
-		Log.v(APPLICATION, "GLES3JNIActivity::onResume()" );
-		super.onResume();
-		GLES3JNILib.onResume();
-	}
-
-	@Override protected void onPause()
-	{
-		Log.v(APPLICATION, "GLES3JNIActivity::onPause()" );
-		GLES3JNILib.onPause();
-		super.onPause();
-	}
-
 	@Override protected void onDestroy()
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::onDestroy()" );

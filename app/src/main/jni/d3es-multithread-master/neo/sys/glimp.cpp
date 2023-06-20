@@ -140,9 +140,6 @@ void GLimp_Shutdown() {
 }
 
 void GLimp_SetupFrame(int buffer /*unused*/) {
-
-	Doom3Quest_processMessageQueue();
-
 	Doom3Quest_prepareEyeBuffer();
 }
 
