@@ -701,13 +701,15 @@ void idRenderWorldLocal::RenderScene(renderView_t *renderView ) {
 	}
 
 	//Lubos BEGIN
-	if (game->isVR) {
+	float fovx = renderSystem->GetFOV(0);
+	float fovy = renderSystem->GetFOV(1);
+	if (game->isVR && (fovx > 0) && (fovy > 0)) {
 		if (pVRClientInfo->weaponZoom) {
-			float aspect = renderSystem->GetFOV(0) / renderSystem->GetFOV(1);
+			float aspect = fovx / fovy;
 			renderView->fov_y = renderView->fov_x / aspect;
 		} else {
-			renderView->fov_x = renderSystem->GetFOV(0);
-			renderView->fov_y = renderSystem->GetFOV(1);
+			renderView->fov_x = fovx;
+			renderView->fov_y = fovy;
 		}
 	}
 	//Lubos END

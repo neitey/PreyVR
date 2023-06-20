@@ -1,4 +1,5 @@
 #include "VrFramebuffer.h"
+#include "SDL_opengl.h"
 
 
 #if !defined(_WIN32)
@@ -199,7 +200,7 @@ bool ovrFramebuffer_Create(
 	frameBuffer->DepthSwapChain.Height = swapChainCreateInfo.height;
 
 	// Create the color swapchain.
-	swapChainCreateInfo.format = GL_RGBA8;
+	swapChainCreateInfo.format = GL_SRGB8_ALPHA8;
 	swapChainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
 	OXR(xrCreateSwapchain(session, &swapChainCreateInfo, &frameBuffer->ColorSwapChain.Handle));
 
@@ -273,6 +274,10 @@ void ovrFramebuffer_Destroy(ovrFramebuffer* frameBuffer) {
 void ovrFramebuffer_SetCurrent(ovrFramebuffer* frameBuffer) {
 	GL(glBindFramebuffer(
 			GL_DRAW_FRAMEBUFFER, frameBuffer->FrameBuffers[frameBuffer->TextureSwapChainIndex]));
+
+	//This is a bit of a hack, but we need to do this to correct for the fact that the engine uses linear RGB colorspace
+	//but openxr uses SRGB (or something, must admit I don't really understand, but adding this works to make it look good again)
+	glDisable( GL_FRAMEBUFFER_SRGB );
 }
 
 void ovrFramebuffer_SetNone() {
