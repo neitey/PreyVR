@@ -37,10 +37,9 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-const int USERCMD_HZ			= 60;			// 60 frames per second
-const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
+#define USERCMD_MSEC			(1000 / (renderSystem ? renderSystem->GetRefresh() : 60))
 #ifdef _HUMANHEAD
-const float	USERCMD_ONE_OVER_HZ = (1.0f / USERCMD_HZ); // HUMANHEAD JRM
+#define	USERCMD_ONE_OVER_HZ     (1.0f / (renderSystem ? renderSystem->GetRefresh() : 60)) // HUMANHEAD JRM
 #endif
 
 // usercmd_t->button bits

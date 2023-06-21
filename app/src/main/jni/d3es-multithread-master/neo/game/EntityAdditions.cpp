@@ -506,7 +506,7 @@ void idEntity::Event_SpawnDebris(const char *debrisKey) {
 			if (GetPhysics()->IsType(idPhysics_Monster::Type)) {
 				idPhysics_Monster *mp = (idPhysics_Monster*)GetPhysics();
 				idVec3 delta = mp->GetDelta();
-				vel = mp->GetDelta() * USERCMD_HZ;
+				vel = mp->GetDelta() * renderSystem->GetRefresh();
 			}			
 		}
 		

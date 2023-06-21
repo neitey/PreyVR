@@ -245,7 +245,7 @@ void hhForceField::Ticker( void ) {
 			EnterTurningOnState();
 		}
 	} else if( fieldState == StateTurningOn ) {
-		float deltaTime = MS2SEC( gameLocal.msec );
+		float deltaTime = MS2SEC( USERCMD_MSEC );
 
 		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] += activationRate * deltaTime;
 		if( renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] >= 1.0f ) {
@@ -254,7 +254,7 @@ void hhForceField::Ticker( void ) {
 
 		UpdateVisuals();
 	} else if( fieldState == StateTurningOff ) {
-		float deltaTime = MS2SEC( gameLocal.msec );
+		float deltaTime = MS2SEC( USERCMD_MSEC );
 
 		renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] -= deactivationRate * deltaTime;
 		if( renderEntity.shaderParms[SHADERPARM_TIMEOFFSET] <= 0.0f ) {
@@ -265,7 +265,7 @@ void hhForceField::Ticker( void ) {
 	}
 
 	if( damagedState ) {
-		float deltaTime = MS2SEC( gameLocal.msec );
+		float deltaTime = MS2SEC( USERCMD_MSEC );
 
 		// Fade parm back to normal
 		fade -= undamageFadeRate * deltaTime;

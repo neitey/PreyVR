@@ -998,13 +998,8 @@ void hhShuttleRecharge::EntityEncroaching(idEntity *ent) {
 		hhVehicle *vehicle = static_cast<hhVehicle *>(ent);
 
 		//HUMANHEAD bjk PCF (4-27-06) - shuttle recharge was slow
-		if(USERCMD_HZ == 30) {
-			vehicle->GiveHealth(2*amountHealth);
-			vehicle->GivePower(2*amountPower);
-		} else {
-			vehicle->GiveHealth(amountHealth);
-			vehicle->GivePower(amountPower);
-		}
+		vehicle->GiveHealth(amountHealth);
+		vehicle->GivePower(amountPower);
 	}
 }
 

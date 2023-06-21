@@ -138,7 +138,7 @@ void hhAnimDriven::Think() {
 	}
 
 	// Move them based on their anim
-	GetAnimator()->GetDelta( gameLocal.time - gameLocal.msec, gameLocal.time, delta );
+	GetAnimator()->GetDelta( gameLocal.time - USERCMD_MSEC, gameLocal.time, delta );
 	delta *= GetAxis();
 	delta.x *= deltaScale.x;
 	delta.y *= deltaScale.y;

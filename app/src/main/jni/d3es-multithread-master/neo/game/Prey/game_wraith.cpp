@@ -104,9 +104,9 @@ void hhWraith::Spawn(void) {
 	turn_threshold = DEG2RAD( spawnArgs.GetFloat( "turn_threshold", "5" ) ); // CJR PCF 5/17/06:  Removed unnecessary 30Hz compensation
 	turn_radius_max = DEG2RAD( spawnArgs.GetFloat( "turn_radius_max", "130" ) ); // CJR PCF 5/17/06:  Remove unnecessary 30Hz compensation
 
-	straight_ticks = spawnArgs.GetInt( "straight_ticks", "30" ) * (USERCMD_HZ / 60.0f);
-	damage_ticks = spawnArgs.GetFloat( "damage_ticks", "8" ) * (USERCMD_HZ / 60.0f);
-	turn_ticks = spawnArgs.GetFloat( "turn_ticks", "200" ) * (USERCMD_HZ / 60.0f);
+	straight_ticks = spawnArgs.GetInt( "straight_ticks", "30" ) * (renderSystem->GetRefresh() / 60.0f);
+	damage_ticks = spawnArgs.GetFloat( "damage_ticks", "8" ) * (renderSystem->GetRefresh() / 60.0f);
+	turn_ticks = spawnArgs.GetFloat( "turn_ticks", "200" ) * (renderSystem->GetRefresh() / 60.0f);
 
 	flee_speed_z = spawnArgs.GetFloat( "flee_speed_z", "10" ) * (60.0f * USERCMD_ONE_OVER_HZ);
 

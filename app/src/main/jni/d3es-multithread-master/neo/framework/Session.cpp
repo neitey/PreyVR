@@ -26,6 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#include <unistd.h>
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
@@ -3119,7 +3120,7 @@ void idSessionLocal::Frame()
 			break;
 		}
 
-		Sys_WaitForEvent(TRIGGER_EVENT_ONE);
+		usleep(1);
 	}
 
 #endif

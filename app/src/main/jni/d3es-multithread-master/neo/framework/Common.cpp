@@ -2884,7 +2884,7 @@ void idCommonLocal::Async(void)
 
 	// don't skip too many
 	if (timescale == 1.0f) {
-		if (lastTicMsec + 10 * USERCMD_MSEC < msec) {
+		if (lastTicMsec + 10 * USERCMD_MSEC < USERCMD_MSEC) {
 			lastTicMsec = msec - 10*USERCMD_MSEC;
 		}
 	}

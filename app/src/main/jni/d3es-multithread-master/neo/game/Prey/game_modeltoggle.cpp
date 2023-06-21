@@ -44,7 +44,7 @@ void hhViewedModel::Ticker() {
 
 	// update rotation
 	physicsObj.GetAngles( ang );
-	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, gameLocal.msec, ang, idAngles( 0, rotationAmount * 360.0f / 60.0f, 0 ), ang_zero );
+	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, USERCMD_MSEC, ang, idAngles( 0, rotationAmount * 360.0f / 60.0f, 0 ), ang_zero );
 
 	// update visuals so that the skeleton is drawn for non-rotating models
 	UpdateVisuals();
