@@ -209,7 +209,7 @@ public class MainActivity extends Activity {
 
             Intent intent = getPackageManager().getLaunchIntentForPackage(GAME_PACKAGE);
             if (map != null) {
-                intent.putExtra("MAP", map);
+                intent.setData(Uri.parse(map));
             }
             getApplicationContext().startActivity(intent);
         } catch (Exception e) {

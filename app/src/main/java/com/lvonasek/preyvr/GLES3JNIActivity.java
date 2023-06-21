@@ -170,7 +170,19 @@ import java.util.Vector;
 		params.screenBrightness = 1.0f;
 		getWindow().setAttributes( params );
 
-		checkPermissionsAndInitialize();
+		if (!started) {
+			commandLineParams = "doom3quest";
+			Intent intent = getIntent();
+			if (intent != null) {
+				String map = intent.getDataString();
+				if (map != null) {
+					commandLineParams += " +map " + map;
+				}
+			}
+
+			checkPermissionsAndInitialize();
+			started = true;
+		}
 	}
 
 	/** Initializes the Activity only if the permission has been granted. */
