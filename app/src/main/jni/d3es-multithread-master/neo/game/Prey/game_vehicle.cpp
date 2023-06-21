@@ -421,7 +421,7 @@ void hhAIVehicleInterface::RetrievePilotInput( usercmd_t& cmds, idAngles& viewAn
 		idAngles idealViewAngles( ang_zero );
 		idVec3 targetDir = stateOrientDestination - eyePos;
 		targetDir.Normalize();
-		float degrees = stateOrientSpeed * 360.0f * MS2SEC(gameLocal.msec);
+		float degrees = stateOrientSpeed * 360.0f * MS2SEC(USERCMD_MSEC);
 
 		vehicle->GetPhysics()->GetAxis().ProjectVector( targetDir, localDir );
 		idealViewAngles.yaw = localDir.ToYaw();

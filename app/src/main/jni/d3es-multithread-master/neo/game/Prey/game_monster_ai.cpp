@@ -622,7 +622,7 @@ bool hhMonsterAI::TestMelee( void ) const {
 		enemyBounds.TranslateSelf( enemyOrg );
 
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, gameLocal.msec );
+			gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, USERCMD_MSEC );
 		}
 
 		if ( !bounds.IntersectsBounds( enemyBounds ) ) {
@@ -1280,9 +1280,9 @@ bool hhMonsterAI::UpdateAnimationControllers( void ) {
 	newLookAng += lookOffset;
 
 #if 0
-	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, gameLocal.msec );
-	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, gameLocal.msec );
-	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, gameLocal.msec );
+	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, USERCMD_MSEC );
+	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, USERCMD_MSEC );
+	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, USERCMD_MSEC );
 #endif
 
 //JRMMERGE_GRAVAXIS: This changed to much to merge, see if you can get your monsters on planets changes back in here.  I'll leave both versions
@@ -1383,7 +1383,7 @@ bool hhMonsterAI::UpdateAnimationControllers( void ) {
 			headAnimator->SetJointPos( rightEyeJoint, JOINTMOD_WORLD_OVERRIDE, eyepos + ( axis[ 0 ] * 64.0f - left ) * headTranspose );
 
 			//if ( ai_debugMove.GetBool() ) {
-			//	gameRenderWorld->DebugLine( colorRed, orientationJointPos, eyepos + ( axis[ 0 ] * 64.0f + left ) * headTranspose, gameLocal.msec );
+			//	gameRenderWorld->DebugLine( colorRed, orientationJointPos, eyepos + ( axis[ 0 ] * 64.0f + left ) * headTranspose, USERCMD_MSEC );
 			//}
 		} else {
 			headEnt->BecomeActive( TH_ANIMATE );
@@ -1558,8 +1558,8 @@ void hhMonsterAI::UpdateEnemyPosition( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, USERCMD_MSEC );
 	}
 }
 
@@ -1805,7 +1805,7 @@ bool hhMonsterAI::TestMeleeDef( const char *meleeDefName ) const {
 		enemyBounds.TranslateSelf( enemyOrg );
 
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, gameLocal.msec );
+			gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, USERCMD_MSEC );
 		}
 
 		if ( !bounds.IntersectsBounds( enemyBounds ) ) {
@@ -2071,11 +2071,11 @@ void hhMonsterAI::FlyMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 4000 );
-		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorBlue, org, goalPos, gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorBlue, org, goalPos, USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }

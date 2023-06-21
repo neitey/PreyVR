@@ -361,8 +361,7 @@ static bool destroyed = false;
 bool frameValid = false;
 time_t seconds;
 int lastRefresh = 0;
-int lastFPS = 0;
-int FPS = 0;
+int currentRefresh = 60;
 
 float Doom3Quest_GetFOV(int axis)
 {
@@ -378,7 +377,7 @@ float Doom3Quest_GetFOV(int axis)
 
 int Doom3Quest_GetRefresh()
 {
-	return lastFPS;
+	return currentRefresh;
 }
 
 void Doom3Quest_GetScreenRes(int *width, int *height)
@@ -388,13 +387,6 @@ void Doom3Quest_GetScreenRes(int *width, int *height)
 
 void Doom3Quest_prepareEyeBuffer( )
 {
-	if (seconds != time(NULL)) {
-		seconds = time(NULL);
-		lastFPS = FPS;
-		FPS = 0;
-	}
-	FPS++;
-
 	if (!VR_GetConfig(VR_CONFIG_VIEWPORT_VALID)) {
 		VR_InitRenderer(VR_GetEngine(), true);
 		VR_SetConfig(VR_CONFIG_VIEWPORT_VALID, true);
@@ -488,6 +480,7 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
 	if (lastRefresh != refresh) {
 		lastRefresh = refresh;
 		VR_SetRefreshRate(refresh);
+		currentRefresh = VR_GetRefreshRate();
 	}
 	Doom3Quest_processHaptics();
 	HandleInput_Default(controlscheme, switch_sticks, ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);

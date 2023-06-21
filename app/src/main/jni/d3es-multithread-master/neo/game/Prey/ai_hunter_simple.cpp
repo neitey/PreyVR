@@ -822,9 +822,9 @@ void hhHunterSimple::AnimMove( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -1017,7 +1017,7 @@ bool hhHunterSimple::UpdateAnimationControllers( void ) {
 			headAnimator->SetJointPos( rightEyeJoint, JOINTMOD_WORLD_OVERRIDE, eyepos + ( axis[ 0 ] * 64.0f - left ) * headTranspose );
 
 			//if ( ai_debugMove.GetBool() ) {
-			//	gameRenderWorld->DebugLine( colorRed, orientationJointPos, eyepos + ( axis[ 0 ] * 64.0f + left ) * headTranspose, gameLocal.msec );
+			//	gameRenderWorld->DebugLine( colorRed, orientationJointPos, eyepos + ( axis[ 0 ] * 64.0f + left ) * headTranspose, USERCMD_MSEC );
 			//}
 		} else {
 			headAnimator->ClearJoint( leftEyeJoint );
@@ -2076,8 +2076,8 @@ void hhHunterSimple::UpdateEnemyPosition( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, USERCMD_MSEC );
 	}
 }
 

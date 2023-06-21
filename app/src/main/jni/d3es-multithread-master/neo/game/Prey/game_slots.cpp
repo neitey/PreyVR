@@ -374,7 +374,7 @@ void hhSlots::Think() {
 	if (thinkFlags & TH_MISC3) {
 		if (bSpinning) {
 
-			float deltaTime = MS2SEC(gameLocal.msec);
+			float deltaTime = MS2SEC(USERCMD_MSEC);
 			if (reelRate1 > 0.0f) {
 				reelPos1 = ((int)(reelPos1 - reelRate1 * deltaTime) + REEL_LENGTH) % REEL_LENGTH;
 				reelRate1 *= 0.98f;

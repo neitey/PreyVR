@@ -716,7 +716,7 @@ gameReturn_t hhGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// update the game time
 		framenum++;
 		previousTime = time;
-		time += msec;
+		time += USERCMD_MSEC;
 		realClientTime = time;
 		timeRandom = time; //HUMANHEAD rww
 
@@ -1128,7 +1128,7 @@ surfTypes_t hhGameLocal::GetMatterType( const idEntity *ent, const idMaterial *m
 void hhGameLocal::AlertAI( idEntity *ent ) {
 	if ( ent && ent->IsType( idActor::Type ) ) {
 		// alert them for the next frame
-		lastAIAlertTime = time + msec;
+		lastAIAlertTime = time + USERCMD_MSEC;
 		lastAIAlertEntity = static_cast<idActor *>( ent );
 		lastAIAlertRadius = 0;			//no radius required by default
 	}
@@ -1137,7 +1137,7 @@ void hhGameLocal::AlertAI( idEntity *ent ) {
 void hhGameLocal::AlertAI( idEntity *ent, float radius ) {
 	if ( ent && ent->IsType( idActor::Type ) ) {
 		// alert them for the next frame
-		lastAIAlertTime = time + msec;
+		lastAIAlertTime = time + USERCMD_MSEC;
 		lastAIAlertEntity = static_cast<idActor *>( ent );
 		lastAIAlertRadius = radius;		//radius of effect
 	}

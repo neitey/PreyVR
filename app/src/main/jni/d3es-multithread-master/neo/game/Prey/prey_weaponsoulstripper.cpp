@@ -218,9 +218,9 @@ void hhSunbeamFireController::LaunchProjectiles( const idVec3& launchOrigin, con
 	//Lubos END
 
 	//HUMANHEAD PCF rww 05/18/06 - since values are assuming 60hz, make them relative
-	float backpush = dict->GetFloat("backpush","0.0")*(60.0f/(float)USERCMD_HZ);
-	float slowwalk = dict->GetFloat("slowwalk","0.0")*(60.0f/(float)USERCMD_HZ);
-	int knockback = dict->GetInt("knockback","0")*(60/USERCMD_HZ);
+	float backpush = dict->GetFloat("backpush","0.0")*(60.0f/(float)renderSystem->GetRefresh());
+	float slowwalk = dict->GetFloat("slowwalk","0.0")*(60.0f/(float)renderSystem->GetRefresh());
+	int knockback = dict->GetInt("knockback","0")*(60/renderSystem->GetRefresh());
 	//HUMANHEAD END
 
 	hhPhysics_Player* pp = static_cast<hhPhysics_Player*>(owner->GetPlayerPhysics());

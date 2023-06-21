@@ -50,4 +50,5 @@ void VR_SetConfigFloat( enum VRConfigFloat config, float value );
 void VR_BindFramebuffer(engine_t *engine);
 XrView VR_GetView(int eye);
 XrVector3f VR_GetHMDAngles();
+int VR_GetRefreshRate();
 void VR_SetRefreshRate(int refresh);

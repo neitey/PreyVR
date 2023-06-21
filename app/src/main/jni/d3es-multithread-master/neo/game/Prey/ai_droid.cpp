@@ -336,11 +336,11 @@ void hhDroid::FlyMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 4000 );
-		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorBlue, org, goalPos, gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorBlue, org, goalPos, USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -556,11 +556,11 @@ void hhDroid::AdjustFlySpeed( idVec3 &vel ) {
 	float speed;
 
 	// apply dampening
-	vel -= vel * flyDampening * MS2SEC( gameLocal.msec );
+	vel -= vel * flyDampening * MS2SEC( USERCMD_MSEC );
 
 	// gradually speed up/slow down to desired speed
 	speed = vel.Normalize();
-	speed += ( move.speed - speed ) * MS2SEC( gameLocal.msec );
+	speed += ( move.speed - speed ) * MS2SEC( USERCMD_MSEC );
 	if ( speed < 0.0f ) {
 		speed = 0.0f;
 	} else if ( move.speed && ( speed > move.speed ) ) {

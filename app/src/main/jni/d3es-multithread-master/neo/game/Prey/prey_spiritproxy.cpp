@@ -757,7 +757,7 @@ void hhDeathWalkProxy::Think() {
 
 	idVec3 newPos = initialPos;
 	if (player->DeathWalkStage2()) {
-		timeSinceStage2Started += gameLocal.msec;
+		timeSinceStage2Started += USERCMD_MSEC;
 		if (timeSinceStage2Started > player->spawnArgs.GetInt("deathwalkBodyDropDelayMS")) {
 			newPos.z = initialPos.z - player->spawnArgs.GetFloat("deathwalkOffsetBelowPortal");
 			lerpTime = 0.02f;

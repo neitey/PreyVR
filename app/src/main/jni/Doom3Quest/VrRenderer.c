@@ -12,6 +12,7 @@ bool initialized = false;
 bool stageSupported = false;
 int vrConfig[VR_CONFIG_MAX] = {};
 float vrConfigFloat[VR_CONFIG_FLOAT_MAX] = {};
+PFN_xrGetDisplayRefreshRateFB pfnGetDisplayRefreshRate = NULL;
 PFN_xrRequestDisplayRefreshRateFB pfnRequestDisplayRefreshRate = NULL;
 
 XrVector3f hmdorientation;
@@ -448,6 +449,22 @@ XrView VR_GetView(int eye) {
 
 XrVector3f VR_GetHMDAngles() {
 	return hmdorientation;
+}
+
+int VR_GetRefreshRate() {
+	if (VR_GetPlatformFlag(VR_PLATFORM_EXTENSION_REFRESH)) {
+		if (!pfnGetDisplayRefreshRate) {
+			OXR(xrGetInstanceProcAddr(
+					VR_GetEngine()->appState.Instance,
+					"xrGetDisplayRefreshRateFB",
+					(PFN_xrVoidFunction*)(&pfnGetDisplayRefreshRate)));
+		}
+
+		float currentDisplayRefreshRate = 0.0f;
+		OXR(pfnGetDisplayRefreshRate(VR_GetEngine()->appState.Session, &currentDisplayRefreshRate));
+		return (int)currentDisplayRefreshRate;
+	}
+	return 72;
 }
 
 void VR_SetRefreshRate(int refresh) {

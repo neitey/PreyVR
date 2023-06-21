@@ -1298,7 +1298,7 @@ void idAI::Think( void ) {
 	}
 /*	this still draws in retail builds.. not sure why.. don't care at this point.
 	if ( !aas && developer.GetBool() && !fl.hidden && !num_cinematics ) {
-		gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 	}
 */
 
@@ -1602,7 +1602,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end ) const {
 		dist = delta.LengthFast();
 
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
+			gameRenderWorld->DebugLine( colorBlue, start, end, USERCMD_MSEC, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
 
@@ -1623,7 +1623,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end ) const {
 		dist = delta.LengthFast();
 
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
+			gameRenderWorld->DebugLine( colorBlue, start, end, USERCMD_MSEC, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
 
@@ -2440,7 +2440,7 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 
 		seekPos = org + move.moveDir * 2048.0f;
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorYellow, org, seekPos, gameLocal.msec, true );
+			gameRenderWorld->DebugLine( colorYellow, org, seekPos, USERCMD_MSEC, true );
 		}
 	} else {
 		AI_DEST_UNREACHABLE = false;
@@ -2564,18 +2564,18 @@ void idAI::Turn( void ) {
 		current_yaw = idMath::AngleNormalize180( anim_turn_yaw + rotateAxis[ 0 ].ToYaw() );
 	} else {
 		diff = idMath::AngleNormalize180( ideal_yaw - current_yaw );
-		turnVel += AI_TURN_SCALE * diff * MS2SEC( gameLocal.msec );
+		turnVel += AI_TURN_SCALE * diff * MS2SEC( USERCMD_MSEC );
 		if ( turnVel > turnRate ) {
 			turnVel = turnRate;
 		} else if ( turnVel < -turnRate ) {
 			turnVel = -turnRate;
 		}
-		turnAmount = turnVel * MS2SEC( gameLocal.msec );
+		turnAmount = turnVel * MS2SEC( USERCMD_MSEC );
 		if ( ( diff >= 0.0f ) && ( turnAmount >= diff ) ) {
-			turnVel = diff / MS2SEC( gameLocal.msec );
+			turnVel = diff / MS2SEC( USERCMD_MSEC );
 			turnAmount = diff;
 		} else if ( ( diff <= 0.0f ) && ( turnAmount <= diff ) ) {
-			turnVel = diff / MS2SEC( gameLocal.msec );
+			turnVel = diff / MS2SEC( USERCMD_MSEC );
 			turnAmount = diff;
 		}
 		current_yaw += turnAmount;
@@ -2594,9 +2594,9 @@ void idAI::Turn( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		const idVec3 &org = physicsObj.GetOrigin();
-		gameRenderWorld->DebugLine( colorRed, org, org + idAngles( 0, ideal_yaw, 0 ).ToForward() * 64, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorGreen, org, org + idAngles( 0, current_yaw, 0 ).ToForward() * 48, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org, org + idAngles( 0, current_yaw + turnVel, 0 ).ToForward() * 32, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorRed, org, org + idAngles( 0, ideal_yaw, 0 ).ToForward() * 64, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorGreen, org, org + idAngles( 0, current_yaw, 0 ).ToForward() * 48, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org, org + idAngles( 0, current_yaw + turnVel, 0 ).ToForward() * 32, USERCMD_MSEC );
 	}
 }
 
@@ -2688,7 +2688,7 @@ void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delt
 	idVec3 oldModelOrigin;
 	idVec3 modelOrigin;
 
-	animator.GetDelta( gameLocal.time - gameLocal.msec, gameLocal.time, delta );
+	animator.GetDelta( gameLocal.time - USERCMD_MSEC, gameLocal.time, delta );
 	delta = axis * delta;
 
 	if ( modelOffset != vec3_zero ) {
@@ -2727,8 +2727,8 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 	AI_OBSTACLE_IN_PATH = false;
 	foundPath = FindPathAroundObstacles( &physicsObj, aas, ( move.bEnemyBlocks ? NULL : enemy.GetEntity() ), origin, goalPos, path ); // HUMANHEAD mdl:  Added bEnemyBlocks check
 	if ( ai_showObstacleAvoidance.GetBool() ) {
-		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), gameLocal.msec );
-		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), gameLocal.msec );
+		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), USERCMD_MSEC );
+		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), USERCMD_MSEC );
 	}
 
 	if ( !foundPath ) {
@@ -2931,9 +2931,9 @@ void idAI::AnimMove( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -2951,7 +2951,7 @@ idVec3 Seek( idVec3 &vel, const idVec3 &org, const idVec3 &goal, float predictio
 	// predict our position
 	predictedPos = org + vel * prediction;
 	goalDelta = goal - predictedPos;
-	seekVel = goalDelta * MS2SEC( gameLocal.msec );
+	seekVel = goalDelta * MS2SEC( USERCMD_MSEC );
 
 	return seekVel;
 }
@@ -3015,8 +3015,8 @@ void idAI::SlideMove( void ) {
 
 	// seek the goal position
 	goalDelta = goalPos - predictedPos;
-	vel -= vel * AI_FLY_DAMPENING * MS2SEC( gameLocal.msec );
-	vel += goalDelta * MS2SEC( gameLocal.msec );
+	vel -= vel * AI_FLY_DAMPENING * MS2SEC( USERCMD_MSEC );
+	vel += goalDelta * MS2SEC( USERCMD_MSEC );
 
 	// cap our speed
 	vel.Truncate( fly_speed );
@@ -3060,9 +3060,9 @@ void idAI::SlideMove( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -3122,7 +3122,7 @@ void idAI::AddFlyBob( idVec3 &vel ) {
 	if ( fly_bob_strength ) {
 		t = MS2SEC( gameLocal.time + entityNumber * 497 );
 		fly_bob_add = ( viewAxis[ 1 ] * idMath::Sin16( t * fly_bob_horz ) + viewAxis[ 2 ] * idMath::Sin16( t * fly_bob_vert ) ) * fly_bob_strength;
-		vel += fly_bob_add * MS2SEC( gameLocal.msec );
+		vel += fly_bob_add * MS2SEC( USERCMD_MSEC );
 		if ( ai_debugMove.GetBool() ) {
 			const idVec3 &origin = physicsObj.GetOrigin();
 			gameRenderWorld->DebugArrow( colorOrange, origin, origin + fly_bob_add, 0 );
@@ -3157,7 +3157,7 @@ void idAI::AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos ) {
 		}
         
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugBounds( goLower ? colorRed : colorGreen, physicsObj.GetBounds(), path.endPos, gameLocal.msec );
+			gameRenderWorld->DebugBounds( goLower ? colorRed : colorGreen, physicsObj.GetBounds(), path.endPos, USERCMD_MSEC );
 		}
 	}
 
@@ -3212,11 +3212,11 @@ void idAI::AdjustFlySpeed( idVec3 &vel ) {
 	float speed;
 
 	// apply dampening
-	vel -= vel * AI_FLY_DAMPENING * MS2SEC( gameLocal.msec );
+	vel -= vel * AI_FLY_DAMPENING * MS2SEC( USERCMD_MSEC );
 
 	// gradually speed up/slow down to desired speed
 	speed = vel.Normalize();
-	speed += ( move.speed - speed ) * MS2SEC( gameLocal.msec );
+	speed += ( move.speed - speed ) * MS2SEC( USERCMD_MSEC );
 	if ( speed < 0.0f ) {
 		speed = 0.0f;
 	} else if ( move.speed && ( speed > move.speed ) ) {
@@ -3319,11 +3319,11 @@ void idAI::FlyMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 4000 );
-		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorBlue, org, goalPos, gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorBlue, org, goalPos, USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -3360,9 +3360,9 @@ void idAI::StaticMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		const idVec3 &org = physicsObj.GetOrigin();
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorBlue, org, move.moveDest, gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorBlue, org, move.moveDest, USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 	}
 }
 
@@ -4060,8 +4060,8 @@ void idAI::UpdateEnemyPosition( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, USERCMD_MSEC );
 	}
 }
 
@@ -4571,7 +4571,7 @@ bool idAI::TestMelee( void ) const {
 	enemyBounds.TranslateSelf( enemyOrg );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorYellow, bounds, vec3_zero, USERCMD_MSEC );
 	}
 
 	if ( !bounds.IntersectsBounds( enemyBounds ) ) {
@@ -5012,7 +5012,7 @@ bool idAI::UpdateAnimationControllers( void ) {
 		}
 		eyeOffset.z = eyepos.z - physicsObj.GetOrigin().z;
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorRed, eyepos, eyepos + orientationJointAxis[ 0 ] * 32.0f, gameLocal.msec );
+			gameRenderWorld->DebugLine( colorRed, eyepos, eyepos + orientationJointAxis[ 0 ] * 32.0f, USERCMD_MSEC );
 		}
 	} else {
 		eyepos = GetEyePosition();
@@ -5054,9 +5054,9 @@ bool idAI::UpdateAnimationControllers( void ) {
 	newLookAng.pitch = 0.0f;
 
 #if 0
-	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, gameLocal.msec );
-	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, gameLocal.msec );
-	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, gameLocal.msec );
+	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, USERCMD_MSEC );
+	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, USERCMD_MSEC );
+	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, USERCMD_MSEC );
 #endif
 
 //JRMMERGE_GRAVAXIS: This changed to much to merge, see if you can get your monsters on planets changes back in here.  I'll leave both versions
@@ -5314,12 +5314,12 @@ void idCombatNode::DrawDebugInfo( void ) {
 			idVec3 pos3 = org + rightDir * node->min_dist;
 			idVec3 pos4 = org + rightDir * cone_dist;
 
-			gameRenderWorld->DebugLine( color, node->GetPhysics()->GetOrigin(), ( pos1 + pos3 ) * 0.5f, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos1, pos2, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos1, pos3, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos3, pos4, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos2, pos4, gameLocal.msec );
-			gameRenderWorld->DebugBounds( color, bounds, org, gameLocal.msec );
+			gameRenderWorld->DebugLine( color, node->GetPhysics()->GetOrigin(), ( pos1 + pos3 ) * 0.5f, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos1, pos2, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos1, pos3, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos3, pos4, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos2, pos4, USERCMD_MSEC );
+			gameRenderWorld->DebugBounds( color, bounds, org, USERCMD_MSEC );
 		}
 	}
 }

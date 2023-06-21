@@ -248,13 +248,8 @@ void hhShuttleDock::EntityEncroaching(idEntity *ent) {
 				if (shuttle->IsDamaged() || shuttle->NeedsPower()) {
 
 					//HUMANHEAD bjk PCF (4-27-06) - shuttle recharge was slow
-					if(USERCMD_HZ == 30) {
-						shuttle->GiveHealth(2*amountHealth);
-						shuttle->GivePower(2*amountPower);
-					} else {
-						shuttle->GiveHealth(amountHealth);
-						shuttle->GivePower(amountPower);
-					}
+					shuttle->GiveHealth(amountHealth);
+					shuttle->GivePower(amountPower);
 
 					if (!bPlayingRechargeSound) {
 						StartSound("snd_recharge", SND_CHANNEL_RECHARGE);

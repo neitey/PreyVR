@@ -75,7 +75,7 @@ void hhBoneController::Update( int iCurrentTime ) {
 		return;
 	}
 
-	Turn = m_TurnRate * MS2SEC(gameLocal.msec) * gameLocal.GetTimeScale();
+	Turn = m_TurnRate * MS2SEC(USERCMD_MSEC) * gameLocal.GetTimeScale();
 
 	Delta = m_IdealAng - m_CurrentAng;
 	for( iIndex = 0; iIndex < 3; ++iIndex ) {

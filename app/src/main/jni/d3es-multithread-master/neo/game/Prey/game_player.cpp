@@ -673,7 +673,7 @@ void hhPlayer::UpdateHud( idUserInterface *_hud ) {
 	// Determine fade in color for icons
 	if (c > 0) {
 		for ( i = 0; i < c; i++ ) {
-			inventory.pickupItemNames[i].time += gameLocal.msec;
+			inventory.pickupItemNames[i].time += USERCMD_MSEC;
 			time = inventory.pickupItemNames[i].time;
 
 			if (time < pickupTimeFadeInStart) {
@@ -688,7 +688,7 @@ void hhPlayer::UpdateHud( idUserInterface *_hud ) {
 		}
 	
 		// Determine fadeout of slot zero icon
-		inventory.pickupItemNames[0].slotZeroTime += gameLocal.msec;
+		inventory.pickupItemNames[0].slotZeroTime += USERCMD_MSEC;
 		time = inventory.pickupItemNames[0].slotZeroTime;
 		if (time < pickupTimeFadeOutStart) {
 			inventory.pickupItemNames[0].matcolorAlpha = 1.0f;
@@ -2418,7 +2418,7 @@ void hhPlayer::BobCycle( const idVec3 &pushVelocity ) {
 
 		// check for footstep / splash sounds
 		old = bobCycle;
-		bobCycle = (int)( old + bobmove * gameLocal.msec ) & 255;
+		bobCycle = (int)( old + bobmove * USERCMD_MSEC ) & 255;
 		bobFoot = ( bobCycle & 128 ) >> 7;
 		bobfracsin = idMath::Fabs( sin( ( bobCycle & 127 ) / 127.0 * idMath::PI ) );
 	}

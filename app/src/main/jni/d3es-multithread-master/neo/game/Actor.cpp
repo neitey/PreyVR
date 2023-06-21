@@ -4087,7 +4087,7 @@ bool idActor::InGravityZone(void) {
 
 void idActor::Event_AFTestSolid(void) {
 	solidTest++;
-	if (solidTest > USERCMD_HZ) { // Test for one second
+	if (solidTest > renderSystem->GetRefresh()) { // Test for one second
 		gameLocal.DWarning( "%s STILL STUCK, going nonsolid.\n", name.c_str() );
 
 		fl.takedamage = false;
@@ -4115,7 +4115,7 @@ void idActor::Event_AFTestSolid(void) {
 	if (af.TestSolidForce(hiForce)) {
 		if (hiForce && solidTest > 10) { // Only worry about high force after 10 frames
 			gameLocal.DWarning( "%s going nonsolid because of high force after 10 frames.\n", name.c_str() );
-			solidTest = USERCMD_HZ + 1; // We have a high force.  Go nonsolid next frame.
+			solidTest = renderSystem->GetRefresh() + 1; // We have a high force.  Go nonsolid next frame.
 		}
 		PostEventMS(&EV_AFTestSolid, USERCMD_MSEC); // Try again next frame
 	} else if (solidTest > 1) {

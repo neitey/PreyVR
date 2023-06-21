@@ -670,7 +670,7 @@ void hhTalon::EnterFlyState(void) {
 void hhTalon::FlyTicker(void) {
 	idAngles	ang;
 	float		distance;
-	float		deltaTime = MS2SEC(gameLocal.msec);
+	float		deltaTime = MS2SEC(USERCMD_MSEC);
 	idVec3		oldVel;
 	float		distanceXY;
 	float		deltaZ;
@@ -854,7 +854,7 @@ void hhTalon::TommyTicker(void) {
 	idVec3		viewOrigin;
 	idMat3		viewAxis;
 	idMat3		ownerAxis;
-	float		deltaTime = MS2SEC(gameLocal.msec);
+	float		deltaTime = MS2SEC(USERCMD_MSEC);
 
 	bLanding = false;
 
@@ -982,7 +982,7 @@ void hhTalon::EnterPerchState(void) {
 //=============================================================================
 
 void hhTalon::PerchTicker(void) {
-	float			deltaTime = MS2SEC(gameLocal.msec);
+	float			deltaTime = MS2SEC(USERCMD_MSEC);
 
 	bLanding = false;
 
@@ -1134,7 +1134,7 @@ void hhTalon::EnterAttackState(void) {
 //=============================================================================
 
 void hhTalon::AttackTicker(void) {
-	float			deltaTime = MS2SEC(gameLocal.msec);
+	float			deltaTime = MS2SEC(USERCMD_MSEC);
 
 	if ( !FindEnemy() ) {
 		ReturnToTommy();
@@ -1361,7 +1361,7 @@ void hhTalon::ExitVehicleState(void) {
 //=============================================================================
 
 void hhTalon::VehicleTicker(void) {
-	float		deltaTime = MS2SEC(gameLocal.msec);
+	float		deltaTime = MS2SEC(USERCMD_MSEC);
 	hhTalonTarget *oldEnt = talonTarget;
 
 	if( GetAnimator()->IsAnimPlaying( GetAnimator()->GetAnim( prelandAnim ) ) ) {
