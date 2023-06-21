@@ -686,7 +686,7 @@ public:
 	virtual bool			IsFullScreen( void ) const;
 	virtual int				GetScreenWidth( void ) const;
 	virtual int				GetScreenHeight( void ) const;
-	virtual float 			GetFOV() const;
+	virtual float 			GetFOV(int axis) const;
 	virtual int 			GetRefresh() const;
 
 	virtual idRenderWorld *	AllocRenderWorld( void );

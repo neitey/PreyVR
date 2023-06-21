@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
@@ -24,13 +25,12 @@ import android.view.WindowManager;
 import com.drbeef.externalhapticsservice.HapticServiceClient;
 import com.drbeef.externalhapticsservice.HapticsConstants;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Locale;
 import java.util.Vector;
 
 @SuppressLint("SdCardPath") public class GLES3JNIActivity extends Activity implements SurfaceHolder.Callback
@@ -41,8 +41,18 @@ import java.util.Vector;
 	//so a map here of Package -> Action would not work.
 	private static Vector<Pair<String, String>> externalHapticsServiceDetails = new Vector<>();
 
+	private static boolean started = false;
+
 	static
 	{
+		String manufacturer = Build.MANUFACTURER.toLowerCase(Locale.ROOT);
+		if (manufacturer.contains("oculus")) // rename oculus to meta as this will probably happen in the future anyway
+			manufacturer = "meta";
+
+		//Load manufacturer specific loader
+		System.loadLibrary("openxr_" + manufacturer);
+
+		//Load the game
 		System.loadLibrary( "doom3" );
 
 		//Add possible external haptic service details here
@@ -170,7 +180,19 @@ import java.util.Vector;
 		params.screenBrightness = 1.0f;
 		getWindow().setAttributes( params );
 
-		checkPermissionsAndInitialize();
+		if (!started) {
+			commandLineParams = "doom3quest";
+			Intent intent = getIntent();
+			if (intent != null) {
+				String map = intent.getDataString();
+				if (map != null) {
+					commandLineParams += " +map " + map;
+				}
+			}
+
+			checkPermissionsAndInitialize();
+			started = true;
+		}
 	}
 
 	/** Initializes the Activity only if the permission has been granted. */
@@ -202,26 +224,15 @@ import java.util.Vector;
 
 		File root = new File("/sdcard/PreyVR");
 		File base = new File(root, "preybase");
+		File saves = new File(root, "saves/preybase");
 
 		//Base game
 		base.mkdirs();
-		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
-		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
 
-		//Read these from a file and pass through
-		commandLineParams = "doom3quest";
-
-		Intent intent = getIntent();
-		if (intent != null) {
-			Bundle bundle = intent.getExtras();
-			if (bundle != null) {
-				String map = bundle.getString("MAP");
-				if (map != null) {
-					commandLineParams += " +map " + map;
-				}
-			}
-		}
+		//Config
+		saves.mkdirs();
+		copy_asset(saves.getAbsolutePath(), "preyconfig.cfg", false);
 
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
@@ -231,38 +242,6 @@ import java.util.Vector;
 			setenv("GAMETYPE", "16", true); // hard coded for now
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-
-		//Parse the config file for these values
-		long refresh = 60; // Default to 60
-		float ss = -1.0F;
-		long msaa = 1; // default for both HMDs
-		File config = new File(base, "preyconfig.cfg");
-		if(config.exists())
-		{
-			BufferedReader br;
-			try {
-				br = new BufferedReader(new FileReader(config));
-				String s;
-				while ((s=br.readLine())!=null) {
-					int i1 = s.indexOf("\"");
-					int i2 = s.lastIndexOf("\"");
-					if (i1 != -1 && i2 != -1) {
-						String value = s.substring(i1+1, i2);
-						if (s.contains("vr_refresh")) {
-							refresh = Long.parseLong(value);
-						} else if (s.contains("vr_msaa")) {
-							msaa = Long.parseLong(value);
-						} else if (s.contains("vr_supersampling")) {
-							ss = Float.parseFloat(value);
-						}
-					}
-				}
-				br.close();
-			} catch (IOException | NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 		}
 
 		for (Pair<String, String> serviceDetail : externalHapticsServiceDetails) {
@@ -275,7 +254,7 @@ import java.util.Vector;
 			externalHapticsServiceClients.add(client);
 		}
 
-		GLES3JNILib.onCreate( this, commandLineParams, refresh, ss, msaa );
+		GLES3JNILib.onCreate( this, commandLineParams, Build.MANUFACTURER );
 	}
 	
 	public void copy_asset(String path, String name, boolean force) {
@@ -327,20 +306,6 @@ import java.util.Vector;
 		GLES3JNILib.onStart(this);
 	}
 
-	@Override protected void onResume()
-	{
-		Log.v(APPLICATION, "GLES3JNIActivity::onResume()" );
-		super.onResume();
-		GLES3JNILib.onResume();
-	}
-
-	@Override protected void onPause()
-	{
-		Log.v(APPLICATION, "GLES3JNIActivity::onPause()" );
-		GLES3JNILib.onPause();
-		super.onPause();
-	}
-
 	@Override protected void onDestroy()
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::onDestroy()" );
@@ -364,7 +329,7 @@ import java.util.Vector;
 		Log.v(APPLICATION, "GLES3JNIActivity::surfaceChanged()" );
 		GLES3JNILib.onSurfaceChanged( holder.getSurface() );
 	}
-	
+
 	@Override public void surfaceDestroyed( SurfaceHolder holder )
 	{
 		Log.v(APPLICATION, "GLES3JNIActivity::surfaceDestroyed()" );

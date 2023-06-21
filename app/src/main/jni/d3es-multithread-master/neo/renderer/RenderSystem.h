@@ -152,7 +152,7 @@ public:
 	virtual bool			IsFullScreen( void ) const = 0;
 	virtual int				GetScreenWidth( void ) const = 0;
 	virtual int				GetScreenHeight( void ) const = 0;
-	virtual float 			GetFOV() const = 0;
+	virtual float 			GetFOV(int axis) const = 0;
 	virtual int 			GetRefresh() const = 0;
 
 	// allocate a renderWorld to be used for drawing

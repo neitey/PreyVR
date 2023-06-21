@@ -140,9 +140,6 @@ void GLimp_Shutdown() {
 }
 
 void GLimp_SetupFrame(int buffer /*unused*/) {
-
-	Doom3Quest_processMessageQueue();
-
 	Doom3Quest_prepareEyeBuffer();
 }
 
@@ -154,9 +151,6 @@ GLimp_SwapBuffers
 */
 void GLimp_SwapBuffers() {
 	Doom3Quest_finishEyeBuffer();
-
-	//We can now submit the stereo frame
-	Doom3Quest_submitFrame();
 }
 
 /*

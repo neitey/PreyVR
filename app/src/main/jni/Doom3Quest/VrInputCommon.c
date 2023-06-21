@@ -3,33 +3,15 @@
 Filename	:	VrInputRight.c 
 Content		:	Handles common controller input functionality
 Created		:	September 2019
-Authors		:	Simon Brown
+Authors		:	Simon Brown, Lubos Vonasek
 
 *************************************************************************************/
 
-#include <VrApi.h>
-#include <VrApi_Helpers.h>
-#include <VrApi_SystemUtils.h>
-#include <VrApi_Input.h>
-#include <VrApi_Types.h>
-
-
-ovrInputStateTrackedRemote leftTrackedRemoteState_old;
-ovrInputStateTrackedRemote leftTrackedRemoteState_new;
-ovrTracking leftRemoteTracking_new;
-
-ovrInputStateTrackedRemote rightTrackedRemoteState_old;
-ovrInputStateTrackedRemote rightTrackedRemoteState_new;
-ovrTracking rightRemoteTracking_new;
-
-ovrInputStateGamepad footTrackedRemoteState_new;
-
-ovrDeviceID controllerIDs[2];
-
-float remote_movementSideways;
-float remote_movementForward;
-
 #include "VrInput.h"
+#include "mathlib.h"
+#include "VrClientInfo.h"
+#include "VrMath.h"
+#include "VrRenderer.h"
 
 void Sys_AddMouseMoveEvent(int dx, int dy);
 void Sys_AddMouseButtonEvent(int button, bool pressed);
@@ -110,60 +92,6 @@ bool between(float min, float val, float max)
     return (min < val) && (val < max);
 }
 
-void acquireTrackedRemotesData(ovrMobile *Ovr, double displayTime) {//The amount of yaw changed by controller
-    for ( int i = 0; ; i++ ) {
-        ovrInputCapabilityHeader capsHeader;
-        ovrResult result = vrapi_EnumerateInputDevices(Ovr, i, &capsHeader);
-        if (result < 0) {
-            break;
-        }
-
-        if (capsHeader.Type == ovrControllerType_Gamepad) {
-
-            ovrInputGamepadCapabilities remoteCaps;
-            remoteCaps.Header = capsHeader;
-            if (vrapi_GetInputDeviceCapabilities(Ovr, &remoteCaps.Header) >= 0) {
-                // remote is connected
-                ovrInputStateGamepad remoteState;
-                remoteState.Header.ControllerType = ovrControllerType_Gamepad;
-                if ( vrapi_GetCurrentInputState( Ovr, capsHeader.DeviceID, &remoteState.Header ) >= 0 )
-                {
-                    // act on device state returned in remoteState
-                    footTrackedRemoteState_new = remoteState;
-                }
-            }
-        }
-        else if (capsHeader.Type == ovrControllerType_TrackedRemote) {
-            ovrTracking remoteTracking;
-            ovrInputTrackedRemoteCapabilities remoteCaps;
-            remoteCaps.Header = capsHeader;
-            if ( vrapi_GetInputDeviceCapabilities( Ovr, &remoteCaps.Header ) >= 0 )
-            {
-                // remote is connected
-                ovrInputStateTrackedRemote remoteState;
-                remoteState.Header.ControllerType = ovrControllerType_TrackedRemote;
-
-                if(vrapi_GetCurrentInputState(Ovr, capsHeader.DeviceID, &remoteState.Header) >= 0) {
-                    if (vrapi_GetInputTrackingState(Ovr, capsHeader.DeviceID, displayTime,
-                                                    &remoteTracking) >= 0) {
-                        // act on device state returned in remoteState
-                        if (remoteCaps.ControllerCapabilities & ovrControllerCaps_RightHand) {
-                            rightTrackedRemoteState_new = remoteState;
-                            rightRemoteTracking_new = remoteTracking;
-                            controllerIDs[1] = capsHeader.DeviceID;
-                        } else {
-                            leftTrackedRemoteState_new = remoteState;
-                            leftRemoteTracking_new = remoteTracking;
-                            controllerIDs[0] = capsHeader.DeviceID;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 #ifndef max
 #define max( x, y ) ( ( ( x ) > ( y ) ) ? ( x ) : ( y ) )
 #define min( x, y ) ( ( ( x ) < ( y ) ) ? ( x ) : ( y ) )
@@ -177,8 +105,7 @@ float clamp(float _min, float _val, float _max)
 
 void Doom3Quest_GetScreenRes(int *width, int *height);
 
-extern float SS_MULTIPLIER;
-void controlMouse(bool showingMenu, ovrInputStateTrackedRemote *newState, ovrInputStateTrackedRemote *oldState) {
+void controlMouse(bool showingMenu) {
     static int cursorX = 0;
     static int cursorY = 0;
     static bool waitForLevelController = true;
@@ -189,13 +116,15 @@ void controlMouse(bool showingMenu, ovrInputStateTrackedRemote *newState, ovrInp
     bool toggledMenuOn = !previousShowingMenu && showingMenu;
     previousShowingMenu = showingMenu;
 
-    int height = 0;
-    int width = 0;
-    Doom3Quest_GetScreenRes(&width, &height);
+    static int width = 0;
+    static int height = 0;
+    if ((width == 0) || (height == 0)) {
+        Doom3Quest_GetScreenRes(&width, &height);
+    }
 
     if (toggledMenuOn || waitForLevelController)
     {
-        cursorX = (float)(((pVRClientInfo->weaponangles_temp[YAW]-yaw) * width) / 60.0F);
+        cursorX = (float)((-(pVRClientInfo->weaponangles_temp[YAW]-yaw) * width) / 70.0F);
         cursorY = (float)((pVRClientInfo->weaponangles_temp[PITCH] * height) / 70.0F);
         yaw = pVRClientInfo->weaponangles_temp[YAW];
 

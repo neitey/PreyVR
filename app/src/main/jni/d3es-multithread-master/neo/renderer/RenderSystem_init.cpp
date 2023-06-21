@@ -1806,13 +1806,13 @@ void idRenderSystemLocal::SetHudOpacity( float opacity ) {
 
 extern "C"
 {
-    float Doom3Quest_GetFOV();
+    float Doom3Quest_GetFOV(int axis);
     int Doom3Quest_GetRefresh();
 }
 
-float idRenderSystemLocal::GetFOV() const
+float idRenderSystemLocal::GetFOV(int axis) const
 {
-	return Doom3Quest_GetFOV();
+	return Doom3Quest_GetFOV(axis);
 }
 
 int idRenderSystemLocal::GetRefresh() const
