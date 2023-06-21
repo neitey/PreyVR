@@ -232,7 +232,7 @@ import java.util.Vector;
 
 		//Config
 		saves.mkdirs();
-		copy_asset(base.getAbsolutePath(), "preyconfig.cfg", false);
+		copy_asset(saves.getAbsolutePath(), "preyconfig.cfg", false);
 
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
