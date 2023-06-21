@@ -181,6 +181,15 @@ import java.util.Vector;
 		getWindow().setAttributes( params );
 
 		if (!started) {
+			commandLineParams = "doom3quest";
+			Intent intent = getIntent();
+			if (intent != null) {
+				String map = intent.getDataString();
+				if (map != null) {
+					commandLineParams += " +map " + map;
+				}
+			}
+
 			checkPermissionsAndInitialize();
 			started = true;
 		}
@@ -224,20 +233,6 @@ import java.util.Vector;
 		//Config
 		saves.mkdirs();
 		copy_asset(base.getAbsolutePath(), "preyconfig.cfg", false);
-
-		//Read these from a file and pass through
-		commandLineParams = "doom3quest";
-
-		Intent intent = getIntent();
-		if (intent != null) {
-			Bundle bundle = intent.getExtras();
-			if (bundle != null) {
-				String map = bundle.getString("MAP");
-				if (map != null) {
-					commandLineParams += " +map " + map;
-				}
-			}
-		}
 
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
