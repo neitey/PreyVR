@@ -1018,8 +1018,8 @@
 								shadow		1
 								forecolor	EDITABLE_FORECOLOR_COMMA
 								hovercolor	EDITABLE_HOVERCOLOR_COMMA
-								choices		"60;72;90"
-								values		"60;72;90"
+								choices		"Low;High"
+								values		"60;72"
 								cvar		"vr_refresh"
 								choiceType	1
 							}

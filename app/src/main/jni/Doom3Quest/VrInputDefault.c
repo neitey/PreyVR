@@ -15,7 +15,6 @@ Authors		:	Simon Brown, Lubos Vonasek
 #include "doomkeys.h"
 #include "VrCommon.h"
 
-float	vr_reloadtimeoutms = 300.0f;
 float	vr_weapon_pitchadjust = -30.0f;
 
 extern bool forceVirtualScreen;
@@ -46,8 +45,6 @@ uint32_t weaponButtonsNew;
 uint32_t weaponButtonsOld;
 uint32_t offhandButtonsNew;
 uint32_t offhandButtonsOld;
-int secondaryButton1;
-int secondaryButton2;
 
 void Doom3Quest_HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight );
 
@@ -72,15 +69,6 @@ HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int dom
 	pSecondaryJoystick = IN_VRGetJoystickState(1 - primaryController);
 	rightTrackedRemoteState_new = weaponButtonsNew;
 	leftTrackedRemoteState_new = offhandButtonsNew;
-
-    if ((controlscheme == 0 &&switchsticks == 1) || (controlscheme == 1 &&switchsticks == 0))
-    {
-        secondaryButton1 = domButton1;
-        secondaryButton2 = domButton2;
-    } else {
-        secondaryButton1 = offButton1;
-        secondaryButton2 = offButton2;
-    }
 
 	//Store original values
 	const XrQuaternionf quatRHand = pWeapon.orientation;
@@ -129,20 +117,6 @@ HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int dom
 
     if ( ( !inCinematic && !inMenu ) || ( pVRClientInfo->vehicleMode && !inMenu ) )
     {
-	    //PDA
-	    if (((offhandButtonsNew & secondaryButton1) !=
-	         (offhandButtonsOld & secondaryButton1)) &&
-	        (offhandButtonsNew & secondaryButton1)) {
-		    Android_SetImpulse(UB_IMPULSE19);
-	    }
-
-	    //Toggle LaserSight
-	    if (((offhandButtonsNew & secondaryButton2) !=
-	         (offhandButtonsOld & secondaryButton2)) &&
-	        (offhandButtonsNew & secondaryButton2)) {
-		    Android_SetImpulse(UB_IMPULSE33);
-	    }
-
         float controllerYawHeading = 0.0f;
         //GBFP - off-hand stuff
         {
@@ -178,13 +152,11 @@ HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int dom
 
             //Duck
             if ((weaponButtonsNew & domButton1) != (weaponButtonsOld & domButton1)) {
-
-                handleTrackedControllerButton_AsToggleButton(weaponButtonsNew, weaponButtonsOld, domButton1, UB_DOWN);
+	            handleTrackedControllerButton_AsButton(weaponButtonsNew, weaponButtonsOld, false, domButton1, UB_DOWN);
             }
 
             //Jump
-            if ((weaponButtonsNew & domButton2) != (weaponButtonsOld & domButton2))
-            {
+            if ((weaponButtonsNew & domButton2) != (weaponButtonsOld & domButton2)) {
                 handleTrackedControllerButton_AsButton(weaponButtonsNew, weaponButtonsOld, false, domButton2, UB_UP);
             }
 
