@@ -16,12 +16,6 @@ Prey 2006 is a wild mashup of Portal, Doom 3, Half-Life and Twilight Zone.
 
 In this repository I port the game on standalone VR headsets.
 
-### Currently supported headsets:
-* Meta/Oculus Quest 1, Quest 2, Quest Pro
-
-### Planned support for headsets:
-* Meta/Oculus Quest 3
-* Pico Neo 3, Pico 4
 
 # Instructions
 
