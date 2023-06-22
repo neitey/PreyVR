@@ -5,7 +5,7 @@
 
 enum VRConfig {
 	//switching between 2D and 3D
-	VR_CONFIG_MODE,
+	VR_CONFIG_MODE, VR_CONFIG_NEED_RECENTER,
 	//mouse cursor
 	VR_CONFIG_MOUSE_SIZE, VR_CONFIG_MOUSE_X, VR_CONFIG_MOUSE_Y,
 	//viewport setup

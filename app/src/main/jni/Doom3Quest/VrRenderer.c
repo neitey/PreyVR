@@ -420,6 +420,11 @@ void VR_FinishFrame( engine_t* engine ) {
 	ovrFramebuffer* frameBuffer = &engine->appState.Renderer.FrameBuffer;
 	frameBuffer->TextureSwapChainIndex++;
 	frameBuffer->TextureSwapChainIndex %= frameBuffer->TextureSwapChainLength;
+
+	if (VR_GetConfig(VR_CONFIG_NEED_RECENTER)) {
+		VR_SetConfig(VR_CONFIG_NEED_RECENTER, false);
+		VR_Recenter(engine);
+	}
 }
 
 int VR_GetConfig(enum VRConfig config ) {

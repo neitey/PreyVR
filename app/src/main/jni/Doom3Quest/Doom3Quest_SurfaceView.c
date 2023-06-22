@@ -456,6 +456,7 @@ void * AppThreadFunction(void * parm) {
 
     chdir("/sdcard/PreyVR");
 
+	VR_SetConfig(VR_CONFIG_NEED_RECENTER, true);
 	VR_EnterVR(VR_GetEngine(), Egl);
 	IN_VRInit(VR_GetEngine());
 
