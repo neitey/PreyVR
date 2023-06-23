@@ -60,6 +60,8 @@ import java.util.Vector;
 
 	private SurfaceView mView;
 
+	private boolean started;
+
 
 	public void shutdown() {
 		finish();
