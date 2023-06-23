@@ -893,9 +893,11 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			viewangles[PITCH] = pitch;
 			viewangles[YAW] = yaw;
 			viewangles[ROLL] = roll;
-			for (int axis = 0; axis < 3; axis++) {
-				pVRClientInfo->hmdorientation_diff[axis] = 0;
-				pVRClientInfo->hmdorientation_offset[axis] = 0;
+			if (wasVehicleMode) {
+				for (int axis = 0; axis < 3; axis++) {
+					pVRClientInfo->hmdorientation_diff[axis] = 0;
+					pVRClientInfo->hmdorientation_offset[axis] = 0;
+				}
 			}
 			wasVehicleMode = false;
 		}
