@@ -223,20 +223,6 @@ import java.util.Vector;
 		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
 
-		//Read these from a file and pass through
-		commandLineParams = "doom3quest";
-
-		Intent intent = getIntent();
-		if (intent != null) {
-			Bundle bundle = intent.getExtras();
-			if (bundle != null) {
-				String map = bundle.getString("MAP");
-				if (map != null) {
-					commandLineParams += " +map " + map;
-				}
-			}
-		}
-
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
 
