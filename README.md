@@ -42,6 +42,10 @@ Running the full version of this game require a copy of the original Prey 2006 d
 
 [Click here to watch Gamertag's video tutorial](https://www.youtube.com/watch?v=OPXp0RYOSoA&t=542s)
 
+# Headset compatibility
+
+The project uses OpenXR to be easily adaptable to any Android based VR platform. The exception are Meta Quest headsets which have on OpenXR degraded performance. For Quest the releases are deployed from VrAPI branch.
+
 # Project family tree
 
 PreyVR is based on a combination of the excellent projects created by opensource community.
