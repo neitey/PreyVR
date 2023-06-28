@@ -49,7 +49,7 @@ If you have questions concerning this license or the applicable additional terms
 #define ID_CONSOLE_LOCK 1
 #endif
 #else
-#define ID_CONSOLE_LOCK 0
+#define ID_CONSOLE_LOCK 1
 #endif
 #endif
 
