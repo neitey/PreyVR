@@ -274,7 +274,10 @@ bool VR_InitFrame( engine_t* engine ) {
 			projectionCapacityInput,
 			&projectionCountOutput,
 			projections));
-	//
+	if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
+	    (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
+		return false;  // There is no valid tracking poses for the views.
+	}
 
 	fov.angleLeft = 0;
 	fov.angleRight = 0;
@@ -415,11 +418,7 @@ void VR_FinishFrame( engine_t* engine ) {
 	endFrameInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
 	endFrameInfo.layerCount = engine->appState.LayerCount;
 	endFrameInfo.layers = layers;
-
 	OXR(xrEndFrame(engine->appState.Session, &endFrameInfo));
-	ovrFramebuffer* frameBuffer = &engine->appState.Renderer.FrameBuffer;
-	frameBuffer->TextureSwapChainIndex++;
-	frameBuffer->TextureSwapChainIndex %= frameBuffer->TextureSwapChainLength;
 
 	if (VR_GetConfig(VR_CONFIG_NEED_RECENTER)) {
 		VR_SetConfig(VR_CONFIG_NEED_RECENTER, false);
