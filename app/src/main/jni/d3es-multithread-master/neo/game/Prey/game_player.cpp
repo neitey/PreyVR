@@ -4917,8 +4917,17 @@ void hhPlayer::Think( void ) {
 	}
 
 	if ( weapon.IsValid() && ( currentWeapon == 1) ) {
-		hmdSpeed += fabs(pVRClientInfo->hmdorientation_diff[0]);
-		hmdSpeed += fabs(pVRClientInfo->hmdorientation_diff[1]);
+		static idAngles lastCamera;
+		idAngles camera = GetAxis().ToAngles();
+		idAngles diff = lastCamera - camera;
+		for (int i = 0; i < 3; i++) {
+			while (diff[i] > 180) diff[i] -= 360;
+			while (diff[i] <-180) diff[i] += 360;
+		}
+		lastCamera = camera;
+
+		hmdSpeed += fabs(diff[0]);
+		hmdSpeed += fabs(diff[1]);
 		hmdSpeed *= 0.75f;
 		weaponSpeed += fabs(pVRClientInfo->weaponangles_delta_temp[0]);
 		weaponSpeed += fabs(pVRClientInfo->weaponangles_delta_temp[1]);
