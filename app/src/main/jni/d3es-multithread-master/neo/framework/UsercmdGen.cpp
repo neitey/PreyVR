@@ -606,7 +606,7 @@ void idUsercmdGenLocal::KeyMove(void)
 	side += KEY_MOVESPEED * ButtonState(UB_MOVERIGHT);
 	side -= KEY_MOVESPEED * ButtonState(UB_MOVELEFT);
 
-	up -= KEY_MOVESPEED * toggled_crouch.on;
+	up -= KEY_MOVESPEED * ButtonState(UB_DOWN); //Lubos
 	up += KEY_MOVESPEED * ButtonState(UB_UP);
 
 	forward += KEY_MOVESPEED * ButtonState(UB_FORWARD);
