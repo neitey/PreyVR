@@ -690,6 +690,15 @@ gameReturn_t hhGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
+	//Lubos BEGIN
+	if( player ) {
+		idVec3 position = player->GetEyePosition();
+		pVRClientInfo->playerPosition[0] = position.x;
+		pVRClientInfo->playerPosition[1] = position.y;
+		pVRClientInfo->playerPosition[2] = position.z;
+	}
+	//Lubos END
+
 	if ( !isMultiplayer && g_stopTime.GetBool() ) {
 		// clear any debug lines from a previous frame
 		gameRenderWorld->DebugClearLines( time + 1 );
