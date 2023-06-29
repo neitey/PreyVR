@@ -38,6 +38,7 @@ typedef struct {
     float snapTurn;
     bool consoleShown;
     bool disableFootStep;
+    bool hackFramerate;
     bool inMenu;
     bool vehicleMode;
     bool weaponZoom;
@@ -47,6 +48,7 @@ typedef struct {
     vec3_t hmdorientation_offset;
     vec2_t uiScale;
     vec2_t uiOffset;
+    vec3_t playerPosition;
     //Lubos END
 
     //FP - Temp Variables for other stuff
