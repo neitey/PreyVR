@@ -140,6 +140,11 @@ static void R_IssueRenderCommands( volatile frameData_t *fd ) {
 		return;
 	}
 
+#ifdef _HUMANHEAD //k: scope view support in multithread
+	backEnd.scopeView = tr.IsScopeView();
+	backEnd.shuttleView = tr.IsShuttleView();
+#endif
+
 	// r_skipBackEnd allows the entire time of the back end
 	// to be removed from performance measurements, although
 	// nothing will be drawn to the screen.  If the prints
@@ -713,6 +718,11 @@ void idRenderSystemLocal::BackendThreadTask()
 
 void idRenderSystemLocal::BackendThreadExecute()
 {
+#ifdef _HUMANHEAD //k: scope view support in multithread
+	backEnd.scopeView = tr.IsScopeView();
+	backEnd.shuttleView = tr.IsShuttleView();
+#endif
+
 	//printf("BackendThreadRun called..");
 	imagesFinished = false;
 	backendFinished = false;

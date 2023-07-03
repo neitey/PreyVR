@@ -1480,7 +1480,7 @@ void RB_T_GLSL_FillDepthBuffer(const drawSurf_t* surf) {
 		const shaderStage_t* pStage = shader->GetStage(stage);
 
 #ifdef _HUMANHEAD //k: scope view support
-		if(tr.IsScopeView())
+		if(backEnd.scopeView /*tr.IsScopeView()*/)
 		{
 			if(pStage->isNotScopeView)
 				continue;
@@ -1490,7 +1490,7 @@ void RB_T_GLSL_FillDepthBuffer(const drawSurf_t* surf) {
 			if(pStage->isScopeView)
 				continue;
 		}
-		if(!tr.IsShuttleView())
+		if(!backEnd.shuttleView /*!tr.IsShuttleView()*/)
 		{
 			if(pStage->isShuttleView)
 				continue;
