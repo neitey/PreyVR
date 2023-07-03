@@ -2007,16 +2007,21 @@ Parse it into the global material variable. Later functions will optimize it.
 If there is any error during parsing, defaultShader will be set.
 =================
 */
-void idMaterial::ParseMaterial( idLexer &src ) {
+void idMaterial::ParseMaterial(idLexer &src)
+{
 	idToken		token;
+	int			s;
 	char		buffer[1024];
 	const char	*str;
 	idLexer		newSrc;
 	int			i;
 
+	s = 0;
+
 	numOps = 0;
 	numRegisters = EXP_REG_NUM_PREDEFINED;	// leave space for the parms to be copied in
-	for ( i = 0 ; i < numRegisters ; i++ ) {
+
+	for (i = 0 ; i < numRegisters ; i++) {
 		pd->registerIsTemporary[i] = true;		// they aren't constants that can be folded
 	}
 
@@ -2024,62 +2029,64 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 
 	textureRepeat_t	trpDefault = TR_REPEAT;		// allow a global setting for repeat
 
-	while ( 1 ) {
-		if ( TestMaterialFlag( MF_DEFAULTED ) ) {	// we have a parse error
+	while (1) {
+		if (TestMaterialFlag(MF_DEFAULTED)) {	// we have a parse error
 			return;
 		}
-		if ( !src.ExpectAnyToken( &token ) ) {
-			SetMaterialFlag( MF_DEFAULTED );
+
+		if (!src.ExpectAnyToken(&token)) {
+			SetMaterialFlag(MF_DEFAULTED);
 			return;
 		}
 
 		// end of material definition
-		if ( token == "}" ) {
+		if (token == "}") {
 			break;
-		} else if ( !token.Icmp( "qer_editorimage") ) {
-			src.ReadTokenOnLine( &token );
+		} else if (!token.Icmp("qer_editorimage")) {
+			src.ReadTokenOnLine(&token);
 			editorImageName = token.c_str();
 			src.SkipRestOfLine();
 			continue;
 		}
 #ifdef _RAVEN // quake4 material property
-// jmarshall - quake 4 materials.
-        else if (!token.Icmp("materialImage"))
+			else if (!token.Icmp("materialImage"))
         {
             src.ReadTokenOnLine(&token);
             continue;
         }
-// jmarshall end
 #endif
-		// description
-		else if ( !token.Icmp( "description") ) {
-			src.ReadTokenOnLine( &token );
+			// description
+		else if (!token.Icmp("description")) {
+			src.ReadTokenOnLine(&token);
 			desc = token.c_str();
 			continue;
 		}
-		// check for the surface / content bit flags
-		else if ( CheckSurfaceParm( &token ) ) {
+			// check for the surface / content bit flags
+		else if (CheckSurfaceParm(&token)) {
 			continue;
 		}
 
 
-		// polygonOffset
-		else if ( !token.Icmp( "polygonOffset" ) ) {
-			SetMaterialFlag( MF_POLYGONOFFSET );
-			if ( !src.ReadTokenOnLine( &token ) ) {
+			// polygonOffset
+		else if (!token.Icmp("polygonOffset")) {
+			SetMaterialFlag(MF_POLYGONOFFSET);
+
+			if (!src.ReadTokenOnLine(&token)) {
 				polygonOffset = 1;
 				continue;
 			}
+
 			// explict larger (or negative) offset
 			polygonOffset = token.GetFloatValue();
 			continue;
 		}
-		// noshadow
-		else if ( !token.Icmp( "noShadows" ) ) {
-			SetMaterialFlag( MF_NOSHADOWS );
+			// noshadow
+		else if (!token.Icmp("noShadows")) {
+			SetMaterialFlag(MF_NOSHADOWS);
 			continue;
+		}
 #ifdef _RAVEN // quake4 material property
-// jmarshall - possible legacy optimisations that aren't needed for current hardware.
+			// jmarshall - possible legacy optimisations that aren't needed for current hardware.
         else if (!token.Icmp("notfix"))
         {
             // Unknown what this is used for.
@@ -2102,22 +2109,12 @@ void idMaterial::ParseMaterial( idLexer &src ) {
             // Unknown what this is used for.
             continue;
         }
-// jmarshall end
-#endif
-		} else if ( !token.Icmp( "suppressInSubview" ) ) {
-			suppressInSubview = true;
-			continue;
-#ifdef _RAVEN // quake4 material property
-// jmarshall
         else if (!token.Icmp("materialType"))
         {
             src.ReadToken(&token);
             materialType = declManager->FindMaterialType(token);
             continue;
         }
-// jmarshall end
-#endif
-#ifdef _RAVEN // quake4 material property
 		else if (!token.Icmp("portalDistanceNear")) {
 			(void)src.ParseFloat(); // a number
 			continue;
@@ -2132,191 +2129,172 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			(void)unusedToken;
 			continue;
 		}
-		/*
-		else if (!token.Icmp("bounce")) {
-			continue;
-		}
-		else if (!token.Icmp("notacticalfeatures")) {
-			continue;
-		}
-		else if (!token.Icmp("shotclip")) {
-			continue;
-		}
-		else if (!token.Icmp("largeshotclip")) {
-			continue;
-		}
-		else if (!token.Icmp("projectileClip")) {
-			continue;
-		}
-		else if (!token.Icmp("flyclip")) {
-			continue;
-		}
-		else if (!token.Icmp("vehicleclip")) {
-			continue;
-		}
-		*/
+// jmarshall end
 #endif
-		} else if (!token.Icmp("suppressInSubview")) {
+		else if (!token.Icmp("suppressInSubview")) {
 			suppressInSubview = true;
 			continue;
-		} else if ( !token.Icmp( "portalSky" ) ) {
+		}
+		else if (!token.Icmp("portalSky")) {
 			portalSky = true;
 			continue;
 		}
-		// noSelfShadow
-		else if ( !token.Icmp( "noSelfShadow" ) ) {
-			SetMaterialFlag( MF_NOSELFSHADOW );
+			// noSelfShadow
+		else if (!token.Icmp("noSelfShadow")) {
+			SetMaterialFlag(MF_NOSELFSHADOW);
 			continue;
 		}
-		// noPortalFog
-		else if ( !token.Icmp( "noPortalFog" ) ) {
-			SetMaterialFlag( MF_NOPORTALFOG );
+			// noPortalFog
+		else if (!token.Icmp("noPortalFog")) {
+			SetMaterialFlag(MF_NOPORTALFOG);
 			continue;
 		}
-		// forceShadows allows nodraw surfaces to cast shadows
-		else if ( !token.Icmp( "forceShadows" ) ) {
-			SetMaterialFlag( MF_FORCESHADOWS );
+			// forceShadows allows nodraw surfaces to cast shadows
+		else if (!token.Icmp("forceShadows")) {
+			SetMaterialFlag(MF_FORCESHADOWS);
 			continue;
 		}
-		// overlay / decal suppression
-		else if ( !token.Icmp( "noOverlays" ) ) {
+			// overlay / decal suppression
+		else if (!token.Icmp("noOverlays")) {
 			allowOverlays = false;
 			continue;
 		}
-		// moster blood overlay forcing for alpha tested or translucent surfaces
-		else if ( !token.Icmp( "forceOverlays" ) ) {
+			// moster blood overlay forcing for alpha tested or translucent surfaces
+		else if (!token.Icmp("forceOverlays")) {
 			pd->forceOverlays = true;
 			continue;
 		}
-		// translucent
-		else if ( !token.Icmp( "translucent" ) ) {
+			// translucent
+		else if (!token.Icmp("translucent")) {
 			coverage = MC_TRANSLUCENT;
 			continue;
 		}
-		// global zero clamp
-		else if ( !token.Icmp( "zeroclamp" ) ) {
+			// global zero clamp
+		else if (!token.Icmp("zeroclamp")) {
 			trpDefault = TR_CLAMP_TO_ZERO;
 			continue;
 		}
-		// global clamp
-		else if ( !token.Icmp( "clamp" ) ) {
+			// global clamp
+		else if (!token.Icmp("clamp")) {
 			trpDefault = TR_CLAMP;
 			continue;
 		}
-		// global clamp
-		else if ( !token.Icmp( "alphazeroclamp" ) ) {
+			// global clamp
+		else if (!token.Icmp("alphazeroclamp")) {
 			trpDefault = TR_CLAMP_TO_ZERO;
 			continue;
 		}
-		// forceOpaque is used for skies-behind-windows
-		else if ( !token.Icmp( "forceOpaque" ) ) {
+			// forceOpaque is used for skies-behind-windows
+		else if (!token.Icmp("forceOpaque")) {
 			coverage = MC_OPAQUE;
 			continue;
 		}
-		// twoSided
-		else if ( !token.Icmp( "twoSided" ) ) {
+			// twoSided
+		else if (!token.Icmp("twoSided")) {
 			cullType = CT_TWO_SIDED;
 			// twoSided implies no-shadows, because the shadow
 			// volume would be coplanar with the surface, giving depth fighting
 			// we could make this no-self-shadows, but it may be more important
 			// to receive shadows from no-self-shadow monsters
-			SetMaterialFlag( MF_NOSHADOWS );
+			SetMaterialFlag(MF_NOSHADOWS);
 		}
-		// backSided
-		else if ( !token.Icmp( "backSided" ) ) {
+			// backSided
+		else if (!token.Icmp("backSided")) {
 			cullType = CT_BACK_SIDED;
 			// the shadow code doesn't handle this, so just disable shadows.
 			// We could fix this in the future if there was a need.
-			SetMaterialFlag( MF_NOSHADOWS );
+			SetMaterialFlag(MF_NOSHADOWS);
 		}
-		// foglight
-		else if ( !token.Icmp( "fogLight" ) ) {
+			// foglight
+		else if (!token.Icmp("fogLight")) {
 			fogLight = true;
 			continue;
 		}
-		// blendlight
-		else if ( !token.Icmp( "blendLight" ) ) {
+			// blendlight
+		else if (!token.Icmp("blendLight")) {
 			blendLight = true;
 			continue;
 		}
-		// ambientLight
-		else if ( !token.Icmp( "ambientLight" ) ) {
+			// ambientLight
+		else if (!token.Icmp("ambientLight")) {
 			ambientLight = true;
 			continue;
 		}
-		// mirror
-		else if ( !token.Icmp( "mirror" ) ) {
+			// mirror
+		else if (!token.Icmp("mirror")) {
 			sort = SS_SUBVIEW;
 			coverage = MC_OPAQUE;
 			continue;
 		}
-		// noFog
-		else if ( !token.Icmp( "noFog" ) ) {
+			// noFog
+		else if (!token.Icmp("noFog")) {
 			noFog = true;
 			continue;
 		}
-		// unsmoothedTangents
-		else if ( !token.Icmp( "unsmoothedTangents" ) ) {
+			// unsmoothedTangents
+		else if (!token.Icmp("unsmoothedTangents")) {
 			unsmoothedTangents = true;
 			continue;
 		}
-		// lightFallofImage <imageprogram>
-		// specifies the image to use for the third axis of projected
-		// light volumes
-		else if ( !token.Icmp( "lightFalloffImage" ) ) {
-			str = R_ParsePastImageProgram( src );
+			// lightFallofImage <imageprogram>
+			// specifies the image to use for the third axis of projected
+			// light volumes
+		else if (!token.Icmp("lightFalloffImage")) {
+			str = R_ParsePastImageProgram(src);
 			idStr	copy;
 
 			copy = str;	// so other things don't step on it
-			lightFalloffImage = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT );
+			lightFalloffImage = globalImages->ImageFromFile(copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT);
 			continue;
 		}
-		// guisurf <guifile> | guisurf entity
-		// an entity guisurf must have an idUserInterface
-		// specified in the renderEntity
-		else if ( !token.Icmp( "guisurf" ) ) {
-			src.ReadTokenOnLine( &token );
-			if ( !token.Icmp( "entity" ) ) {
+			// guisurf <guifile> | guisurf entity
+			// an entity guisurf must have an idUserInterface
+			// specified in the renderEntity
+		else if (!token.Icmp("guisurf")) {
+			src.ReadTokenOnLine(&token);
+
+			if (!token.Icmp("entity")) {
 				entityGui = 1;
-			} else if ( !token.Icmp( "entity2" ) ) {
+			} else if (!token.Icmp("entity2")) {
 				entityGui = 2;
-			} else if ( !token.Icmp( "entity3" ) ) {
+			} else if (!token.Icmp("entity3")) {
 				entityGui = 3;
 			} else {
-				gui = uiManager->FindGui( token.c_str(), true );
+				gui = uiManager->FindGui(token.c_str(), true);
 			}
+
 			continue;
 		}
-		// sort
-		else if ( !token.Icmp( "sort" ) ) {
-			ParseSort( src );
+			// sort
+		else if (!token.Icmp("sort")) {
+			ParseSort(src);
 			continue;
 		}
-		// spectrum <integer>
-		else if ( !token.Icmp( "spectrum" ) ) {
-			src.ReadTokenOnLine( &token );
-			spectrum = atoi( token.c_str() );
+			// spectrum <integer>
+		else if (!token.Icmp("spectrum")) {
+			src.ReadTokenOnLine(&token);
+			spectrum = atoi(token.c_str());
 			continue;
 		}
-		// deform < sprite | tube | flare >
-		else if ( !token.Icmp( "deform" ) ) {
-			ParseDeform( src );
+			// deform < sprite | tube | flare >
+		else if (!token.Icmp("deform")) {
+			ParseDeform(src);
 			continue;
 		}
-		// decalInfo <staySeconds> <fadeSeconds> ( <start rgb> ) ( <end rgb> )
-		else if ( !token.Icmp( "decalInfo" ) ) {
-			ParseDecalInfo( src );
+			// decalInfo <staySeconds> <fadeSeconds> ( <start rgb> ) ( <end rgb> )
+		else if (!token.Icmp("decalInfo")) {
+			ParseDecalInfo(src);
 			continue;
 		}
-		// renderbump <args...>
-		else if ( !token.Icmp( "renderbump") ) {
-			src.ParseRestOfLine( renderBump );
+			// renderbump <args...>
+		else if (!token.Icmp("renderbump")) {
+			src.ParseRestOfLine(renderBump);
 			continue;
 		}
-		// diffusemap for stage shortcut
-		else if ( !token.Icmp( "diffusemap" ) ) {
+			// diffusemap for stage shortcut
+		else if (!token.Icmp("diffusemap")) {
 #if defined(_RAVENxxx)
-// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
+			// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
 			idStr nstr;
             src.ReadRestOfLine(nstr);
 			idStr::snPrintf(buffer, sizeof(buffer), "blend diffusemap\nmap %s\n}\n", nstr.c_str());
@@ -2325,16 +2303,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			str = R_ParsePastImageProgram(src);
 			idStr::snPrintf(buffer, sizeof(buffer), "blend diffusemap\nmap %s\n}\n", str);
 #endif
-			newSrc.LoadMemory( buffer, strlen(buffer), "diffusemap" );
-			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
-			ParseStage( newSrc, trpDefault );
+			newSrc.LoadMemory(buffer, strlen(buffer), "diffusemap");
+			newSrc.SetFlags(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES);
+			ParseStage(newSrc, trpDefault);
 			newSrc.FreeSource();
 			continue;
 		}
-		// specularmap for stage shortcut
-		else if ( !token.Icmp( "specularmap" ) ) {
+			// specularmap for stage shortcut
+		else if (!token.Icmp("specularmap")) {
 #if defined(_RAVENxxx)
-// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
+			// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
 			idStr nstr;
             src.ReadRestOfLine(nstr);
 			idStr::snPrintf(buffer, sizeof(buffer), "blend specularmap\nmap %s\n}\n", nstr.c_str());
@@ -2343,16 +2321,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			str = R_ParsePastImageProgram(src);
 			idStr::snPrintf(buffer, sizeof(buffer), "blend specularmap\nmap %s\n}\n", str);
 #endif
-			newSrc.LoadMemory( buffer, strlen(buffer), "specularmap" );
-			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
-			ParseStage( newSrc, trpDefault );
+			newSrc.LoadMemory(buffer, strlen(buffer), "specularmap");
+			newSrc.SetFlags(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES);
+			ParseStage(newSrc, trpDefault);
 			newSrc.FreeSource();
 			continue;
 		}
-		// normalmap for stage shortcut
-		else if ( !token.Icmp( "bumpmap" ) ) {
+			// normalmap for stage shortcut
+		else if (!token.Icmp("bumpmap")) {
 #if defined(_RAVENxxx)
-// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
+			// jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
 			idStr nstr;
             src.ReadRestOfLine(nstr);
 			idStr::snPrintf(buffer, sizeof(buffer), "blend bumpmap\nmap %s\n}\n", nstr.c_str());
@@ -2361,16 +2339,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			str = R_ParsePastImageProgram(src);
 			idStr::snPrintf(buffer, sizeof(buffer), "blend bumpmap\nmap %s\n}\n", str);
 #endif
-			newSrc.LoadMemory( buffer, strlen(buffer), "bumpmap" );
-			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
-			ParseStage( newSrc, trpDefault );
+			newSrc.LoadMemory(buffer, strlen(buffer), "bumpmap");
+			newSrc.SetFlags(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES);
+			ParseStage(newSrc, trpDefault);
 			newSrc.FreeSource();
 			continue;
 		}
-		// DECAL_MACRO for backwards compatibility with the preprocessor macros
-		else if ( !token.Icmp( "DECAL_MACRO" ) ) {
+			// DECAL_MACRO for backwards compatibility with the preprocessor macros
+		else if (!token.Icmp("DECAL_MACRO")) {
 			// polygonOffset
-			SetMaterialFlag( MF_POLYGONOFFSET );
+			SetMaterialFlag(MF_POLYGONOFFSET);
 			polygonOffset = 1;
 
 			// discrete
@@ -2381,44 +2359,82 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			sort = SS_DECAL;
 
 			// noShadows
-			SetMaterialFlag( MF_NOSHADOWS );
+			SetMaterialFlag(MF_NOSHADOWS);
+#ifdef _HUMANHEAD //karin: decal default using alphatest
+			coverage = MC_TRANSLUCENT;
+#endif
 			continue;
 #ifdef _HUMANHEAD
 #define _SURFTYPE(x) ((x) | (surfaceFlags & (~SURF_TYPE_MASK)))
 		} else if (!token.Icmp("matter_metal")) {
 			surfaceFlags = _SURFTYPE(SURFTYPE_METAL);
+			continue;
 		} else if (!token.Icmp("matter_wood")) {
 			surfaceFlags = _SURFTYPE(SURFTYPE_WOOD);
+			continue;
 		} else if (!token.Icmp("matter_cardboard")) {
+			surfaceFlags = _SURFTYPE(SURFTYPE_CARDBOARD);
+			continue;
 		} else if (!token.Icmp("matter_tile")) {
 			surfaceFlags = _SURFTYPE(SURFTYPE_TILE);
+			continue;
 		} else if (!token.Icmp("matter_stone")) {
+			surfaceFlags = _SURFTYPE(SURFTYPE_STONE);
+			continue;
 		} else if (!token.Icmp("matter_flesh")) {
 			surfaceFlags = _SURFTYPE(SURFTYPE_FLESH);
+			continue;
 		} else if (!token.Icmp("matter_glass")) {
 			surfaceFlags = _SURFTYPE(SURFTYPE_GLASS);
+			continue;
 		} else if (!token.Icmp("matter_pipe")) {
 			surfaceFlags = _SURFTYPE(SURFTYPE_PIPE);
+			continue;
 		} else if (!token.Icmp("decal_alphatest_macro")) {
+			// polygonOffset
+			SetMaterialFlag(MF_POLYGONOFFSET);
+			polygonOffset = 1;
+
+			// discrete
+			surfaceFlags |= SURF_DISCRETE;
+			contentFlags &= ~CONTENTS_SOLID;
+
+			// sort decal
+			sort = SS_DECAL;
+
+			// noShadows
+			SetMaterialFlag(MF_NOSHADOWS);
+
+			coverage = MC_TRANSLUCENT;
+			continue;
 		} else if (!token.Icmp("skipClip")) {
 			SetMaterialFlag(MF_SKIPCLIP);
+			continue;
 		} else if (!token.Icmp("noSeeThru")) {
+			continue;
 		} else if (!token.Icmp("seeThru")) {
+			continue;
 		} else if (!token.Icmp("overlay_macro")) {
+			continue;
 		} else if (!token.Icmp("scorch_macro")) {
+			continue;
 		} else if (!token.Icmp("glass_macro")) {
 			surfaceFlags = _SURFTYPE(SURFTYPE_GLASS);
+			continue;
 		} else if (!token.Icmp("skybox_macro")) {
 			surfaceFlags |= SURF_NOFRAGMENT;
 			coverage = MC_OPAQUE;
-			SetMaterialFlag(MF_NOSHADOWS);
 			allowOverlays = false;
+			SetMaterialFlag(MF_NOSHADOWS);
+			continue;
 		} else if (!token.Icmp("lightWholeMesh")) {
 			SetMaterialFlag(MF_LIGHT_WHOLE_MESH);
+			continue;
 		} else if (!token.Icmp("skyboxportal")) {
 			src.SkipRestOfLine();
 			sort = SS_SUBVIEW;
 			subviewClass = SC_PORTAL_SKYBOX;
+			continue;
 		} else if (!token.Icmp("directportal")) { // with a parm: e.g. directportal parm5
 			directPortalDistance = ParseExpression(src);
 			sort = SS_SUBVIEW;
@@ -2428,15 +2444,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			idToken t;
 			t = "discrete";
 			CheckSurfaceParm(&t);
+			continue;
 #undef _SURFTYPE
 #endif
-		} else if ( token == "{" ) {
+		} else if (token == "{") {
 			// create the new stage
-			ParseStage( src, trpDefault );
+			ParseStage(src, trpDefault);
 			continue;
 		} else {
-			common->Warning( "unknown general material parameter '%s' in '%s'", token.c_str(), GetName() );
-			SetMaterialFlag( MF_DEFAULTED );
+			common->Warning("unknown general material parameter '%s' in '%s'", token.c_str(), GetName());
+			SetMaterialFlag(MF_DEFAULTED);
 			return;
 		}
 	}
@@ -2454,13 +2471,14 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 
 	// we can't just call ReceivesLighting(), because the stages are still
 	// in temporary form
-	if ( cullType == CT_TWO_SIDED ) {
-		for ( i = 0 ; i < numStages ; i++ ) {
-			if ( pd->parseStages[i].lighting != SL_AMBIENT || pd->parseStages[i].texture.texgen != TG_EXPLICIT ) {
-				if ( cullType == CT_TWO_SIDED ) {
+	if (cullType == CT_TWO_SIDED) {
+		for (i = 0 ; i < numStages ; i++) {
+			if (pd->parseStages[i].lighting != SL_AMBIENT || pd->parseStages[i].texture.texgen != TG_EXPLICIT) {
+				if (cullType == CT_TWO_SIDED) {
 					cullType = CT_FRONT_SIDED;
 					shouldCreateBackSides = true;
 				}
+
 				break;
 			}
 		}
@@ -2468,17 +2486,19 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 
 	// currently a surface can only have one unique texgen for all the stages on old hardware
 	texgen_t firstGen = TG_EXPLICIT;
-	for ( i = 0; i < numStages; i++ ) {
-		if ( pd->parseStages[i].texture.texgen != TG_EXPLICIT ) {
-			if ( firstGen == TG_EXPLICIT ) {
+
+	for (i = 0; i < numStages; i++) {
+		if (pd->parseStages[i].texture.texgen != TG_EXPLICIT) {
+			if (firstGen == TG_EXPLICIT) {
 				firstGen = pd->parseStages[i].texture.texgen;
-			} else if ( firstGen != pd->parseStages[i].texture.texgen ) {
-				common->Warning( "material '%s' has multiple stages with a texgen", GetName() );
+			} else if (firstGen != pd->parseStages[i].texture.texgen) {
+				common->Warning("material '%s' has multiple stages with a texgen", GetName());
 				break;
 			}
 		}
 	}
 }
+
 
 /*
 =========================

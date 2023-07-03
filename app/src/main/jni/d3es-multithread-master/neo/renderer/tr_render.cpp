@@ -67,16 +67,8 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		int bits = backEnd.glState.glStateBits;
 		idStr texture(surf->material->GetName());
 
-		//modify gl state function to fix glass and cavepaints
-		if((texture.CmpPrefix("textures/dreamworld/cavepaint") == 0) || (texture.CmpPrefix("textures/sfx/glass") == 0) || (texture.CmpPrefix("textures/sfx/nonbreakglass") == 0)) {
-			GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
-			glStateUpdated = true;
-		}
-
 		//modify the depth to fix decals
 		if(texture.CmpPrefix("textures/decals") == 0) {
-			float offset = 0.0001f;
-			glDepthRangef(offset, 1 + offset);
 			GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
 			glStateUpdated = true;
 		}
@@ -87,7 +79,6 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 
 		//restore previous state
 		if(glStateUpdated) {
-			glDepthRangef(0, 1);
 			GL_State(bits);
 		}
 		//Lubos END
