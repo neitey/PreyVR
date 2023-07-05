@@ -248,6 +248,7 @@
 	
 				onAction {
 					set	"cmd"	"play guisounds_menuclickup; createNewName"; 
+					resetTime "SG_Button" "0"; 
 				}
 			}
 
