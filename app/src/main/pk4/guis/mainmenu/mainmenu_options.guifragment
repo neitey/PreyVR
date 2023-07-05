@@ -122,23 +122,6 @@
 					resetTime "Options_AnimOut" "0";
 				}
 			}
-			
-			buttonDef Options_BottomButton_Reset {
-				rect		270, 0, 280, 19
-				backcolor	0, 0, 0, 0
-				forecolor	SUBMENU_BOTTOMBAR_FORECOLOR_COMMA
-				hovercolor	SUBMENU_BOTTOMBAR_HOVERCOLOR_COMMA
-				textscale	0.36
-				textalign	1
-				textaligny	-6
-				font		"fonts/menu"
-				text		"#str_20209"
-				shadow		1
-				onAction {
-					set	"cmd" "play guisounds_menu_clickin" ; 
-					resetTime "AnimResetDefaults_Up" "0" ;
-				}
-			}
 		}
 		tabContainerDef Options_TabContainer {
 			rect		25, 35, 570, 390
