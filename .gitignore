@@ -33,3 +33,4 @@ drbeef-release-key.keystore
 *.json
 *.bin
 *.ser
+app/src/main/assets/vr_support.pk4
