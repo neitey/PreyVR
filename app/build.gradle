@@ -51,6 +51,20 @@ android {
     }
 }
 
+android {
+    task PackVrSupportPK4(type: Zip) {
+        from 'src/main/pk4/'
+        archiveName 'vr_support.pk4'
+        destinationDir(file('src/main/assets/'))
+    }
+    afterEvaluate {
+        if (project(':app').tasks.findByName('mergeDebugJniLibFolders'))
+            project(':app').mergeDebugJniLibFolders.dependsOn PackVrSupportPK4
+        if (project(':app').tasks.findByName('mergeReleaseJniLibFolders'))
+            project(':app').mergeReleaseJniLibFolders.dependsOn PackVrSupportPK4
+    }
+}
+
 dependencies {
     implementation "com.android.support:support-compat:26.1.0"
     implementation "com.android.support:support-core-utils:26.1.0"
