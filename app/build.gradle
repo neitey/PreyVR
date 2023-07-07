@@ -58,10 +58,10 @@ android {
         destinationDir(file('src/main/assets/'))
     }
     afterEvaluate {
-        if (project(':app').tasks.findByName('mergeDebugJniLibFolders'))
-            project(':app').mergeDebugJniLibFolders.dependsOn PackVrSupportPK4
-        if (project(':app').tasks.findByName('mergeReleaseJniLibFolders'))
-            project(':app').mergeReleaseJniLibFolders.dependsOn PackVrSupportPK4
+        if (project(':app').tasks.findByName('createDebugVariantModel'))
+            project(':app').createDebugVariantModel.dependsOn PackVrSupportPK4
+        if (project(':app').tasks.findByName('createReleaseVariantModel'))
+            project(':app').createReleaseVariantModel.dependsOn PackVrSupportPK4
     }
 }
 
