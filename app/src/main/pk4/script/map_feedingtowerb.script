@@ -1,0 +1,1815 @@
+namespace map_feedingtowerb {
+	float deathCatwalkSwayAmount = 0.75,
+		  deathCatwalkSwayTime = 1.25,
+		  shuttleRoomHunterID,
+		  shuttleRoomHunter2ID,
+		  shuttleHunterRetreatRan,
+		  shuttleHunterTriggered,
+		  gChickenDogTipping = 0,
+		  gChickenDogShaking = 0,
+		  gUwearWallBangID,
+		  gUwearBridgeID,
+		  gTommyUwearKilled = 0,
+		  gTommyCanSpeak = 1; //used to avoid overlapping dialog
+		  
+	void HugeHunterPlayAnim( entity hunter, string anim, float blend ) {
+		hunter.setBlendFrames( ANIMCHANNEL_LEGS, blend );
+		hunter.setBlendFrames( ANIMCHANNEL_TORSO, blend );
+		hunter.playAnim( ANIMCHANNEL_LEGS, anim );
+		hunter.playAnim( ANIMCHANNEL_TORSO, anim );
+		sys.wait( hunter.animLength( ANIMCHANNEL_LEGS, anim ) );
+	}
+	
+	void HugeHunterFakeTrigger( entity hunterFake ) {
+		sys.wait( 0.45 );
+		sys.trigger( hunterFake );
+	}
+	
+	float gCanRespondGiantHunter = 1;
+		  
+	void HugeHunterComment2() {
+		if ( gCanRespondGiantHunter && gTommyCanSpeak ) {
+			gTommyCanSpeak = 0;
+			$player1.startSoundShader( "ftb_tom_gianthunter02", SND_CHANNEL_VOICE );
+			sys.waitForSilence( $player1, 0 );
+			gTommyCanSpeak = 1;
+		}
+	}
+	
+	void HugeHunterVoice() {
+		sys.trigger( $ftbHugeHunterVoice );
+		$ftbHugeHunter.startSound( "snd_look_voice", SND_CHANNEL_VOICE, 0 );
+	}
+	
+	void HugeHunterFootstep( entity footstepEnt ) {
+		entity referenceEnt = $ftbHugeHunterSoundReference,
+			   hunter = $ftbHugeHunter,
+			   hunterView = $biosky;
+			   
+		vector footstepPos = footstepEnt.getOrigin(),
+			   referencePos = referenceEnt.getOrigin(),
+			   currentDist = hunter.getOrigin() - hunterView.getOrigin();
+		
+		footstepPos_x = referencePos_x + ( currentDist_x * 2.25 );
+		footstepPos_y = referencePos_y + ( currentDist_y * 10 );
+		footstepEnt.setOrigin( footstepPos );
+		footstepEnt.startSound( "snd_footstep", SND_CHANNEL_ANY, 0 );
+	}
+	
+	void HugeHunterFootstepLeft() {
+		thread HugeHunterFootstep( $ftbHugeHunterFootstepLeft );
+	}
+	
+	void HugeHunterFootstepRight() {
+		thread HugeHunterFootstep( $ftbHugeHunterFootstepRight );
+	}
+	
+	void HugeHunterRun() {
+		entity door = $ftbHugeHunterDoor,
+			   hunter = $ftbHugeHunter,
+			   hunterFake = $ftbHugeHunterFake,
+			   portal = $ftbHugeHunterPortal,
+			   console = $ftbHugeHunterConsole,
+			   consoleRelay = $ftbHugeHunterConsoleRelay,
+			   dest1 = $ftbHugeHunterDest1,
+			   dest2 = $ftbHugeHunterDest2;
+			   
+		thread PlayMapMusic( "snd_asteroid", false, MUS_TRANSITION_OVERLAP );
+
+		//Lubos BEGIN
+		sys.setSpawnArg( "origin", Vec3Set( 2148, -11484, 0 ) );
+		sys.setSpawnArg( "angle", 180 );
+		sys.setSpawnArg( "team", "0" );
+		sys.setSpawnArg( "rank", "0" );
+		sys.setSpawnArg( "fx_flashlight", "" );
+		sys.setSpawnArg( "no_sight", "1" );
+		sys.setSpawnArg( "nodrop", "1" );
+		sys.setSpawnArg( "skin", "skins/monsters/elite_hunter.skin" );
+
+		hunter = sys.spawn( "monster_hunter_feedinga" );
+		sys.waitFrame();
+		hunter.allowMovement( true );
+		hunter.setContents( 0 );
+		hunter.setClipmask( 0 );
+		//Lubos END
+		
+		hunter.setState( "state_Nothing" );
+		hunter.allowMovement( true );
+		sys.trigger( hunter );//Lubos
+		sys.trigger( door );
+		hunter.show();
+		
+		//walk to asteroid
+		HugeHunterPlayAnim( hunter, "walk", 0 );
+		HugeHunterPlayAnim( hunter, "walk", 0 );
+		HugeHunterPlayAnim( hunter, "walk", 0 );
+		$ftbHugeHunterSight.enable();
+		HugeHunterPlayAnim( hunter, "walk", 0 );
+		thread HugeHunterPlayAnim( hunter, "walk", 0 );
+		sys.wait( 0.025 );
+		//Lubos:HugeHunterPlayAnim( hunter, "feedingb_look", 12 );
+		
+		//walk to console
+		hunter.faceEntity( dest1 );
+		$ftbHugeHunterSight.disable();
+		HugeHunterPlayAnim( hunter, "walk", 8 );
+		thread HugeHunterPlayAnim( hunter, "walk", 0 );
+		hunter.faceEntity( console );
+		sys.wait( 0.2 );
+		
+		//use console
+		//Lubos:HugeHunterPlayAnim( hunter, "activity4", 8 );
+		sys.trigger( portal );
+		sys.trigger( consoleRelay );
+		
+		//walk to portal
+		hunter.faceEntity( portal );
+		HugeHunterPlayAnim( hunter, "walk", 8 );
+		thread HugeHunterComment2();
+		thread HugeHunterFakeTrigger( hunterFake );
+		HugeHunterPlayAnim( hunter, "walk", 0 );
+		hunter.faceEntity( door );
+		thread HugeHunterPlayAnim( hunter, "walk", 0 );
+		sys.wait( 0.5 );
+		sys.trigger( portal );
+		hunter.remove();
+	}
+	
+	void HugeHunterSight() {
+		$player1.startSoundShader( "ftb_tom_gianthunter01_1", SND_CHANNEL_VOICE );
+	}
+	
+	void ChickenDogBoxIdleShake() {
+		gChickenDogShaking = 1;
+		
+		float waitTime,
+			  currentTime;
+			  
+		vector rotVec;
+			  
+		entity ent = $ftbPortalBox1CtrlP2;
+		
+		while ( true ) {
+			rotVec = Vec3Set( sys.random( 1 ) - 0.5, sys.random( 2 ) - 1, -2 );
+			$ftbPortalBox1.startSound( "snd_bump", SND_CHANNEL_ANY, 0 );
+			TimeTweak( ent, 0, 0.075, 0.075 );
+			ent.rotateOnce( rotVec );
+			sys.waitFor( ent );
+			TimeTweak( ent, 0.25, 0, 0.25 );
+			ent.rotateOnce( -rotVec );
+			sys.waitFor( ent );
+			
+			if ( int( sys.random( 4 ) ) == 1 ) {
+				$ftbPortalBox1.startSound( "snd_fodder", SND_CHANNEL_ANY, 0 );
+			}
+			
+			currentTime = sys.getTime();
+			
+			waitTime = sys.random( 1.5 ) + 0.5;
+			
+			while ( sys.getTime() < currentTime + waitTime ) {
+				if ( gChickenDogTipping ) {
+					gChickenDogShaking = 0;
+					return;
+				}
+				sys.waitFrame();
+			}
+		}
+	}
+	
+	void ChickenDogBoxRealActivate() {
+		sys.wait( 0.05 );
+		sys.trigger( $ftbChickenDogBoxReal );
+		sys.wait( 0.05 );
+		sys.trigger( $ftbChickenDogBoxAnimate );
+		$ftbPortalBox1.startSound( "snd_fodder", SND_CHANNEL_ANY, 0 );
+		sys.wait( 0.15 );		
+		sys.trigger( $ftbChickenDogForcefield );
+		sys.wait( 0.425 );
+		sys.trigger( $ftbPortalBox1MonsterClip );
+	}
+	
+	void ChickenDogBoxTip() {
+		gChickenDogTipping = 1;
+		
+		while ( gChickenDogShaking ) {
+			sys.waitFrame();
+		}
+		
+		entity ent = $ftbPortalBox1CtrlP;
+		TimeTweak( ent, 0, 0, 0.225 );
+		
+		$ftbPortalBox1.startSound( "snd_bounce", SND_CHANNEL_ANY, 0 );
+		
+		ent.moveToPos( '-1092.97 -1639.67 652.46' );
+		ent.rotateOnce( '-3.38 -0.32 -18.62' );
+		sys.waitFor( ent );
+		
+		ent.moveToPos( '-1093.11 -1624.1 642.85' );
+		ent.rotateOnce( '-0.04 -0.12 -23.57' );
+		sys.waitFor( ent );
+		
+		ent.moveToPos( '-1095.27 -1610.46 638.83' );
+		ent.rotateOnce( '-4.05 2.95 -19.93' );
+		sys.waitFor( ent );
+		
+		$ftbPortalBox1.startSound( "snd_bounce", SND_CHANNEL_ANY, 0 );
+		
+		ent.moveToPos( '-1098.92 -1592.12 627.16' );
+		ent.rotateOnce( '2.77 3.86 -26.51' );
+		sys.waitFor( ent );
+		
+		thread ChickenDogBoxRealActivate();
+		
+		ent.moveToPos( '-1102.65 -1574.95 632.13' );
+		ent.rotateOnce( '-2.89 2.45 -12.98' );
+		sys.waitFor( ent );
+		
+		$ftbPortalBox1.startSound( "snd_bounce", SND_CHANNEL_ANY, 0 );
+		
+		ent.moveToPos( '-1102.68 -1563.68 633.85' );
+		ent.rotateOnce( '1.66 2.55 -5.79' );
+		sys.waitFor( ent );
+		
+		ent.moveToPos( '-1102.28 -1561.46 633.69' );
+		ent.rotateOnce( '0.02 1.47 0.27' );
+		sys.waitFor( ent );
+		
+		ent.moveToPos( '-1101.34 -1564.01 629.76' );
+		ent.rotateOnce( '0.3775 0.74 7.83' );
+		sys.waitFor( ent );
+		
+		$ftbPortalBox1.startSound( "snd_bounce", SND_CHANNEL_ANY, 0 );
+		
+		ent.moveToPos( '-1100.68 -1567.51 626.28' );
+		ent.rotateOnce( '0.7175 0.26 11.67' );
+		sys.waitFor( ent );
+		
+		ent.moveToPos( '-1100.76 -1567.76 624.66' );
+		ent.rotateOnce( '1.0875 0.78 -2.25' );
+		sys.waitFor( ent );
+		
+		ent.time( sys.getFrameTime() * 8 );
+		ent.moveToPos( '-1100.95 -1567.29 624.46' );
+		ent.rotateOnce( '0.7275 0.6 -0.04' );
+		sys.waitFor( ent );
+	}
+	
+	void Music1Play() {
+		thread PlayMapMusic( "snd_ft_b_ambient1", false, MUS_TRANSITION_CUTOFF );
+	}
+	
+	void Music2Play() {
+		thread PlayMapMusic( "snd_ft_b_ambient2", false, MUS_TRANSITION_OVERLAP );
+	}
+	
+	void MusicAsteroidPlay() {
+		thread PlayMapMusic( "snd_asteroid", false, MUS_TRANSITION_OVERLAP );
+	}
+	
+	void SphereVoice1() {
+		if ( gTommyCanSpeak ) {
+			gTommyCanSpeak = 0; //avoiding conflict with first wallwalk comment
+			
+			float sndLength;
+			
+			SphereGibberish_Start();
+					
+			sndLength = $ftbSphereGibberish1.startSound( "snd_gibberish", SND_CHANNEL_ANY, 0 );
+			
+			if ( sndLength > 0.0 ) {
+				sys.wait( sndLength + 0.5 );
+			}
+			
+			$player1.startSoundShader( "ftb_tom_spherevoice", SND_CHANNEL_VOICE );
+			
+			SphereGibberish_Stop();
+			
+			gTommyCanSpeak = 1;
+		}
+	}
+	
+	void SphereVoice2() {
+		if ( gTommyCanSpeak ) {
+			gTommyCanSpeak = 0; //avoiding conflict with the underwear in this area
+			
+			sys.wait( 1.5 );
+			
+			float sndLength;
+			
+			SphereGibberish_Start();
+					
+			sndLength = $ftbSphereGibberish1.startSound( "snd_gibberish", SND_CHANNEL_ANY, 0 );
+			
+			if ( sndLength > 0.0 ) {
+				sys.wait( sndLength + 0.5 );
+			}
+			
+			$player1.startSoundShader( "ftb_tom_sphere_response2", SND_CHANNEL_VOICE );
+			
+			SphereGibberish_Stop();
+			
+			gTommyCanSpeak = 1;
+		}
+	}
+	
+	float gFFToggleCount = 0;
+	
+	void Forcefield1Toggle( entity self ) {
+		gFFToggleCount++;
+		
+		if ( gFFToggleCount == 7 ) {
+			sys.trigger( $ftbForcefield1ConsoleBSOD );
+			$ftbForcefield1Console.startSound( "snd_bsod", SND_CHANNEL_ANY, 0 );
+		}
+		
+		if ( gFFToggleCount < 8 ) {
+			sys.trigger( $ftbForcefield1 );
+			sys.trigger( $func_aas_obstacle_1 );
+			
+			if ( self.getFloatKey( "currentState" ) == 1 ) {
+				$ftbForcefield1Light.fadeOutLight( 0.75 );
+				thread fadeOutEnt( $ftbForcefield1Trim, $ftbForcefield1Trim.getVectorKey( "_color" ), 0.75 );
+				self.setKey( "currentState", 0 );
+			} else {
+				$ftbForcefield1Light.fadeInLight( 0.75 );
+				thread fadeInEnt( $ftbForcefield1Trim, $ftbForcefield1Trim.getVectorKey( "_color" ), 0.75 );
+				self.setKey( "currentState", 1 );
+			}
+		}
+	}
+	
+	void WorkerCanSpawn( entity self ) {		
+		entity spawnedCan,
+			   light,
+			   emitter;
+			   
+		emitter = self.getEntityKey( "emitter" );
+		
+		sys.setSpawnArg( "origin", self.getOrigin() );
+		sys.setSpawnArg( "angle", self.getKey( "angle" ) );
+		sys.setSpawnArg( "skin", "skins/mapobjects/wraithcandissolve.skin" );
+		sys.setSpawnArg( "nodrop", 1 );
+		sys.setSpawnArg( "noimpact", 1 );
+		sys.setSpawnArg( "shaderparm5", 1 );
+			
+		sys.wait( 0.9 );
+		
+		if ( spawnedCan = sys.spawn( "movable_worker_can" ) ) {
+			spawnedCan.becomeNonSolid();
+			spawnedCan.startSoundShader( "feedingb_mutilatedhumans_canisterin", SND_CHANNEL_ANY );
+			
+			sys.trigger( emitter );
+			spawnedCan.setShaderParm( 4, -sys.getTime() );
+			spawnedCan.setShaderParm( 5, 0 );
+			
+			self.setKey( "canName", spawnedCan.getName() );
+			
+			if ( light = sys.getEntity( self.getKey( "pickupLight" ) ) ) {
+				light.fadeInLight( 0.5 );
+				sys.wait( 1 );
+				light.fadeOutLight( 0.5 );
+			}
+		}
+	}
+	
+	void Worker1Can1SlideThread() {
+		$ftbWorker1.slideTo( $path_corner_1.getOrigin(), 3.2 );
+	}
+	
+	void Worker1Can1Slide() {
+		thread Worker1Can1SlideThread();
+	}
+	
+	void WorkerCanPickup( entity self ) {
+		entity canToPickup,
+			   worker;
+		
+		if ( canToPickup = sys.getEntity( self.getKey( "canName" ) ) ) {
+			if ( worker = sys.getEntity( self.getKey( "workerName" ) ) ) {
+				sys.trigger( canToPickup );
+				
+				float workerJointNum = worker.getJointHandle( "Rattach_gun" );
+				vector workerJointPos = worker.getJointPos( workerJointNum ),
+					   workerCanOffset,
+					   workerAngles,
+					   forwardVec,
+					   sideVec;
+								
+				workerAngles = worker.getAngles();
+				forwardVec = Vec3Set( sys.cos( workerAngles_y ), sys.sin( workerAngles_y ), 0 );
+				sideVec = sys.CrossProduct( forwardVec, '0 0 1' );
+				
+				workerCanOffset = ( forwardVec * -2.34 ) + ( sideVec * -4.42 );
+				workerCanOffset_z = 1.69;
+				
+				canToPickup.setOrigin( workerJointPos + workerCanOffset );
+				
+				canToPickup.bindToJoint( worker, "Rattach_gun", 1 );
+				worker.setKey( "currentCan", canToPickup.getName() );
+				
+				sys.wait( 8 );
+				thread WorkerCanSpawn( self );
+			}
+		}
+	}
+	
+	void WorkerCanDeform( entity canToDispose ) {
+		float i;
+					
+		for ( i = 0; i <= 50; i += 0.25 ) {
+			canToDispose.setShaderParm( 10, sys.sin( i ) + 1 );
+			sys.wait( 0.01 );
+		}
+	}
+	
+	void WorkerCanDispose( entity canToDispose, float dumpNum ) {
+		entity canCtrlP,
+			   canRotCtrlP,
+			   canFXCtrlP,
+			   canDropPos,
+			   dropSource1,
+			   dropSource2,
+			   dropFlare1,
+			   dropFlare2,
+			   dropFX1,
+			   dropFX2,			   
+			   dropCone,
+			   dropLight;
+			   
+		canCtrlP = sys.getEntity( "ftbDrop" + dumpNum + "CanCtrlP" );
+		canRotCtrlP = sys.getEntity( "ftbDrop" + dumpNum + "CanRotCtrlP" );
+		canFXCtrlP = sys.getEntity( "ftbDrop" + dumpNum + "CanFXCtrlP" );
+		canDropPos = sys.getEntity( "ftbDrop" + dumpNum + "CanDropPos" );
+		dropSource1 = sys.getEntity( "ftbDrop" + dumpNum + "Source1" );
+		dropSource2 = sys.getEntity( "ftbDrop" + dumpNum + "Source2" );
+		dropFlare1 = sys.getEntity( "ftbDrop" + dumpNum + "Flare1" );
+		dropFlare2 = sys.getEntity( "ftbDrop" + dumpNum + "Flare2" );
+		dropFX1 = sys.getEntity( "ftbDrop" + dumpNum + "FX1" );
+		dropFX2 = sys.getEntity( "ftbDrop" + dumpNum + "FX2" );
+		dropCone = sys.getEntity( "ftbDrop" + dumpNum + "Cone" );
+		dropLight = sys.getEntity( "ftbDrop" + dumpNum + "Light" );
+		
+		TimeTweak( canCtrlP, 0, 0, sys.getFrameTime() );
+		canCtrlP.moveTo( canToDispose );
+		sys.waitFor( canCtrlP );
+		canToDispose.bind( canRotCtrlP );
+		
+		TimeTweak( canCtrlP, 0.75, 0.25, 1 );
+		canToDispose.startSoundShader( "feedingb_mutilatedhumans_canisterout_start", SND_CHANNEL_ANY );
+		canCtrlP.moveTo( canDropPos );
+		TimeTweak( canRotCtrlP, 5, 1, 6 );
+		canRotCtrlP.rotateOnce( '1000 700 600' );
+		canFXCtrlP.rotate( '220 260 75' );
+		
+		float fadeInTime = 2;
+		
+		dropLight.fadeInLight( fadeInTime );
+		
+		thread fadeInEnt( dropSource1, dropSource1.getVectorKey( "_color" ), fadeInTime );
+		thread fadeInEnt( dropSource2, dropSource2.getVectorKey( "_color" ), fadeInTime );
+		thread fadeInEnt( dropFlare1, dropFlare1.getVectorKey( "_color" ), fadeInTime );
+		thread fadeInEnt( dropFlare2, dropFlare2.getVectorKey( "_color" ), fadeInTime );
+		thread fadeInEnt( dropCone, dropCone.getVectorKey( "_color" ), fadeInTime );
+			
+		sys.trigger( dropFX1 );
+		sys.trigger( dropFX2 );
+		
+		sys.wait( 2 );
+				
+		canToDispose.setShaderParm( 4, -sys.getTime() );
+		canToDispose.setShaderParm( 5, 1 );
+				
+		TimeTweak( canCtrlP, 1.25, 0, 1.25 );
+		
+		sys.trigger( dropFX1 );
+		sys.trigger( dropFX2 );
+		
+		canToDispose.setShaderParm( 9, 1 );
+		
+		thread crossFadeEnt( dropCone, dropCone.getVectorKey( "_color" ), dropCone.getVectorKey( "_color" ) * 2, 0.5 );
+		
+		thread WorkerCanDeform( canToDispose );
+		
+		canToDispose.startSoundShader( "feedingb_mutilatedhumans_canisterout", SND_CHANNEL_ANY );
+				
+		sys.wait( 1.75 );
+		
+		float fadeOutTime = 0.5;
+		
+		thread fadeOutEnt( dropSource1, dropSource1.getVectorKey( "_color" ), fadeOutTime );
+		thread fadeOutEnt( dropSource2, dropSource2.getVectorKey( "_color" ), fadeOutTime );
+		thread fadeOutEnt( dropFlare1, dropFlare1.getVectorKey( "_color" ), fadeOutTime );
+		thread fadeOutEnt( dropFlare2, dropFlare2.getVectorKey( "_color" ), fadeOutTime );
+		thread fadeOutEnt( dropCone, dropCone.getVectorKey( "_color" ) * 2, fadeOutTime );
+		
+		dropLight.fadeOutLight( fadeOutTime );
+		
+		sys.wait( 0.25 );
+		canToDispose.remove();
+	}
+	
+	void WorkerCanDump( entity self ) {
+		entity canToDump,
+			   worker;
+			   
+		if ( worker = sys.getEntity( self.getKey( "workerName" ) ) ) {
+			if ( canToDump = sys.getEntity( worker.getKey( "currentCan" ) ) ) {
+				canToDump.unbind();
+				worker.setKey( "currentCan", "" );
+				
+				WorkerCanDispose( canToDump, self.getFloatKey( "dumpNum" ) );
+			}
+		}
+	}
+		
+	void WorkerCanSetup() {
+		thread WorkerCanSpawn( $ftbWorkerCan1Pickup );
+		thread WorkerCanSpawn( $ftbWorkerCan2Pickup );
+		thread WorkerCanSpawn( $ftbWorkerCan3Pickup );
+		thread WorkerCanSpawn( $ftbWorkerCan4Pickup );
+		
+		$ftbDrop1Source1.setColor( 0, 0, 0 );
+		$ftbDrop1Source2.setColor( 0, 0, 0 );
+		$ftbDrop1Flare1.setColor( 0, 0, 0 );
+		$ftbDrop1Flare2.setColor( 0, 0, 0 );
+		$ftbDrop1FX1.setColor( 0, 0, 0 );
+		$ftbDrop1FX2.setColor( 0, 0, 0 );
+		$ftbDrop1Cone.setColor( 0, 0, 0 );
+		
+		$ftbDrop2Source1.setColor( 0, 0, 0 );
+		$ftbDrop2Source2.setColor( 0, 0, 0 );
+		$ftbDrop2Flare1.setColor( 0, 0, 0 );
+		$ftbDrop21Flare2.setColor( 0, 0, 0 );
+		$ftbDrop2FX1.setColor( 0, 0, 0 );
+		$ftbDrop2FX2.setColor( 0, 0, 0 );
+		$ftbDrop2Cone.setColor( 0, 0, 0 );
+		
+		$ftbDrop3Source1.setColor( 0, 0, 0 );
+		$ftbDrop3Source2.setColor( 0, 0, 0 );
+		$ftbDrop3Flare1.setColor( 0, 0, 0 );
+		$ftbDrop31Flare2.setColor( 0, 0, 0 );
+		$ftbDrop3FX1.setColor( 0, 0, 0 );
+		$ftbDrop3FX2.setColor( 0, 0, 0 );
+		$ftbDrop3Cone.setColor( 0, 0, 0 );
+	}
+	
+	void ShuttleRoomHunter1Retreat() {
+		shuttleHunterRetreatRan = 1;
+		
+		if ( shuttleHunterTriggered ) {
+			if ( CheckSpawnId( $ftbShuttleRoomHunter1, shuttleRoomHunterID ) ) {
+				if ( EntIsAlive( $ftbShuttleRoomHunter1 ) ) {
+					$ftbShuttleRoomHunter1.startSound( "snd_script_retreat", SND_CHANNEL_ANY, 0 );
+					$ftbShuttleRoomHunter1.followPath( "hunterRetreatPath" );
+				}
+			}
+			
+			if ( CheckSpawnId( $ftbShuttleRoomHunter2, shuttleRoomHunter2ID ) ) {
+				if ( EntIsAlive( $ftbShuttleRoomHunter2 ) ) {
+					$ftbShuttleRoomHunter2.followPath( "hunterRetreatPath2" );
+				}
+			}			
+		}
+		
+		$trigger_relay_31.disable(); //disable underwear death trigger
+	}
+	
+	//Fade lights off prior to hologram powerup
+	void HoloPrePowerup() {
+		float i;
+		entity currentEnt;
+		string prefixFloor = "ho_pre_floorlight",
+			   prefixBack = "ho_pre_backlight",
+			   prefixSide = "ho_pre_sidelight",
+			   prefixWall = "ho_prebackwall";
+		
+		//floor lights
+		for ( i = 1; i <= 7; i++ ) {
+			currentEnt = sys.getEntity( prefixFloor + i );
+			currentEnt.fadeOutLight( 1 );
+			
+			currentEnt = sys.getEntity( prefixFloor + i + "Source" );
+			thread crossFadeEnt( currentEnt, currentEnt.getColor(), '0 0 0', 1 );
+		}
+	
+		for ( i = 1; i <= 2; i++ ) {
+			//backlights
+			currentEnt = sys.getEntity( prefixBack + i );
+			currentEnt.fadeOutLight( 1 );
+			
+			currentEnt = sys.getEntity( prefixBack + i + "amb" );
+			currentEnt.fadeOutLight( 1 );
+			
+			currentEnt = sys.getEntity( prefixBack + i + "Source" );
+			thread crossFadeEnt( currentEnt, currentEnt.getColor(), '0 0 0', 1 );
+			
+			currentEnt = sys.getEntity( prefixBack + i + "Flare" );
+			thread crossFadeEnt( currentEnt, currentEnt.getColor(), '0 0 0', 1 );
+			
+			//sidelights
+			currentEnt = sys.getEntity( prefixSide + i );
+			currentEnt.fadeOutLight( 1 );
+			
+			currentEnt = sys.getEntity( prefixSide + i + "amb" );
+			currentEnt.fadeOutLight( 1 );
+			
+			currentEnt = sys.getEntity( prefixSide + i + "Source" );
+			thread crossFadeEnt( currentEnt, currentEnt.getColor(), '0 0 0', 1 );
+		}
+		
+		//backwall
+		$ho_prebackamb1.fadeOutLight( 1 );
+		$ho_prebackamb2.fadeOutLight( 1 );
+		
+		for ( i = 1; i <= 6; i++ ) {
+			currentEnt = sys.getEntity( prefixWall + i );
+			currentEnt.fadeOutLight( 1 );
+			
+			currentEnt = sys.getEntity( prefixWall + i + "SourceA" );
+			thread crossFadeEnt( currentEnt, currentEnt.getColor(), '0 0 0', 1 );
+			
+			currentEnt = sys.getEntity( prefixWall + i + "SourceB" );
+			thread crossFadeEnt( currentEnt, currentEnt.getColor(), '0 0 0', 1 );
+		}
+		
+		//engine
+		$ho_preengine.fadeOutLight( 1 );
+		$ho_preengineamb.fadeOutLight( 1 );
+		$ho_preengineamb2.fadeOutLight( 1 );
+		$ho_pre_spotamb.fadeOutLight( 1 );
+		
+		thread crossFadeEnt( $ho_preengineSource, $ho_preengineSource.getColor(), '0 0 0', 1 );
+	}
+	
+	void HoloFadeLights() {
+		$ho_postsun.On();
+		
+		sys.wait( 4 );
+		
+		$ho_postsunamb.fadeInLight( 8 );
+		$ho_postsunamb2.fadeInLight( 8 );
+		
+		float i;
+		entity currentEnt;
+		
+		for ( i = 1; i <= 10; i++ ) {
+			currentEnt = sys.getEntity( "ftbHoloVentEmitter" + i );
+			thread crossFadeEnt( currentEnt, '0 0 0', currentEnt.getVectorKey( "_color" ), 8 );
+		}
+		
+		thread crossFadeEnt( $ftbHoloVentEmitter1b, '0 0 0', $ftbHoloVentEmitter1b.getVectorKey( "_color" ), 8 );
+		thread crossFadeEnt( $ftbHoloVentEmitter8b, '0 0 0', $ftbHoloVentEmitter8b.getVectorKey( "_color" ), 8 );
+	}
+	
+	//Makes plug connection for hologram power
+	void HoloPowerPlugMove() {
+		TimeTweak( $ftbHoloPowerPlug, 0.5, 0.1, 0.75 );
+		TimeTweak( $ftbHoloPowerPlug2, 0.5, 0.1, 0.75 );
+		TimeTweak( $ftbHoloPowerPlug3, 0.5, 0.1, 0.75 );
+		
+		$ftbHoloPowerPlug.move( EAST, 24 );
+		$ftbHoloPowerPlug2.moveTo( $ftbHoloPowerPlug2Pos2 );
+		$ftbHoloPowerPlug3.moveTo( $ftbHoloPowerPlug3Pos2 );
+		
+		sys.wait( 1 );
+		
+		sys.trigger( $ftbHoloPowerBeam1 );
+		$ftbHoloPowerPlug.rotateOnce( '0 0 45' );
+		sys.trigger( $ftbHoloPowerPlugSpeaker );
+		sys.trigger( $ftbHoloPowerPlugLight );
+		
+		sys.trigger( $ftbHoloPowerBeam2 );
+		$ftbHoloPowerPlug2.rotateOnce( '0 0 45' );
+		sys.trigger( $ftbHoloPowerPlug2Speaker );
+		sys.trigger( $ftbHoloPowerPlug2Light );
+		
+		sys.trigger( $ftbHoloPowerBeam3 );
+		$ftbHoloPowerPlug3.rotateOnce( '0 0 45' );
+		sys.trigger( $ftbHoloPowerPlug3Speaker );
+		sys.trigger( $ftbHoloPowerPlug3Light );
+	}
+	
+	void HologramFlickerSound( string table, float totalTime ) {
+		float i,
+			  frac,
+			  currentVal = 0,
+			  previousVal = 0,
+			  numTics;
+		vector c;
+		
+		// convert to the total number of game tics
+		numTics = totalTime * sys.getTicsPerSecond();	
+	
+		for( i = 0; i < numTics; i++ ) {
+			frac = i / numTics;
+			currentVal = sys.tableLookup( table, frac );
+			
+			if ( currentVal > 0 ) {
+				if ( previousVal == 0 ) {
+					$ftbHologram1.startSound( "snd_flash", SND_CHANNEL_ANY, 0 );
+				}
+			}
+			
+			previousVal = currentVal;
+			
+			// wait one game frame
+			sys.waitFrame();
+		}
+	}
+	
+	void HologramFlickerOn() {		
+		$ftbHoloProjLight1Flare.show();
+		$ftbHoloProjLight2Flare.show();
+		$ftbHoloProjLight3Flare.show();
+		
+		$ftbHoloProjLight1Cone.show();
+		$ftbHoloProjLight2Cone.show();
+		$ftbHoloProjLight3Cone.show();
+		
+		$ftbHologram1.show();
+		$ftbHologram2.show();
+		$ftbHologram3.show();
+		$ftbHologram4.show();
+		
+		string tableName = "holoFlickerOn";
+		float flickerTime = 1;
+		
+		thread HologramFlickerSound( tableName, flickerTime );
+		thread flickerInEnt( $ftbHoloProjLightEmitter, $ftbHoloProjLightEmitter.getVectorKey( "_color" ), tableName, flickerTime );
+		
+		thread flickerInEnt( $ftbHoloProjLight1, $ftbHoloProjLight1.getVectorKey( "_color" ), tableName, flickerTime );
+		thread flickerInEnt( $ftbHoloProjLight2, $ftbHoloProjLight2.getVectorKey( "_color" ), tableName, flickerTime );
+		thread flickerInEnt( $ftbHoloProjLight3, $ftbHoloProjLight3.getVectorKey( "_color" ), tableName, flickerTime );
+		
+		thread flickerInEnt( $ftbHoloProjLight1Flare, $ftbHoloProjLight1Flare.getVectorKey( "_color" ), tableName, flickerTime );
+		thread flickerInEnt( $ftbHoloProjLight2Flare, $ftbHoloProjLight2Flare.getVectorKey( "_color" ), tableName, flickerTime );
+		thread flickerInEnt( $ftbHoloProjLight3Flare, $ftbHoloProjLight3Flare.getVectorKey( "_color" ), tableName, flickerTime );
+		
+		thread flickerInEnt( $ftbHoloProjLight1Cone, $ftbHoloProjLight1Cone.getVectorKey( "_color" ), tableName, flickerTime );
+		thread flickerInEnt( $ftbHoloProjLight2Cone, $ftbHoloProjLight2Cone.getVectorKey( "_color" ), tableName, flickerTime );
+		thread flickerInEnt( $ftbHoloProjLight3Cone, $ftbHoloProjLight3Cone.getVectorKey( "_color" ), tableName, flickerTime );
+			
+		thread flickerInEntParm( $ftbHologram1, 6, 1, tableName, flickerTime );
+		thread flickerInEntParm( $ftbHologram2, 6, 1, tableName, flickerTime );
+		thread flickerInEntParm( $ftbHologram3, 6, 1, tableName, flickerTime );
+		thread flickerInEntParm( $ftbHologram4, 6, 1, tableName, flickerTime );
+		
+		$holocastlight.On();
+		thread flickerInEnt( $holocastlight, $holocastlight.getVectorKey( "_color" ), tableName, flickerTime );
+		
+		sys.wait( flickerTime );
+		
+		$ftbHologram1.startSound( "snd_reveal", SND_CHANNEL_ANY, 0 );
+		$ftbHologram1.startSound( "snd_idle", SND_CHANNEL_ANY, 0 );		
+	}
+
+	//Opens hologram device
+	void HoloOpen() {
+		thread crossFadeEnt( $ftbHologramLight1, '0 0 0', $ftbHologramLight1.getVectorKey( "_color" ), 2 );
+		thread crossFadeEnt( $ftbHologramLight2, '0 0 0', $ftbHologramLight2.getVectorKey( "_color" ), 2 );
+		thread crossFadeEnt( $ftbHologramLight3, '0 0 0', $ftbHologramLight3.getVectorKey( "_color" ), 2 );
+		thread crossFadeEnt( $ftbHologramLight4, '0 0 0', $ftbHologramLight4.getVectorKey( "_color" ), 2 );
+		thread crossFadeEnt( $ftbHologramLight5, '0 0 0', $ftbHologramLight5.getVectorKey( "_color" ), 2 );
+		thread crossFadeEnt( $ftbHologramLight6, '0 0 0', $ftbHologramLight6.getVectorKey( "_color" ), 2 );
+		
+		TimeTweak( $ftbHologramBase, 0.5, 0.25, 2 );
+		$ftbHologramBase.startSound( "snd_loop", SND_CHANNEL_ANY, 0 );
+		$ftbHologramBase.move( UP, 56 );
+		sys.waitFor( $ftbHologramBase );
+		$ftbHologramBase.stopSound( SND_CHANNEL_ANY, 0 );
+		$ftbHologramBase.startSound( "snd_end", SND_CHANNEL_ANY, 0 );
+				
+		thread HoloPowerPlugMove();
+		
+		sys.wait( 2.0 );
+		
+		$holocurvepan1a.startSound( "snd_open", SND_CHANNEL_ANY, 0 );
+		$holocurvepan1b.startSound( "snd_open", SND_CHANNEL_ANY, 0 );
+		$holocurvepan1c.startSound( "snd_open", SND_CHANNEL_ANY, 0 );
+		
+		TimeTweak( $holocurvepan1a, 1, 0.5, 3 );
+		TimeTweak( $holocurvepan1b, 1, 0.5, 3 );
+		TimeTweak( $holocurvepan1c, 1, 0.5, 3 );
+		
+		$holocurvepan1a.moveTo( $holocurvepan1aPos2 );
+		$holocurvepan1b.moveTo( $holocurvepan1bPos2 );
+		$holocurvepan1c.moveTo( $holocurvepan1cPos2 );
+		
+		$holocurvepan1a.rotateOnce( '0 0 60' );
+		$holocurvepan1b.rotateOnce( '0 0 60' );
+		$holocurvepan1c.rotateOnce( '0 0 60' );
+		
+		$ftbHoloOpenLight.fadeInLight( 0.25 );
+		
+		TimeTweak( $ftbHoloProjBaseCtrlP, 1, 2, 3 );
+		$ftbHoloProjBaseCtrlP.move( UP, 12 );
+		
+		sys.wait( 2.0 );
+				
+		thread HologramFlickerOn();
+				
+		sys.waitFor( $holocurvepan1a );
+		
+		$holocurvepan1a.stopSound( SND_CHANNEL_ANY, 0 );
+		$holocurvepan1b.stopSound( SND_CHANNEL_ANY, 0 );
+		$holocurvepan1c.stopSound( SND_CHANNEL_ANY, 0 );
+		
+		$holocurvepan1a.startSound( "snd_stopped", SND_CHANNEL_ANY, 0 );
+		$holocurvepan1b.startSound( "snd_stopped", SND_CHANNEL_ANY, 0 );
+		$holocurvepan1c.startSound( "snd_stopped", SND_CHANNEL_ANY, 0 );
+	}
+	
+	void HoloPanelBlink( entity lightSource, entity light ) {
+		vector lightSource_color = lightSource.getVectorKey( "_color" ),
+			   light_color = light.getVectorKey( "_color" );
+		
+		thread crossFadeEnt( lightSource, lightSource_color, lightSource_color * 3, 0.1 );
+		crossFadeEnt( light, light_color, light_color * 1.5, 0.1 );
+	
+		thread crossFadeEnt( lightSource, lightSource_color * 3, lightSource_color, 0.5 );
+		crossFadeEnt( light, light_color * 1.5, light_color, 0.5 );
+	
+		thread crossFadeEnt( lightSource, lightSource_color, '0 0 0', 3 );
+		thread crossFadeEnt( light, light_color, '0 0 0', 3 );
+	}
+	
+	void HoloBottomRemovePanels() {	
+		$ftbHoloRoofBottomR1.remove();
+		$ftbHoloRoofBottomR2.remove();
+		$ftbHoloRoofBottomR3.remove();
+		$ftbHoloRoofBottomR4.remove();
+		$ftbHoloRoofBottomL1.remove();
+		$ftbHoloRoofBottomL2.remove();
+		$ftbHoloRoofBottomL3.remove();
+	}
+	
+	void HoloBottomPanelMove( string prefix, float panelNum ) {
+		entity panel = sys.getEntity( prefix + panelNum ),
+			   currentNode = sys.getEntity( prefix + "Node" + panelNum ),
+			   nextNode = sys.getEntity( prefix + "Node" + ( panelNum + 1 ) ),		   
+			   nextPanel = sys.getEntity( prefix + ( panelNum + 1 ) ),
+			   lightSource = sys.getEntity( prefix + panelNum + "LightSource" ),
+			   light = sys.getEntity( prefix + panelNum + "Light" );
+			   
+		thread HoloPanelBlink( lightSource, light );
+		
+		panel.startSound( "snd_sliding", SND_CHANNEL_ANY, 0 );
+		
+		TimeTweak( panel, 0.05, 0.1, 0.75 );
+		panel.moveTo( currentNode );
+		sys.waitFor( panel );
+	
+		TimeTweak( panel, 0.25, 0.1, 2 );
+		panel.moveTo( nextNode );
+		if ( !( !nextPanel ) ) { //next panel exists
+			panel.rotateOnce( nextPanel.getAngles() - panel.getAngles() );
+		}
+		sys.waitFor( panel );
+		panel.stopSound( SND_CHANNEL_ANY, 0 );
+		panel.startSound( "snd_stopped", SND_CHANNEL_ANY, 0 );
+	}
+	
+	void HologramBottomOpen() {
+		string holoRoofBottomR = "ftbHoloRoofBottomR",
+			   holoRoofBottomL = "ftbHoloRoofBottomL";
+			   
+		thread HoloBottomPanelMove( holoRoofBottomR, 1 );
+		sys.wait( 2 );
+		thread HoloBottomPanelMove( holoRoofBottomL, 1 );
+		thread HoloBottomPanelMove( holoRoofBottomR, 2 );
+		sys.wait( 2 );
+		thread HoloBottomPanelMove( holoRoofBottomL, 2 );
+		thread HoloBottomPanelMove( holoRoofBottomR, 3 );
+		sys.wait( 2 );
+		thread HoloBottomPanelMove( holoRoofBottomL, 3 );
+		HoloBottomPanelMove( holoRoofBottomR, 4 );
+		HoloBottomRemovePanels();
+	}
+	
+	void HoloMiddlePanelMove( string prefix ) {
+		entity panel = sys.getEntity( prefix ),
+			   light = sys.getEntity( prefix + "Light" ),
+			   lightSource = sys.getEntity( prefix + "LightSource" );
+	
+		thread HoloPanelBlink( lightSource, light );
+		
+		panel.startSound( "snd_rotate", SND_CHANNEL_ANY, 0 );
+		
+		TimeTweak( panel, 0.25, 0.5, 2 );
+		panel.move( UP, 64 );
+		panel.rotateOnce( '-70 0 0' );
+		
+		sys.waitFor( panel );
+		
+		panel.stopSound( SND_CHANNEL_ANY, 0 );
+		panel.startSound( "snd_stopped", SND_CHANNEL_ANY, 0 );
+	}
+	
+	void HologramMiddleOpen() {
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle5" );
+		sys.wait( 0.75 );
+		
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle4" );
+		sys.wait( 0.1 );
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle6" );
+		sys.wait( 0.75 );
+		
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle7" );
+		sys.wait( 0.05 );
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle3" );
+		sys.wait( 0.75 );
+		
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle2" );
+		sys.wait( 0.075 );
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle8" );
+		sys.wait( 0.75 );
+		
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle1" );
+		sys.wait( 0.1 );
+		thread HoloMiddlePanelMove( "ftbHologramRoofMiddle9" );
+	}
+	
+	void HologramTopOpen() {
+		$ftbHologramRoofTop.startSound( "snd_sliding", SND_CHANNEL_ANY, 0 );
+		
+		TimeTweak( $ftbHologramRoofTop, 0.5, 0.25, 5 );
+		$ftbHologramRoofTop.move( WEST, 400 );
+		sys.waitFor( $ftbHologramRoofTop );
+		
+		$ftbHologramRoofTop.stopSound( SND_CHANNEL_ANY, 0 );
+		$ftbHologramRoofTop.startSound( "snd_stopped", SND_CHANNEL_ANY, 0 );
+	}
+	
+	//Spins the spinners on the walls of hologram room
+	void HologramSpinnerSpin( entity spinner, float direction, entity emitter ) {
+		vector currentAngles = spinner.getAngles() * direction;
+		float phase = 0,
+			  velocityMin = 80 * GAME_FRAMETIME,
+			  velocityMax = 210 * GAME_FRAMETIME,
+			  velocityRange = velocityMax - velocityMin,
+			  velocityMultiplier = 0,
+			  sinResult,
+			  emitterActivated = 0,
+			  previousZ = 0;
+		
+		spinner.startSound( "snd_rotate", SND_CHANNEL_ANY, 0 );
+		
+		while ( true ) {
+			if ( velocityMultiplier < 1.0 ) {
+				velocityMultiplier += 0.15 * GAME_FRAMETIME;
+				if ( velocityMultiplier > 1 ) {
+					velocityMultiplier = 1;
+				}
+			}
+			
+			sinResult = sys.sin( ( currentAngles_z + phase ) / 2 ); //sin based on current rotation, keeps result positive
+			sinResult = sinResult * sinResult; //square result
+			currentAngles_z += ( sinResult * velocityRange + velocityMin ) * velocityMultiplier; //add to current rotation
+			
+			previousZ = currentAngles_z;
+			currentAngles = anglemod360( currentAngles );
+			
+			if ( previousZ > currentAngles_z ) {
+				emitterActivated = FALSE;
+			}
+			
+			spinner.setAngles( currentAngles * direction );
+			
+			if ( currentAngles_z > 90 && !emitterActivated ) {
+				sys.trigger( emitter );
+				emitterActivated = TRUE;
+			}
+			
+			sys.wait( GAME_FRAMETIME );
+		}
+	}
+	
+	//Spins the spinners on the walls of hologram room
+	void HologramSpinnersRun() {
+		thread HologramSpinnerSpin( $ftbHoloSpinnerL, 1, $ftbHoloVentEmitter1b );
+		thread HologramSpinnerSpin( $ftbHoloSpinnerR, -1, $ftbHoloVentEmitter8b );
+	}
+	
+	//Moves console out of view after use
+	void HoloConsoleMove() {
+		$ftbHoloConsole.startSound( "snd_descend", SND_CHANNEL_ANY, 0 );
+		TimeTweak( $ftbHoloConsoleCtrlP, 1, 2, 3 );
+		$ftbHoloConsoleCtrlP.rotateOnce( '150 0 0' );
+		TimeTweak( $ftbHoloConsoleCtrlP2, 1, 2, 3 );
+		$ftbHoloConsoleCtrlP2.rotateOnce( '-25 0 0' );
+		TimeTweak( $ftbHoloConsoleCtrlP3, 1, 2, 3 );
+		$ftbHoloConsoleCtrlP3.rotateOnce( '-15 0 0' );
+		TimeTweak( $ftbHoloConsoleCtrlP4, 0.5, 1, 1.5 );
+		$ftbHoloConsoleCtrlP4.rotateOnce( '-35 0 0' );
+		sys.waitFor( $ftbHoloConsoleCtrlP4 );
+		$ftbHoloConsoleCtrlP4.rotateOnce( '40 0 0' );
+	}
+	
+	void HoloFadeGlass() {
+		float i;
+		entity currentEnt;
+		
+		for ( i = 1; i <= 11; i++ ) {
+			currentEnt = sys.getEntity( "ftbHoloGlass" + i );
+			
+			if ( currentEnt ) {				
+				thread crossFadeEnt( currentEnt, currentEnt.getColor(), currentEnt.getVectorKey( "_color" ), 5 );
+			}
+		}
+	}
+	
+	//Main function for powering up the hologram
+	void HologramPowerUp() {
+		$trigger_relay_30.disable(); //disable underwear death trigger
+		thread PlayMapMusic( "snd_ft_b_hologram", false, MUS_TRANSITION_OVERLAP );
+		
+		$ftbHologramStartupSpeaker.On();
+		
+		thread HoloConsoleMove();
+		
+		thread HologramSpinnersRun();
+		thread HoloPrePowerup();
+		sys.wait( 0.5 );
+		
+		thread HoloOpen();
+		sys.wait( 8 );
+		
+		thread HoloFadeGlass();
+		thread HoloFadeLights();
+		
+		$ftbSkybox1.show(); //show skybox
+		thread HologramBottomOpen();		
+		sys.wait( 3 );
+		thread HologramMiddleOpen();
+		sys.wait( 1 );
+		$player1.startSoundShader( "ftb_tom_holoearth01", SND_CHANNEL_VOICE );
+		sys.wait( 1 );
+		thread HologramTopOpen();
+		sys.trigger( $ftbHoloWallwalk );
+	}
+	
+	void HoloSetup() {		
+		$ftbHoloProjLight1.setColor( 0, 0, 0 );
+		$ftbHoloProjLight2.setColor( 0, 0, 0 );
+		$ftbHoloProjLight3.setColor( 0, 0, 0 );
+		
+		$ftbHoloVentEmitter1.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter2.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter3.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter4.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter5.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter6.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter7.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter8.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter9.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter10.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter1b.setColor( 0, 0, 0 );
+		$ftbHoloVentEmitter8b.setColor( 0, 0, 0 );
+		
+		$ftbHoloSpotlightLeft.setAngles( '0 -32 -36' );
+		$ftbHoloSpotlightRight.setAngles( '0 32 36' );
+		$ftbHoloSpotlightLeftLight1.bind( $ftbHoloSpotlightLeft );
+		$ftbHoloSpotlightLeftLight2.bind( $ftbHoloSpotlightLeft );
+		$ftbHoloSpotlightRightLight1.bind( $ftbHoloSpotlightRight );
+		$ftbHoloSpotlightRightLight2.bind( $ftbHoloSpotlightRight );
+		
+		$ftbHoloRoofBottomL3.setAngles( '0 90 0' );
+		$ftbHoloRoofBottomR4.setAngles( '0 -90 0' );
+		$ftbHoloRoofBottomL2.bind( $ftbHoloRoofBottomL3 );
+		$ftbHoloRoofBottomR3.bind( $ftbHoloRoofBottomR4 );
+		
+		$ftbHoloRoofBottomR4Light.bind( $ftbHoloRoofBottomR4 );
+		$ftbHoloRoofBottomR4LightSource.bind( $ftbHoloRoofBottomR4 );
+		$ftbHoloRoofBottomL3Light.bind( $ftbHoloRoofBottomL3 );
+		$ftbHoloRoofBottomL3LightSource.bind( $ftbHoloRoofBottomL3 );
+		
+		vector HoloOrigin = $ftbHologramBase.getOrigin();
+		HoloOrigin_z -= 56;
+		$ftbHologramBase.setOrigin( HoloOrigin );
+		
+		$ftbHologramLight1.setColor( 0, 0, 0 );
+		$ftbHologramLight2.setColor( 0, 0, 0 );
+		$ftbHologramLight3.setColor( 0, 0, 0 );
+		$ftbHologramLight4.setColor( 0, 0, 0 );
+		$ftbHologramLight5.setColor( 0, 0, 0 );
+		$ftbHologramLight6.setColor( 0, 0, 0 );
+		
+		float i;
+		entity currentEnt;
+		
+		for ( i = 1; i <= 11; i++ ) {
+			currentEnt = sys.getEntity( "ftbHoloGlass" + i );
+			
+			if ( currentEnt ) {
+				currentEnt.setColor( 0, 0, 0 );
+			}
+		}
+	}
+	
+	//Moves and rotates individual panels for vomiter pop
+	void FloorVomiterPanelMove( entity currentPanel ) {
+		float settleAmount = 1 + sys.random( 6 );
+		
+		TimeTweak( currentPanel, 0, 0.1, 0.25 );
+		currentPanel.move( UP, settleAmount + currentPanel.getFloatKey( "moveDist" ) );
+		currentPanel.rotateOnce( currentPanel.getVectorKey( "rotVec" ) );
+		
+		sys.waitFor( currentPanel );
+		
+		TimeTweak( currentPanel, 0, 0.1, 0.1 + ( 0.03 * settleAmount ) );
+		currentPanel.move( DOWN, settleAmount );
+	}
+	
+	//Moves vomitter and organic mesh up for vomiter pop/
+	void FloorVomiterMove() {
+		TimeTweak( $ftbVomFloorCtrlP, 0, 0.1, 0.25 );
+		$ftbVomFloorCtrlP.move( UP, 35 );
+		sys.waitFor( $ftbVomFloorCtrlP );
+		TimeTweak( $ftbVomFloorCtrlP, 0, 0.1, 0.1 );
+		$ftbVomFloorCtrlP.move( DOWN, 3 );
+	}
+	
+	//Main floor vomiter pop function
+	void FloorVomiterPop() {
+		sys.trigger( $ftbFloorVomiter );
+		
+		sys.trigger( $ftbVomFloorMov1 );
+		sys.trigger( $ftbVomFloorMov2 );
+		sys.trigger( $ftbVomFloorMov3 );
+		sys.trigger( $ftbVomFloorMov4 );
+		
+		sys.trigger( $ftbFloorVomiterSpeaker );
+		
+		sys.wait( 0.1 );
+		
+		thread FloorVomiterMove();
+		
+		float i;	
+		for ( i = 1; i <= 14; i++ ) {
+			thread FloorVomiterPanelMove( sys.getEntity( "ftbVomFloor" + i ) );
+		}
+	}
+	
+	//Sets initial angles for slab group 1 that start on an angled path
+	void Slab1SetAngles( entity slab ) {
+		slab.setAngles( '65 90 0' );
+	}
+	
+	//Turns lights on for slab track
+	void Slab1LightsOn() {
+		entity currentLight;
+		float i;
+		
+		for ( i = 1; i <= 10; i++ ) {
+			currentLight = sys.getEntity( "ftbSlab1Light1_" + i );
+			
+			currentLight.fadeInLight( 1 );
+		}
+	}
+	
+	//Sets slab colors based on a multiplier/
+	void Slab1LightSourceSetColor( float colorMult, float fadeTime ) {
+		entity currentLightSource;
+		float i;
+		
+		for ( i = 1; i <= 10; i++ ) {
+			currentLightSource = sys.getEntity( "ftbSlab1LightSource1_" + i );
+			
+			thread crossFadeEnt( currentLightSource, currentLightSource.getColor(), currentLightSource.getVectorKey( "_color" ) * colorMult, fadeTime );
+		}
+	}
+	
+	float gCanSaySlabConsoleComment = 0;
+	
+	void Slab1ConsoleComment() {
+		if ( $ftbSlab1Console.playerCanSee() > 0 && gCanSaySlabConsoleComment ) {
+			$ftbSlab1ConsoleComment.disable();
+			$player1.startSoundShader( "ftb_tom_slabcontrol_01", SND_CHANNEL_VOICE );
+		}
+	}
+	
+	//Starts slab1 slabs
+	void Slab1PowerUp() {
+		sys.trigger( $ftbSlab1PowerSpeaker );
+		
+		thread Slab1LightsOn();
+		thread Slab1LightSourceSetColor( 1, 1 );
+		
+		thread SlabNPCStartMove( $ftbSlab1_1Spawn );
+		thread SlabNPCStartMove( $ftbSlab1_2Spawn );
+		thread SlabNPCStartMove( $ftbSlab1_3Spawn );
+		thread SlabNPCStartMove( $ftbSlab1_4Spawn );
+		
+		$player1.dialogStart( false, true, false );
+		
+		entity npc = sys.getEntity( $ftbSlab1_2Spawn.getKey( "npc" ) );
+		if ( !( !npc ) ) {
+			entity npcHead = npc.getHead();
+			float soundLength;
+			
+			npc.lookAt( $player1, -1 );
+			npc.disableEyelook();
+			
+			if ( $fb_mutilated1.playerCanSee() > 0 ) {
+				soundLength = $player1.startSoundShader( "ftb_tom_mutilatedhuman_02", SND_CHANNEL_VOICE );
+			
+				if ( soundLength > 0.25 ) {
+					sys.wait( soundLength - 0.25 );
+				}
+			}
+			
+			soundLength = npcHead.startSoundShader( "jen_scream13_tommyhelpmeplease", SND_CHANNEL_ANY );
+			
+			if ( soundLength > 0 ) {
+				sys.wait( soundLength );
+			}
+			
+			soundLength = $player1.startSoundShader( "ftb_tom_jenonslab_01", SND_CHANNEL_VOICE );
+			
+			if ( soundLength > 0 ) {
+				sys.wait( soundLength );
+			}
+			
+			gCanSaySlabConsoleComment = 1;
+			
+			soundLength = npcHead.startSoundShader( "jen_scream14_getmeoffathisthing", SND_CHANNEL_ANY );
+			
+			if ( soundLength > 0 ) {
+				sys.wait( soundLength + 1 );
+			}
+			
+			soundLength = npcHead.startSoundShader( "jen_scream17_helpme", SND_CHANNEL_ANY );
+			
+			if ( soundLength > 0 ) {
+				sys.wait( soundLength );
+			}
+			
+			npc.lookAt( $player1, 0 );
+		}
+		
+		$player1.dialogStop();
+	}
+	
+	void ShuttlePitGetIn() {		
+		$ftbShuttleVehicle1.getIn( $ftbShuttleHunter1 );
+		$ftbShuttleVehicle2.getIn( $ftbShuttleHunter2 );
+		TimeTweak( $ftbShuttlePickupBlock, 4, 0, 8 );
+	}
+	
+	void ShuttlePitIdle() {
+		$ftbShuttleVehicle1.thrustTowards( $ftbShuttle1Idle.getOrigin(), 0.1 );
+		$ftbShuttleVehicle2.thrustTowards( $ftbShuttle2Idle.getOrigin(), 1 );
+	}
+	
+	void ShuttlePitVehicle1() {
+		$ftbShuttleVehicle1.orientTowards( $ftbShuttleMoveable1.getOrigin(), 0.12 );
+		sys.wait( 1.75 );
+		$ftbShuttleVehicle1.altFire( 1 );
+		sys.wait( 0.75 );
+		$ftbShuttlePickupBlock.move( UP, 1024 );
+		$ftbShuttleVehicle1.thrustTowards( $ftbShuttleNode2.getOrigin(), 0.6 );
+		sys.wait( 2 );
+		$ftbShuttleVehicle1.orientTowards( $ftbShuttleNode3.getOrigin(), 0.1 );
+		sys.wait( 6 );
+		$ftbShuttleVehicle1.orientTowards( $ftbShuttleNode5.getOrigin(), 0.2 );
+		$ftbShuttleVehicle1.thrustTowards( $ftbShuttleNode5.getOrigin(), 1 );
+		sys.wait( 8 );
+		$ftbShuttleVehicle1.remove();
+		$ftbShuttleHunter1.remove();
+		$ftbShuttleMoveable1.remove();
+		$ftbShuttlePickupBlock.remove();
+	}
+	
+	void ShuttlePitVehicle2() {
+		$ftbShuttleVehicle2.thrustTowards( $ftbShuttleNode4.getOrigin(), 0.45 );
+		sys.wait( 1.8 );
+		$ftbShuttleVehicle2.thrustTowards( $ftbShuttleNode2.getOrigin(), 0.225 );
+		$ftbShuttleVehicle2.orientTowards( $ftbShuttleNode3.getOrigin(), 0.1 );
+		sys.wait( 5 );
+		$ftbShuttleVehicle2.thrustTowards( $ftbShuttleNode5.getOrigin(), 0.25 );
+		sys.wait( 4.5 );
+		$ftbShuttleVehicle2.remove();
+		$ftbShuttleHunter2.remove();
+	}
+	
+	void ShuttlePit() {
+		$ftbShuttleHunter2Damage.remove();
+		thread ShuttlePitVehicle2();
+		thread ShuttlePitVehicle1();
+		sys.wait( 2.5 );
+		if ( !shuttleHunterRetreatRan ) {
+			shuttleHunterTriggered = 1;
+			sys.trigger( $ftbShuttleRoomHunter2Relay );
+			sys.wait( 4 );
+			sys.trigger( $ftbShuttleRoomHunter1 );
+		}
+	}
+	
+	void Hallway2Run() {
+		$ftbHall2Drum.startSound( "snd_rotate", SND_CHANNEL_ANY, 0 );
+	}
+	
+	void TeleportLotaTunnel() {
+		gTommyCanSpeak = 0;
+		
+		sys.wait( 0.25 );
+		
+		$player1.startSoundShader( "ftb_conv1_talon01", SND_SCRIPT_0 );
+		
+		sys.trigger( $lotaTunnelSequence );
+				
+		$player1.dialogStart( true, true, true );
+		sys.wait( 2.5 );
+		$player1.startSoundShader( "ftb_conv1_gf02", SND_CHANNEL_VOICE );
+		sys.waitForSilence( $player1, -1.6 );
+		$player1.startSoundShader( "ftb_conv1_gf03", SND_CHANNEL_VOICE );
+		sys.waitForSilence( $player1, -1.6 );
+		$player1.startSoundShader( "ftb_conv1_gf04", SND_CHANNEL_VOICE );
+		sys.waitForSilence( $player1, -1.6 );
+	}
+	
+	void EndLevel() {
+		sys.trigger( $ftbEndLevelSoundFade );
+		thread FadeMapMusic( MUS_SILENCE_DB, 1 );
+		sys.wait( 1 );
+		sys.trigger( $ftbEndLevel );
+	}
+		
+	void DeathCatwalkSway() {
+		sys.threadname( "map_feedingtowerb::DeathCatwalkSway" );
+		
+		vector swayRot = '0 0 0';
+		float swayTime;
+		
+		swayRot_x = -deathCatwalkSwayAmount / 2;
+		$ftbDeathCatwalkCtrlP.setAngles( $ftbDeathCatwalk.getAngles() + swayRot );
+		
+		while ( true ) {
+			sys.waitPVS( $ftbDeathCatwalkCtrlP );
+			
+			TimeTweak( $ftbDeathCatwalkCtrlP, deathCatwalkSwayTime / 2, deathCatwalkSwayTime / 2, deathCatwalkSwayTime );
+			swayRot = Vec3Set( deathCatwalkSwayAmount, 0, 0 );
+			$ftbDeathCatwalkCtrlP.rotateTo_world( swayRot );
+			$ftbDeathCatwalk.startSound( "snd_creak1", SND_SCRIPT_0, 0 );
+			sys.waitFor( $ftbDeathCatwalkCtrlP );
+
+			TimeTweak( $ftbDeathCatwalkCtrlP, deathCatwalkSwayTime / 2, deathCatwalkSwayTime / 2, deathCatwalkSwayTime );
+			swayRot = Vec3Set( -deathCatwalkSwayAmount, 0, 0 );
+			$ftbDeathCatwalkCtrlP.rotateTo_world( swayRot );
+			$ftbDeathCatwalk.startSound( "snd_creak2", SND_SCRIPT_0, 0 );
+			sys.waitFor( $ftbDeathCatwalkCtrlP );
+		}
+	}
+	
+	void DeathCatwalkMoveDown1() {
+		sys.trigger( $ftbDeathCatwalkFall1Speaker );
+		
+		TimeTweak( $ftbDeathCatwalk, 0.025, 0.0, 0.05 );
+		$ftbDeathCatwalk.move( DOWN, 10 );
+		
+		deathCatwalkSwayAmount = 1.5;
+		deathCatwalkSwayTime = 1.2;
+	}
+	
+	void DeathCatwalkBreakHideClip() {
+		sys.wait( 4.5 );
+		
+		$ftbDeathCatwalkRope1b.hide();
+		$ftbDeathCatwalkRope2.hide();
+		$ftbDeathCatwalkBoundClip.hide();
+		$ftbDeathCatwalkBoundClip2.hide();
+		$ftbDeathCatwalkBoundClip3.hide();		
+	}
+	
+	void DeathCatwalkBreak() {
+		sys.killthread( "map_feedingtowerb::DeathCatwalkSway" );
+		sys.waitFrame();
+		$ftbDeathCatwalkCtrlP.stopMoving();
+		sys.waitFrame();
+		TimeTweak( $ftbDeathCatwalkCtrlP, 0.05, 0.05, 0.2 );
+		$ftbDeathCatwalkCtrlP.rotateTo_world( '0 0 0' );
+		sys.waitFor( $ftbDeathCatwalkCtrlP );
+		
+		thread DeathCatwalkBreakHideClip();
+		
+		$ftbDeathCatwalkLight1.Off();
+		$ftbDeathCatwalkLight2.Off();
+		$ftbDeathCatwalkLight3.Off();
+		$ftbDeathCatwalkLight4.Off();
+		$ftbDeathCatwalkLight5.Off();
+		$ftbDeathCatwalk.setColor( 0, 0, 0 );
+		
+		sys.trigger( $ftbDeathCatwalkBreakSparks );
+		$ftbCatwalkBreakSpeaker.On();
+		
+		$ftbDeathCatwalkBreakCtrlP.unbind();
+		$ftbDeathCatwalkRope1.unbind();
+		$ftbDeathCatwalkRope2.unbind();
+		$ftbDeathCatwalk.unbind();
+		$ftbDeathCatwalkBoundClip.unbind();
+		sys.waitFrame();
+		$ftbDeathCatwalk.bind( $ftbDeathCatwalkBreakCtrlP );
+		$ftbDeathCatwalkBoundClip.bind( $ftbDeathCatwalkBreakCtrlP );
+		$ftbDeathCatwalkRope2.bind( $ftbDeathCatwalkRope2CtrlP );
+		$ftbDeathCatwalkBreakCtrlP.bind( $ftbDeathCatwalkRope2 );
+						
+		TimeTweak( $ftbDeathCatwalkRope2CtrlP, 0.75, 0.75, 0.5 );
+		$ftbDeathCatwalkRope2CtrlP.rotateOnce( '0 0 7' );
+		TimeTweak( $ftbDeathCatwalkBreakCtrlP, 0.0, 0.0, 2.5 );
+		$ftbDeathCatwalkBreakCtrlP.rotateOnce( '0 0 -18' );
+		sys.wait( 0.1 );
+		
+		if ( gTommyCanSpeak ) {
+			$player1.startSoundShader( "ftb_tom_catwalk_break", SND_CHANNEL_VOICE );
+		}
+		
+		sys.trigger( $ftbDeathCatwalkGrindSparks1 );
+		sys.trigger( $ftbDeathCatwalkGrindSparks2 );
+		$ftbDeathCatwalkGrindSpeaker.On();
+		sys.waitFor( $ftbDeathCatwalkBreakCtrlP );
+		$ftbDeathCatwalkGrindSpeaker.Off();
+				
+		$ftbDeathCatwalkBoundClip2.hide();
+		$ftbDeathCatwalkBoundClip3.hide();
+		$ftbDeathCatwalk.startSound( "snd_swingout", SND_SCRIPT_1, 0 );
+		TimeTweak( $ftbDeathCatwalkRope2CtrlP, 0.0, 0.75, 1.5 );
+		$ftbDeathCatwalkRope2CtrlP.rotateOnce( '0 0 -12' );	
+		TimeTweak( $ftbDeathCatwalkBreakCtrlP, 0.0, 0.75, 1.5 );
+		$ftbDeathCatwalkBreakCtrlP.rotateOnce( '0 10 -70' );
+		sys.wait( 1 );
+		if ( gTommyCanSpeak ) {
+			$player1.startSoundShader( "feedingb_catwalk_scream", SND_CHANNEL_VOICE );
+		}
+		sys.waitFor( $ftbDeathCatwalkBreakCtrlP );
+		
+		TimeTweak( $ftbDeathCatwalkRope2CtrlP, 0.75, 0.75, 1.5 );
+		$ftbDeathCatwalkRope2CtrlP.rotateOnce( '0 0 12' );	
+		TimeTweak( $ftbDeathCatwalkBreakCtrlP, 0.75, 0.75, 1.5 );
+		$ftbDeathCatwalkBreakCtrlP.rotateOnce( '0 -10 20' );
+		sys.waitFor( $ftbDeathCatwalkBreakCtrlP );
+		
+		TimeTweak( $ftbDeathCatwalkRope2CtrlP, 0.75, 0.75, 1.5 );
+		$ftbDeathCatwalkRope2CtrlP.rotateOnce( '0 0 -12' );	
+		TimeTweak( $ftbDeathCatwalkBreakCtrlP, 0.75, 0.75, 1.5 );
+		$ftbDeathCatwalkBreakCtrlP.rotateOnce( '0 5 -10' );
+	}
+	
+	void DeathCatwalkHuntersEnter( entity hunter, entity dest ) {	
+		hunter.allowMovement( true );
+		sys.trigger( hunter );
+		sys.wait( 0.5 );
+			
+		hunter.faceEntity( dest );
+		hunter.playAnim( ANIMCHANNEL_LEGS, "run" );
+		sys.wait( hunter.animLength( ANIMCHANNEL_LEGS, "run" ) );
+		hunter.playAnim( ANIMCHANNEL_LEGS, "run" );
+		sys.wait( hunter.animLength( ANIMCHANNEL_LEGS, "run" ) );
+		hunter.playAnim( ANIMCHANNEL_LEGS, "run" );
+		sys.wait( 0.1 );
+		hunter.setBlendFrames( ANIMCHANNEL_LEGS, 8 );
+		hunter.playAnim( ANIMCHANNEL_LEGS, "idle" );
+			
+		hunter.followPath( "ftbDeathCatwalkShootAt1" );	
+	}
+		
+	void DeathCatwalkMoveDown2() {
+		$player1.dialogStart( 1, 0, 0 );
+				
+		$ftbDeathCatwalkBoundClip2.show();
+		$ftbDeathCatwalkBoundClip3.show();
+		
+		sys.trigger( $ftbDeathCatwalkClip );
+		sys.trigger( $ftbDeathCatwalkClip2 );
+		
+		sys.trigger( $ftbDeathCatwalkFall1Speaker );
+	
+		TimeTweak( $ftbDeathCatwalk, 0.25, 0.05, 0.3 );
+		$ftbDeathCatwalk.move( DOWN, 66 );
+		sys.waitFor( $ftbDeathCatwalk );
+		
+		TimeTweak( $ftbDeathCatwalk, 0.05, 0.05, 0.1 );
+		$ftbDeathCatwalk.move( UP, 5 );
+		sys.waitFor( $ftbDeathCatwalk );
+		
+		TimeTweak( $ftbDeathCatwalk, 0.05, 0.05, 0.1 );
+		$ftbDeathCatwalk.move( DOWN, 5 );
+		sys.waitFor( $ftbDeathCatwalk );
+		
+		TimeTweak( $ftbDeathCatwalk, 0.2, 0.0, 0.2 );
+		$ftbDeathCatwalk.move( DOWN, 20 );
+		sys.waitFor( $ftbDeathCatwalk );
+		
+		deathCatwalkSwayAmount = 3;
+		deathCatwalkSwayTime = 1.1;
+				
+		thread DeathCatwalkHuntersEnter( $ftbDeathCatwalkGuiHunter2, $ftbDeathCatwalkGuiHunter2Pos2 );
+		sys.wait( 0.5 );
+		thread DeathCatwalkHuntersEnter( $ftbDeathCatwalkGuiHunter, $ftbDeathCatwalkGuiHunterPos2 );		
+		sys.wait( 1 );
+		thread PlayMapMusic( "snd_ft_b_bridgefall", false, MUS_TRANSITION_OVERLAP );
+		$ftbCatwalkHunterSight.On();
+		sys.wait( 3 );
+		$ftbDeathCatwalkRope1Damage.enable();
+		sys.wait( 2 );
+		sys.trigger( $ftbDeathCatwalkRope1TargetDamage );
+	}
+	
+	void TommyLooksSafe() {
+		if ( gTommyCanSpeak ) {
+			gTommyCanSpeak = 0;
+			$player1.startSoundShader( "ftb_tom_catwalk", SND_CHANNEL_VOICE );
+			sys.waitForSilence( $player1, 1 );
+			gTommyCanSpeak = 1;
+		}
+		$trigger_relay_32.disable(); //disable underwear death trigger
+	}
+	
+	void KidGibThread() {
+		sys.trigger( $ftbPossGirlScream1 );
+		sys.wait( 2 );
+		sys.trigger( $ftbPossGirlGibs1 );
+	}
+	
+	void KidGib() {
+		thread KidGibThread();
+	}
+		
+	void V8Run() {
+		while ( true ) {
+			sys.waitPVS( $ftbV8Exhaust1 );
+			sys.wait( 5 );
+			
+			sys.trigger( $ftbV8Exhaust1 );
+			sys.trigger( $ftbV8Exhaust2 );
+			sys.trigger( $ftbV8Exhaust3 );
+			sys.trigger( $ftbV8Exhaust4 );
+		}
+	}
+	
+	void SetEnemyPlayer() {
+		$ftbUWearShootHunter.setShootTarget( $player1 );
+		$ftbUWearShootHunter.setEnemy( $player1 );
+	}
+	
+	void UWearShoot() {
+		sys.trigger( $ftbUWearShootHunter );
+		sys.trigger( $ftbUWearShoot );
+		sys.waitFrame();
+		$ftbUWearShoot.setContents( 0 );
+		$ftbUWearShoot.setClipmask( 0 );
+		$ftbUWearShootHunter.setShootTarget( $ftbUWearShoot );
+	}
+	
+	void MasherArmRun() {		
+		entity npcEnt = $ftbSlabNPCRelay1_1.getEntityKey( "npc" );
+		map_feedingtowera::MasherArmRun();
+	}
+	
+	void MasherPowerUp() {
+		sys.trigger( $ftaSlabNPCRelay );
+		sys.trigger( $ftbSlabNPCRelay1_2 );
+				
+		$ftaExitPowerUpSpeaker.On();
+		
+		string flickerTable = "feedPowerUp";
+		float flickerTime = 2;
+		
+		$ftaExitLight1_1.On();
+		$ftaExitLight1_2.On();
+		thread flickerInEnt( $ftaExitLight1_1, $ftaExitLight1_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitLight1_2, $ftaExitLight1_2.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		thread flickerInEnt( $ftaExitModel1_1, $ftaExitModel1_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitModel1_2, $ftaExitModel1_2.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitModel1_3, $ftaExitModel1_3.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitModel1_4, $ftaExitModel1_4.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		sys.trigger( $ftaExitFX1_1 );
+		sys.trigger( $ftaExitFX1_2 );
+		sys.trigger( $ftaExitFX1_3 );
+		sys.trigger( $ftaExitFX1_6 );
+		sys.trigger( $ftaExitFX1_7 );
+		thread flickerInEnt( $ftaExitFX1_1, $ftaExitFX1_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitFX1_2, $ftaExitFX1_2.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitFX1_3, $ftaExitFX1_3.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitFX1_6, $ftaExitFX1_6.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitFX1_7, $ftaExitFX1_7.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		sys.waitFrame();
+		
+		$ftaExitLight2_1.On();
+		thread flickerInEnt( $ftaExitLight2_1, $ftaExitLight2_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		thread flickerInEnt( $ftaExitModel2_1, $ftaExitModel2_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		sys.trigger( $ftaExitFX2_1 );
+		sys.trigger( $ftaExitFX2_2 );
+		thread flickerInEnt( $ftaExitFX2_1, $ftaExitFX2_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitFX2_2, $ftaExitFX2_2.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		sys.waitFrame();
+		
+		$ftaExitLight3_1.On();
+		$ftaExitLight3_3.On();
+		$ftaExitLight3_5.On();
+		$ftaExitLight3_6.On();
+		$ftaExitLight3_9.On();
+		$ftaExitLight3_10.On();
+		thread flickerInEnt( $ftaExitLight3_1, $ftaExitLight3_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitLight3_3, $ftaExitLight3_3.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitLight3_5, $ftaExitLight3_5.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitLight3_6, $ftaExitLight3_6.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitLight3_9, $ftaExitLight3_9.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitLight3_10, $ftaExitLight3_10.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		thread flickerInEnt( $ftaExitModel3_1, $ftaExitModel3_1.getVectorKey( "_color" ), flickerTable, flickerTime );
+		thread flickerInEnt( $ftaExitModel3_2, $ftaExitModel3_2.getVectorKey( "_color" ), flickerTable, flickerTime );
+		
+		sys.wait( 1.5 );
+		
+		if ( gTommyCanSpeak ) {
+			gTommyCanSpeak = 0;
+			
+			$player1.startSoundShader( "ftb_tom_mulchreactivate", SND_CHANNEL_VOICE );
+			sys.waitForSilence( $player1, 1 );
+			
+			gTommyCanSpeak = 1;
+		}
+	}
+	
+	void MasherSetup() {
+		$ftaExitModel1_1.setColor( 0, 0, 0 );
+		$ftaExitModel1_2.setColor( 0, 0, 0 );
+		$ftaExitModel1_3.setColor( 0, 0, 0 );
+		$ftaExitModel1_4.setColor( 0, 0, 0 );
+		$ftaExitModel2_1.setColor( 0, 0, 0 );
+		$ftaExitModel3_1.setColor( 0, 0, 0 );
+		$ftaExitModel3_2.setColor( 0, 0, 0 );
+		
+		$ftaExitFX1_1.setColor( 0, 0, 0 );
+		$ftaExitFX1_2.setColor( 0, 0, 0 );
+		$ftaExitFX1_3.setColor( 0, 0, 0 );
+		$ftaExitFX1_6.setColor( 0, 0, 0 );
+		$ftaExitFX2_2.setColor( 0, 0, 0 );
+	}
+	
+	float gRiflePickedUp = 0;
+	
+	void Hunter1Killed() {
+		sys.trigger( $ftbRiflePickup );
+		
+		sys.wait( 2 );
+		
+		gRiflePickedUp = 1;
+	}
+	
+	void MulchKidEntry() {
+		Music1Play();
+		sys.wait( 1 );
+		if ( gRiflePickedUp ) {
+			$ftbMulchKidSight.enable();
+			sys.wait( 1 );
+			$ftbMulchKidSight.disable();
+		}
+	}
+	
+	void VomitterIntro() {
+		gCanRespondGiantHunter = 0;
+		
+		while ( !gTommyCanSpeak ) {
+			sys.wait( 0.1 );
+		}
+		
+		gTommyCanSpeak = 0;
+		$player1.startSoundShader( "ftb_tom_entervomitroom01", SND_CHANNEL_VOICE );
+		sys.waitForSilence( $player1, 0 );
+		while( $ftbIntroVomitter3.playerCanSee() <= 0 ) {
+			sys.wait( 0.1 );
+		}
+		$player1.startSoundShader( "ftb_tom_entervomitroom02", SND_CHANNEL_VOICE );
+		sys.waitForSilence( $player1, 0 );
+		gTommyCanSpeak = 1;
+	}
+	
+	float gWallBangCommentDone = 0;
+	
+	void WallBangComment() {
+		if ( !gWallBangCommentDone ) {
+			
+			entity uwear = $ftbWallBangMan;
+		
+			if ( CheckSpawnId( uwear, gUwearWallBangID ) ) {
+				if ( EntIsAlive( uwear ) ) {
+					if ( uwear.playerCanSee() && gTommyCanSpeak ) {
+						gTommyCanSpeak = 0;
+						gWallBangCommentDone = 1;
+						$ftbWallBangComment.disable();
+						
+						$player1.startSoundShader( "fta_tom_abductedchat05", SND_CHANNEL_VOICE );
+						sys.waitForSilence( $player1, 1 );
+						
+						if ( EntIsAlive( uwear ) ) {
+							$player1.startSoundShader( "fta_tom_abductedchat09", SND_CHANNEL_VOICE );
+							sys.waitForSilence( $player1, 1 );
+						}
+						
+						gTommyCanSpeak = 1;
+					}
+				}
+			}
+		}
+	}
+	
+	float gBridgeUwearCommentDone = 0;
+	
+	void BridgeUwearComment() {
+		if ( !gBridgeUwearCommentDone ) {
+			
+			entity uwear = $ftbBridgeUwear;
+		
+			if ( CheckSpawnId( uwear, gUwearBridgeID ) ) {
+				if ( EntIsAlive( uwear ) ) {
+					if ( uwear.playerCanSee() && gTommyCanSpeak ) {
+						gTommyCanSpeak = 0;
+						gBridgeUwearCommentDone = 1;
+						$ftbBridgeUwearComment.disable();
+						
+						$player1.startSoundShader( "fta_tom_abductedchat03", SND_CHANNEL_VOICE );
+						sys.waitForSilence( $player1, 0 );
+						
+						gTommyCanSpeak = 1;
+					}
+				}
+			}
+		}
+	}
+	
+	void TommyFirstUwearKill() {
+		if ( !gTommyUwearKilled && gTommyCanSpeak ) {
+			gTommyCanSpeak = 0;
+			gTommyUwearKilled = 1;
+			sys.wait( 0.5 );
+			$player1.startSoundShader( "fta_tom_abductedkilled01", SND_CHANNEL_VOICE );
+			sys.waitForSilence( $player1, 0 );
+			gTommyCanSpeak = 1;
+		}
+	}
+	
+	//Hey, kid! Stop! Come back!
+	void TommyHeyKidStop() {
+		$player1.startSoundShader( "ftb_tom_kid01", SND_CHANNEL_VOICE );
+	}
+	
+	//Whoah!
+	void TommyWallwalkWoah() {
+		if ( gTommyCanSpeak ) {
+			gTommyCanSpeak = 0;
+			$player1.startSoundShader( "ftb_tom_wallwalk01", SND_CHANNEL_VOICE );
+			sys.waitForSilence( $player1, 0 );
+			gTommyCanSpeak = 1;
+		}
+	}
+	
+	//Same kind of energy as those…spores.
+	void TommySameKind() {
+		if ( gTommyCanSpeak ) {
+			gTommyCanSpeak = 0;
+			
+			$player1.startSoundShader( "ftb_tom_health03", SND_CHANNEL_VOICE );
+			sys.waitForSilence( $player1, 1 );
+			
+			gTommyCanSpeak = 1;
+		}
+	}
+	
+	//Poor bastards.
+	void TommyPoorBastards() {
+		$player1.startSoundShader( "ftb_tom_mutilated01", SND_CHANNEL_VOICE );
+	}
+	
+	void main() {
+		shuttleRoomHunterID = sys.getEntitySpawnId( $ftbShuttleRoomHunter1 );
+		shuttleRoomHunter2ID = sys.getEntitySpawnId( $ftbShuttleRoomHunter2 );
+		shuttleHunterRetreatRan = 0;
+		shuttleHunterTriggered = 0;
+		
+		gUwearWallBangID = sys.getEntitySpawnId( $ftbWallBangMan );
+		gUwearBridgeID = sys.getEntitySpawnId( $ftbBridgeUwear );
+		
+		$ftbSkybox1.hide();
+		
+		WorkerCanSetup();
+		
+		MasherSetup();
+				
+		HoloSetup();
+		
+		thread Hallway2Run();
+				
+		thread DeathCatwalkSway();
+		thread V8Run();
+		
+		thread Slab1LightSourceSetColor( 0.0, 0.01 );
+	}
+}
