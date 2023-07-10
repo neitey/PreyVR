@@ -104,7 +104,7 @@ namespace map_feedingtowerb {
 		HugeHunterPlayAnim( hunter, "walk", 0 );
 		HugeHunterPlayAnim( hunter, "walk", 0 );
 		$ftbHugeHunterSight.enable();
-		HugeHunterPlayAnim( hunter, "walk", 0 );
+		//Lubos:HugeHunterPlayAnim( hunter, "walk", 0 );
 		thread HugeHunterPlayAnim( hunter, "walk", 0 );
 		sys.wait( 0.025 );
 		//Lubos:HugeHunterPlayAnim( hunter, "feedingb_look", 12 );
@@ -115,6 +115,7 @@ namespace map_feedingtowerb {
 		HugeHunterPlayAnim( hunter, "walk", 8 );
 		thread HugeHunterPlayAnim( hunter, "walk", 0 );
 		hunter.faceEntity( console );
+		sys.trigger( hunter );//Lubos
 		sys.wait( 0.2 );
 		
 		//use console
@@ -123,6 +124,7 @@ namespace map_feedingtowerb {
 		sys.trigger( consoleRelay );
 		
 		//walk to portal
+		sys.wait( 0.5 );//Lubos
 		hunter.faceEntity( portal );
 		HugeHunterPlayAnim( hunter, "walk", 8 );
 		thread HugeHunterComment2();
@@ -130,7 +132,7 @@ namespace map_feedingtowerb {
 		HugeHunterPlayAnim( hunter, "walk", 0 );
 		hunter.faceEntity( door );
 		thread HugeHunterPlayAnim( hunter, "walk", 0 );
-		sys.wait( 0.5 );
+		//Lubos:sys.wait( 0.5 );
 		sys.trigger( portal );
 		hunter.remove();
 	}
