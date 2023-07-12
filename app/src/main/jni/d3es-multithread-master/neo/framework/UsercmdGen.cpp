@@ -866,7 +866,9 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		float pitch = 0, yaw = 0, roll = 0;
 		float hmd_forward = 0, hmd_strafe = 0, up = 0;
 		static bool wasVehicleMode = false;
-		if (pVRClientInfo->vehicleMode) {
+		if (pVRClientInfo->vehicleMode && (strcmp(session->GetCurrentMapName(), "maps/game/spherebrain") == 0)) {
+			VR_GetMove(&forward, &strafe, &temp, &temp, &temp, &temp, &temp, &temp);
+		} else if (pVRClientInfo->vehicleMode) {
 			if (!wasVehicleMode) {
 				pVRClientInfo->vehicleYaw = pVRClientInfo->hmdorientation_temp[ YAW ];
 				VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
