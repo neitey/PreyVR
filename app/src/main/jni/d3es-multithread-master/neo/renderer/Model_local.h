@@ -425,6 +425,7 @@ public:
 	virtual idBounds	Bounds( const struct renderEntity_s *ent ) const;
 
 private:
+	idVec3				CalculateMinorVector( const struct renderEntity_s *ent, idVec3 &up, idVec3 &right, const idVec3 &pos ); //Lubos
 	void				UpdateSurface( const struct renderEntity_s *ent, const int index, const hhBeamNodes_t *beam, modelSurface_t *surf );
 	void				UpdateQuadSurface( const struct renderEntity_s *ent, const int index, int quadIndex, const hhBeamNodes_t *beam, modelSurface_t *surf );
 
