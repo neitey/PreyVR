@@ -223,12 +223,16 @@ void hhSunbeamFireController::LaunchProjectiles( const idVec3& launchOrigin, con
 	int knockback = dict->GetInt("knockback","0")*(60/renderSystem->GetRefresh());
 	//HUMANHEAD END
 
-	hhPhysics_Player* pp = static_cast<hhPhysics_Player*>(owner->GetPlayerPhysics());
-	idVec3 v = pp->GetLinearVelocity()+owner->GetAxis()[0]*backpush;
-	float f = pp->GetLinearVelocity()*owner->GetAxis()[0];
-	v += owner->GetAxis()[0] * ( (f>0) ? slowwalk*f : 0 );
-	pp->SetLinearVelocity(v);
-	pp->SetKnockBack(knockback);
+	//Lubos BEGIN
+	if (!game->isVR) {
+		hhPhysics_Player* pp = static_cast<hhPhysics_Player*>(owner->GetPlayerPhysics());
+		idVec3 v = pp->GetLinearVelocity()+owner->GetAxis()[0]*backpush;
+		float f = pp->GetLinearVelocity()*owner->GetAxis()[0];
+		v += owner->GetAxis()[0] * ( (f>0) ? slowwalk*f : 0 );
+		pp->SetLinearVelocity(v);
+		pp->SetKnockBack(knockback);
+	}
+	//Lubos END
 }
 
 void hhSunbeamFireController::Think()
