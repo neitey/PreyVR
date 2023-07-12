@@ -509,20 +509,9 @@ idAngles hhPlayerView::AngleOffset(float kickSpring, float kickDamping) {
 //Lubos BEGIN
 void Overlay(const idMaterial *material) {
 	if (game->isVR) {
-		//top
-		renderSystem->DrawStretchPic(-160, -120, 320, 240, 1, 0, 0, 1, material);
-		renderSystem->DrawStretchPic(160, -120, 320, 240, 0, 0, 1, 1, material);
-		renderSystem->DrawStretchPic(480, -120, 320, 240, 1, 0, 0, 1, material);
-
-		//center
-		renderSystem->DrawStretchPic(-160, 120, 320, 240, 1, 1, 0, 0, material);
-		renderSystem->DrawStretchPic(160, 120, 320, 240, 0, 1, 1, 0, material);
-		renderSystem->DrawStretchPic(480, 120, 320, 240, 1, 1, 0, 0, material);
-
-		//bottom
-		renderSystem->DrawStretchPic(-160, 360, 320, 240, 1, 0, 0, 1, material);
-		renderSystem->DrawStretchPic(160, 360, 320, 240, 0, 0, 1, 1, material);
-		renderSystem->DrawStretchPic(480, 360, 320, 240, 1, 0, 0, 1, material);
+		float m = 0.1f;
+		renderSystem->DrawStretchPic(0, 0, 640, 480, -m, 1 + m, 1 + m, -m, material);
+		renderSystem->DrawStretchPic(0, 0, 640, 480, -m, 1 + m, 1 + m, -m, material);
 	} else {
 		renderSystem->DrawStretchPic(0, 0, 640, 480, 0, 1, 1, 0, material);
 	}
@@ -584,7 +573,6 @@ void hhPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 		//HUMANHEAD: aob
 		if( viewOverlayMaterial ) {		
 			renderSystem->SetColor4( viewOverlayColor[0], viewOverlayColor[1], viewOverlayColor[2], viewOverlayColor[3] );
-			Overlay(viewOverlayMaterial);
 			Overlay(viewOverlayMaterial);
 		}
 		//HUMANHEAD END
@@ -700,7 +688,6 @@ void hhPlayerView::SpiritVision( idUserInterface *hud, const renderView_t *view 
 	}
 
 	renderSystem->SetColor4( 1, 1, 1, 1 );
-	Overlay(spiritMaterial);
 	Overlay(spiritMaterial);
 
 	voTotalTime = oldTime;
