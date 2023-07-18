@@ -62,26 +62,8 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 	}
 */
 	if ( surf->indexCache ) {
-		//Lubos BEGIN
-		bool glStateUpdated = false;
-		int bits = backEnd.glState.glStateBits;
-		idStr texture(surf->material->GetName());
-
-		//modify the depth to fix decals
-		if(texture.CmpPrefix("textures/decals") == 0) {
-			GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
-			glStateUpdated = true;
-		}
-
-		//render geometry
 		qglDrawElements(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *) vertexCache.Position(surf->indexCache));
 		backEnd.pc.c_vboIndexes += surf->numIndexes;
-
-		//restore previous state
-		if(glStateUpdated) {
-			GL_State(bits);
-		}
-		//Lubos END
 	} else {
 		static bool bOnce = true;
 		if (bOnce) {

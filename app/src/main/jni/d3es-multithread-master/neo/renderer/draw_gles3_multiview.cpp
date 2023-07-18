@@ -1533,7 +1533,7 @@ void RB_T_GLSL_FillDepthBuffer(const drawSurf_t* surf) {
 
 	// set polygon offset if necessary
 	// NB: will be restored at the end of the process
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET)) {
+	if ((shader->TestMaterialFlag(MF_POLYGONOFFSET))&&((r_offsetFactor.GetFloat()!=0)&&(r_offsetUnits.GetFloat()!=0))) {
 		qglEnable(GL_POLYGON_OFFSET_FILL);
 		qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
 	}
@@ -1679,9 +1679,7 @@ void RB_T_GLSL_FillDepthBuffer(const drawSurf_t* surf) {
 	/////////////////////////////////////////////
 
 	// reset polygon offset
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET)) {
-		qglDisable(GL_POLYGON_OFFSET_FILL);
-	}
+	qglDisable(GL_POLYGON_OFFSET_FILL);
 
 	// Restore blending
 	if ( shader->GetSort() == SS_SUBVIEW ) {
@@ -2183,15 +2181,6 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 			// bind the texture (this will be either a dynamic texture, or a static one)
 			RB_BindVariableStageImage(&pStage->texture, regs);
 
-			// set the state
-			GL_State(pStage->drawStateBits);
-
-			// set privatePolygonOffset if necessary
-			if ( pStage->privatePolygonOffset ) {
-				qglEnable(GL_POLYGON_OFFSET_FILL);
-				qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
-			}
-
 #ifdef NO_LIGHT
 			if (r_noLight.GetBool() )
 			{
@@ -2205,7 +2194,18 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 	                    GL_State(GLS_SRCBLEND_ONE|GLS_DSTBLEND_ONE|GLS_DEPTHFUNC_LESS);
 	            }
             }
+			else
 #endif
+			{
+				GL_State(pStage->drawStateBits);
+			}
+
+			// set privatePolygonOffset if necessary
+			if ( pStage->privatePolygonOffset ) {
+				qglEnable(GL_POLYGON_OFFSET_FILL);
+				qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
+			}
+
 			/////////////////////
 			// Draw the surface!
 			/////////////////////
@@ -2214,6 +2214,11 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 			/////////////////////////////////////////////
 			// Restore everything to an acceptable state
 			/////////////////////////////////////////////
+
+			// unset privatePolygonOffset if necessary
+			if ( pStage->privatePolygonOffset ) {
+				qglDisable(GL_POLYGON_OFFSET_FILL);
+			}
 
 			// Disable the other attributes array
 			if ( pStage->texture.texgen == TG_DIFFUSE_CUBE ) {
@@ -2248,13 +2253,6 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 				}
 			}
 
-			// unset privatePolygonOffset if necessary
-			if ( pStage->privatePolygonOffset && !surf->material->TestMaterialFlag(MF_POLYGONOFFSET)) {
-				qglDisable(GL_POLYGON_OFFSET_FILL);
-			} else if ( pStage->privatePolygonOffset && surf->material->TestMaterialFlag(MF_POLYGONOFFSET)) {
-				qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
-			}
-
 			// Restore color modulation state to default values
 			if ( pStage->vertexColor != SVC_IGNORE ) {
 				GL_Uniform1fv(offsetof(shaderProgram_t, colorModulate), zero);
@@ -2270,9 +2268,7 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 	/////////////////////////////////////////////
 
 	// reset polygon offset
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET)) {
-		qglDisable(GL_POLYGON_OFFSET_FILL);
-	}
+	qglDisable(GL_POLYGON_OFFSET_FILL);
 }
 
 /*
