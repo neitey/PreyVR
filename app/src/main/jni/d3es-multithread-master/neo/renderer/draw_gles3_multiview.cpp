@@ -1162,9 +1162,9 @@ void RB_GLSL_StencilShadowPass(const drawSurf_t* drawSurfs, const viewLight_t* v
 	// don't write to the color buffer, just the stencil buffer
 	GL_State(GLS_DEPTHMASK | GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS);
 
-	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat()) {
-		qglPolygonOffset(r_shadowPolygonFactor.GetFloat(), -r_shadowPolygonOffset.GetFloat());
-		qglEnable(GL_POLYGON_OFFSET_FILL);
+	if (r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat()) {
+		glPolygonOffset(r_shadowPolygonFactor.GetFloat(), -r_shadowPolygonOffset.GetFloat());
+		glEnable(GL_POLYGON_OFFSET_FILL);
 	}
 
 	qglStencilFunc(GL_ALWAYS, 1, 255);
@@ -1177,8 +1177,8 @@ void RB_GLSL_StencilShadowPass(const drawSurf_t* drawSurfs, const viewLight_t* v
 	// Restore culling
 	GL_Cull(CT_FRONT_SIDED);
 
-	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat()) {
-		qglDisable(GL_POLYGON_OFFSET_FILL);
+	if (r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat()) {
+		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
 	qglStencilFunc(GL_GEQUAL, 128, 255);
@@ -1532,10 +1532,9 @@ void RB_T_GLSL_FillDepthBuffer(const drawSurf_t* surf) {
 	}
 
 	// set polygon offset if necessary
-	// NB: will be restored at the end of the process
 	if ((shader->TestMaterialFlag(MF_POLYGONOFFSET))&&((r_offsetFactor.GetFloat()!=0)&&(r_offsetUnits.GetFloat()!=0))) {
-		qglEnable(GL_POLYGON_OFFSET_FILL);
-		qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
 	}
 
 	// Color
@@ -1679,7 +1678,9 @@ void RB_T_GLSL_FillDepthBuffer(const drawSurf_t* surf) {
 	/////////////////////////////////////////////
 
 	// reset polygon offset
-	qglDisable(GL_POLYGON_OFFSET_FILL);
+	if ((shader->TestMaterialFlag(MF_POLYGONOFFSET))&&((r_offsetFactor.GetFloat()!=0)&&(r_offsetUnits.GetFloat()!=0))) {
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
 
 	// Restore blending
 	if ( shader->GetSort() == SS_SUBVIEW ) {
@@ -1752,8 +1753,7 @@ void RB_GLSL_FillDepthBuffer(drawSurf_t** drawSurfs, int numDrawSurfs) {
 	globalImages->whiteImage->Bind();
 
 	// Decal surfaces may enable polygon offset
-	// GAB Note: Looks like it is not needed, because in case of offsetted surface we will use the offset value of the surface
-	// qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat());
+	glPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat());
 
 	// Depth func to LESS
 	GL_State(GLS_DEPTHFUNC_LESS);
@@ -1904,10 +1904,9 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 	}
 
 	// set polygon offset if necessary
-	// NB: must be restored at end of process
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET)) {
-		qglEnable(GL_POLYGON_OFFSET_FILL);
-		qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
+	if (shader->TestMaterialFlag(MF_POLYGONOFFSET)) {
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
 	}
 
 	// set face culling appropriately
@@ -1936,6 +1935,34 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 	for ( int stage = 0; stage < shader->GetNumStages(); stage++ ) {
 
 		const shaderStage_t* const pStage = shader->GetStage(stage);
+
+#ifdef _HUMANHEAD //k: scope view support
+		if(tr.IsScopeView())
+		{
+			if(pStage->isNotScopeView)
+				continue;
+		}
+		else
+		{
+			if(pStage->isScopeView)
+				continue;
+		}
+		if(!tr.IsShuttleView())
+		{
+			if(pStage->isShuttleView)
+				continue;
+		}
+		if (backEnd.viewDef->renderView.viewSpiritEntities)
+		{
+			if(pStage->isNotSpiritWalk)
+				continue;
+		}
+		else
+		{
+			if(pStage->isSpiritWalk)
+				continue;
+		}
+#endif
 
 		///////////////
 		// Skip cases
@@ -2200,8 +2227,16 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 				GL_State(pStage->drawStateBits);
 			}
 
-			// set privatePolygonOffset if necessary
+			//Lubos BEGIN
+			idStr texture(surf->material->ImageName());
+			if(((texture.Find("ramp_fx") != -1) || (texture.CmpPrefix("textures/sfx/genericdissolve") == 0)) && pStage->drawStateBits) {
+				/*qglEnable(GL_POLYGON_OFFSET_FILL);
+				qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
+				GL_State(GLS_DEPTHMASK | pStage->drawStateBits - GLS_DEPTHFUNC_EQUAL);*/
+			} else
+			//Lubos END
 			if ( pStage->privatePolygonOffset ) {
+				// set privatePolygonOffset if necessary
 				qglEnable(GL_POLYGON_OFFSET_FILL);
 				qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
 			}
@@ -2216,7 +2251,7 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 			/////////////////////////////////////////////
 
 			// unset privatePolygonOffset if necessary
-			if ( pStage->privatePolygonOffset ) {
+			if (pStage->privatePolygonOffset && !surf->material->TestMaterialFlag(MF_POLYGONOFFSET)) {
 				qglDisable(GL_POLYGON_OFFSET_FILL);
 			}
 
@@ -2268,7 +2303,9 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 	/////////////////////////////////////////////
 
 	// reset polygon offset
-	qglDisable(GL_POLYGON_OFFSET_FILL);
+	if (shader->TestMaterialFlag(MF_POLYGONOFFSET)) {
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
 }
 
 /*
