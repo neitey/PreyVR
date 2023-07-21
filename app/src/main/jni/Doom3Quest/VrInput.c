@@ -32,10 +32,6 @@ uint32_t lButtons = 0;
 uint32_t rButtons = 0;
 XrActionStateVector2f moveJoystickState[2];
 
-//0 = left, 1 = right
-float vibration_channel_duration[2] = {0.0f, 0.0f};
-float vibration_channel_intensity[2] = {0.0f, 0.0f};
-
 #if !defined(_WIN32)
 #include <sys/time.h>
 
@@ -76,61 +72,26 @@ XrTime ToXrTime(const double timeInSeconds) {
 	return (XrTime)(timeInSeconds * 1e9);
 }
 
-void INVR_Vibrate( int duration, int chan, float intensity ) {
-	for (int i = 0; i < 2; ++i) {
-		int channel = i & chan;
-		if (channel) {
-			if (vibration_channel_duration[channel] > 0.0f)
-				return;
-
-			if (vibration_channel_duration[channel] == -1.0f && duration != 0.0f)
-				return;
-
-			vibration_channel_duration[channel] = (float)duration;
-			vibration_channel_intensity[channel] = intensity;
-		}
-	}
-}
-
-void VR_processHaptics() {
-	float lastFrameTime = 0.0f;
-	float timestamp = (float)(milliseconds());
-	float frametime = timestamp - lastFrameTime;
-	lastFrameTime = timestamp;
-
-	for (int i = 0; i < 2; ++i) {
-		if (vibration_channel_duration[i] > 0.0f ||
-		    vibration_channel_duration[i] == -1.0f) {
-
-			// fire haptics using output action
-			XrHapticVibration vibration = {};
-			vibration.type = XR_TYPE_HAPTIC_VIBRATION;
-			vibration.next = NULL;
-			vibration.amplitude = vibration_channel_intensity[i];
-			vibration.duration = ToXrTime(vibration_channel_duration[i]);
-			vibration.frequency = 3000;
-			XrHapticActionInfo hapticActionInfo = {};
-			hapticActionInfo.type = XR_TYPE_HAPTIC_ACTION_INFO;
-			hapticActionInfo.next = NULL;
-			hapticActionInfo.action = i == 0 ? vibrateLeftFeedback : vibrateRightFeedback;
-			OXR(xrApplyHapticFeedback(VR_GetEngine()->appState.Session, &hapticActionInfo, (const XrHapticBaseHeader*)&vibration));
-
-			if (vibration_channel_duration[i] != -1.0f) {
-				vibration_channel_duration[i] -= frametime;
-
-				if (vibration_channel_duration[i] < 0.0f) {
-					vibration_channel_duration[i] = 0.0f;
-					vibration_channel_intensity[i] = 0.0f;
-				}
-			}
-		} else {
-			// Stop haptics
-			XrHapticActionInfo hapticActionInfo = {};
-			hapticActionInfo.type = XR_TYPE_HAPTIC_ACTION_INFO;
-			hapticActionInfo.next = NULL;
-			hapticActionInfo.action = i == 0 ? vibrateLeftFeedback : vibrateRightFeedback;
-			OXR(xrStopHapticFeedback(VR_GetEngine()->appState.Session, &hapticActionInfo));
-		}
+void INVR_Vibrate( float duration, int channel, float intensity ) {
+	if (intensity > 0) {
+		XrHapticVibration vibration = {};
+		vibration.type = XR_TYPE_HAPTIC_VIBRATION;
+		vibration.next = NULL;
+		vibration.amplitude = intensity;
+		vibration.duration = ToXrTime(duration);
+		vibration.frequency = 300;
+		XrHapticActionInfo hapticActionInfo = {};
+		hapticActionInfo.type = XR_TYPE_HAPTIC_ACTION_INFO;
+		hapticActionInfo.next = NULL;
+		hapticActionInfo.action = channel == 0 ? vibrateLeftFeedback : vibrateRightFeedback;
+		OXR(xrApplyHapticFeedback(VR_GetEngine()->appState.Session, &hapticActionInfo, (const XrHapticBaseHeader*)&vibration));
+	} else {
+		// Stop haptics
+		XrHapticActionInfo hapticActionInfo = {};
+		hapticActionInfo.type = XR_TYPE_HAPTIC_ACTION_INFO;
+		hapticActionInfo.next = NULL;
+		hapticActionInfo.action = channel == 0 ? vibrateLeftFeedback : vibrateRightFeedback;
+		OXR(xrStopHapticFeedback(VR_GetEngine()->appState.Session, &hapticActionInfo));
 	}
 }
 
@@ -396,8 +357,6 @@ void IN_VRInputFrame( engine_t* engine ) {
 	getInfo.type = XR_TYPE_ACTION_STATE_GET_INFO;
 	getInfo.next = NULL;
 	getInfo.subactionPath = XR_NULL_PATH;
-
-	VR_processHaptics();
 
 	if (leftControllerAimSpace == XR_NULL_HANDLE) {
 		leftControllerAimSpace = CreateActionSpace(handPoseLeftAction, leftHandPath);

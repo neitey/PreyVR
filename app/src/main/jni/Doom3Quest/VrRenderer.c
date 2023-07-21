@@ -23,14 +23,11 @@ void VR_UpdateStageBounds(ovrApp* pappState) {
 	XrResult result;
 	OXR(result = xrGetReferenceSpaceBoundsRect(pappState->Session, XR_REFERENCE_SPACE_TYPE_STAGE, &stageBounds));
 	if (result != XR_SUCCESS) {
-		ALOGV("Stage bounds query failed: using small defaults");
 		stageBounds.width = 1.0f;
 		stageBounds.height = 1.0f;
 
 		pappState->CurrentSpace = pappState->FakeStageSpace;
 	}
-
-	ALOGV("Stage bounds: width = %f, depth %f", stageBounds.width, stageBounds.height);
 }
 
 void VR_GetResolution(engine_t* engine, int *pWidth, int *pHeight) {

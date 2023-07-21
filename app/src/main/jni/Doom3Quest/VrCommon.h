@@ -67,8 +67,6 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh);
 
 void Doom3Quest_setUseScreenLayer(int screen);
 
-void Doom3Quest_processHaptics();
-
 void Doom3Quest_getHMDOrientation();
 
 void Doom3Quest_prepareEyeBuffer();

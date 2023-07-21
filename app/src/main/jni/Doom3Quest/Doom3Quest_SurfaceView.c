@@ -256,18 +256,12 @@ Doom3Quest_Vibrate
 ========================
 */
 
-//0 = left, 1 = right
-float vibration_intensity[2][2] = {{0.0f,0.0f},{0.0f,0.0f}};
-int vibration_length[2] = {0, 0};
-
 int Android_GetCVarInteger(const char* cvar);
 
 void Doom3Quest_Vibrate(int channel, float low, float high, int length)
 {
 	if (Android_GetCVarInteger("vr_haptics")) {
-		vibration_intensity[channel][0] = low;
-		vibration_intensity[channel][1] = high;
-		vibration_length[channel] = length;
+		INVR_Vibrate((float)length * 0.001f, channel, low * 0.01f);
 	}
 }
 
@@ -486,27 +480,8 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
 		VR_SetRefreshRate(refresh);
 		currentRefresh = VR_GetRefreshRate();
 	}
-	Doom3Quest_processHaptics();
+	pVRClientInfo->right_handed = !controlscheme;
 	HandleInput_Default(controlscheme, switch_sticks, ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);
-}
-
-void Doom3Quest_processHaptics() {//Handle haptics
-
-	float beat;
-	bool enable;
-	for (int h = 0; h < 2; ++h) {
-		beat = fabs( vibration_intensity[h][0] - vibration_intensity[h][1] ) / 65535;
-		if (vibration_length[h] > 0) {
-			vibration_length[h]--;
-		} else if (vibration_length[h] == 0) {
-			beat = 0;
-		}
-		//TODO:implement
-		/*if(beat > 0.0f)
-			vrapi_SetHapticVibrationSimple(gAppState.Ovr, controllerIDs[1 - h], beat);
-		else
-			vrapi_SetHapticVibrationSimple(gAppState.Ovr, controllerIDs[1 - h], 0.0f);*/
-	}
 }
 
 void Doom3Quest_getHMDOrientation() {
