@@ -256,7 +256,7 @@ bool VR_InitFrame( engine_t* engine ) {
 	XrViewLocateInfo projectionInfo = {};
 	projectionInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
 	projectionInfo.viewConfigurationType = engine->appState.ViewportConfig.viewConfigurationType;
-	projectionInfo.displayTime = frameState.predictedDisplayTime;
+	projectionInfo.displayTime = 0;
 	projectionInfo.space = engine->appState.CurrentSpace;
 
 	XrViewState viewState = {XR_TYPE_VIEW_STATE, NULL};
@@ -325,6 +325,25 @@ void VR_EndFrame( engine_t* engine ) {
 
 void VR_FinishFrame( engine_t* engine ) {
 
+	XrViewLocateInfo projectionInfo = {};
+	projectionInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
+	projectionInfo.viewConfigurationType = engine->appState.ViewportConfig.viewConfigurationType;
+	projectionInfo.displayTime = 0;
+	projectionInfo.space = engine->appState.CurrentSpace;
+
+	XrViewState viewState = {XR_TYPE_VIEW_STATE, NULL};
+
+	uint32_t projectionCapacityInput = ovrMaxNumEyes;
+	uint32_t projectionCountOutput = projectionCapacityInput;
+
+	OXR(xrLocateViews(
+			engine->appState.Session,
+			&projectionInfo,
+			&viewState,
+			projectionCapacityInput,
+			&projectionCountOutput,
+			projections));
+
 	int vrMode = vrConfig[VR_CONFIG_MODE];
 	XrCompositionLayerProjectionView projection_layer_elements[2] = {};
 	if ((vrMode == VR_MODE_MONO_6DOF) || (vrMode == VR_MODE_STEREO_6DOF)) {
@@ -332,9 +351,9 @@ void VR_FinishFrame( engine_t* engine ) {
 
 		for (int eye = 0; eye < ovrMaxNumEyes; eye++) {
 			ovrFramebuffer* frameBuffer = &engine->appState.Renderer.FrameBuffer;
-			XrPosef pose = invViewTransform[0];
+			XrPosef pose = projections[0].pose;
 			if (vrMode != VR_MODE_MONO_6DOF) {
-				pose = invViewTransform[eye];
+				pose = projections[eye].pose;
 			}
 
 			memset(&projection_layer_elements[eye], 0, sizeof(XrCompositionLayerProjectionView));
