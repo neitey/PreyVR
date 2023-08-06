@@ -1475,6 +1475,12 @@ void hhGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
 }
 
 bool hhGameLocal::InCinematic() {
+	//Lubos BEGIN
+	auto* player = dynamic_cast<hhPlayer *>(GetLocalPlayer());
+	if (pVRClientInfo->levelname && (strcmp(pVRClientInfo->levelname, "maps/game/spherebrain") == 0)) {
+		return (player && player->bClampYaw) || pVRClientInfo->credits;
+	}
+	//Lubos END
 	if( (GetLocalPlayer() && GetLocalPlayer()->GetPrivateCameraView()) )
 		return true;
 	else

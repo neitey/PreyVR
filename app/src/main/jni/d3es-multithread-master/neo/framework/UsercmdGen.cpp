@@ -915,7 +915,8 @@ void idUsercmdGenLocal::MakeCurrent(void)
 
 		//Lubos BEGIN
 		idPlayer* player = game->GetLocalPlayer();
-		if( player && ( strcmp( session->GetCurrentMapName(), "maps/game/salvageboss" ) == 0 ) ) {
+		pVRClientInfo->levelname = (char*)session->GetCurrentMapName();
+		if( player && ( strcmp( pVRClientInfo->levelname, "maps/game/salvageboss" ) == 0 ) ) {
 			idVec3 playerPosition;
 			playerPosition.x = pVRClientInfo->playerPosition[0];
 			playerPosition.y = pVRClientInfo->playerPosition[1];
