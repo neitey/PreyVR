@@ -62,6 +62,16 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 	}
 */
 	if ( surf->indexCache ) {
+		//Lubos BEGIN
+		static int frameIndex = -1;
+		if (frameIndex != tr.frameCount) {
+			frameIndex = tr.frameCount;
+			pVRClientInfo->credits = false;
+		}
+		if (idStr(surf->material->ImageName()).CmpPrefix("guis/assets/credits") == 0) {
+			pVRClientInfo->credits = true;
+		}
+		//Lubos END
 		qglDrawElements(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *) vertexCache.Position(surf->indexCache));
 		backEnd.pc.c_vboIndexes += surf->numIndexes;
 	} else {
