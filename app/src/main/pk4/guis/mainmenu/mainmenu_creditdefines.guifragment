@@ -29,7 +29,7 @@
 // Misc things to clean up the gui
 // ------------------------------------------------------------
 
-#define CREDIT_TITLE_XVALUE					"xvalue"
+#define CREDIT_TITLE_XVALUE					150
 #define CREDIT_NAMES_XVALUE					150
 #define CREDIT_HEADG_XVALUE					150
 #define CREDIT_TITLE_DIMENSIONS				320, 20
@@ -48,7 +48,7 @@
 			forecolor			CREDIT_TITLE_FORECOLOR_COMMA														\
 			textalign			1																					\
 			textaligny			-3																					\
-			visible				0																					\
+			visible				1																					\
 			noTime				1																					\
 			shear				0, ("shearvalue")																	\
 			splineIn			0																					\
@@ -80,7 +80,7 @@
 			forecolor			CREDIT_NAME_FORECOLOR_COMMA															\
 			textalign			1																					\
 			textaligny			-3																					\
-			visible				0																					\
+			visible				1																					\
 			noTime				1																					\
 			trailOffset			0.012																				\
 			onNamedEvent Reset {																					\
@@ -100,7 +100,7 @@
 			forecolor			CREDIT_HEADING_FORECOLOR_COMMA														\
 			textalign			1																					\
 			textaligny			-3																					\
-			visible				0																					\
+			visible				1																					\
 			noTime				1																					\
 			onNamedEvent Reset {																					\
 				set "visible" "0";																					\
