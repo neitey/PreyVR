@@ -305,9 +305,39 @@
 								choiceType	0
 							}
 						}
+
+						buttonDef OA_Thumbsticks {
+							rect			10, 100, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							
+							windowDef OAT_Thumbsticks {
+								rect		0, 0, 200, 25
+								text		"Swap thumsticks"
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								forecolor	STATIC_FORECOLOR_COMMA
+							}
+
+							choiceDef OAC_Thumbsticks {
+								rect		200, 0, 200, 25
+								textscale	0.33
+								textalign	1
+								textaligny	0
+								shadow		1
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								choices		"#str_20152"
+								cvar		"vr_switchSticks"
+								choiceType	0
+							}
+						}
 						
 						buttonDef OA_TurnMode {
-							rect			10, 100, 400, 50
+							rect			10, 130, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
@@ -338,7 +368,7 @@
 						}
 
 						buttonDef OA_TurnAngle {
-							rect			10, 130, 400, 50
+							rect			10, 160, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
@@ -369,7 +399,7 @@
 						}
 
 						buttonDef OA_Cursor {
-							rect			10, 160, 400, 50
+							rect			10, 190, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
@@ -400,7 +430,7 @@
 						}
 
 						buttonDef OA_Haptics {
-							rect			10, 190, 400, 50
+							rect			10, 220, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
@@ -431,7 +461,7 @@
 						}
 
 						buttonDef OA_VehicleInvertY {
-							rect			10, 220, 400, 25
+							rect			10, 250, 400, 25
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
