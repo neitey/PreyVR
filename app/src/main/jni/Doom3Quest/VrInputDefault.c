@@ -52,10 +52,8 @@ void
 HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int domButton2, int offButton1, int offButton2)
 
 {
-	int primaryController = 1;
-	if ((controlscheme == 0 &&switchsticks == 1) || (controlscheme == 1 &&switchsticks == 0)) {
-		primaryController = 0;
-	}
+	int primaryController = 1 - controlscheme;
+	int primaryThumbStick = controlscheme == 0 ? 1 - switchsticks : switchsticks;
 
     //Need this for the touch screen
     XrPosef pWeapon = IN_VRGetPose(primaryController);
@@ -65,8 +63,8 @@ HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int dom
 	offhandButtonsOld = offhandButtonsNew;
     weaponButtonsNew = IN_VRGetButtonState(primaryController);
     offhandButtonsNew = IN_VRGetButtonState(1 - primaryController);
-	pPrimaryJoystick = IN_VRGetJoystickState(primaryController);
-	pSecondaryJoystick = IN_VRGetJoystickState(1 - primaryController);
+	pPrimaryJoystick = IN_VRGetJoystickState(primaryThumbStick);
+	pSecondaryJoystick = IN_VRGetJoystickState(1 - primaryThumbStick);
 	rightTrackedRemoteState_new = weaponButtonsNew;
 	leftTrackedRemoteState_new = offhandButtonsNew;
 
