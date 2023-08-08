@@ -1293,6 +1293,7 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
 	{
 		screenYaw = vr.hmdorientation_temp[YAW];
 	}
+	pVRClientInfo->right_handed = controlscheme != 0;
 
     Doom3Quest_processHaptics();
     Doom3Quest_getHMDOrientation();
