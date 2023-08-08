@@ -1210,16 +1210,6 @@ void hhWeapon::PresentWeapon( bool showViewModel ) {
 	// update animation
 	UpdateAnimation();
 
-	//Lubos BEGIN
-	if (game->isVR && !pVRClientInfo->weaponZoom && (status <= WP_RELOAD)) {
-		hhPlayer* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
-		if (player) {
-			renderEntity.origin = player->GetEyePosition();
-			ApplyVRWeaponTransform(renderEntity.axis, renderEntity.origin);
-		}
-	}
-	//Lubos END
-
 	// only show the surface in player view
 	renderEntity.allowSurfaceInViewID = owner->entityNumber+1;
 
@@ -1900,6 +1890,17 @@ void hhWeapon::GetMasterDefaultPosition( idVec3 &masterOrigin, idMat3 &masterAxi
 		} else {
 			hhAnimatedEntity::GetMasterDefaultPosition( masterOrigin, masterAxis );
 		}
+
+		//Lubos BEGIN
+		if( game->isVR && !pVRClientInfo->weaponZoom && master->IsType(idPlayer::Type) ) {
+			auto* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
+			if (player) {
+				masterOrigin = player->GetEyePosition();
+				ApplyVRWeaponTransform(masterAxis, masterOrigin);
+				masterOrigin -= idVec3(0, 0, player->EyeHeight()) * masterAxis;
+			}
+		}
+		//Lubos END
 	}
 }
 
@@ -2039,12 +2040,6 @@ void hhWeapon::PrecomputeTraceInfo() {
 	idVec3 eyePos = owner->GetEyePosition();
 	idMat3 weaponAxis = GetAxis();
 	float traceDist = 1024.0f;	// was CM_MAX_TRACE_DIST
-
-	//Lubos BEGIN
-	if (game->isVR && !pVRClientInfo->vehicleMode) {
-		ApplyVRWeaponTransform(weaponAxis, eyePos);
-	}
-	//Lubos END
 
 	// Perform eye trace
 	gameLocal.clip.TracePoint( eyeTraceInfo, eyePos, eyePos + weaponAxis[0] * traceDist, 

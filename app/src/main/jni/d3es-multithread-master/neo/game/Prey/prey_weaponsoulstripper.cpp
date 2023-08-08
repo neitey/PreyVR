@@ -154,11 +154,6 @@ void hhBeamBasedFireController::Think()
 			}
 		}
 
-		//Lubos BEGIN
-		if (game->isVR) {
-			ApplyVRWeaponTransform( aimAxis, beamOrigin );
-		}
-		//Lubos END
 		shotbeam->SetOrigin( beamOrigin );
 		shotbeam->SetAxis( aimAxis );
 	}
@@ -208,14 +203,7 @@ END_CLASS
 
 void hhSunbeamFireController::LaunchProjectiles( const idVec3& launchOrigin, const idMat3& aimAxis, const idVec3& pushVelocity, idEntity* projOwner ) {
 
-	//Lubos BEGIN
-	idMat3 axis = aimAxis;
-	idVec3 origin = launchOrigin;
-	if (game->isVR) {
-		ApplyVRWeaponTransform(axis, origin);
-	}
-	hhBeamBasedFireController::LaunchProjectiles(origin, axis, pushVelocity, projOwner);
-	//Lubos END
+	hhBeamBasedFireController::LaunchProjectiles(launchOrigin, aimAxis, pushVelocity, projOwner);
 
 	//HUMANHEAD PCF rww 05/18/06 - since values are assuming 60hz, make them relative
 	float backpush = dict->GetFloat("backpush","0.0")*(60.0f/(float)renderSystem->GetRefresh());
@@ -259,12 +247,6 @@ void hhSunbeamFireController::Think()
 				//just keep the existing axis
 			}
 		}
-		//Lubos BEGIN
-		if (game->isVR) {
-			ApplyVRWeaponTransform( aimAxis, beamOrigin );
-			end = beamOrigin + length * aimAxis[0];
-		}
-		//Lubos END
 		shotbeam->SetOrigin( beamOrigin );
 		shotbeam->SetAxis( aimAxis );
 		shotbeam->SetTargetLocation( end );
@@ -883,14 +865,6 @@ void hhWeaponSoulStripper::UpdateBeam( idVec3 start, bool struckEntity ) {
 
 		GetJointWorldTransform( dict->GetString("attach_beam"), boneOrigin, boneAxis);
 
-		//Lubos BEGIN
-		if (game->isVR) {
-			boneOrigin *= -1.0f;
-			ApplyVRWeaponTransform(boneAxis, boneOrigin);
-			boneOrigin *= -1.0f;
-		}
-		//Lubos END
-
 		beam->SetOrigin( boneOrigin );
 
 		beam->SetArcVector( GetAxis()[0] );
@@ -1150,7 +1124,7 @@ void hhWeaponSoulStripper::Event_PlayCycle( int channel, const char *animname ) 
 //=============================================================================
 
 void hhWeaponSoulStripper::PresentWeapon( bool showViewModel ) {
-	if ( IsHidden() || !owner->CanShowWeaponViewmodel() || pm_thirdPerson.GetBool() || /*Lubos*/game->isVR ) {
+	if ( IsHidden() || !owner->CanShowWeaponViewmodel() || pm_thirdPerson.GetBool() ) {
 		if ( beamCanA1.IsValid() ) beamCanA1->Activate( false );
 		if ( beamCanB1.IsValid() ) beamCanB1->Activate( false );
 		if ( beamCanC1.IsValid() ) beamCanC1->Activate( false );
