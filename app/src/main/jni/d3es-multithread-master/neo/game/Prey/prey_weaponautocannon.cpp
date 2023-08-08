@@ -236,10 +236,8 @@ void hhWeaponAutoCannon::Event_SpawnRearGasFX() {
 		fxInfo.UseWeaponDepthHack( true );
 		fxInfo.RemoveWhenDone( true );
 
-		if ( !game->isVR ) { //Lubos
-			BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxL"), &fxInfo, &EV_Broadcast_AssignLeftRearFx, false );
-			BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxR"), &fxInfo, &EV_Broadcast_AssignRightRearFx, false );
-		}
+		BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxL"), &fxInfo, &EV_Broadcast_AssignLeftRearFx, false );
+		BroadcastFxInfoAlongBone( dict->RandomPrefix("fx_rearGas", gameLocal.random), dict->GetString("joint_rearGasFxR"), &fxInfo, &EV_Broadcast_AssignRightRearFx, false );
 
 		if( GetHeatLevel() >= 1.0f )
 			StartSound( "snd_overheat", SND_CHANNEL_BODY, 0, false, NULL );
