@@ -63,17 +63,34 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 */
 	if ( surf->indexCache ) {
 		//Lubos BEGIN
+		bool glStateUpdated = false;
+		int bits = backEnd.glState.glStateBits;
+		idStr texture(surf->material->GetName());
+
+		//modify gl state function to fix glass and cavepaints
+		if((texture.CmpPrefix("textures/dreamworld/cavepaint") == 0) || (texture.CmpPrefix("textures/sfx/glass") == 0) || (texture.CmpPrefix("textures/sfx/nonbreakglass") == 0)) {
+			GL_State(GLS_DEPTHMASK | (bits & GLS_SRCBLEND_BITS) | (bits & GLS_DSTBLEND_BITS));
+			glStateUpdated = true;
+		}
+
+		//detect credits
 		static int frameIndex = -1;
 		if (frameIndex != tr.frameCount) {
 			frameIndex = tr.frameCount;
 			pVRClientInfo->credits = false;
 		}
-		if (idStr(surf->material->ImageName()).CmpPrefix("guis/assets/credits") == 0) {
+		if (texture.CmpPrefix("guis/assets/credits") == 0) {
 			pVRClientInfo->credits = true;
 		}
-		//Lubos END
+
 		qglDrawElements(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *) vertexCache.Position(surf->indexCache));
 		backEnd.pc.c_vboIndexes += surf->numIndexes;
+
+		//restore previous state
+		if(glStateUpdated) {
+			GL_State(bits);
+		}
+		//Lubos END
 	} else {
 		static bool bOnce = true;
 		if (bOnce) {
