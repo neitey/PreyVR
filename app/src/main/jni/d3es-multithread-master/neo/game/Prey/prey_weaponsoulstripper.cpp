@@ -720,7 +720,12 @@ void hhWeaponSoulStripper::Event_Leech() {
 
 	// Currently latched onto a target, check to see if the target is within the valid cone and there is still a LOS to the target
 	if ( targetNode ) {
-		common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 50, 500, 10);//Lubos;
+
+		//Lubos BEGIN
+		if ( !owner->IsType( hhArtificialPlayer::Type ) ) {
+			common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 50, 500, 10);
+		}
+		//Lubos END
 		end = beam->GetTargetLocation();
 
 		// Verify that the target is within a cone in front of the weapon

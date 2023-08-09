@@ -404,6 +404,7 @@ public:
 	virtual void			MapShutdown( void );
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
+	virtual void			SpawnArtificialPlayer(void);//Lubos
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
 	virtual bool			Draw( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
@@ -625,7 +626,6 @@ public:
 	int						GetMapSpawnCount(void) { return mapSpawnCount; }
 
 	void					GetAPUserInfo(idDict &dict, int clientNum);
-	void					SpawnArtificialPlayer(void);
 	//HUMANHEAD END
 
 	//HUMANHEAD rww - keep track of layered spawning

@@ -242,7 +242,12 @@ bool hhFireController::LaunchProjectiles( const idVec3& pushVelocity ) {
 				localMuzzleAxis = newAxis;
 			}
 		}
-		common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 100, 1000, 10);//Lubos
+
+		//Lubos BEGIN
+		if ( !GetProjectileOwner()->IsType( hhArtificialPlayer::Type ) ) {
+			common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 100, 1000, 10);
+		}
+		//Lubos END
 
 		CreateMuzzleFx( localMuzzleOrigin, localMuzzleAxis );
 	}
