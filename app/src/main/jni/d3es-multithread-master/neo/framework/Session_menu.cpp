@@ -861,6 +861,7 @@ void idSessionLocal::HandleMainMenuCommands(const char *menuCommand)
 
 		if (!idStr::Icmp(cmd, "startMultiplayer")) {
 			//Lubos BEGIN
+			cvarSystem->SetCVarInteger("si_maxPlayers", 16);
 			StartNewGame(cvarSystem->GetCVarString("si_map"), true);
 			return;
 			//Lubos END

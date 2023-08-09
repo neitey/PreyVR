@@ -1894,7 +1894,7 @@ void hhWeapon::GetMasterDefaultPosition( idVec3 &masterOrigin, idMat3 &masterAxi
 		//Lubos BEGIN
 		if( game->isVR && !pVRClientInfo->weaponZoom && master->IsType(idPlayer::Type) ) {
 			auto* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
-			if (player) {
+			if (player && !owner->IsType(hhArtificialPlayer::Type)) {
 				masterOrigin = player->GetEyePosition();
 				ApplyVRWeaponTransform(masterAxis, masterOrigin);
 				masterOrigin -= idVec3(0, 0, player->EyeHeight()) * masterAxis;

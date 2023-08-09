@@ -1067,7 +1067,7 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 	_hud->SetStateInt( "s_debug", cvarSystem->GetCVarInteger( "s_showLevelMeter" ) );
 
 	//Lubos BEGIN
-	if (game->isVR && !game->InCinematic()) {
+	if (game->isVR && !game->InCinematic() && !IsType(hhArtificialPlayer::Type)) {
 		pVRClientInfo->uiOffset[0] = 200;
 		pVRClientInfo->uiOffset[1] = 180;
 		pVRClientInfo->uiScale[0] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
@@ -1093,7 +1093,7 @@ void hhPlayer::DrawHUD( idUserInterface *_hud ) {
 			UpdateCrosshairs();
 
 			//Lubos BEGIN
-			if (game->isVR && !InVehicle() && weapon.IsValid() && renderView) {
+			if (game->isVR && !InVehicle() && weapon.IsValid() && !IsType(hhArtificialPlayer::Type) && renderView) {
 				idVec3 worldPos = weapon->GetEyeTraceInfo().endpos;
 				idVec3 screenPos = hhUtils::ProjectOntoScreen(worldPos, *renderView);
 				float scale = 250.0f / idMath::ClampFloat(250, 10000, screenPos.z);
@@ -3211,8 +3211,12 @@ hhPlayer::Damage
 void hhPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 					   const char *damageDefName, const float damageScale, const int location ) {
 
-	common->Vibrate(0, 50, 500, damageScale * 10);//Lubos
-	common->Vibrate(1, 50, 500, damageScale * 10);//Lubos
+	//Lubos BEGIN
+	if ( !IsType( hhArtificialPlayer::Type ) ) {
+		common->Vibrate(0, 50, 500, damageScale * 10);
+		common->Vibrate(1, 50, 500, damageScale * 10);
+	}
+	//Lubos END
 
 	if(	IsSpiritOrDeathwalking() ) { //Player is spirit-walking, so check for special immunities
 		const idKeyValue *kv = spawnArgs.MatchPrefix("immunityspirit");
@@ -4905,7 +4909,7 @@ void hhPlayer::Think( void ) {
 	UpdatePlayerIcons();
 
 	//Lubos BEGIN
-	if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
+	if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) && !weapon->GetOwner()->IsType(hhArtificialPlayer::Type) ) {
 		hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
 		if ( weap && weap->GetAltMode() ) {
 			if (pVRClientInfo->weaponZooming == -1) {
@@ -4916,7 +4920,7 @@ void hhPlayer::Think( void ) {
 		}
 	}
 
-	if ( weapon.IsValid() && ( currentWeapon == 1) ) {
+	if ( weapon.IsValid() && ( currentWeapon == 1) && !weapon->GetOwner()->IsType(hhArtificialPlayer::Type) ) {
 		static idAngles lastCamera;
 		idAngles camera = GetAxis().ToAngles();
 		idAngles diff = lastCamera - camera;
@@ -5028,31 +5032,33 @@ void hhPlayer::Think( void ) {
 	}
 
 	//Lubos BEGIN
-	if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
-		hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
-		if ( weap && weap->GetAltMode() ) {
-			pVRClientInfo->weaponZoom = true;
+	if ( !IsType(hhArtificialPlayer::Type) ) {
+		if ( weapon.IsValid() && weapon->IsType( hhWeaponZoomable::Type ) ) {
+			hhWeaponZoomable *weap = static_cast<hhWeaponZoomable*>(weapon.GetEntity());
+			if ( weap && weap->GetAltMode() ) {
+				pVRClientInfo->weaponZoom = true;
+			} else {
+				pVRClientInfo->weaponZoom = false;
+			}
 		} else {
 			pVRClientInfo->weaponZoom = false;
 		}
-	} else {
-		pVRClientInfo->weaponZoom = false;
-	}
 
-	pVRClientInfo->weaponOffset[0] = 0; //forward
-	pVRClientInfo->weaponOffset[1] = 0; //left
-	pVRClientInfo->weaponOffset[2] = 0; //up
-	if (bSpiritWalk) {
-		pVRClientInfo->weaponOffset[0] = -15; pVRClientInfo->weaponOffset[1] = 0; pVRClientInfo->weaponOffset[2] = 5; //bow
-	} else {
-		switch (currentWeapon) {
-			case 1: pVRClientInfo->weaponOffset[0] = -16; pVRClientInfo->weaponOffset[1] = 9; pVRClientInfo->weaponOffset[2] = 20; break; //wrench
-			case 2: pVRClientInfo->weaponOffset[0] = -1; pVRClientInfo->weaponOffset[1] = 7; pVRClientInfo->weaponOffset[2] = 7; break; //rifle
-			case 3: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 7; pVRClientInfo->weaponOffset[2] = 5; break; //crawler
-			case 4: pVRClientInfo->weaponOffset[0] = -3; pVRClientInfo->weaponOffset[1] = 9; pVRClientInfo->weaponOffset[2] = 7; break; //leech gun
-			case 5: pVRClientInfo->weaponOffset[0] = -5; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 7; break; //auto-cannon
-			case 6: pVRClientInfo->weaponOffset[0] = 0; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 11; break; //acid spray
-			case 7: pVRClientInfo->weaponOffset[0] = -5; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 7; break; //crawler cannon
+		pVRClientInfo->weaponOffset[0] = 0; //forward
+		pVRClientInfo->weaponOffset[1] = 0; //left
+		pVRClientInfo->weaponOffset[2] = 0; //up
+		if (bSpiritWalk) {
+			pVRClientInfo->weaponOffset[0] = -15; pVRClientInfo->weaponOffset[1] = 0; pVRClientInfo->weaponOffset[2] = 5; //bow
+		} else {
+			switch (currentWeapon) {
+				case 1: pVRClientInfo->weaponOffset[0] = -16; pVRClientInfo->weaponOffset[1] = 9; pVRClientInfo->weaponOffset[2] = 20; break; //wrench
+				case 2: pVRClientInfo->weaponOffset[0] = -1; pVRClientInfo->weaponOffset[1] = 7; pVRClientInfo->weaponOffset[2] = 7; break; //rifle
+				case 3: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 7; pVRClientInfo->weaponOffset[2] = 5; break; //crawler
+				case 4: pVRClientInfo->weaponOffset[0] = -3; pVRClientInfo->weaponOffset[1] = 9; pVRClientInfo->weaponOffset[2] = 7; break; //leech gun
+				case 5: pVRClientInfo->weaponOffset[0] = -5; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 7; break; //auto-cannon
+				case 6: pVRClientInfo->weaponOffset[0] = 0; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 11; break; //acid spray
+				case 7: pVRClientInfo->weaponOffset[0] = -5; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 7; break; //crawler cannon
+			}
 		}
 	}
 	//Lubos END

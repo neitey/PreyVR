@@ -119,6 +119,8 @@ public:
 	// Spawns the player entity to be used by the client.
 	virtual void				SpawnPlayer( int clientNum ) = 0;
 
+	virtual void		    	SpawnArtificialPlayer(void) = 0;//Lubos
+
 	// Runs a game frame, may return a session command for level changing, etc
 	virtual gameReturn_t		RunFrame( const usercmd_t *clientCmds ) = 0;
 
