@@ -22,6 +22,7 @@
 #include "tr_local.h"
 
 #include "glsl/glsl_shaders.h"
+#include "game/Game_local.h"
 
 shaderProgram_t interactionShader;
 shaderProgram_t interactionPhongShader;
@@ -2229,10 +2230,33 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 
 			//Lubos BEGIN
 			idStr texture(surf->material->ImageName());
-			if(((texture.Find("ramp_fx") != -1) || (texture.CmpPrefix("textures/sfx/genericdissolve") == 0)) && pStage->drawStateBits) {
-				/*qglEnable(GL_POLYGON_OFFSET_FILL);
-				qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
-				GL_State(GLS_DEPTHMASK | pStage->drawStateBits - GLS_DEPTHFUNC_EQUAL);*/
+			if(((texture.Find("ramp_fx") != -1) || (texture.CmpPrefix("textures/sfx/genericdissolve") == 0)) && surf->renderEntity) {
+				static int entityCount[MAX_GENTITIES];
+				static int renderCount[MAX_GENTITIES];
+				if (pVRClientInfo->levelChanged) {
+					memset(renderCount, 0, MAX_GENTITIES * sizeof(int));
+					pVRClientInfo->levelChanged = false;
+				}
+
+				int index = surf->renderEntity->entityNum;
+				if (renderCount[index] != tr.frameCount) {
+					renderCount[index] = tr.frameCount;
+					entityCount[index] = 0;
+				}
+				entityCount[index]++;
+
+				if (pVRClientInfo->levelname) {
+					if (strcmp(pVRClientInfo->levelname, "maps/game/roadhouse") == 0) {
+						//TODO:fix effects in roadhouse level
+						/*if (renderCount[surf->renderEntity->entityNum] == tr.frameCount) {
+							qglEnable(GL_POLYGON_OFFSET_FILL);
+							qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
+							GL_State(GLS_DEPTHMASK | pStage->drawStateBits - GLS_DEPTHFUNC_EQUAL);
+						}*/
+					} else if (entityCount[index] == 1) {
+						continue;
+					}
+				}
 			} else
 			//Lubos END
 			if ( pStage->privatePolygonOffset ) {
