@@ -861,7 +861,7 @@ void idSessionLocal::HandleMainMenuCommands(const char *menuCommand)
 
 		if (!idStr::Icmp(cmd, "startMultiplayer")) {
 			//Lubos BEGIN
-			StartNewGame(cvarSystem->GetCVarString("si_map"));
+			StartNewGame(cvarSystem->GetCVarString("si_map"), true);
 			return;
 			//Lubos END
 
