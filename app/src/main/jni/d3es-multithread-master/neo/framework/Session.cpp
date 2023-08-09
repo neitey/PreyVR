@@ -1924,6 +1924,15 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->SetPersistentPlayerInfo(i, mapSpawnData.persistentPlayerInfo[i]);
 	}
 
+	//Lubos BEGIN
+	bool server = idAsyncNetwork::server.IsActive();
+	bool client = idAsyncNetwork::client.IsActive();
+	if ( mapSpawnData.serverInfo.FindKey( "devmap" ) ) {
+		server = true;
+		client = true;
+	}
+	//Lubos END
+
 	// load and spawn all other entities ( from a savegame possibly )
 	if (loadingSaveGame && savegameFile) {
 #ifdef _RAVEN
@@ -1939,17 +1948,17 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 
 			game->SetServerInfo(mapSpawnData.serverInfo);
 #ifdef _RAVEN
-			game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
+			game->InitFromNewMap(fullMapName + ".map", rw, server, client, Sys_Milliseconds());
 #else
-			game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
+			game->InitFromNewMap(fullMapName + ".map", rw, sw, server, client, Sys_Milliseconds());
 #endif
 		}
 	} else {
 		game->SetServerInfo(mapSpawnData.serverInfo);
 #ifdef _RAVEN
-		game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
+		game->InitFromNewMap(fullMapName + ".map", rw, server, client, Sys_Milliseconds());
 #else
-		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
+		game->InitFromNewMap(fullMapName + ".map", rw, sw, server, client, Sys_Milliseconds());
 #endif
 	}
 
