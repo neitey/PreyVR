@@ -130,6 +130,8 @@ typedef struct drawSurf_s {
     	int							numShadowIndexesNoFrontCaps;	// shadow volumes with front caps omitted
 		int							numShadowIndexesNoCaps;			// shadow volumes with the front and rear caps omitted
 		int							shadowCapPlaneBits;		// bits 0-5 are set when that plane of the interacting light has triangles
+
+	renderEntity_t* renderEntity; //Lubos
 } drawSurf_t;
 
 

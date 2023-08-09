@@ -43,7 +43,8 @@ typedef struct {
     bool vehicleMode;
     bool weaponZoom;
     float vehicleYaw;
-    char* levelname;;
+    char* levelname;
+    bool levelChanged;
     bool credits;
     vec3_t weaponOffset;
     vec3_t hmdorientation_diff;
