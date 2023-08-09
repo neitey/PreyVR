@@ -1,60 +1,5 @@
 
 
-	// PATCH: Added this window to hang global functions on
-	windowDef MultiplayerGlobal {
-		rect	0, 0, 1, 1
-		float canjoin	1
-		onTime 0 {
-			// Alerted that status may have changed
-			if ( "gui::serverlist_sel_0" >= 0 && ("gui::gui_cl_punkbuster" != 0 || "gui::server_punkbuster" == 0)) {
-				// Allow Join: only if valid choice, and either pbclient is enabled or not a pb server
-				set "MFS_Summary_JoinGame::noevents" "0" ;
-				set "MFS_Players_JoinGame::noevents" "0" ;
-				set "MFS_Details_JoinGame::noevents" "0" ;
-				set "MFS_Summary_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
-				set "MFS_Players_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
-				set "MFS_Details_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
-				set "MultiplayerGlobal::canjoin" 1;
-			
-			} else {
-				// Disallow Join
-				set "MFS_Summary_JoinGame::noevents" "1" ;
-				set "MFS_Players_JoinGame::noevents" "1" ;
-				set "MFS_Details_JoinGame::noevents" "1" ;
-				set "MFS_Summary_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
-				set "MFS_Players_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
-				set "MFS_Details_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
-				set "MultiplayerGlobal::canjoin" 0;
-			}
-		}
-	}
-
-
-	windowDef PrecacheAddOnMapLoadingScreens1 {
-		rect			0, 0, 1, 1
-		background	"guis/assets/loading/thumbs/dmgravitylab_6.tga"
-		visible		0
-		noevents		1
-	}
-	windowDef PrecacheAddOnMapLoadingScreens2 {
-		rect			0, 0, 1, 1
-		background	"guis/assets/loading/thumbs/dmplanes_4.tga"
-		visible		0
-		noevents		1
-	}
-	windowDef PrecacheAddOnMapLoadingScreens3 {
-		rect			0, 0, 1, 1
-		background	"guis/assets/loading/thumbs/dmtopillogical_4.tga"
-		visible		0
-		noevents		1
-	}
-	windowDef PrecacheAddOnMapLoadingScreens5 {
-		rect			0, 0, 1, 1
-		background	"guis/assets/loading/thumbs/dmtunnelrat_8.tga"
-		visible		0
-		noevents		1
-	}
-
 	//------------------------------------------------------
 	//
 	//	Multiplayer Menu
@@ -73,10 +18,14 @@
 			transition "PortalModelFront::viewOffset" "-43 7 0 0" "-15 7 0 0" "400" ;
 			transition "Multiplayer_Menu::rect" MENU_INITIAL_RECT_TEXT MENU_MIDDLE_RECT_TEXT "200" ;
 			set "Multiplayer_Titlebar::visible" "0" ;
+			set "cmd" "MAPScan" ;
 
-			// Check for servers
-			namedEvent "Multiplayer_FindServers::ScanForServers";
-			
+			set "Multiplayer_Settings::visible" "0" ;
+			set "Multiplayer_CreateServer::visible" "1" ;
+			set "Multiplayer_FindServers::visible" "0" ;
+			set "MCS_Normal::visible" "1" ;
+			set "MCS_Advanced::visible" "0" ;
+
 			// Fill in model list
 			set "cmd" "modelscan";
 			set "cmd" "play2 guisounds_menu_slidein";
@@ -181,7 +130,7 @@
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
 				activeColor		TABTOP_ACTIVECOLOR_COMMA
 				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-				text			"#str_20136"
+				text			""
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	1
 
@@ -191,7 +140,7 @@
 				}
 
 				windowDef Multiplayer_Settings_PlayerModelBG {
-					rect		10, 135, 550, 230
+					rect		20, 135, 530, 230
 
 					windowDef Multiplayer_Settings_PlayerModelCaption {
 						rect		10, 18, 150, 16
@@ -219,503 +168,232 @@
 						shadow		1
 					}
 
-					tabContainerDef MPS_PlayerPages {
-						rect			200, 10, 318, 210
-						backcolor		0, 0, 0, 0
-						sepcolor		0.74, 0.81, 0.88, 1
-						activetab		0
-						tabMargins		120, 0
-						tabHeight		20
-						visible	1
-
-						tabDef MPS_Page1 {
-							rect			0, 20, 318, 190
-							backcolor		TAB_PAGE_BACKCOLOR_COMMA
-							background		"guis/assets/menu/fadebg_top.tga"
-							forecolor		TABTOP_FORECOLOR_COMMA
-							hovercolor		TABTOP_HOVERCOLOR_COMMA
-							activeColor		TABTOP_ACTIVECOLOR_COMMA
-							hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-							text			"1"
-							textaligny		-2
-							seperatorLines	1, 1, 1, 1
-							seperatorMargin	50
-
-							onTabActivate {
-								set "cmd" "play guisounds_menu_tabflip" ;
+					windowDef Multiplayer_Settings_ModelList {
+						rect		150, 0, 380, 230
+						
+						windowDef Multiplayer_Settings_Model0 {
+							rect			20, 15, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait0"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
 							}
-
-							windowDef Multiplayer_Settings_Model0 {
-								rect			6, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait0"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 0";
-								}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model1 {
-								rect			68, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait1"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 1";
-								}
-							}
-							windowDef Multiplayer_Settings_Model2 {
-								rect			130, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait2"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 2";
-								}
-							}
-							windowDef Multiplayer_Settings_Model3 {
-								rect			192, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait3"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 3";
-								}
-							}
-							windowDef Multiplayer_Settings_Model4 {
-								rect			254, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait4"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 4";
-								}
-							}
-//row 2
-							windowDef Multiplayer_Settings_Model5 {
-								rect			6, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait5"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 5";
-								}
-							}
-							windowDef Multiplayer_Settings_Model6 {
-								rect			68, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait6"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 6";
-								}
-							}
-							windowDef Multiplayer_Settings_Model7 {
-								rect			130, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait7"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 7";
-								}
-							}
-							windowDef Multiplayer_Settings_Model8 {
-								rect			192, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait8"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 8";
-								}
-							}
-							windowDef Multiplayer_Settings_Model9 {
-								rect			254, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait9"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 9";
-								}
-							}
-//row 3
-							windowDef Multiplayer_Settings_Model10 {
-								rect			6, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait10"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 10";
-								}
-							}
-							windowDef Multiplayer_Settings_Model11 {
-								rect			68, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait11"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 11";
-								}
-							}
-							windowDef Multiplayer_Settings_Model12 {
-								rect			130, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait12"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 12";
-								}
-							}
-							windowDef Multiplayer_Settings_Model13 {
-								rect			192, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait13"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 13";
-								}
-							}
-							windowDef Multiplayer_Settings_Model14 {
-								rect			254, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait14"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 14";
-								}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 0";
 							}
 						}
-						tabDef MPS_Page2 {
-							rect			0, 20, 318, 190
-							backcolor		TAB_PAGE_BACKCOLOR_COMMA
-							background		"guis/assets/menu/fadebg_top.tga"
-							forecolor		TABTOP_FORECOLOR_COMMA
-							hovercolor		TABTOP_HOVERCOLOR_COMMA
-							activeColor		TABTOP_ACTIVECOLOR_COMMA
-							hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-							text			"2"
-							textaligny		-2
-							seperatorLines	1, 1, 1, 1
-							seperatorMargin	50
-
-							onTabActivate {
-								set "cmd" "play guisounds_menu_tabflip" ;
+						windowDef Multiplayer_Settings_Model1 {
+							rect			90, 15, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait1"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
 							}
-
-							windowDef Multiplayer_Settings_Model15 {
-								rect			6, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait15"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 15";
-								}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model16 {
-								rect			68, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait16"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 16";
-								}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 1";
 							}
-							windowDef Multiplayer_Settings_Model17 {
-								rect			130, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait17"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 17";
-								}
+						}
+						windowDef Multiplayer_Settings_Model2 {
+							rect			160, 15, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait2"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model18 {
-								rect			192, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait18"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 18";
-								}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model19 {
-								rect			254, 5, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait19"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 19";
-								}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 2";
 							}
-//row 2
-							windowDef Multiplayer_Settings_Model20 {
-								rect			6, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait20"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 20";
-								}
+						}
+						windowDef Multiplayer_Settings_Model3 {
+							rect			230, 15, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait3"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model21 {
-								rect			68, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait21"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 21";
-								}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model22 {
-								rect			130, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait22"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 22";
-								}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 3";
 							}
-							windowDef Multiplayer_Settings_Model23 {
-								rect			192, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait23"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 23";
-								}
+						}
+						windowDef Multiplayer_Settings_Model4 {
+							rect			300, 15, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait4"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model24 {
-								rect			254, 66, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait24"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 24";
-								}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
 							}
-//row 3
-							windowDef Multiplayer_Settings_Model25 {
-								rect			6, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait25"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 25";
-								}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 4";
 							}
-							windowDef Multiplayer_Settings_Model26 {
-								rect			68, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait26"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 26";
-								}
+						}
+						windowDef Multiplayer_Settings_Model5 {
+							rect			20, 85, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait5"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model27 {
-								rect			130, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait27"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 27";
-								}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
 							}
-							windowDef Multiplayer_Settings_Model28 {
-								rect			192, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait28"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 28";
-								}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 5";
 							}
-							windowDef Multiplayer_Settings_Model29 {
-								rect			254, 127, 58, 58
-								matcolor		MODELLIST_DARKCOLOR_COMMA
-								background		"gui::mp_modelportrait29"
-								onMouseEnter {
-									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
-								}
-								onMouseExit {
-									set "matcolor" MODELLIST_DARKCOLOR_STRING;
-								}
-								onAction {
-									set "cmd" "play guisounds_menu_clickin" ;
-									set "cmd" "click_modelList 29";
-								}
+						}
+						windowDef Multiplayer_Settings_Model6 {
+							rect			90, 85, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait6"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 6";
+							}
+						}
+						windowDef Multiplayer_Settings_Model7 {
+							rect			160, 85, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait7"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 7";
+							}
+						}
+						windowDef Multiplayer_Settings_Model8 {
+							rect			230, 85, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait8"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 8";
+							}
+						}
+						windowDef Multiplayer_Settings_Model9 {
+							rect			300, 85, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait9"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 9";
+							}
+						}
+						windowDef Multiplayer_Settings_Model10 {
+							rect			20, 155, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait10"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 10";
+							}
+						}
+						windowDef Multiplayer_Settings_Model11 {
+							rect			90, 155, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait11"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 11";
+							}
+						}
+						windowDef Multiplayer_Settings_Model12 {
+							rect			160, 155, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait12"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 12";
+							}
+						}
+						windowDef Multiplayer_Settings_Model13 {
+							rect			230, 155, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait13"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 13";
+							}
+						}
+						windowDef Multiplayer_Settings_Model14 {
+							rect			300, 155, 64, 64
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait14"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 14";
 							}
 						}
 					}
@@ -785,46 +463,6 @@
 						}
 					}
 
-					buttonDef Multiplayer_Settings_CDKey {
-						rect			0, 60, 530, 25
-						leftMat			"guis/assets/menu/textbar_corner.tga"
-						middleMat		"guis/assets/menu/textbarstrip.tga"
-						rightMat		"guis/assets/menu/textbar_invcorner.tga"
-
-						windowDef Multiplayer_Settings_CDKeyTitle {
-							rect		0, 0, 265, 25
-							text		"#str_20141"
-							textscale	0.33
-							textalign	1
-							textaligny	-1
-							shadow		1
-							forecolor	STATIC_FORECOLOR_COMMA
-						}
-						windowDef Multiplayer_Settings_Demo {
-							rect		265, 0, 265, 25
-							text    	"#str_42115"
-							textscale	0.33
-							textaligny	-1
-							shadow		1
-							forecolor	EDITABLE_FORECOLOR_COMMA
-							visible		("gui::isdemo" != 0)
-						}
-						buttonDef Multiplayer_Settings_CDKeyButton {
-							rect		265, 0, 265, 25
-							text    	"gui::str_d3key_state"	//fixme: make str_preykey_state
-							textscale	0.33
-							textaligny	-1
-							shadow		1
-							forecolor	EDITABLE_FORECOLOR_COMMA
-							hovercolor	EDITABLE_HOVERCOLOR_COMMA
-							visible		("gui::isdemo" == 0)
-							onActionRelease {
-								set "cmd" "play guisounds_menu_clickin" ;
-								set	"cmd" "SetCDKey" ;
-							}
-						}
-					}
-					
 					buttonDef Multiplayer_Settings_Autoswitch {
 						rect			0, 90, 530, 25
 						leftMat			"guis/assets/menu/textbar_corner.tga"
@@ -863,7 +501,7 @@
 				hovercolor		TABTOP_HOVERCOLOR_COMMA
 				activeColor		TABTOP_ACTIVECOLOR_COMMA
 				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
-				text			"#str_20142"
+				text			""
 				seperatorLines	1, 1, 1, 1
 				seperatorMargin	1
 
@@ -910,31 +548,6 @@
 							onTabActivate {
 								set "cmd" "play guisounds_menu_tabflip" ;
 							}
-
-							buttonDef MCS_ServerName {
-								rect			20, 10, 400, 24
-								leftMat			"guis/assets/menu/textbar_corner.tga"
-								middleMat		"guis/assets/menu/textbarstrip.tga"
-								rightMat		"guis/assets/menu/textbar_invcorner.tga"
-								text			"#str_20144"
-								textalignx		10
-								textaligny		-2
-								shadow			1
-								forecolor		STATIC_FORECOLOR_COMMA
-
-								editDef MCS_ServerNameEdit {
-									rect		140, 0, 260, 24
-									cvar		"si_name"
-									maxchars 	24
-									textaligny	-2
-									shadow		1
-									forecolor	EDITABLE_FORECOLOR_COMMA
-									hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									onEnter {
-										setFocus "MCS_Create";	// set focus somewhere else
-									}
-								}
-							}
 							
 							windowDef MCS_Choices {
 								rect			20, 32, 400, 310
@@ -964,35 +577,9 @@
 								windowDef MCS_Map {
 									rect				0, 0, 190, 310
 									backcolor			0, 0, 0, 0
-									
-									windowDef MCS_MapImageBG {
-										rect			0, 9, 170, 120
-										backcolor		0, 0, 0, 1
-										forecolor		1, 1, 1, 1
-										text			"#str_20145"
-										textscale		0.33
-										textalign		1
-										textaligny		20
-										forecolor		STATIC_FORECOLOR_COMMA
 
-										windowDef MCS_MapImage {
-											rect		0, 0, 170, 120
-											background  "gui::current_levelshot"
-										}
-
-										superWindowDef MCS_MapImageFrame {
-											rect		0, 0, 170, 120
-											cornerMat	"guis/assets/menu/pictureframe_corner.tga"
-											leftMat		"guis/assets/menu/pictureframe_left.tga"
-											topMat		"guis/assets/menu/pictureframe_strip.tga"
-											margins		0, 0, 0, 0	// left, right, top, bottom
-											cornerSize	4, 4
-											edgeSize	4, 4
-										}
-									}
-									
 									windowDef MCS_MapTitle {
-										rect			0, 133, 170, 25
+										rect			0, 0, 170, 25
 										forecolor		LISTHEADING_FORECOLOR_COMMA
 										text			"#str_20146"
 										textscale		0.35
@@ -1038,35 +625,6 @@
 									}
 								}
 
-								// Right side
-								buttonDef MCS_ServerType {
-									rect			180, 9, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									
-									windowDef MCS_ServerType_text {
-										rect		10, 0, 200, 24
-										text		"#str_20147"
-										forecolor	STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-									choiceDef MCS_ServerTypeEdit {
-										rect		80, 0, 115, 24
-										gui			"server_type"
-										choices		"#str_20148"
-										choiceType	0
-										textscale	0.33
-										textalign	2
-										textaligny	0
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									}
-								}
-
 								buttonDef MCS_GameType {
 									rect			180, 36, 220, 24
 									leftMat			"guis/assets/menu/textbar_corner.tga"
@@ -1099,256 +657,6 @@
 										onAction {
 											set "cmd" "MAPScan" ;
 											resetTime "MCS_TeamDamage" "0";
-										}
-									}
-								}
-
-								buttonDef MCS_TeamDamage {
-									rect			180, 63, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									
-									windowDef MCS_TeamDamage_text {
-										rect		10, 0, 200, 24
-										text			"#str_20151"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-									
-									onTime 0 {
-										if ( "gui::currentGameType" == 2 ) {
-											set "MCS_TeamDamageEdit::forecolor" EDITABLE_FORECOLOR_STRING ;
-											set "MCS_TeamDamageEdit::noevents" "0"
-										} else {
-											set "MCS_TeamDamageEdit::forecolor" EDITABLE_FORECOLOR_GRAYED_STRING ;
-											set "MCS_TeamDamageEdit::noevents" "1"
-										}
-									}
-
-									choiceDef MCS_TeamDamageEdit {
-										rect		80, 0, 115, 24
-										choices		"#str_20152"
-										cvar		"si_teamDamage"
-										choiceType	0
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_GRAYED_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-										noevents	1
-									}
-								}
-
-								buttonDef MCS_FragLimit {
-									rect			180, 90, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									
-									windowDef MCS_FragLimit_text {
-										rect		10, 0, 200, 24
-										text			"#str_20153"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-									
-									editDef MCS_FragLimitEdit {
-										rect		177, 0, 35, 24
-										cvar		"si_fragLimit"
-										maxchars	3
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-										onEnter {
-											setFocus "MCS_Create";	// set focus somewhere else
-										}
-									}
-								}
-
-								buttonDef MCS_TimeLimit {
-									rect			180, 117, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"							
-									
-									windowDef MCS_TimeLimit_text {
-										rect		10, 0, 200, 24
-										text			"#str_20154"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-
-									editDef MCS_TimeLimitEdit {
-										rect		179, 0, 35, 24
-										cvar		"si_timeLimit"
-										maxchars	2
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-										onEnter {
-											setFocus "MCS_Create";	// set focus somewhere else
-										}
-									}
-								}
-
-								buttonDef MCS_MaxPlayers {
-									rect			180, 144, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									
-									windowDef MCS_MaxPlayers_text {
-										rect		10, 0, 200, 24
-										text			"#str_20155"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-
-									editDef MCS_MaxPlayersEdit {
-										rect		185, 0, 35, 24
-										cvar		"si_maxPlayers"
-										maxchars 	1
-										cvarmax		8
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-										onEnter {
-											setFocus "MCS_Create";	// set focus somewhere else
-										}
-									}
-								}
-
-								buttonDef MCS_DoWarmup {
-									rect			180, 171, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									
-									windowDef MCS_DoWarmup_text {
-										rect		10, 0, 200, 24
-										text			"#str_20156"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-
-									choiceDef MCS_DoWarmupEdit {
-										rect		80, 0, 115, 24
-										choices		"#str_20152"
-										cvar		"si_warmup"
-										choiceType	0
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									}
-								}
-
-								buttonDef MCS_AllowSpectators {
-									rect			180, 198, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									
-									windowDef MCS_AllowSpectators_text {
-										rect		10, 0, 200, 24
-										text			"#str_20157"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-
-									choiceDef MCS_AllowSpectatorsEdit {
-										rect		80, 0, 115, 24
-										choices		"#str_20152"
-										cvar		"si_spectators"
-										choiceType	0
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									}
-								}
-
-								buttonDef MCS_Dedicated {
-									rect			180, 225, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									
-									windowDef MCS_Dedicated_text {
-										rect		10, 0, 200, 24
-										text			"#str_20158"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-
-									choiceDef MCS_DedicatedEdit {
-										rect		80, 0, 115, 24
-										choices		"#str_20152"
-										gui			"dedicated"
-										choiceType	0
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-									}
-								}
-								
-								buttonDef MCS_Punkbuster {
-									rect			180, 252, 220, 24
-									leftMat			"guis/assets/menu/textbar_corner.tga"
-									middleMat		"guis/assets/menu/textbarstrip.tga"
-									rightMat		"guis/assets/menu/textbar_invcorner.tga"
-									visible			("gui::isdemo" == 0)
-									
-									windowDef MCS_Punkbuster_text {
-										rect		10, 0, 200, 24
-										text			"#str_20159"
-										forecolor		STATIC_FORECOLOR_COMMA
-										textscale	0.33
-										textaligny	0
-										shadow		1
-									}
-
-									choiceDef MCS_PunkbusterChoice {
-										rect		80, 0, 115, 24
-										choices		"#str_20152"
-										gui			"gui_sv_punkbuster"
-										choiceType	0
-										textalign	2
-										textscale	0.33
-										shadow		1
-										forecolor	EDITABLE_FORECOLOR_COMMA
-										hovercolor	EDITABLE_HOVERCOLOR_COMMA
-										onAction {
-											if ("gui::gui_sv_punkbuster" != 0) {
-												// If on (about to toggle off), PB requires restart for malicious admins
-												resetTime "AnimMustRestart_Up" "0" ;
-											}
-											set "cmd" "punkbuster server";	 
 										}
 									}
 								}
@@ -1938,7 +1246,7 @@
 					visible		("gui::isdemo" != 0)
 
 					//				GM	PB	LK	SERVER	PLAYERS PING TYPE MAP
-					tabstops		"0, 17, 25, 52, 247, 316, 356, 453"
+					tabstops		"0, 17, 25, 52,		247,	316, 356, 453"
 					tabAligns		"1, 1, 1, 0, 1, 1, 0, 0"					// LEFT, CENTER, CENTER, CENTER, CENTER, LEFT, LEFT
 					tabTypes		"1, 1, 1, 0, 0, 0, 0, 0"					// ICON, ICON, ICON, TEXT, TEXT, TEXT, TEXT, TEXT
 					tabIconSizes	"13,13, 13,13, 13,13, 0,0, 0,0, 0,0, 0,0, 0,0"
@@ -1955,10 +1263,10 @@
 						set	"cmd" "play guisounds_menu_tick ; serverList" ;
 						set "LANLevelshot::matcolor" "1 1 1 1" ;
 						set "LANLevelshot::forecolor" "0.6 0.8 0.8 0" ;
-						resetTime "MultiplayerGlobal" "0";
+						resetTime "MFS_Summary_JoinGame" "0" ;
 					}
 					onEnter {
-						if ("MultiplayerGlobal::canjoin" != 0) {
+						if ("MFS_Summary_JoinGame::canjoin" != 0) {
 							set "cmd" "play guisounds_menu_clickin" ;
 							set "cmd" "LANConnect" ;
 						}
@@ -1981,10 +1289,9 @@
 					listName 	"serverlist"
 					visible			("gui::isdemo" == 0)
 
-//HUMANHEAD PATCH pdm: updated tabstops and aligns so punkbuster icons shows up properly
 					//				GM	PB	LK	SERVER	PLAYERS PING TYPE MAP
-					tabstops		"0, 15, 31, 52,	247, 316, 356, 453"
-					tabAligns		"0, 0, 0, 0, 1, 1, 0, 0"					// LEFT, LEFT, LEFT, LEFT, CENTER, CENTER, LEFT, LEFT
+					tabstops		"0, 17, 25, 52,		247,	316, 356, 453"
+					tabAligns		"1, 1, 1, 0, 1, 1, 0, 0"					// LEFT, CENTER, CENTER, CENTER, CENTER, LEFT, LEFT
 					tabTypes		"1, 1, 1, 0, 0, 0, 0, 0"					// ICON, ICON, ICON, TEXT, TEXT, TEXT, TEXT, TEXT
 					tabIconSizes	"13,13, 13,13, 13,13, 0,0, 0,0, 0,0, 0,0, 0,0"
 					tabIconVOffset	"1, 1, 1, 0, 0, 0, 0, 0"
@@ -2000,10 +1307,10 @@
 						set	"cmd" "play guisounds_menu_tick ; serverList" ;
 						set "LANLevelshot::matcolor" "1 1 1 1" ;
 						set "LANLevelshot::forecolor" "0.6 0.8 0.8 0" ;
-						resetTime "MultiplayerGlobal" "0";
+						resetTime "MFS_Summary_JoinGame" "0" ;
 					}
 					onEnter {
-						if ("MultiplayerGlobal::canjoin" != 0) {
+						if ("MFS_Summary_JoinGame::canjoin" != 0) {
 							set "cmd" "play guisounds_menu_clickin" ;
 							set "cmd" "LANConnect" ;
 						}
@@ -2292,7 +1599,7 @@
 													resetTime "AnimMustRestart_Up" "0" ;
 												}
 												set "cmd" "punkbuster client";
-												resetTime "MultiplayerGlobal" "0";
+												resetTime "MFS_Summary_JoinGame" "0" ;
 											}
 										}
 									}
@@ -2313,8 +1620,31 @@
 										rightHoverMat		"guis/assets/menu/button/rollover_invcorner"
 										edgeWidth			12
 										noevents			1
+										float canjoin		1
+										onTime 0 {
+											// Alerted that status may have changed
+											if ( "gui::serverlist_sel_0" >= 0 && ("gui::gui_cl_punkbuster" != 0 || "gui::server_punkbuster" == 0)) {
+												// Allow Join: only if valid choice, and either pbclient is enabled or not a pb server
+												set "MFS_Summary_JoinGame::noevents" "0" ;
+												set "MFS_Players_JoinGame::noevents" "0" ;
+												set "MFS_Details_JoinGame::noevents" "0" ;
+												set "MFS_Summary_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
+												set "MFS_Players_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
+												set "MFS_Details_JoinGame::forecolor" BUTTON_FORECOLOR_STRING ;
+												set "MFS_Summary_JoinGame::canjoin" 1;
+											} else {
+												// Disallow Join
+												set "MFS_Summary_JoinGame::noevents" "1" ;
+												set "MFS_Players_JoinGame::noevents" "1" ;
+												set "MFS_Details_JoinGame::noevents" "1" ;
+												set "MFS_Summary_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+												set "MFS_Players_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+												set "MFS_Details_JoinGame::forecolor" BUTTON_FORECOLOR_GREYED_STRING ;
+												set "MFS_Summary_JoinGame::canjoin" 0;
+											}
+										}
 										onAction {
-											if ("MultiplayerGlobal::canjoin" != 0) {
+											if ("MFS_Summary_JoinGame::canjoin" != 0) {
 												set	"cmd"	"play guisounds_menu_clickin ; LANConnect" ;
 											}
 										}
@@ -2457,7 +1787,7 @@
 										edgeWidth			12
 										noevents			1
 										onAction {
-											if ("MultiplayerGlobal::canjoin" != 0) {
+											if ("MFS_Summary_JoinGame::canjoin" != 0) {
 												set	"cmd"	"play guisounds_menu_clickin ; LANConnect" ;
 											}
 										}
@@ -2613,7 +1943,7 @@
 										edgeWidth			12
 										noevents			1
 										onAction {
-											if ("MultiplayerGlobal::canjoin" != 0) {
+											if ("MFS_Summary_JoinGame::canjoin" != 0) {
 												set	"cmd"	"play guisounds_menu_clickin ; LANConnect" ;
 											}
 										}
@@ -2777,7 +2107,7 @@
 
 								onAction {
 									set "cmd" "play guisounds_menu_connect ; FilterServers" ;
-									resetTime "MultiplayerGlobal" "0";
+									resetTime "MFS_Summary_JoinGame" "0" ;
 								}
 							}
 						}	// MFS_FiltersTab
@@ -2865,4 +2195,3 @@
 			}
 		}
 	}
-
