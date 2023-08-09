@@ -194,24 +194,6 @@ idMat3 hhFireController::DetermineProjectileAxis( const idMat3& axis ) {
 
 	projectileAngles[2] = axis.ToAngles()[2];
 
-	//Lubos BEGIN
-	idEntity *owner = GetProjectileOwner();
-	if ( owner && owner->IsType( hhPlayer::Type ) ) {
-		hhPlayer *player = static_cast<hhPlayer *>(owner);
-		if (game->isVR && !pVRClientInfo->vehicleMode) {
-			idMat3 axis = projectileAngles.ToMat3();
-			idVec3 origin = muzzleOrigin;
-			if (pVRClientInfo->weaponZoom && player->renderView) {
-				origin = player->renderView->vieworg;
-				axis = player->renderView->viewaxis;
-			} else {
-				ApplyVRWeaponTransform(axis, origin);
-			}
-			return axis;
-		}
-	}
-	//Lubos END
-
 	return projectileAngles.ToMat3();
 }
 
