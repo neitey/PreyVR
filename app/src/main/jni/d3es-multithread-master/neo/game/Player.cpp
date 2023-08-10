@@ -3610,7 +3610,7 @@ void idPlayer::UpdateSpectating( void ) {
 	} else if ( usercmd.upmove > 0 ) {
 		SpectateFreeFly( false );
 	} else if ( usercmd.buttons & BUTTON_ATTACK ) {
-		SpectateCycle();
+		//Lubos:SpectateCycle();
 	}
 }
 

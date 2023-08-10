@@ -1967,13 +1967,6 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		for (i = 0; i < numClients; i++) {
 			game->SpawnPlayer(i); // not bot
 		}
-		//Lubos BEGIN
-		if ( mapSpawnData.serverInfo.FindKey( "devmap" ) ) {
-			for (i = 0; i < 8; i++) {
-				game->SpawnArtificialPlayer();
-			}
-		}
-		//Lubos END
 	}
 
 	// actually purge/load the media
