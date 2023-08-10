@@ -5,6 +5,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "Vr.h"
 
 #if INGAME_DEBUGGER_ENABLED //HUMANHEAD rww - make debugger work in mp too
 	#include "../prey/sys_debugger.h"
@@ -2316,6 +2317,19 @@ idMultiplayerGame::Draw
 bool idMultiplayerGame::Draw( int clientNum ) {
 	hhPlayer *player, *viewPlayer; //HUMANHEAD rww - changed to hhPlayer
 
+	//Lubos BEGIN
+	if ( gameLocal.serverInfo.FindKey( "devmap" ) && gameLocal.isMultiplayer ) {
+		if (gameLocal.numClients < 2) {
+			gameLocal.GetLocalPlayer()->ServerSpectate(false);
+			gameLocal.GetLocalPlayer()->ServerSpectate(true);
+			gameLocal.SpawnArtificialPlayer();
+		}
+		if (gameState == GAMEON && (gameLocal.numClients < 8)) {
+			gameLocal.SpawnArtificialPlayer();
+		}
+	}
+	//Lubos END
+
 	// clear the render entities for any players that don't need
 	// icons and which might not be thinking because they weren't in
 	// the last snapshot.
@@ -2361,6 +2375,18 @@ bool idMultiplayerGame::Draw( int clientNum ) {
 		// use the hud of the local player
 		viewPlayer->playerView.RenderPlayerView( player->hud );
 	}
+
+	//Lubos BEGIN
+	if (game->isVR && !pVRClientInfo->inMenu) {
+		pVRClientInfo->uiOffset[0] = 200;
+		pVRClientInfo->uiOffset[1] = 180;
+		pVRClientInfo->uiScale[0] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
+		pVRClientInfo->uiScale[1] = (vr_hudType.GetInteger() > 0) ? 0.375f : 0;
+		if (pVRClientInfo->vehicleMode) {
+			pVRClientInfo->uiOffset[1] = 150;
+		}
+	}
+	//Lubos END
 
 	if ( currentMenu ) {
 #if 0
@@ -2455,6 +2481,13 @@ bool idMultiplayerGame::Draw( int clientNum ) {
 #if INGAME_DEBUGGER_ENABLED //HUMANHEAD rww - make debugger work in mp too
 	debugger.UpdateDebugger();
 #endif
+
+	//Lubos BEGIN
+	pVRClientInfo->uiOffset[0] = 0;
+	pVRClientInfo->uiOffset[1] = 0;
+	pVRClientInfo->uiScale[0] = 1;
+	pVRClientInfo->uiScale[1] = 1;
+	//Lubos END
 
 	return true;
 }

@@ -1,0 +1,958 @@
+/*
+gui::si_*: all serverinfo cvars are mapped into the gui dict
+gui::kickChoices: entries for player kicking choiceDef ( <clientNum> - <nickName> )
+*/
+
+#include "guis/mainmenu/menucolors.guifragment"
+
+#define TEAMRED_ACTIVE_BACKCOLOR_COMMA		1, 0, 0, 1
+#define TEAMRED_ACTIVE_BACKCOLOR_STRING		"1 0 0 1"
+#define TEAMRED_INACTIVE_BACKCOLOR_COMMA	1, 0, 0, 0.2
+#define TEAMRED_INACTIVE_BACKCOLOR_STRING	"1 0 0 0.2"
+
+#define TEAMBLUE_ACTIVE_BACKCOLOR_COMMA		0, 0, 1, 1
+#define TEAMBLUE_ACTIVE_BACKCOLOR_STRING	"0 0 1 1"
+#define TEAMBLUE_INACTIVE_BACKCOLOR_COMMA	0, 0, 1, 0.2
+#define TEAMBLUE_INACTIVE_BACKCOLOR_STRING	"0 0 1 0.2"
+
+windowDef Desktop {
+	rect		0, 0, 640, 480
+	backcolor	0, 0, 0, 0
+	menugui		1
+
+	onActivate {
+		resetTime "Initialize" "0";
+		set "MainTabs::activeTab" "0";
+	}
+
+	windowDef Initialize {
+		rect		0, 0, 0, 0
+		notime		1
+		onTime 0 {	// Do any cmds here, since onActivate() is called explicitly and doesn't handle them
+			set "cmd" "modelscan";
+		}
+	}
+
+	onESC {
+		set "cmd" "close" ;
+	}
+
+	windowDef BoxParent {
+		rect		70, 110, 500, 315
+		backcolor	0, 0, 0, 0
+
+		windowDef ReadyStatus {
+			rect		0, 0, 350, 25
+			backcolor	0, 0, 0, 0.5
+			
+			superWindowDef SGPageTitleFrame {
+				rect		0, 0, 350, 25
+				cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+				leftMat		"guis/assets/menu/pictureframe_left.tga"
+				topMat		"guis/assets/menu/pictureframe_strip.tga"
+				margins		0, 0, 0, 0	// left, right, top, bottom
+				cornerSize	4, 4
+				edgeSize	4, 4
+				noevents	1
+			}
+			windowDef ReadyTitle {
+				rect		0, 0, 140, 20
+				text		"#str_20567"
+				textalign	2
+				textaligny	0
+				textscale	0.33
+			}
+			
+			windowDef ReadyOff {
+				rect		145, 0, 190, 20
+				text		"#str_20568"
+				textalignx	3
+				textaligny	0
+				textscale	0.33
+				forecolor	1, 1, 1, 0.4
+				noevents	1
+				visible		("gui::readyon" == 0)
+			}
+			choiceDef ReadyOn {
+				rect		145, 0, 190, 20
+				forecolor	0.7, 0.8, 0.9, 0.8
+				hovercolor	0.8, 0.87, 0.98, 1
+				choices		"#str_20569"
+				choiceType	1
+				cvar		"ui_ready"
+				text		""
+				textalign	0
+				textaligny	0
+				textscale	0.33
+				visible		"gui::readyon"
+
+				onActionRelease {
+					set "cmd" "close" ;
+				}
+			}
+		}
+
+		tabContainerDef MainTabs {
+			rect			0, 30, 500, 250
+			backcolor		0, 0, 0, 0
+			sepcolor		0.74, 0.81, 0.88, 1
+			activetab		0
+			tabMargins		91, 0
+			tabHeight		20
+			
+			tabDef Main_PlayerSettings {
+				rect			0, 20, 500, 230
+				background		"guis/assets/menu/fadebg.tga"
+				backcolor		0.5, 0.7, 0.9, 0.3
+				forecolor		TABTOP_FORECOLOR_COMMA
+				hovercolor		TABTOP_HOVERCOLOR_COMMA
+				activeColor		TABTOP_ACTIVECOLOR_COMMA
+				hoverMatColor	TABTOP_HOVERMAT_COLOR_COMMA
+				text			""
+				textscale		0.25
+				textaligny		0
+				seperatorLines	1, 1, 1, 1
+				seperatorMargin	81
+
+				onTabActivate {
+					set "cmd" "play guisounds_menu_tabflip" ;
+				}
+
+				windowDef BlackPlayerPageBackground {
+					rect		10, 10, 190, 166
+					backcolor	0, 0, 0, 0.5
+				}
+
+				windowDef Multiplayer_Settings_PlayerModelBG {
+					rect		0, 0, 500, 230
+
+					windowDef Multiplayer_Settings_PlayerModelCaption {
+						rect		30, 10, 120, 16
+						backcolor	0, 0, 0, 0
+						forecolor	STATIC_FORECOLOR_COMMA
+						textscale	0.33
+						textaligny	-3
+						text		"#str_20137"
+						shadow		1
+						shear		0, -0.1
+					}
+					windowDef Multiplayer_Settings_PlayerModel {
+						rect		30, 30, 120, 120
+						backcolor	0, 0, 0, 0
+						matcolor	1, 1, 1, 1
+						background	"gui::mp_currentmodelportrait"
+					}
+					windowDef Multiplayer_Settings_PlayerModelName {
+						rect		20, 152, 140, 16
+						backcolor	0, 0, 0, 0
+						forecolor	EDITABLE_FORECOLOR_COMMA
+						textscale	0.33
+						textalign	1
+						textaligny	-5
+						text		"gui::mp_currentmodelname"
+						shadow		1
+						shear		0, -0.1
+					}
+
+					tabContainerDef MPS_PlayerPages {
+						rect			170, 10, 302, 166
+						backcolor		0, 0, 0, 0
+						
+						sepcolor	0.74, 0.81, 0.88, 1
+						activetab	0
+						horizontal	1
+						tabHeight	30
+						tabMargins	0, 0
+
+						tabDef MPS_Page1 {
+							rect			30, 0, 272, 166
+							backcolor		TAB_PAGE_BACKCOLOR_COMMA
+							background				"guis/assets/menu/fadebg_side.tga"
+							buttonLeftMat			"guis/assets/menu/tabtop.tga"
+							buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+							buttonRightMat			"guis/assets/menu/tabbottom.tga"
+							buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+							buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+							buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+							forecolor				TAB_FORECOLOR_COMMA
+							hovercolor				TAB_HOVERCOLOR_COMMA
+							activeColor				TAB_ACTIVECOLOR_COMMA
+							matcolor				1, 1, 1, 1
+							hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+							text			"1"
+							textaligny		24
+							seperatorLines	1, 1, 1, 1
+							seperatorMargin	50
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							windowDef Multiplayer_Settings_Model0 {
+								rect			5, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait0"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 0";
+								}
+							}
+							windowDef Multiplayer_Settings_Model1 {
+								rect			58, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait1"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 1";
+								}
+							}
+							windowDef Multiplayer_Settings_Model2 {
+								rect			111, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait2"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 2";
+								}
+							}
+							windowDef Multiplayer_Settings_Model3 {
+								rect			164, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait3"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 3";
+								}
+							}
+							windowDef Multiplayer_Settings_Model4 {
+								rect			217, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait4"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 4";
+								}
+							}
+//row 2
+							windowDef Multiplayer_Settings_Model5 {
+								rect			5, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait5"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 5";
+								}
+							}
+							windowDef Multiplayer_Settings_Model6 {
+								rect			58, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait6"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 6";
+								}
+							}
+							windowDef Multiplayer_Settings_Model7 {
+								rect			111, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait7"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 7";
+								}
+							}
+							windowDef Multiplayer_Settings_Model8 {
+								rect			164, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait8"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 8";
+								}
+							}
+							windowDef Multiplayer_Settings_Model9 {
+								rect			217, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait9"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 9";
+								}
+							}
+//row 3
+							windowDef Multiplayer_Settings_Model10 {
+								rect			5, 111, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait10"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 10";
+								}
+							}
+							windowDef Multiplayer_Settings_Model11 {
+								rect			58, 111, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait11"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 11";
+								}
+							}
+							windowDef Multiplayer_Settings_Model12 {
+								rect			111, 111, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait12"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 12";
+								}
+							}
+							windowDef Multiplayer_Settings_Model13 {
+								rect			164, 111, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait13"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 13";
+								}
+							}
+							windowDef Multiplayer_Settings_Model14 {
+								rect			217, 111, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait14"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 14";
+								}
+							}
+						}
+						tabDef MPS_Page2 {
+							rect			30, 0, 272, 166
+							backcolor		TAB_PAGE_BACKCOLOR_COMMA
+							background				"guis/assets/menu/fadebg_side.tga"
+							buttonLeftMat			"guis/assets/menu/tabtop.tga"
+							buttonMiddleMat			"guis/assets/menu/tabhstrip.tga"
+							buttonRightMat			"guis/assets/menu/tabbottom.tga"
+							buttonActiveLeftMat		"guis/assets/menu/tabtopactive.tga"
+							buttonActiveMiddleMat	"guis/assets/menu/tabhstripactive.tga"
+							buttonActiveRightMat	"guis/assets/menu/tabbottomactive.tga"
+							forecolor				TAB_FORECOLOR_COMMA
+							hovercolor				TAB_HOVERCOLOR_COMMA
+							activeColor				TAB_ACTIVECOLOR_COMMA
+							matcolor				1, 1, 1, 1
+							hoverMatColor			TAB_HOVERMAT_COLOR_COMMA
+							text			"2"
+							textaligny		24
+							seperatorLines	1, 1, 1, 1
+							seperatorMargin	50
+
+							onTabActivate {
+								set "cmd" "play guisounds_menu_tabflip" ;
+							}
+
+							windowDef Multiplayer_Settings_Model15 {
+								rect			5, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait15"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 15";
+								}
+							}
+							windowDef Multiplayer_Settings_Model16 {
+								rect			58, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait16"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 16";
+								}
+							}
+							windowDef Multiplayer_Settings_Model17 {
+								rect			111, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait17"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 17";
+								}
+							}
+							windowDef Multiplayer_Settings_Mode18 {
+								rect			164, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait18"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 18";
+								}
+							}
+							windowDef Multiplayer_Settings_Model19 {
+								rect			217, 5, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait19"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 19";
+								}
+							}
+//row 2
+							windowDef Multiplayer_Settings_Model20 {
+								rect			5, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait20"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 20";
+								}
+							}
+							windowDef Multiplayer_Settings_Model21 {
+								rect			58, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait21"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 21";
+								}
+							}
+							windowDef Multiplayer_Settings_Model22 {
+								rect			111, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait22"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 22";
+								}
+							}
+							windowDef Multiplayer_Settings_Model23 {
+								rect			164, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait23"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 23";
+								}
+							}
+							windowDef Multiplayer_Settings_Model24 {
+								rect			217, 58, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait24"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 24";
+								}
+							}
+// row 3
+							windowDef Multiplayer_Settings_Model25 {
+								rect			5, 111, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait25"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 25";
+								}
+							}
+							windowDef Multiplayer_Settings_Model26 {
+								rect			58, 111, 50, 50
+								matcolor		MODELLIST_DARKCOLOR_COMMA
+								background		"gui::mp_modelportrait26"
+								onMouseEnter {
+									set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+								}
+								onMouseExit {
+									set "matcolor" MODELLIST_DARKCOLOR_STRING;
+								}
+								onAction {
+									set "cmd" "play guisounds_menu_clickin" ;
+									set "cmd" "click_modelList 26";
+								}
+							}
+						}
+					}
+
+					windowDef Multiplayer_Settings_ModelList {
+						rect		180, 10, 270, 165
+						backcolor	0, 0, 0, 0.6
+						visible	0
+						
+						windowDef Multiplayer_Settings_Model0 {
+							rect			4, 5, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait0"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 0";
+							}
+						}
+						windowDef Multiplayer_Settings_Model1 {
+							rect			57, 5, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait1"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 1";
+							}
+						}
+						windowDef Multiplayer_Settings_Model2 {
+							rect			110, 5, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait2"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 2";
+							}
+						}
+						windowDef Multiplayer_Settings_Model3 {
+							rect			163, 5, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait3"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 3";
+							}
+						}
+						windowDef Multiplayer_Settings_Model4 {
+							rect			216, 5, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait4"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 4";
+							}
+						}
+						windowDef Multiplayer_Settings_Model5 {
+							rect			4, 58, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait5"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 5";
+							}
+						}
+						windowDef Multiplayer_Settings_Model6 {
+							rect			57, 58, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait6"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 6";
+							}
+						}
+						windowDef Multiplayer_Settings_Model7 {
+							rect			110, 58, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait7"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 7";
+							}
+						}
+						windowDef Multiplayer_Settings_Model8 {
+							rect			163, 58, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait8"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 8";
+							}
+						}
+						windowDef Multiplayer_Settings_Model9 {
+							rect			216, 58, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait9"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 9";
+							}
+						}
+						windowDef Multiplayer_Settings_Model10 {
+							rect			4, 111, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait10"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 10";
+							}
+						}
+						windowDef Multiplayer_Settings_Model11 {
+							rect			57, 111, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait11"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 11";
+							}
+						}
+						windowDef Multiplayer_Settings_Model12 {
+							rect			110, 111, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait12"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 12";
+							}
+						}
+						windowDef Multiplayer_Settings_Model13 {
+							rect			163, 111, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait13"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 13";
+							}
+						}
+						windowDef Multiplayer_Settings_Model14 {
+							rect			216, 111, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait14"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 14";
+							}
+						}
+					}
+				}
+
+				superWindowDef Settings_Autoswitch {
+					rect		10, 180, 160, 40
+					cornerMat	"guis/assets/menu/pictureframe_corner.tga"
+					leftMat		"guis/assets/menu/pictureframe_left.tga"
+					topMat		"guis/assets/menu/pictureframe_strip.tga"
+					margins		0, 0, 0, 0	// left, right, top, bottom
+					cornerSize	4, 4
+					edgeSize	4, 4
+
+					windowDef Settings_AutoswitchTitle {
+						rect		0, 5, 160, 20
+						text		"#str_20273"
+						textscale	0.28
+						textalign	1
+						textaligny	-4
+						shadow		1
+						forecolor	STATIC_FORECOLOR_COMMA
+					}
+					choiceDef Settings_AutoswitchChoice {
+						rect		0, 20, 160, 20
+						textscale	0.28
+						textaligny	-4
+						textalign	1
+						shadow		1
+						forecolor	EDITABLE_FORECOLOR_COMMA
+						hovercolor	EDITABLE_HOVERCOLOR_COMMA
+						choices		"#str_20152"
+						cvar		"ui_autoSwitch"
+						choiceType	0
+					}
+				}
+			}
+		}
+
+		buttonDef Button_MainMenu {
+			rect			5, 285, 160, 26
+			text			"#str_20598"
+			textalign		1
+			textaligny		1
+			textscale		0.33
+			shadow			1
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+			onActionRelease {
+				set "cmd" "main" ;
+			}
+		}
+		buttonDef Button_Spectate {
+			rect			172, 285, 160, 26
+			text			"gui::spectext"
+			textalign		1
+			textaligny		1
+			textscale		0.33
+			shadow			1
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+
+			onActionRelease {
+				set "cmd" "spectate" ;
+			}
+		}
+		buttonDef Button_Disconnect {
+			rect			338, 285, 160, 26
+			text			"#str_20599"
+			textalign		1
+			textaligny		1
+			textscale		0.33
+			shadow			1
+			forecolor		BUTTON_FORECOLOR_COMMA
+			hoverColor		BUTTON_HOVERCOLOR_COMMA
+			leftMat			"guis/assets/menu/button/corner"
+			middleMat		"guis/assets/menu/button/strip"
+			leftHoverMat	"guis/assets/menu/button/rollover_corner"
+			middleHoverMat	"guis/assets/menu/button/rollover_strip"
+			rightMat		"guis/assets/menu/button/invcorner"
+			rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
+			edgeWidth		12
+
+			onActionRelease {
+				set "cmd" "exec disconnect" ;
+			}
+		}
+	}
+}
