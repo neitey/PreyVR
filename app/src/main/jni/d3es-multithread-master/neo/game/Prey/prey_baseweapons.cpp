@@ -1896,6 +1896,7 @@ void hhWeapon::GetMasterDefaultPosition( idVec3 &masterOrigin, idMat3 &masterAxi
 			auto* player = dynamic_cast<hhPlayer *>(gameLocal.GetLocalPlayer());
 			if (player && !owner->IsType(hhArtificialPlayer::Type)) {
 				masterOrigin = player->GetEyePosition();
+				masterOrigin -= idVec3(0, 0, 4) * masterAxis;
 				ApplyVRWeaponTransform(masterAxis, masterOrigin);
 				masterOrigin -= idVec3(0, 0, player->EyeHeight()) * masterAxis;
 			}

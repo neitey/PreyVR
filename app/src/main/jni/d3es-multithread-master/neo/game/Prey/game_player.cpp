@@ -5051,15 +5051,16 @@ void hhPlayer::Think( void ) {
 			pVRClientInfo->weaponOffset[0] = -15; pVRClientInfo->weaponOffset[1] = 0; pVRClientInfo->weaponOffset[2] = 5; //bow
 		} else {
 			switch (currentWeapon) {
-				case 1: pVRClientInfo->weaponOffset[0] = -16; pVRClientInfo->weaponOffset[1] = 9; pVRClientInfo->weaponOffset[2] = 20; break; //wrench
-				case 2: pVRClientInfo->weaponOffset[0] = -1; pVRClientInfo->weaponOffset[1] = 7; pVRClientInfo->weaponOffset[2] = 7; break; //rifle
-				case 3: pVRClientInfo->weaponOffset[0] = -10; pVRClientInfo->weaponOffset[1] = 7; pVRClientInfo->weaponOffset[2] = 5; break; //crawler
-				case 4: pVRClientInfo->weaponOffset[0] = -3; pVRClientInfo->weaponOffset[1] = 9; pVRClientInfo->weaponOffset[2] = 7; break; //leech gun
-				case 5: pVRClientInfo->weaponOffset[0] = -5; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 7; break; //auto-cannon
-				case 6: pVRClientInfo->weaponOffset[0] = 0; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 11; break; //acid spray
-				case 7: pVRClientInfo->weaponOffset[0] = -5; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 7; break; //crawler cannon
+				case 1: pVRClientInfo->weaponOffset[0] = -11; pVRClientInfo->weaponOffset[1] = 7; pVRClientInfo->weaponOffset[2] = 20; break; //wrench
+				case 2: pVRClientInfo->weaponOffset[0] = 1; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 6; break; //rifle
+				case 3: pVRClientInfo->weaponOffset[0] = -9; pVRClientInfo->weaponOffset[1] = 6; pVRClientInfo->weaponOffset[2] = 5; break; //crawler
+				case 4: pVRClientInfo->weaponOffset[0] = -1; pVRClientInfo->weaponOffset[1] = 8; pVRClientInfo->weaponOffset[2] = 6; break; //leech gun
+				case 5: pVRClientInfo->weaponOffset[0] = -3; pVRClientInfo->weaponOffset[1] = 4; pVRClientInfo->weaponOffset[2] = 5; break; //auto-cannon
+				case 6: pVRClientInfo->weaponOffset[0] = 4; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 9; break; //acid sprayer
+				case 7: pVRClientInfo->weaponOffset[0] = -2; pVRClientInfo->weaponOffset[1] = 5; pVRClientInfo->weaponOffset[2] = 6; break; //crawler cannon
 			}
 		}
+		pVRClientInfo->weaponOffset[2] += 4;
 	}
 	//Lubos END
 
