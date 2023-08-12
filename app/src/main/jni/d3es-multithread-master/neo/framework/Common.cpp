@@ -2692,7 +2692,7 @@ void idCommonLocal::Frame(void)
 		
 		Doom3Quest_FrameSetup(cvarSystem->GetCVarInteger("vr_weaponHand"),
 							  cvarSystem->GetCVarInteger("vr_switchSticks"),
-							  cvarSystem->GetCVarInteger("vr_refresh"));
+							  60);//Lubos:cvarSystem->GetCVarInteger("vr_refresh"));
 
 		if (game) {
 			game->SetVRClientInfo(pVRClientInfo);
