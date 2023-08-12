@@ -178,7 +178,7 @@ HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int dom
 					}
 					itemSwitched = true;
 				}
-			} else {
+			} else if (fabsf(pPrimaryJoystick.y) < 0.66f) {//Lubos
 				pVRClientInfo->weaponZooming = 0; //Lubos
 				itemSwitched = false;
 			}
