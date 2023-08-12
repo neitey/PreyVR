@@ -176,11 +176,11 @@
 							}
 							
 							windowDef MCS_Choices {
-								rect			20, 32, 400, 310
+								rect			20, 0, 400, 350
 								backcolor		1, 1, 0, 0
 
 								buttonDef MCS_Create {
-									rect			280, 280, 120, 30
+									rect			280, 325, 120, 30
 									text			"Start game"
 									textalign		1
 									textaligny		0
@@ -205,7 +205,7 @@
 									backcolor			0, 0, 0, 0
 
 									windowDef MCS_MapTitle {
-										rect			0, 0, 170, 25
+										rect			0, 10, 170, 25
 										forecolor		LISTHEADING_FORECOLOR_COMMA
 										text			"#str_20146"
 										textscale		0.35
@@ -246,5 +246,14 @@
 					}
 				}
 			}
+		}
+
+		buttonDef Multiplayer_Warning {
+			rect			150, 335, 400, 60
+			textalign		1
+			textaligny		0
+			shadow			1
+			text			"WARNING! This feature is still under development and is unstable.\nIt will probably be part of the next major update!"
+			noevents		1
 		}
 	}
