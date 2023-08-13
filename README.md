@@ -25,7 +25,6 @@ In this repository I port the game on standalone VR headsets.
 
 # Instructions
 
-
 ### Demo version
 
 * Download the game and the launcher from [releases](https://github.com/lvonasek/PreyVR/releases).
@@ -94,11 +93,20 @@ PreyVR uses renderer and VR integration from Doom3Quest, the engine is from glKa
 * Switching between VR/flat mode depending on scene
 * VR vehicle control
 
+### Known issues
+* 6DoF doesn't allow movement over invisible colliders
+* Alient light effects in the first level are not correct
+* Jen has detached head on screen (level Hidden Agendas)
+* Jukebox doesn't update the pointer (collider issue)
+* Performance issues when fog is present
+* Performance issues when portals are shown
+* Weapons have incorrect alignment when putting them down/behind
+  
 ### Missing features
+* Controling ingame UI using fingers
 * Glitch effect (unsupported by the renderer) 
 * Glow effect (unsupported by the renderer)
-* Light effects (not completely correct in current renderer)
 * Multiprey (will eventually be added later)
 * Network communication (missing source code)
 * Shadows (cause performance issues)
-* UI tabs support (fixed by rewriting UI)
+* UI tabs support (fixed by rewriting the UI)
