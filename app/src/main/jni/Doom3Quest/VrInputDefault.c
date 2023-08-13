@@ -48,12 +48,14 @@ uint32_t offhandButtonsOld;
 
 void Doom3Quest_HapticEvent(const char* event, int position, int flags, int intensity, float angle, float yHeight );
 
-void
-HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int domButton2, int offButton1, int offButton2)
-
+void HandleInput_Default(int controlscheme, int switchsticks)
 {
 	int primaryController = 1 - controlscheme;
 	int primaryThumbStick = controlscheme == 0 ? 1 - switchsticks : switchsticks;
+	int domButton1 = controlscheme == 0 ? ovrButton_A : ovrButton_X;
+	int domButton2 = controlscheme == 0 ? ovrButton_B : ovrButton_Y;
+	int offButton1 = controlscheme == 1 ? ovrButton_A : ovrButton_X;
+	int offButton2 = controlscheme == 1 ? ovrButton_B : ovrButton_Y;
 
     //Need this for the touch screen
     XrPosef pWeapon = IN_VRGetPose(primaryController);

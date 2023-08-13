@@ -481,7 +481,7 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
 		currentRefresh = VR_GetRefreshRate();
 	}
 	pVRClientInfo->right_handed = !controlscheme;
-	HandleInput_Default(controlscheme, switch_sticks, ovrButton_A, ovrButton_B, ovrButton_X, ovrButton_Y);
+	HandleInput_Default(controlscheme, switch_sticks);
 }
 
 void Doom3Quest_getHMDOrientation() {

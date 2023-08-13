@@ -25,7 +25,7 @@ extern "C" {
 #define ALOGV(...) __android_log_print( ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__ )
 #endif
 
-void HandleInput_Default(int controlscheme, int switchsticks, int domButton1, int domButton2, int offButton1, int offButton2);
+void HandleInput_Default(int controlscheme, int switchsticks);
 
 bool isMultiplayer();
 
