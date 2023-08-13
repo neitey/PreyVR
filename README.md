@@ -42,13 +42,63 @@ Running the full version of this game require a copy of the original Prey 2006 d
 
 [Click here to watch Gamertag's video tutorial](https://www.youtube.com/watch?v=OPXp0RYOSoA&t=542s)
 
-# Headset compatibility
-
-The project uses OpenXR to be easily adaptable to any Android based VR platform. The exception are Meta Quest headsets which have on OpenXR degraded performance. For Quest the releases are deployed from VrAPI branch.
-
-# Project family tree
+# About the project
 
 PreyVR is based on a combination of the excellent projects created by opensource community.
 I tried to create a kind of fmaily tree to keep track of the project's roots.
 
 ![Project family tree](https://github.com/lvonasek/PreyVR/blob/master/doc/family_tree.png?raw=true)
+
+PreyVR uses renderer and VR integration from Doom3Quest, the engine is from glKarin's Android port. The project uses OpenXR to be easily adaptable to any Android based VR platform. The exception are Meta Quest headsets which have on OpenXR degraded performance. For Quest the releases are deployed from VrAPI branch.
+
+### Bug fixes
+* Alien text translations logic
+* Credits rendering fixed (workaround for unsupported UI feature)
+* Light beams culling fixed
+* Performance issues when rendering skybox
+* Rendered beams face camera
+* Renderer fixes for specific materials/objects
+* Z-Fighting for fire decals on walls
+
+### Disabled features
+* Developer console (demo data / mods issues)
+* EAX reverb in dreamworld levels (this doesn't work well when invaded)
+* Footsteps for 6DoF movements (it didn't apply to real steps)
+* Knockback of leech gun (doesn't work correctly on higher framerate)
+* Shadows rendering (causes performance issues)
+* Stereo rendering for skyboxes (had wrong stereo effect)
+* View bobbing (feels weird in VR)
+
+### Features added to this project
+* "3D" aiming cursor with autoscaling
+* 6DoF motion tracking (mapping movement to keys + elevation adjust)
+* 6DoF weapon tracking (apply controller movement to weapons)
+* Apply headset refreshrate to game
+* Automatic fix pf axis misalignment
+* Big hunter scene recreated (the engine doesn't support original animation)
+* Camera shaking option (shaking adds immersion but also motion sickness)
+* Demo data without DDS textures (DDS textures are unsupported by the engine)
+* Downscale HUD graphics (to be visible for VR users)
+* Faster vertex cache
+* Fluent rifle weapon zooming
+* Full weapons models (original game doesn't contain back side of the weapon)
+* Height adjust (helpful for sitting mode)
+* Hidden god mode cheat trick
+* Launcher to download demo data or mods
+* Menu screens adjusted (workaround for missing UI features, VR options)
+* Motion attack for wrench weapon
+* Motion sickness warning on level 2 loading screen
+* Opening ammo cabinets (missing in the Android version)
+* Overlay effects adjusted to VR screen
+* Stereo rendering
+* Switching between VR/flat mode depending on scene
+* VR vehicle control
+
+### Missing features
+* Glitch effect (unsupported by the renderer) 
+* Glow effect (unsupported by the renderer)
+* Light effects (not completely correct in current renderer)
+* Multiprey (will eventually be added later)
+* Network communication (missing source code)
+* Shadows (cause performance issues)
+* UI tabs support (fixed by rewriting UI)
