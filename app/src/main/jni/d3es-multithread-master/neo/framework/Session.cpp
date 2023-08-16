@@ -137,7 +137,7 @@ static void Session_Map_f(const idCmdArgs &args)
 #endif
 
 	cvarSystem->SetCVarBool("developer", false);
-	sessLocal.StartNewGame(map, true);
+	sessLocal.StartNewGame(map, false);
 }
 
 /*
