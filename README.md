@@ -50,6 +50,8 @@ I tried to create a kind of fmaily tree to keep track of the project's roots.
 
 PreyVR uses renderer and VR integration from Doom3Quest, the engine is from glKarin's Android port. The project uses OpenXR to be easily adaptable to any Android based VR platform. The exception are Meta Quest headsets which have on OpenXR degraded performance. For Quest the releases are deployed from VrAPI branch.
 
+There are no plans to bring this to PCVR or PSVR.
+
 ### Contributors
 * Engine consulting: **DrBeef**, **Baggyg**, **Bummser**, **Stiefl525**
 * Launcher graphics: **Luboš**, **Skizot**
