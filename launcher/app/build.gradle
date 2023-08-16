@@ -10,8 +10,8 @@ android {
         applicationId "com.lvonasek.preyvrlauncher"
         minSdk 26
         targetSdk 26
-        versionCode 80
-        versionName "0.8.0"
+        versionCode 100
+        versionName "1.0.0"
     }
 
     buildTypes {
