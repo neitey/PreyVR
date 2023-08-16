@@ -3,7 +3,6 @@
     <declare-styleable name="ModsView">
         <attr name="icon" format="reference" />
         <attr name="title" format="string|reference" />
-        <attr name="desc" format="string|reference" />
         <attr name="file" format="string" />
         <attr name="map" format="string" />
     </declare-styleable>
