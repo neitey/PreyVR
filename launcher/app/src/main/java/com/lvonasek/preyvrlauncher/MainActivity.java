@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends Activity {
 
@@ -211,7 +213,13 @@ public class MainActivity extends Activity {
             if (map != null) {
                 intent.setData(Uri.parse(map));
             }
-            getApplicationContext().startActivity(intent);
+            finish();
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    startActivity(intent);
+                }
+            }, 600);
         } catch (Exception e) {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(UPDATES_URL));
             new AlertDialog.Builder(this)
