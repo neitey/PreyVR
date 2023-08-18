@@ -178,7 +178,7 @@ public class MainActivity extends Activity {
         return new File(base, "demo07.pk4").exists();
     }
     private boolean hasFullVersion() {
-       return new File(base, "pak006.pk4").exists();
+       return new File(base, "pak004.pk4").exists();
     }
 
     private void startModGame(String filename, String mapname) {
