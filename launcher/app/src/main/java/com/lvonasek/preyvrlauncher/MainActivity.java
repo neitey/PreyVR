@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -212,6 +213,16 @@ public class MainActivity extends Activity {
             Intent intent = getPackageManager().getLaunchIntentForPackage(GAME_PACKAGE);
             if (map != null) {
                 intent.setData(Uri.parse(map));
+            }
+            boolean hasGameInstalled = false;
+            for (ApplicationInfo app : getPackageManager().getInstalledApplications(PackageManager.GET_META_DATA)) {
+                if (app.packageName.compareTo(GAME_PACKAGE) == 0) {
+                    hasGameInstalled = true;
+                    break;
+                }
+            }
+            if (!hasGameInstalled) {
+                throw new Exception("Game not installed!");
             }
             finish();
             new Timer().schedule(new TimerTask() {
