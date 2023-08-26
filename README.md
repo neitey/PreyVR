@@ -113,9 +113,11 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * Weapons have incorrect alignment when putting them down/behind
   
 ### Missing features
+* BHaptics support (I do not own the accessory)
 * Controling ingame UI using fingers
 * Glitch effect (unsupported by the renderer) 
 * Glow effect (unsupported by the renderer)
+* Holding weapons using two hands
 * Multiprey (will eventually be added later)
 * Network communication (missing source code)
 * Shadows (cause performance issues)
