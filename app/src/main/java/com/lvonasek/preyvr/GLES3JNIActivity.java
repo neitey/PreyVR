@@ -63,8 +63,9 @@ import java.util.Vector;
 	private static final int READ_EXTERNAL_STORAGE_PERMISSION_ID = 1;
 	private static final int WRITE_EXTERNAL_STORAGE_PERMISSION_ID = 2;
 
-
 	private static final String APPLICATION = "Doom3Quest";
+
+	private static final String[] DATA_FULL = {"pak000.pk4", "pak001.pk4", "pak002.pk4", "pak003.pk4", "pak004.pk4"};
 
 	private String commandLineParams;
 
@@ -234,6 +235,13 @@ import java.util.Vector;
 		saves.mkdirs();
 		copy_asset(saves.getAbsolutePath(), "preyconfig.cfg", false);
 
+		//Demo or full version menu layout
+		if (has_files(base, DATA_FULL)) {
+			new File(base, "vr_support_demo.pk4").delete();
+		} else {
+			copy_asset(base.getAbsolutePath(), "vr_support_demo.pk4", true);
+		}
+
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
 
@@ -255,6 +263,15 @@ import java.util.Vector;
 		}
 
 		GLES3JNILib.onCreate( this, commandLineParams, Build.MANUFACTURER );
+	}
+
+	public boolean has_files(File base, String[] files) {
+		for (String file : files) {
+			if (!new File(base, file).exists()) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	public void copy_asset(String path, String name, boolean force) {
