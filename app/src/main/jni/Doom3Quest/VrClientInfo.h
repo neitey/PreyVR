@@ -46,6 +46,7 @@ typedef struct {
     char* levelname;
     bool levelChanged;
     bool credits;
+    bool weaponGun;
     vec3_t weaponOffset;
     vec3_t hmdorientation_diff;
     vec3_t hmdorientation_offset;

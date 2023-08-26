@@ -245,6 +245,26 @@ bool hhFireController::LaunchProjectiles( const idVec3& pushVelocity ) {
 
 		//Lubos BEGIN
 		if ( !GetProjectileOwner()->IsType( hhArtificialPlayer::Type ) ) {
+			idEntity *owner = GetProjectileOwner();
+			if ( owner && owner->IsType( hhPlayer::Type ) && !pVRClientInfo->weaponGun ) {
+				hhPlayer *player = static_cast<hhPlayer *>(owner);
+				if (game->isVR && !pVRClientInfo->vehicleMode) {
+					idMat3 axis = GetSelfConst()->GetAxis();
+					idVec3 origin = GetSelfConst()->GetOrigin();
+					if (pVRClientInfo->weaponZoom && player->renderView) {
+						origin = player->renderView->vieworg;
+						axis = player->renderView->viewaxis;
+					} else {
+						ApplyVRWeaponTransform(axis, origin);
+					}
+
+					idVec3 weaponToMuzzle = localMuzzleOrigin - GetSelfConst()->GetOrigin();
+					weaponToMuzzle = weaponToMuzzle * GetSelfConst()->GetAxis().Inverse();
+					localMuzzleOrigin = origin + (weaponToMuzzle * axis);
+					localMuzzleAxis = axis;
+				}
+			}
+
 			common->Vibrate(pVRClientInfo->right_handed ? 1 : 0, 100, 1000, 10);
 		}
 		//Lubos END
