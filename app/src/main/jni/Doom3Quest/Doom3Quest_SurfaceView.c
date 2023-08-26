@@ -324,9 +324,6 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
 	*joy_side = remote_movementSideways;
 	*joy_forward = remote_movementForward;
 	*up = pVRClientInfo->hmdposition_last[1];
-	if (Doom3Quest_useScreenLayer()) {
-		*up = 1.5f;
-	}
 
 	if (fabs(vr.hmdorientation_diff[PITCH]) > 1) vr.hmdorientation_offset[PITCH] += vr.hmdorientation_diff[PITCH] * 0.1f;
 	if (fabs(vr.hmdorientation_diff[ROLL]) > 1) vr.hmdorientation_offset[ROLL] += vr.hmdorientation_diff[ROLL] * 0.1f;
