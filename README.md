@@ -44,7 +44,7 @@ Running the full version of this game require a copy of the original Prey 2006 d
 # About the project
 
 PreyVR is based on a combination of the excellent projects created by opensource community.
-I tried to create a kind of fmaily tree to keep track of the project's roots.
+I tried to create a kind of family tree to keep track of the project's roots.
 
 ![Project family tree](https://github.com/lvonasek/PreyVR/blob/master/doc/family_tree.png?raw=true)
 
