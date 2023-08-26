@@ -69,6 +69,7 @@ import java.util.Vector;
 
 	private static final String[] DATA_DEMO = {"demo00.pk4", "demo01.pk4", "demo02.pk4", "demo03.pk4", "demo04.pk4", "demo05.pk4", "demo06.pk4", "demo07.pk4"};
 	private static final String[] DATA_FULL = {"pak000.pk4", "pak001.pk4", "pak002.pk4", "pak003.pk4", "pak004.pk4"};
+	private static final String[] DATA_MODS = {"ar_ep1.pk4", "lostcity.pk4", "mod_sounds.pk4", "omapsp_leonprey.pk4", "revelations_demo.pk4", "SurprisinglyFocused.pk4", "zPREY_SKY123.pk4"};
 	private static final String DATA_URL = "https://github.com/lvonasek/PreyVR/raw/master/data/";
 
 	private File root = new File("/sdcard/PreyVR");
@@ -249,9 +250,14 @@ import java.util.Vector;
 
 		//Download data
 		String updateLayout = "vr_support_update.pk4";
-		if (has_files(base, DATA_DEMO)) {
-			new File(base, updateLayout).delete();
-		} else if (has_files(base, DATA_FULL)) {
+		if (has_files(base, DATA_FULL)) {
+			if (has_files(base, DATA_MODS)) {
+				new File(base, updateLayout).delete();
+			} else {
+				copy_asset(base.getAbsolutePath(), updateLayout, true);
+				download_data(DATA_MODS);
+			}
+		} else if (has_files(base, DATA_DEMO)) {
 			new File(base, updateLayout).delete();
 		} else {
 			copy_asset(base.getAbsolutePath(), updateLayout, true);

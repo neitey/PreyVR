@@ -51,7 +51,7 @@
 		visible		0
 
 		buttonDef Mods_Titlebar {
-			rect		32, 8, 312, 24
+			rect		32, 50, 312, 24
 			leftMat		"guis/assets/menu/titlebar_corner.tga"
 			middleMat	"guis/assets/menu/titlebarstrip.tga"
 			edgeWidth	12
@@ -86,26 +86,6 @@
 					resetTime "Mods_AnimOut" "0";
 				}
 			}
-		}
-		
-		windowDef Mods_Info1 {
-			rect		0, 30, 400, 25
-			text		"The mods won't start unless they are installed in preybase folder"
-			textalign	1
-			textaligny	0
-			textscale	0.25
-			shadow		1
-			forecolor	STATIC_FORECOLOR_COMMA
-		}
-
-		windowDef Mods_Info2 {
-			rect		0, 45, 400, 25
-			text		"Get the mods/addons from https://www.moddb.com/games/prey/"
-			textalign	1
-			textaligny	0
-			textscale	0.25
-			shadow		1
-			forecolor	STATIC_FORECOLOR_COMMA
 		}
 
 		buttonDef Mod_AlteredReality {
