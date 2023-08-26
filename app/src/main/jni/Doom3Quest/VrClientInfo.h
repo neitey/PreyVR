@@ -53,6 +53,9 @@ typedef struct {
     vec2_t uiScale;
     vec2_t uiOffset;
     vec3_t playerPosition;
+    char downloaderTitle[128];
+    char downloaderText[128];
+    char downloaderButton[128];
     //Lubos END
 
     //FP - Temp Variables for other stuff
