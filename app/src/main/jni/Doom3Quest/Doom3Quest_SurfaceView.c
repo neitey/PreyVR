@@ -753,3 +753,18 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JN
 	}
 	NativeWindow = newNativeWindow;
 }
+
+JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_setText(JNIEnv *env, jclass clazz, jstring key, jstring value)
+{
+	jboolean iscopy;
+	const char *keyStr = (*env)->GetStringUTFChars(env, key, &iscopy);
+	if (pVRClientInfo) {
+		if (strcmp(keyStr, "#str_lubos_title") == 0) {
+			strcpy(pVRClientInfo->downloaderTitle, (*env)->GetStringUTFChars(env, value, &iscopy));
+		} else if (strcmp(keyStr, "#str_lubos_text") == 0) {
+			strcpy(pVRClientInfo->downloaderText, (*env)->GetStringUTFChars(env, value, &iscopy));
+		} else if (strcmp(keyStr, "#str_lubos_button") == 0) {
+			strcpy(pVRClientInfo->downloaderButton, (*env)->GetStringUTFChars(env, value, &iscopy));
+		}
+	}
+}

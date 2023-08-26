@@ -25,11 +25,13 @@ import android.view.WindowManager;
 import com.drbeef.externalhapticsservice.HapticServiceClient;
 import com.drbeef.externalhapticsservice.HapticsConstants;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.Locale;
 import java.util.Vector;
 
@@ -65,7 +67,13 @@ import java.util.Vector;
 
 	private static final String APPLICATION = "Doom3Quest";
 
+	private static final String[] DATA_DEMO = {"demo00.pk4", "demo01.pk4", "demo02.pk4", "demo03.pk4", "demo04.pk4", "demo05.pk4", "demo06.pk4", "demo07.pk4"};
 	private static final String[] DATA_FULL = {"pak000.pk4", "pak001.pk4", "pak002.pk4", "pak003.pk4", "pak004.pk4"};
+	private static final String DATA_URL = "https://github.com/lvonasek/PreyVR/raw/master/data/";
+
+	private File root = new File("/sdcard/PreyVR");
+	private File base = new File(root, "preybase");
+	private File saves = new File(root, "saves/preybase");
 
 	private String commandLineParams;
 
@@ -223,10 +231,6 @@ import java.util.Vector;
 
 	public void create() {
 
-		File root = new File("/sdcard/PreyVR");
-		File base = new File(root, "preybase");
-		File saves = new File(root, "saves/preybase");
-
 		//Base game
 		base.mkdirs();
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
@@ -236,10 +240,22 @@ import java.util.Vector;
 		copy_asset(saves.getAbsolutePath(), "preyconfig.cfg", false);
 
 		//Demo or full version menu layout
+		String demoLayout = "vr_support_demo.pk4";
 		if (has_files(base, DATA_FULL)) {
-			new File(base, "vr_support_demo.pk4").delete();
+			new File(base, demoLayout).delete();
 		} else {
-			copy_asset(base.getAbsolutePath(), "vr_support_demo.pk4", true);
+			copy_asset(base.getAbsolutePath(), demoLayout, true);
+		}
+
+		//Download data
+		String updateLayout = "vr_support_update.pk4";
+		if (has_files(base, DATA_DEMO)) {
+			new File(base, updateLayout).delete();
+		} else if (has_files(base, DATA_FULL)) {
+			new File(base, updateLayout).delete();
+		} else {
+			copy_asset(base.getAbsolutePath(), updateLayout, true);
+			download_data(DATA_DEMO);
 		}
 
 		try {
@@ -263,6 +279,57 @@ import java.util.Vector;
 		}
 
 		GLES3JNILib.onCreate( this, commandLineParams, Build.MANUFACTURER );
+	}
+
+	private void download_data(String[] data) {
+		new Thread(() -> {
+			int index = 0;
+			int count = data.length;
+			for (String file : data) {
+				index++;
+				String url = DATA_URL + file;
+				String progress = index + "/" + count;
+				if (!download_file(url, new File(base, file), false, progress)) {
+					GLES3JNILib.setText("#str_lubos_title", "Downloading data failed!");
+					GLES3JNILib.setText("#str_lubos_text", "Restart the game to try it again.");
+					GLES3JNILib.setText("#str_lubos_button", "Continue");
+					return;
+				}
+			}
+			GLES3JNILib.setText("#str_lubos_title", "Downloading data finished!");
+			GLES3JNILib.setText("#str_lubos_text", "Restart the game to continue.");
+			GLES3JNILib.setText("#str_lubos_button", "Continue");
+		}).start();
+	}
+
+	public boolean download_file(String url, File target, boolean forced, String progress) {
+		try {
+			if (target.exists() && !forced) {
+				return true;
+			}
+			File temp = new File(root, "temp");
+			URL u = new URL(url);
+			InputStream is = u.openStream();
+			DataInputStream dis = new DataInputStream(is);
+
+			int length;
+			byte[] buffer = new byte[1024];
+			FileOutputStream fos = new FileOutputStream(temp);
+			while ((length = dis.read(buffer))>0) {
+				GLES3JNILib.setText("#str_lubos_title", "Downloading data, please wait...");
+				GLES3JNILib.setText("#str_lubos_text", "Downloading " + progress);
+				GLES3JNILib.setText("#str_lubos_button", "Cancel");
+				fos.write(buffer, 0, length);
+			}
+			dis.close();
+			is.close();
+			if (temp.renameTo(target)) {
+				return true;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	public boolean has_files(File base, String[] files) {

@@ -16,4 +16,6 @@ public class GLES3JNILib
 	// Surface lifecycle
 	public static native void onSurfaceCreated( Surface s );
 	public static native void onSurfaceChanged( Surface s );
+
+	public static native void setText(String key, String value);
 }
