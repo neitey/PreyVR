@@ -27,9 +27,9 @@ In this repository I port the game on standalone VR headsets.
 
 ### Demo version
 
-* Download the game and the launcher from [releases](https://github.com/lvonasek/PreyVR/releases).
+* Download the game from [releases](https://github.com/lvonasek/PreyVR/releases).
 * Install both APKs to your headset e.g. using SideQuest.
-* In the headset open the launcher which will download the demo data.
+* In the headset open the game, it will download the demo data.
 
 ### Full version
 
@@ -54,7 +54,6 @@ There are no plans to bring this to PCVR or PSVR.
 
 ### Contributors
 * Engine consulting: **DrBeef**, **Baggyg**, **Bummser**, **Stiefl525**
-* Launcher graphics: **Luboš**, **Skizot**
 * Programming: **Luboš**, **GLKarin**
 * SideQuest listing: **Bummser**
 * Weapons 3D modeling: **Luboš**, **LennyGuy20**
@@ -88,13 +87,13 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * Big hunter scene recreated (the engine doesn't support original animation)
 * Camera shaking option (shaking adds immersion but also motion sickness)
 * Demo data without DDS textures (DDS textures are unsupported by the engine)
+* Downloader to get demo data or mods
 * Downscale HUD graphics (to be visible for VR users)
 * Faster vertex cache
 * Fluent rifle weapon zooming
 * Full weapons models (original game doesn't contain back side of the weapon)
 * Height adjust (helpful for sitting mode)
 * Hidden god mode cheat trick
-* Launcher to download demo data or mods
 * Menu screens adjusted (workaround for missing UI features, VR options)
 * Motion attack for wrench weapon
 * Motion sickness warning on level 2 loading screen
