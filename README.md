@@ -104,6 +104,7 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * Jukebox doesn't update the pointer (collider issue)
 * Performance issues when fog is present
 * Performance issues when portals are shown
+* Screen with Jen is not rendered (level Hidden Agendas)
 * Weapons have incorrect alignment when putting them down/behind
   
 ### Missing features
