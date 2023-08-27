@@ -837,10 +837,7 @@ creates the current command for this frame
 */
 void idUsercmdGenLocal::MakeCurrent(void)
 {
-	idVec3		oldAngles;
 	int		i;
-
-	oldAngles = viewangles;
 
 	if (!Inhibited()) {
 		// update toggled key states
@@ -887,6 +884,8 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			viewangles[ PITCH ] += pitch;
 			viewangles[ YAW ] += yaw;
 
+			if (viewangles[ PITCH ] > 180) viewangles[ PITCH ] -= 360;
+			if (viewangles[ PITCH ] < -180) viewangles[ PITCH ] += 360;
 			if (viewangles[ YAW ] > 180) viewangles[ YAW ] -= 360;
 			if (viewangles[ YAW ] < -180) viewangles[ YAW ] += 360;
 			wasVehicleMode = true;
@@ -928,16 +927,6 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			pVRClientInfo->hackFramerate = false;
 		}
 		//Lubos END
-
-		// check to make sure the angles haven't wrapped
-		if( viewangles[PITCH] - oldAngles[PITCH] > 90 )
-		{
-			viewangles[PITCH] = oldAngles[PITCH] + 90;
-		}
-		else if( oldAngles[PITCH] - viewangles[PITCH] > 90 )
-		{
-			viewangles[PITCH] = oldAngles[PITCH] - 90;
-		}
 	} else {
 		mouseDx = 0;
 		mouseDy = 0;
