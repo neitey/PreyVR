@@ -63,7 +63,5 @@ android {
 }
 
 dependencies {
-    implementation "com.android.support:support-compat:26.1.0"
-    implementation "com.android.support:support-core-utils:26.1.0"
     implementation files('src/main/libs/haptic_service.aar')
 }
