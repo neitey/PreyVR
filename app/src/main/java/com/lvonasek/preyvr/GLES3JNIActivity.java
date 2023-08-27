@@ -14,8 +14,6 @@ import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Pair;
 import android.view.SurfaceHolder;
@@ -61,9 +59,6 @@ import java.util.Vector;
 		externalHapticsServiceDetails.add(Pair.create(HapticsConstants.BHAPTICS_PACKAGE, HapticsConstants.BHAPTICS_ACTION_FILTER));
 		externalHapticsServiceDetails.add(Pair.create(HapticsConstants.FORCETUBE_PACKAGE, HapticsConstants.FORCETUBE_ACTION_FILTER));
 	}
-
-	private static final int READ_EXTERNAL_STORAGE_PERMISSION_ID = 1;
-	private static final int WRITE_EXTERNAL_STORAGE_PERMISSION_ID = 2;
 
 	private static final String APPLICATION = "Doom3Quest";
 
@@ -177,10 +172,6 @@ import java.util.Vector;
 	{
 		super.onCreate( icicle );
 
-		mView = new SurfaceView( this );
-		setContentView( mView );
-		mView.getHolder().addCallback( this );
-
 		// Force the screen to stay on, rather than letting it dim and shut off
 		// while the user is watching a movie.
 		getWindow().addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON );
@@ -208,15 +199,9 @@ import java.util.Vector;
 	/** Initializes the Activity only if the permission has been granted. */
 	private void checkPermissionsAndInitialize() {
 		// Boilerplate for checking runtime permissions in Android.
-		if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-				!= PackageManager.PERMISSION_GRANTED){
-			ActivityCompat.requestPermissions(this,
-					new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-							Manifest.permission.WRITE_EXTERNAL_STORAGE},
-					WRITE_EXTERNAL_STORAGE_PERMISSION_ID);
-		}
-		else
-		{
+		if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+			requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+		} else {
 			// Permissions have already been granted.
 			create();
 		}
@@ -225,12 +210,17 @@ import java.util.Vector;
 	/** Handles the user accepting the permission. */
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
-		if (requestCode == WRITE_EXTERNAL_STORAGE_PERMISSION_ID) {
+		if (requestCode == 1) {
 			checkPermissionsAndInitialize();
 		}
 	}
 
 	public void create() {
+
+		//Init screen
+		mView = new SurfaceView( this );
+		setContentView( mView );
+		mView.getHolder().addCallback( this );
 
 		//Base game
 		base.mkdirs();
