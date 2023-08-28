@@ -430,6 +430,7 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
                         Android_SetImpulse(UB_IMPULSE25); //throw granade
                     }
                 }
+	            pVRClientInfo->weaponModifier = offhandButtonsNew & ovrButton_GripTrigger;
                 //Lubos END
             }
 

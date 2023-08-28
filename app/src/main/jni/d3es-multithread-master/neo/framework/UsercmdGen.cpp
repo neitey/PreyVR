@@ -867,6 +867,9 @@ void idUsercmdGenLocal::MakeCurrent(void)
 			VR_GetMove(&forward, &strafe, &temp, &temp, &temp, &temp, &temp, &temp);
 		} else if (pVRClientInfo->vehicleMode) {
 			if (!wasVehicleMode) {
+				pVRClientInfo->vehicleOffset[PITCH] = 0;
+				pVRClientInfo->vehicleOffset[YAW] = 0;
+				pVRClientInfo->vehicleOffset[ROLL] = 0;
 				pVRClientInfo->vehicleYaw = pVRClientInfo->hmdorientation_temp[ YAW ];
 				VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 				viewangles[PITCH] = pitch;
@@ -874,20 +877,23 @@ void idUsercmdGenLocal::MakeCurrent(void)
 				viewangles[ROLL] = roll;
 			}
 			VR_GetMove(&forward, &strafe, &temp, &temp, &temp, &temp, &temp, &temp);
-			VR_GetJoystick(&yaw, &pitch);
+			VR_GetJoystick(pVRClientInfo->weaponModifier ? &roll : &yaw, &pitch);
 			if (vr_invertVehicleY.GetBool()) {
 				pitch *= -1.0f;
 			}
-			if (cos(DEG2RAD(viewangles[ PITCH ])) < 0) {
-				yaw *= -1.0f;
-			}
-			viewangles[ PITCH ] += pitch;
-			viewangles[ YAW ] += yaw;
 
-			if (viewangles[ PITCH ] > 180) viewangles[ PITCH ] -= 360;
-			if (viewangles[ PITCH ] < -180) viewangles[ PITCH ] += 360;
-			if (viewangles[ YAW ] > 180) viewangles[ YAW ] -= 360;
-			if (viewangles[ YAW ] < -180) viewangles[ YAW ] += 360;
+			idAngles hmd;
+			for (i = 0; i < 3; i++) {
+				hmd[i] = pVRClientInfo->hmdorientation_temp[i] - pVRClientInfo->hmdorientation_prev[i];
+				while (hmd[i] > 180) hmd[i] -= 360;
+				while (hmd[i] <-180) hmd[i] += 360;
+				pVRClientInfo->hmdorientation_prev[i] = pVRClientInfo->hmdorientation_temp[i];
+			}
+			idAngles angle(pVRClientInfo->vehicleOffset[ PITCH ], pVRClientInfo->vehicleOffset[ YAW ], pVRClientInfo->vehicleOffset[ ROLL ]);
+			angle = (hmd.ToQuat() * idAngles(pitch, yaw, -roll).ToQuat() * angle.ToQuat()).ToAngles();
+			pVRClientInfo->vehicleOffset[ PITCH ] = angle.pitch;
+			pVRClientInfo->vehicleOffset[ YAW ] = angle.yaw;
+			pVRClientInfo->vehicleOffset[ ROLL ] = angle.roll;
 			wasVehicleMode = true;
 		} else {
 			VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);

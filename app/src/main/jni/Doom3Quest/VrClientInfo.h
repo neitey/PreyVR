@@ -48,12 +48,16 @@ typedef struct {
     bool levelChanged;
     bool credits;
     bool weaponGun;
+    bool weaponModifier;
+    bool weaponTwoHand;
     vec3_t weaponOffset;
     vec3_t hmdorientation_diff;
     vec3_t hmdorientation_offset;
+    vec3_t hmdorientation_prev;
     vec2_t uiScale;
     vec2_t uiOffset;
     vec3_t playerPosition;
+    vec3_t vehicleOffset;
     char downloaderTitle[128];
     char downloaderText[128];
     char downloaderButton[128];
