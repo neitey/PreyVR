@@ -5045,6 +5045,7 @@ void hhPlayer::Think( void ) {
 		}
 
 		pVRClientInfo->weaponGun = false;
+		pVRClientInfo->weaponTwoHand = false;
 		pVRClientInfo->weaponOffset[0] = 0; //forward
 		pVRClientInfo->weaponOffset[1] = 0; //left
 		pVRClientInfo->weaponOffset[2] = 0; //up
@@ -5062,6 +5063,7 @@ void hhPlayer::Think( void ) {
 			}
 			if (currentWeapon > 1) {
 				pVRClientInfo->weaponGun = true;
+				pVRClientInfo->weaponTwoHand = currentWeapon != 3;
 			}
 		}
 		pVRClientInfo->weaponOffset[2] += 4;

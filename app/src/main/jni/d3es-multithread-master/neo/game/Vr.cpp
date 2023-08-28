@@ -202,6 +202,14 @@ void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
 	float dy = weapon[1] - head[1];
 	float dz = weapon[2] - head[2];
 
+	// Two hands aming
+	if (pVRClientInfo->weaponModifier && pVRClientInfo->weaponTwoHand) {
+		auto offhand = cvarSystem->GetCVarInteger("vr_weaponHand") != 0 ? pVRClientInfo->rhandposition : pVRClientInfo->lhandposition;
+		idAngles angles = idVec3(weapon[2] - offhand[2], weapon[0] - offhand[0], -weapon[1] + offhand[1]).ToAngles();
+		weaponAngles.pitch = angles.pitch;
+		weaponAngles.yaw = angles.yaw;
+	}
+
 	// Apply weapon transformation
 	axis = hmdAngles.ToMat3().Inverse() * axis;
 	origin += 32.0f * idVec3(-dz, -dx, dy) * axis;

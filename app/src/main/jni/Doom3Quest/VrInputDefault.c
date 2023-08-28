@@ -229,6 +229,7 @@ void HandleInput_Default(int controlscheme, int switchsticks)
                     }
                 }
             }
+			pVRClientInfo->weaponModifier = offhandButtonsNew & ovrButton_GripTrigger;
 	        //Lubos END
 
             //We need to record if we have started firing primary so that releasing trigger will stop definitely firing, if user has pushed grip
