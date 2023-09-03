@@ -45,6 +45,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "GameBearShootWindow.h"
 #include "GameBustOutWindow.h"
 
+#ifdef _HUMANHEAD
+#include "TabWindow.h"
+#include "TabContainerWindow.h"
+#endif
+
 //
 //  gui editor is more integrated into the window now
 #include "../tools/guied/GEWindowWrapper.h"
@@ -2955,7 +2960,6 @@ bool idWindow::Parse(idParser *src, bool rebuild)
 				 || token == "buttonDef"
 				 || token == "creditDef"
 				 || token == "splineDef"
-				 || token == "tabContainerDef" || token == "tabDef" //k: TODO: tab
 #endif
 				) {
 			if (token == "animationDef") {
@@ -3104,6 +3108,30 @@ bool idWindow::Parse(idParser *src, bool rebuild)
 			dwt.win = win;
 			drawWindows.Append(dwt);
 		}
+#ifdef _HUMANHEAD
+		else if (token == "tabContainerDef") {
+			hhTabContainerWindow *win = new hhTabContainerWindow(dc, gui);
+			SaveExpressionParseState();
+			win->Parse(src, rebuild);
+			RestoreExpressionParseState();
+			AddChild(win);
+			win->SetParent(this);
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append(dwt);
+		}
+		else if (token == "tabDef") {
+			hhTabWindow *win = new hhTabWindow(dc, gui);
+			SaveExpressionParseState();
+			win->Parse(src, rebuild);
+			RestoreExpressionParseState();
+			AddChild(win);
+			win->SetParent(this);
+			dwt.simp = NULL;
+			dwt.win = win;
+			drawWindows.Append(dwt);
+		}
+#endif
 //
 //  added new onEvent
 		else if (token == "onNamedEvent") {
@@ -5291,6 +5319,16 @@ void idWindow::Translate(int tFontNum)
 		} else {
 			drawWindows[i].simp->Translate(tFontNum);
 		}
+	}
+}
+
+void idWindow::SetVisible(bool on)
+{
+	visible = on;
+	for(int i = 0; i < drawWindows.Num(); i++)
+	{
+		if(drawWindows[i].win)
+			drawWindows[i].win->SetVisible(on);
 	}
 }
 #endif
