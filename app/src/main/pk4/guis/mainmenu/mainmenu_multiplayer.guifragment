@@ -113,13 +113,13 @@
 			}
 		}
 
-		tabContainerDef Multiplayer_TabContainer {
+		windowDef Multiplayer_TabContainer {
 			rect		25, 35, 570, 390
 			backcolor	0, 0, 0, 0
 			sepcolor	0.74, 0.81, 0.88, 1
 			activetab	2
 
-			tabDef Multiplayer_CreateServer {
+			windowDef Multiplayer_CreateServer {
 				rect			0, 20, 570, 370
 				backcolor		TAB_PAGE_BACKCOLOR_COMMA
 				background		"guis/assets/menu/fadebg_top.tga"
@@ -140,7 +140,7 @@
 				windowDef MCS_TabBG {
 					rect		20, 5, 530, 360
 
-					tabContainerDef MCS_TabContainer {
+					windowDef MCS_TabContainer {
 						rect		5, 5, 520, 350
 						backcolor	0, 1, 0, 0
 						
@@ -150,7 +150,7 @@
 						tabHeight	80
 						tabMargins	40, 0
 						
-						tabDef MCS_Normal {
+						windowDef MCS_Normal {
 							rect					80, 0, 440, 350
 							backcolor				TAB_PAGE_BACKCOLOR_COMMA
 							background				"guis/assets/menu/fadebg_side.tga"
