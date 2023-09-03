@@ -1,9 +1,9 @@
-#include "../../idlib/precompiled.h"
+#include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../../ui/DeviceContext.h"
-#include "../../ui/Window.h"
-#include "../../ui/UserInterfaceLocal.h"
+#include "DeviceContext.h"
+#include "Window.h"
+#include "UserInterfaceLocal.h"
 #include "TabWindow.h"
 #include "TabContainerWindow.h"
 
