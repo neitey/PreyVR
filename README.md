@@ -109,6 +109,7 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * Performance issues when fog is present
 * Performance issues when portals are shown
 * Screen with Jen is not rendered (level Hidden Agendas)
+* UI tabs are not rendered correctly
 * Weapons have incorrect alignment when putting them down/behind
   
 ### Missing features
@@ -119,4 +120,3 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * Multiprey (will eventually be added later)
 * Network communication (missing source code)
 * Shadows (cause performance issues)
-* UI tabs support (fixed by rewriting the UI)
