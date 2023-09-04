@@ -204,11 +204,6 @@ import java.util.Vector;
 
 	public void create() {
 
-		//Init screen
-		mView = new SurfaceView( this );
-		setContentView( mView );
-		mView.getHolder().addCallback( this );
-
 		//Base game
 		base.mkdirs();
 		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
@@ -223,14 +218,25 @@ import java.util.Vector;
 			copy_asset(base.getAbsolutePath(), demoLayout, true);
 		}
 
-		//Unpack data
-		if (has_files(base, DATA_FULL)) {
-			if (!has_files(base, DATA_MODS)) {
-				unpack_data(DATA_MODS);
+		new Thread(() -> {
+			//Unpack data
+			if (has_files(base, DATA_FULL)) {
+				if (!has_files(base, DATA_MODS)) {
+					unpack_data(DATA_MODS);
+				}
+			} else if (!has_files(base, DATA_DEMO)) {
+				unpack_data(DATA_DEMO);
 			}
-		} else if (!has_files(base, DATA_DEMO)) {
-			unpack_data(DATA_DEMO);
-		}
+			runOnUiThread(this::startGame);
+		}).start();
+	}
+
+	public void startGame() {
+
+		//Init screen
+		mView = new SurfaceView( this );
+		setContentView( mView );
+		mView.getHolder().addCallback( this );
 
 		try {
 			setenv("USER_FILES", root.getAbsolutePath(), true);
