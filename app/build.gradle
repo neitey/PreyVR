@@ -28,6 +28,11 @@ android {
                 srcDir 'src/main/jni/VrApi/Libs/'
             }
         }
+        release {
+            assets {
+                srcDir '../data/'
+            }
+        }
     }
 
     buildTypes {
