@@ -8,7 +8,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.Build;
@@ -23,7 +22,7 @@ import android.view.WindowManager;
 import com.drbeef.externalhapticsservice.HapticServiceClient;
 import com.drbeef.externalhapticsservice.HapticsConstants;
 
-import java.io.DataInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -65,7 +64,6 @@ import java.util.Vector;
 	private static final String[] DATA_DEMO = {"demo00.pk4", "demo01.pk4", "demo02.pk4", "demo03.pk4", "demo04.pk4", "demo05.pk4", "demo06.pk4", "demo07.pk4"};
 	private static final String[] DATA_FULL = {"pak000.pk4", "pak001.pk4", "pak002.pk4", "pak003.pk4", "pak004.pk4"};
 	private static final String[] DATA_MODS = {"ar_ep1.pk4", "lostcity.pk4", "mod_sounds.pk4", "omapsp_leonprey.pk4", "revelations_demo.pk4", "SurprisinglyFocused.pk4", "zPREY_SKY123.pk4"};
-	private static final String DATA_URL = "https://github.com/lvonasek/PreyVR/raw/master/data/";
 
 	private File root = new File("/sdcard/PreyVR");
 	private File base = new File(root, "preybase");
@@ -238,25 +236,16 @@ import java.util.Vector;
 			copy_asset(base.getAbsolutePath(), demoLayout, true);
 		}
 
-		//Download data
-		String updateLayout = "vr_support_update.pk4";
+		//Unpack data
 		if (has_files(base, DATA_FULL)) {
-			if (has_files(base, DATA_MODS)) {
-				new File(base, updateLayout).delete();
-			} else {
-				copy_asset(base.getAbsolutePath(), updateLayout, true);
-				download_data(DATA_MODS);
+			if (!has_files(base, DATA_MODS)) {
+				unpack_data(DATA_MODS);
 			}
-		} else if (has_files(base, DATA_DEMO)) {
-			new File(base, updateLayout).delete();
-		} else {
-			copy_asset(base.getAbsolutePath(), updateLayout, true);
-			download_data(DATA_DEMO);
+		} else if (!has_files(base, DATA_DEMO)) {
+			unpack_data(DATA_DEMO);
 		}
 
 		try {
-			ApplicationInfo ai =  getApplicationInfo();
-
 			setenv("USER_FILES", root.getAbsolutePath(), true);
 			setenv("GAMELIBDIR", getApplicationInfo().nativeLibraryDir, true);
 			setenv("GAMETYPE", "16", true); // hard coded for now
@@ -277,47 +266,33 @@ import java.util.Vector;
 		GLES3JNILib.onCreate( this, commandLineParams, Build.MANUFACTURER );
 	}
 
-	private void download_data(String[] data) {
-		new Thread(() -> {
-			int index = 0;
-			int count = data.length;
-			for (String file : data) {
-				index++;
-				String url = DATA_URL + file;
-				String progress = index + "/" + count;
-				if (!download_file(url, new File(base, file), false, progress)) {
-					GLES3JNILib.setText("#str_lubos_title", "Downloading data failed!");
-					GLES3JNILib.setText("#str_lubos_text", "Restart the game to try it again.");
-					GLES3JNILib.setText("#str_lubos_button", "Continue");
-					return;
-				}
+	private void unpack_data(String[] data) {
+		for (String file : data) {
+			AssetManager assets = this.getAssets();
+			InputStream in = null;
+			try {
+				in = assets.open(file);
+			} catch (IOException e) {
+				System.exit(1);
 			}
-			GLES3JNILib.setText("#str_lubos_title", "Downloading data finished!");
-			GLES3JNILib.setText("#str_lubos_text", "Restart the game to continue.");
-			GLES3JNILib.setText("#str_lubos_button", "Continue");
-		}).start();
+			if (!unpack_file(in, new File(base, file), false)) {
+				System.exit(1);
+			}
+		}
 	}
 
-	public boolean download_file(String url, File target, boolean forced, String progress) {
+	public boolean unpack_file(InputStream is, File target, boolean forced) {
 		try {
 			if (target.exists() && !forced) {
 				return true;
 			}
 			File temp = new File(root, "temp");
-			URL u = new URL(url);
-			InputStream is = u.openStream();
-			DataInputStream dis = new DataInputStream(is);
-
 			int length;
-			byte[] buffer = new byte[1024];
+			byte[] buffer = new byte[8192];
 			FileOutputStream fos = new FileOutputStream(temp);
-			while ((length = dis.read(buffer))>0) {
-				GLES3JNILib.setText("#str_lubos_title", "Downloading data, please wait...");
-				GLES3JNILib.setText("#str_lubos_text", "Downloading " + progress);
-				GLES3JNILib.setText("#str_lubos_button", "Cancel");
+			while ((length = is.read(buffer)) != -1) {
 				fos.write(buffer, 0, length);
 			}
-			dis.close();
 			is.close();
 			if (temp.renameTo(target)) {
 				return true;

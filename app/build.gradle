@@ -26,6 +26,11 @@ android {
         main {
             jniLibs.srcDirs = ['src/main/jni/OpenXR/android']
         }
+        release {
+            assets {
+                srcDir '../data/'
+            }
+        }
     }
 
     buildTypes {
