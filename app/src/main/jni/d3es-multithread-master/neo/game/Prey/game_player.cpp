@@ -3771,10 +3771,16 @@ void hhPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) {
 		axis = angles.ToMat3();
 		origin = GetEyePosition();
 	} else {
+		//Lubos BEGIN
+		float amount = 1;
+		if (game->isVR) {
+			amount *= vr_shakeAmplitude.GetFloat();
+		}
+		//Lubos END
 		assert(kickSpring < 500.0f && kickSpring > 0.0f);
 		assert(kickDamping < 500.0f && kickDamping > 0.0f);
 		origin = viewBob + TransformToPlayerSpace( idVec3(g_viewNodalX.GetFloat(), g_viewNodalZ.GetFloat(), g_viewNodalZ.GetFloat() + EyeHeight()) );
-		axis = TransformToPlayerSpace( (GetUntransformedViewAngles() + viewBobAngles + playerView.AngleOffset(kickSpring, kickDamping)).ToMat3() );		
+		axis = TransformToPlayerSpace( (GetUntransformedViewAngles() + viewBobAngles + amount * playerView.AngleOffset(kickSpring, kickDamping)).ToMat3() );
 	}
 }
 
