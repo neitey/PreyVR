@@ -218,6 +218,7 @@ import java.util.Vector;
 		//Base game
 		base.mkdirs();
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
+		new File(base, "vr_support_update.pk4").delete();
 
 		//Config
 		saves.mkdirs();
