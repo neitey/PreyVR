@@ -209,6 +209,7 @@ import java.util.Vector;
 		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
+		new File(base, "vr_support_update.pk4").delete();
 
 		//Demo or full version menu layout
 		String demoLayout = "vr_support_demo.pk4";
