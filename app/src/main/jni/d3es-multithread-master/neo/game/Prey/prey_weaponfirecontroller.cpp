@@ -3,6 +3,7 @@
 #pragma hdrstop
 
 #include "prey_local.h"
+#include "Vr.h"
 
 CLASS_DECLARATION( hhFireController, hhWeaponFireController )
 END_CLASS
@@ -313,6 +314,11 @@ void hhWeaponFireController::CalculateMuzzleRise( idVec3& origin, idMat3& axis )
 	}
 	
 	amount = ( float )time / ( float )muzzle_kick_maxtime;
+	//Lubos BEGIN
+	if (game->isVR) {
+		amount *= vr_shakeAmplitude.GetFloat();
+	}
+	//Lubos END
 	ang		= muzzle_kick_angles * amount;
 	offset	= muzzle_kick_offset * amount;
 
