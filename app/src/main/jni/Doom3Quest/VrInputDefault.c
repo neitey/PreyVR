@@ -425,7 +425,10 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
                     (offhandButtonsNew & offButton2)) {
                     if ((offhandButtonsNew & ovrButton_Trigger) &&
                     (offhandButtonsNew & ovrButton_GripTrigger)) {
-                        Android_SetCommand("god"); //cheat
+						if (weaponButtonsNew & ovrButton_GripTrigger)
+							Android_SetCommand("noclip"); //noclip cheat
+						else
+							Android_SetCommand("god"); //god cheat
                     } else {
                         Android_SetImpulse(UB_IMPULSE25); //throw granade
                     }
