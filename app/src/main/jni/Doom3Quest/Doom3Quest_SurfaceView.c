@@ -368,9 +368,6 @@ float Doom3Quest_GetFOV(int axis)
 
 int Doom3Quest_GetRefresh()
 {
-	if (pVRClientInfo && pVRClientInfo->hackFramerate) {
-		return 60;
-	}
 	return currentRefresh;
 }
 
