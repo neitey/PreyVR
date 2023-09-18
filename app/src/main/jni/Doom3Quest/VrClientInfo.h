@@ -39,7 +39,6 @@ typedef struct {
     float snapTurn;
     bool consoleShown;
     bool disableFootStep;
-    bool hackFramerate;
     bool inMenu;
     bool vehicleMode;
     bool weaponZoom;

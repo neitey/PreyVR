@@ -984,8 +984,6 @@ int Doom3Quest_GetRefresh()
 {
 	if ( gAppState.Ovr == NULL ) {
 		return 60;
-	} else if (pVRClientInfo && pVRClientInfo->hackFramerate) {
-		return 60;
 	}
 	return vrapi_GetSystemPropertyInt(&gAppState.Java, VRAPI_SYS_PROP_DISPLAY_REFRESH_RATE);
 }
