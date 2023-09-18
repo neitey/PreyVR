@@ -1397,6 +1397,7 @@ void PortalSpinStart() {
 		TimeTweak( $svgbPortalRingOuterCtrl,		0.5,	0.25, 	1.0	);
 		$svgbPortalRingOuterCtrl.move( UP, 510 );//Outer starts//480 //528 //480
 		sys.wait( 0.5 );//inner done moveingdown, mid done moving up at end of this time
+		sys.wait( 1.0 );//Lubos
 		$svgbPortalRingInnerCtrl.bind( $svgbPortalRingMidCtrl );
 		TimeTweak( $svgbPortalRingMidCtrl,			0.0,	0.15,	0.5	);
 		$svgbPortalRingMidCtrl.move( 	DOWN, 	50 );// inner and mid down
