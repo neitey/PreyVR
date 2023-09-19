@@ -917,22 +917,6 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe );
 		cmd.elevationVR = (up + vr_heightAdjust.GetFloat() - 1.5f) * vr_trackingScale.GetFloat();
 		//Lubos END
-
-		//Lubos BEGIN
-		idPlayer* player = game->GetLocalPlayer();
-		pVRClientInfo->levelname = (char*)session->GetCurrentMapName();
-		if( player && ( strcmp( pVRClientInfo->levelname, "maps/game/salvageboss" ) == 0 ) ) {
-			idVec3 playerPosition;
-			playerPosition.x = pVRClientInfo->playerPosition[0];
-			playerPosition.y = pVRClientInfo->playerPosition[1];
-			playerPosition.z = pVRClientInfo->playerPosition[2];
-
-			idVec3 hackPosition(1864, 1852, 858);
-			pVRClientInfo->hackFramerate = (playerPosition - hackPosition).Length() < 1000;
-		} else {
-			pVRClientInfo->hackFramerate = false;
-		}
-		//Lubos END
 	} else {
 		mouseDx = 0;
 		mouseDy = 0;

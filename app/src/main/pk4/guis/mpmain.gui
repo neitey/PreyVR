@@ -92,7 +92,7 @@ windowDef Desktop {
 			}
 		}
 
-		tabContainerDef MainTabs {
+		windowDef MainTabs {
 			rect			0, 30, 500, 250
 			backcolor		0, 0, 0, 0
 			sepcolor		0.74, 0.81, 0.88, 1
@@ -100,7 +100,7 @@ windowDef Desktop {
 			tabMargins		91, 0
 			tabHeight		20
 			
-			tabDef Main_PlayerSettings {
+			windowDef Main_PlayerSettings {
 				rect			0, 20, 500, 230
 				background		"guis/assets/menu/fadebg.tga"
 				backcolor		0.5, 0.7, 0.9, 0.3
@@ -154,7 +154,7 @@ windowDef Desktop {
 						shear		0, -0.1
 					}
 
-					tabContainerDef MPS_PlayerPages {
+					windowDef MPS_PlayerPages {
 						rect			170, 10, 302, 166
 						backcolor		0, 0, 0, 0
 						
@@ -164,7 +164,7 @@ windowDef Desktop {
 						tabHeight	30
 						tabMargins	0, 0
 
-						tabDef MPS_Page1 {
+						windowDef MPS_Page1 {
 							rect			30, 0, 272, 166
 							backcolor		TAB_PAGE_BACKCOLOR_COMMA
 							background				"guis/assets/menu/fadebg_side.tga"
@@ -416,7 +416,7 @@ windowDef Desktop {
 								}
 							}
 						}
-						tabDef MPS_Page2 {
+						windowDef MPS_Page2 {
 							rect			30, 0, 272, 166
 							backcolor		TAB_PAGE_BACKCOLOR_COMMA
 							background				"guis/assets/menu/fadebg_side.tga"

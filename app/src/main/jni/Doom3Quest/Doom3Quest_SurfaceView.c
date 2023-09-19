@@ -368,9 +368,6 @@ float Doom3Quest_GetFOV(int axis)
 
 int Doom3Quest_GetRefresh()
 {
-	if (pVRClientInfo && pVRClientInfo->hackFramerate) {
-		return 60;
-	}
 	return currentRefresh;
 }
 
@@ -749,19 +746,4 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceChanged( JN
 		ALOGE( "        Surface not in landscape mode!" );
 	}
 	NativeWindow = newNativeWindow;
-}
-
-JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_setText(JNIEnv *env, jclass clazz, jstring key, jstring value)
-{
-	jboolean iscopy;
-	const char *keyStr = (*env)->GetStringUTFChars(env, key, &iscopy);
-	if (pVRClientInfo) {
-		if (strcmp(keyStr, "#str_lubos_title") == 0) {
-			strcpy(pVRClientInfo->downloaderTitle, (*env)->GetStringUTFChars(env, value, &iscopy));
-		} else if (strcmp(keyStr, "#str_lubos_text") == 0) {
-			strcpy(pVRClientInfo->downloaderText, (*env)->GetStringUTFChars(env, value, &iscopy));
-		} else if (strcmp(keyStr, "#str_lubos_button") == 0) {
-			strcpy(pVRClientInfo->downloaderButton, (*env)->GetStringUTFChars(env, value, &iscopy));
-		}
-	}
 }

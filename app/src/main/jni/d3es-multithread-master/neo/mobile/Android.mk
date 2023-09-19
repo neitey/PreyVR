@@ -213,6 +213,8 @@ src_ui = \
 	ui/RenderWindow.cpp \
 	ui/SimpleWindow.cpp \
 	ui/SliderWindow.cpp \
+	ui/TabContainerWindow.cpp \
+	ui/TabWindow.cpp \
 	ui/UserInterface.cpp \
 	ui/Window.cpp \
 	ui/Winvar.cpp \

@@ -1,0 +1,1629 @@
+// map_salvageBoss.script
+
+namespace map_salvageboss {
+	
+//Global variables
+float g_bSVGSpawnAmmo = TRUE;
+float g_DestAngX, g_DestAngZ;//salvageBoss Globals for vent sequence
+
+#define	SVG_NUM_SPAWNPOINTS 2
+#define	SVG_BOSSAMMO_SPAWN_DELAY 15
+#define SVG_BOSSAMMO_MIN_DIST 750
+
+//============================================================================
+//	SalvageBoss Music
+//============================================================================
+void SalvageBoss_Music_BusA() {
+	thread PlayMapMusic( "snd_salvageboss_bus_a", FALSE, MUS_TRANSITION_OVERLAP );
+}
+
+void SalvageBoss_Music_BusB() {
+	thread PlayMapMusic( "snd_salvageboss_bus_b", FALSE, MUS_TRANSITION_OVERLAP );
+}
+
+void SalvageBoss_Music_Portal() {
+	thread PlayMapMusic( "snd_salvageboss_portal", FALSE, MUS_TRANSITION_OVERLAP );
+}
+
+//============================================================================
+//AmmoTrigger( entity eSelf )
+//============================================================================
+void AmmoTrigger( entity eSelf ) {
+	eSelf.setKey( "inUse", false );
+}
+
+//============================================================================
+//AmmoSpawners()
+//============================================================================
+void AmmoSpawners() {
+	float i, distance, fAngle;
+	entity spawnPoint;
+	vector o;
+
+	for( i = 1; i <= SVG_NUM_SPAWNPOINTS; i++ ) {
+		spawnPoint = sys.getEntity( "svgBossAmmoTrigger" + i );
+		spawnPoint.setKey( "inUse", false );
+	}
+
+	while( g_bSVGSpawnAmmo == TRUE ) {
+		for( i = 1; i <= SVG_NUM_SPAWNPOINTS; i++ ) {
+			spawnPoint = sys.getEntity( "svgBossAmmoTrigger" + i );
+			PL( "spawnPoint = " + spawnPoint.getName() );
+			distance = $player1.distanceTo( spawnPoint );
+			if( ( distance > SVG_BOSSAMMO_MIN_DIST ) && ( spawnPoint.getFloatKey( "inUse" ) == false ) ) {
+				spawnPoint.setKey( "inUse", true );
+				o 		= spawnPoint.getOrigin();
+				fAngle	= spawnPoint.getFloatKey( "angle" );
+//				o_x += sys.random( 192 ) - 96;
+//				o_y += sys.random( 192 ) - 96;
+				sys.setSpawnArg( "origin", o );
+				sys.setSpawnArg( "angle", fAngle );
+				sys.setSpawnArg( "target", spawnPoint.getName() );
+				sys.spawn( "item_automatic_always_autocannon" );
+//				break;
+			}
+			sys.waitFrame();
+		}
+		PL( "AmmoSpawners for loop complete" );
+		sys.wait( SVG_BOSSAMMO_SPAWN_DELAY );
+	}
+}
+
+//==========================================================================
+//==========================================================================
+
+
+//==========================================================================
+// void ToggleLift()
+//==========================================================================
+void ToggleLift( entity self ) {
+	entity mvr, destEnt;
+	string mvrState;
+
+	mvr = self.getEntityKey( "liftMover" );
+	mvrState = mvr.getKey( "currentState" );
+	if( mvrState == "atRestTop" ) {
+		destEnt = mvr.getEntityKey( "bottomPos" );
+		mvr.setKey( "currentState", "moving" );
+		mvr.moveTo( destEnt );
+		mvr.startSound( "snd_startmove", SND_SCRIPT_0, 0 );
+		sys.waitFor( mvr );
+		mvr.startSound( "snd_stopmove", SND_SCRIPT_0, 0 );
+		mvr.setKey( "currentState", "atRestBottom" );
+	}
+	else if( mvrState == "atRestBottom" ) {
+		destEnt = mvr.getEntityKey( "topPos" );
+		mvr.setKey( "currentState", "moving" );
+		mvr.moveTo( destEnt );
+		mvr.startSound( "snd_startmove", SND_SCRIPT_0, 0 );
+		sys.waitFor( mvr );
+		mvr.startSound( "snd_stopmove", SND_SCRIPT_0, 0 );
+		mvr.setKey( "currentState", "atRestTop" );
+	}
+}
+
+//==========================================================================
+//SalvagePistons()
+//
+//timing for the pump room
+//==========================================================================
+void SalvagePistons() {
+	float n, fDirection;
+	entity ePiston;
+	
+	$svgBWallWalkPiston1.move( SOUTH, 160 );
+	sys.wait( 0.25 );
+	$svgBWallWalkPiston3.move( SOUTH, 160 );
+	sys.wait( 0.25 );
+	$svgBWallWalkPiston6.move( NORTH, 160 );
+	sys.wait( 0.25 );
+	$svgBWallWalkPiston8.move( NORTH, 160 );
+
+	n = 1;
+	for ( n = 1; n < 9; n++ ) {
+		ePiston = sys.getEntity( "svgBWallWalkPiston" + n );
+		TimeTweak( ePiston, 0, 0, 0.5 );
+	}
+	
+	while ( 1 ) {
+		n = 8;
+		for ( n = 8; n > 0; n-- ) {
+			ePiston = sys.getEntity( "svgBWallWalkPiston" + n );
+//			sys.waitPVS( ePiston );
+			sys.waitFor( ePiston );//in case it has been blocked since it was last accessed
+			if ( ePiston.getFloatKey( "direction" ) == 1 ) {
+				ePiston.move( SOUTH, 160 );
+				ePiston.setKey( "direction", 0 );
+			}
+			else {
+				ePiston.move( NORTH, 160 );
+				ePiston.setKey( "direction", 1 );
+			}
+			sys.wait( 0.25 );
+		}
+		sys.waitPVS( $svgBWallWalkPiston1 );
+	}
+}
+
+//==========================================================================
+//==========================================================================
+void ThingThing_UpdateScreen( entity eSelf, entity ePortal1, entity ePortal2 ) {
+	while( eSelf.getIntKey( "isRunning" ) == TRUE ) {
+		ePortal1.updateCameraTarget();
+		ePortal2.updateCameraTarget();
+		sys.waitFrame();
+	}
+}
+
+//==========================================================================
+//ThinThing_Move( entity eSelf )
+//==========================================================================
+void ThinThing_Move( entity eSelf ) {
+	entity eThinThing, eClip, eForce, ePortal1, ePortal2, eLoc1, eLoc2, eLoc3, eLoc4;
+	
+	if ( eSelf.getIntKey( "isRunning" ) == FALSE ) {
+		eSelf.setKey( "isRunning", TRUE );
+		
+		eThinThing	= sys.getEntity( eSelf.getKey( "thinThing" ) );
+		eClip		= sys.getEntity( eSelf.getKey( "safeClip" ) );
+		eForce		= sys.getEntity( eSelf.getKey( "safeForce" ) );
+		ePortal1	= sys.getEntity( eSelf.getKey( "portal" ) );
+		ePortal2	= sys.getEntity( ePortal1.getKey( "cameraTarget" ) );
+		eLoc1		= sys.getEntity( eSelf.getKey( "target" ) );
+		eLoc2		= sys.getEntity( eSelf.getKey( "target1" ) );
+		eLoc3		= sys.getEntity( eSelf.getKey( "target2" ) );
+		eLoc4		= sys.getEntity( eSelf.getKey( "target3" ) );
+		eThinThing.speed( 100 );
+	
+		thread ThingThing_UpdateScreen( eSelf, ePortal1, ePortal2 );
+		eThinThing.startSound( "snd_movething", SND_SCRIPT_1, 0 );
+		eThinThing.startSound( "snd_loopthing", SND_SCRIPT_2, 0 );
+		if ( eSelf.getIntKey( "atDest" ) == FALSE ) {
+			eThinThing.moveTo( eLoc2 );
+			sys.waitFor( eThinThing );
+			sys.trigger( eForce );
+			eThinThing.moveTo( eLoc3 );
+			sys.waitFrame();
+			sys.trigger( eClip );
+			sys.waitFor( eThinThing );
+			eThinThing.moveTo( eLoc4 );
+			sys.trigger( eClip );
+			sys.waitFor( eThinThing );
+			eSelf.setKey( "atDest", TRUE );
+		}
+		else {
+			eThinThing.moveTo( eLoc3 );
+			sys.waitFor( eThinThing );
+			sys.trigger( eForce );
+			eThinThing.moveTo( eLoc2 );
+			sys.waitFrame();
+			sys.trigger( eClip );
+			sys.waitFor( eThinThing );
+			eThinThing.moveTo( eLoc1 );
+			sys.trigger( eClip );
+			sys.waitFor( eThinThing );
+			eSelf.setKey( "atDest", FALSE );
+		}
+		eThinThing.stopSound( SND_SCRIPT_1, 0 );
+		eThinThing.startSound( "snd_stopthing", SND_SCRIPT_2, 0 );
+		eSelf.setKey( "isRunning", FALSE );
+	}
+}	
+
+//==========================================================================
+// void VentPlayerLand()
+//==========================================================================
+void VentPlayerLand(entity trig, entity plyr) {
+	vector v;
+
+	v = plyr.getLinearVelocity();
+	if( v_z > 500 ) {
+		trig.startSound( "snd_impact", 15, 1 );
+	}
+}
+
+//==========================================================================
+// void WraithFlyBy()
+//==========================================================================
+void WraithFlyBy() {
+	thread PlayMapMusic( "snd_salvage_wraith_scare", false, MUS_TRANSITION_OVERLAP );
+	sys.trigger( $scriptedWraith );
+	sys.wait( 0.5 );
+	sys.trigger( $func_idforcefield_1 );
+	sys.wait( 0.05);
+	sys.trigger( $func_idforcefield_2 );
+	sys.wait( 0.17 );
+	sys.trigger( $func_idforcefield_4 );
+	sys.wait( 0.05);
+	sys.trigger( $func_idforcefield_3 );
+	sys.wait( 0.2 );
+	sys.trigger( $func_idforcefield_5 );
+	sys.wait( 0.05);
+	sys.trigger( $func_idforcefield_6 );
+	sys.wait( 2 );
+	$scriptedWraith.remove();
+}
+
+//==========================================================================
+// void HoundDoor()
+//==========================================================================
+void HoundDoor( entity door, float dist, float dir1, float dir2 ) {
+	float openDelay;
+
+	TimeTweak( door, 0, 0, 0.3 );
+	door.move( dir1, dist );
+	door.startSound( "snd_openit", SND_SCRIPT_1, 0 );
+	sys.waitFor( door );
+	openDelay = door.getFloatKey( "openDelay" );
+	sys.wait( openDelay );
+	TimeTweak( door, 0, 0, 0.5 );
+	door.move( dir2, dist );
+	door.startSound( "snd_closeit", SND_SCRIPT_1, 0 );
+}
+
+//==========================================================================
+// void HoundWallDoor1()
+//==========================================================================
+void HoundWallDoor1() {
+	HoundDoor( $hound_walldoor_1, 96, DOWN, UP );
+}
+
+//==========================================================================
+// void HoundWallDoor2()
+//==========================================================================
+void HoundWallDoor2() {
+	HoundDoor( $hound_walldoor_2, 96, DOWN, UP );
+}
+
+//==========================================================================
+// void HoundFloorDoor()
+//==========================================================================
+void HoundFloorDoor() {
+	HoundDoor( $hound_floor_door, 100, SOUTH, NORTH );
+}
+
+//==========================================================================
+// void RaiseSmallPortal()
+//==========================================================================
+void RaiseSmallPortal() {
+	TimeTweak( $salvageportalmover, 0, 0, 0.4 );
+	$salvageportalmover.startSound( "snd_portmove", SND_SCRIPT_0, 0 );
+	$salvageportalmover.move( UP, 72 );
+	sys.waitFor( $salvageportalmover );
+	$salvageportalmover.startSound( "snd_portstop", SND_SCRIPT_0, 0 );
+	$portSmallPumpEntrance.updateCameraTarget();
+}
+
+//==========================================================================
+// void HideoutJabberingGuy()
+//==========================================================================
+void HideoutJabberingGuy() {
+	$salHideoutGuy.DisableWalkIK();
+	$salHideoutGuy.playAnim( ANIMCHANNEL_LEGS, "topeka_idle" );
+	sys.wait( 0.1 );
+	sys.trigger( $salHideoutDoor );
+
+	sys.wait( 0.4 );
+	$player1.startSoundShader( "sal_tom_yuppie", SND_CHANNEL_VOICE );
+	sys.waitForSilence( $player1, 0 );
+
+	$salHideoutGuy.setBlendFrames( ANIMCHANNEL_LEGS, 12 );
+	$salHideoutGuy.playAnim( ANIMCHANNEL_LEGS, "topeka" );
+	if( $salHideoutGuy.getHealth() <= 0 ) {
+		return;
+	}
+	$salHideoutGuy.playAnim( ANIMCHANNEL_HEAD, "sal_npc03" );
+	sys.wait( 5.863 );
+	if( $salHideoutGuy.getHealth() <= 0 ) {
+		return;
+	}
+	$salHideoutGuy.playAnim( ANIMCHANNEL_HEAD, "sal_npc04" );
+	sys.wait( 9.845 );
+	if( $salHideoutGuy.getHealth() <= 0 ) {
+		return;
+	}
+	$salHideoutGuy.playAnim( ANIMCHANNEL_HEAD, "sal_npc05" );
+	sys.wait( 3.877 );
+
+	sys.wait( 0.455 );
+	if( $salHideoutGuy.getHealth() <= 0 ) {
+		return;
+	}
+	sys.trigger( $salHideoutDoor );
+}
+
+//==========================================================================
+// void MutilatedDragAbducted( entity, entity )
+//==========================================================================
+void MutilatedDragAbducted( entity mut, entity ab ) {
+	ab.disableClip();
+	mut.disableClip();
+	ab.setContents( 0 );
+	ab.allowMovement( true );
+	mut.allowMovement( true );
+	ab.moveToJoint( mut, "origin");
+	ab.bindToJoint( mut, "origin", 0 );
+	ab.overrideAnim( ANIMCHANNEL_TORSO );
+	mut.overrideAnim( ANIMCHANNEL_TORSO );
+	ab.playAnim( ANIMCHANNEL_LEGS, "dragged" );
+	mut.playAnim( ANIMCHANNEL_LEGS, "dragging" );
+	sys.wait( mut.animLength( ANIMCHANNEL_LEGS, "dragging" ) );
+	ab.remove();
+	mut.remove();
+}
+
+//==========================================================================
+// void StartDragger1()
+//==========================================================================
+void StartDragger1() {
+	MutilatedDragAbducted( $dragger, $draggee );
+}
+
+//==========================================================================
+// void StartDragger2()
+//==========================================================================
+void StartDragger2() {
+	MutilatedDragAbducted( $dragger2, $draggee2 );
+}
+
+//==========================================================================
+// void CheckAbductedDialog()
+//==========================================================================
+void CheckAbductedDialog( entity self ) {
+	entity obj, sightNull;
+	vector v, objPos;
+	float jointNum;
+
+	obj = self.getEntityKey( "objectEnt" );
+	if( obj.getHealth() <= 0 ) {
+		self.remove();
+		return;
+	}
+	if( obj.distanceTo( $player1 ) < self.getFloatKey( "distance" ) ) {
+		jointNum = obj.getJointHandle( "b3" );
+		objPos = obj.getJointPos( jointNum );
+		v = sys.vecNormalize( $player1.getOrigin() + '0 0 64' - objPos );
+		sightNull = self.getEntityKey( "sightEnt" );
+		sightNull.setOrigin( objPos + ( v * 24 ) );
+		if( sightNull.playerCanSee() ) {
+			sys.trigger( self.getEntityKey( "speakerEnt" ) );
+			self.remove();
+		}
+	}
+}
+
+//============================================================================
+//SvgbFreezer1BodyRespawn()
+//
+//The freezer room recieves 2 new bodies
+//============================================================================
+void SvgbFreezer1BodyRespawn() {
+	entity eSpawn;
+	
+	TimeTweak( $svgbFreezer1BodyRack3, 3, 0.25, 5.5 ); 
+	$svgbFreezer1BodyRack3.move( UP, 224 );
+	sys.waitFor( $svgbFreezer1BodyRack3 );
+	sys.trigger( $svgbFreezer1Bodies3Doors );//close
+	
+	sys.trigger( $svgbFreezer1BodyBag3a );//unhide
+	sys.trigger( $svgbFreezer1BodyBag3b );
+//	sys.setSpawnArg( "angle", "60" );
+//	eSpawn = SpawnEntityAt( "env_human_bodybag", '32 -288 860' );
+//	eSpawn.bind( $svgbFreezer1BodyBag3aCtrl );
+//	sys.setSpawnArg( "angle", "150" );
+//	eSpawn = SpawnEntityAt( "env_human_bodybag", '160 -288 860' );
+//	eSpawn.bind( $svgbFreezer1BodyBag3bCtrl );
+//	sys.setSpawnArg( "angle", "265" );
+//	eSpawn = SpawnEntityAt( "env_human_bodybag", '288 -288 860' );
+//	eSpawn.bind( $svgbFreezer1BodyBag3cCtrl );
+		
+	sys.wait( 2 );
+	sys.trigger( $svgbFreezer1Bodies3Doors );//open
+//	sys.trigger( $svgbFreezer1BodySteamSpeaker2 );FIX ME :ADD
+	sys.trigger( $svgbFreezer1BodySteam2a );//steam on
+	sys.trigger( $svgbFreezer1BodySteam2b );
+	sys.wait( 1 );
+	TimeTweak( $svgbFreezer1BodyRack3, 0.25, 3, 5.5 ); 
+	$svgbFreezer1BodyRack3.move( DOWN, 224 );
+	sys.wait( 1 );
+	sys.trigger( $svgbFreezer1BodySteam2a );//steam off
+	sys.trigger( $svgbFreezer1BodySteam2b );
+}
+
+//============================================================================
+//SvgbFreezer1LiftUp()
+//============================================================================
+void SvgbFreezer1LiftUp() {
+	float fDistanceMod, fZLoc;
+	vector vLiftOrg;
+	
+	vLiftOrg = $svgbFreezer1Lift.getOrigin();
+	fZLoc = vLiftOrg_z;
+	PL( "  fZLoc == " + fZLoc );
+	//fDistanceMod = 1 - GetRangePercentage( 328, 512, fZLoc );
+	fDistanceMod = 1 - GetRangePercentage( 328, 512, fZLoc );
+	
+	if ( fDistanceMod <= 0 ) {
+		fDistanceMod = 0.01;
+	}
+	if ( fDistanceMod > 1 ) {
+		fDistanceMod = 1;
+	}
+	TimeTweak( $svgbFreezer1Lift, (1 * fDistanceMod), (1 * fDistanceMod), (4 * fDistanceMod) );
+	$svgbFreezer1Lift.moveToPos( '-740 -760 512' );
+}
+
+//============================================================================
+//SvgbFreezer1LiftDown()
+//============================================================================
+void SvgbFreezer1LiftDown() {
+	float fDistanceMod, fZLoc;
+	vector vLiftOrg;
+	
+	vLiftOrg = $svgbFreezer1Lift.getOrigin();//-740 -760 512
+	fZLoc = vLiftOrg_z;
+	PL( "  fZLoc == " + fZLoc );
+	fDistanceMod = GetRangePercentage( 328, 512, fZLoc );
+	
+	if ( fDistanceMod < 0.3 ) {//to keep the downward accel from causing the player to hop
+		fDistanceMod = 0.3;
+	}
+	if ( fDistanceMod > 1 ) {
+		fDistanceMod = 1;
+	}
+	
+	TimeTweak( $svgbFreezer1Lift, 1, (1 * fDistanceMod), (4 * fDistanceMod) );
+	$svgbFreezer1Lift.moveToPos( '-740 -760 328' );
+}
+
+//============================================================================
+//============================================================================
+void SvgbFreezer1BodiesRemove()	{
+	TimeTweak( $svgbFreezer1BodyRack3, 3, 0.25, 5.5 ); 
+	$svgbFreezer1BodyRack3.move( UP, 224 );
+	sys.waitFor( $svgbFreezer1BodyRack3 );
+	sys.trigger( $svgbFreezer1Bodies3Doors );//close
+	sys.trigger( $svgbFreezer1BodyBag3a );//hide
+	sys.trigger( $svgbFreezer1BodyBag3b );
+
+	sys.wait( 2 );
+	sys.trigger( $svgbFreezer1Bodies3Doors );//open
+	sys.wait( 1 );
+	TimeTweak( $svgbFreezer1BodyRack3, 0.25, 3, 5.5 ); 
+	$svgbFreezer1BodyRack3.move( DOWN, 224 );
+}
+
+//============================================================================
+//raising and lowering of the bodies during the first pass of the freezer.
+//============================================================================
+void SvgbFreezer1BodiesLower () {
+	sys.wait( 0.5 );
+//	sys.trigger( $svgbFreezer1BodySteamSpeaker );//FIX ME: ADD
+	TimeTweak( $svgbFreezer1BodyRack1, 0.25, 3, 5.5 ); 
+	$svgbFreezer1BodyRack1.move( DOWN, 224 );
+	sys.wait( 4 );
+	//third row raises with 2 bodies and comes down with 0
+	thread SvgbFreezer1BodiesRemove();
+}
+
+
+//============================================================================
+//BusSequenceStart()
+//
+//Desciption:
+//============================================================================
+void BusSequenceStart() {
+	$busSequenceDoor1.close();
+	$busSequenceDoor2.close();
+	thread SalvageBoss_Music_BusB();
+}
+
+//==========================================================================
+//==========================================================================
+void UnderwearCowering_Start() {
+	$underwearCowering.DisableWalkIK();
+	PlayCycle_Blend( $underwearCowering, ANIMCHANNEL_LEGS, "cower_b", 0 );
+	while ( $underWearCowering_relay.getIntKey( "bStop" ) == FALSE ) {
+		sys.waitPVS( $underwearCowering );
+		PlayAnim_Blend( $underwearCowering, ANIMCHANNEL_HEAD, "sal_cower", 6 );
+		sys.waitForSilence( $underwearCowering.getHead(), 1 + sys.random( 4 ) );
+	}
+}
+
+//==========================================================================
+//==========================================================================
+void UnderwearCowering_Stop() {
+//	entity eHead;
+	
+//	eHead = $underwearCowering.getHead();
+//	eHead.stopSound( SND_CHANNEL_VOICE, 0 );
+	$underWearCowering_relay.setKey( "bStop", TRUE );
+}
+
+//==========================================================================
+//precache in level_precache.def
+//==========================================================================
+void HunterCombatSound( entity eSelf ) {//enemies use even sound channels
+	thread StartSoundRandomLoop( eSelf, "monster_hunter_sight", SND_SCRIPT_0, 10, 20 );
+	sys.wait( 1.5 );
+	thread StartSoundRandomLoop( eSelf, "monster_hunter_missileattack", SND_SCRIPT_2, 0.10, 2 );
+	sys.wait( 3.5 );
+	thread StartSoundRandomLoop( eSelf, "monster_hunter_pain", SND_SCRIPT_4, 4, 8 );
+	sys.wait( 2.37 );
+	thread StartSoundRandomLoop( eSelf, "monster_hunter_speech_takecover", SND_SCRIPT_6, 30, 60 );
+}
+
+//==========================================================================
+//precache in level_precache.def
+//==========================================================================
+void HiderCombatSound( entity eSelf ) {//characters use odd sound channels
+	thread StartSoundRandomLoop( eSelf, "monster_hunter_altmissileattack", SND_SCRIPT_1, 5.25, 25 );
+}
+
+//==========================================================================
+//Hunter hider combat sounds
+//==========================================================================
+void HunterHiderCombatSound( entity eSelf ) {
+	thread HunterCombatSound( eSelf );
+	thread HiderCombatSound( eSelf );
+}
+
+//==========================================================================
+//HiderFight()
+//==========================================================================
+void HiderFight() {
+	$hiderFight_hiderL.allowMovement( 1 );
+	$hiderFight_hiderR.allowMovement( 1 );
+	$hiderFight_hiderL.DisableWalkIK();
+	$hiderFight_hiderR.DisableWalkIK();
+	sys.trigger( $hiderFight_hiderL );
+	sys.trigger( $hiderFight_hiderR );
+	sys.waitFrame();
+	PlayCycle_Blend( $hiderFight_hiderR, ANIMCHANNEL_LEGS, "fleerightidle", 0 );
+	PlayCycle_Blend( $hiderFight_hiderL, ANIMCHANNEL_LEGS, "fleeleftidle", 0 );
+}
+
+void HiderFight_Run() {
+	PlayAnim_Blend( $hiderFight_hiderR, ANIMCHANNEL_HEAD, "tommysight", 6 );
+	sys.wait( 0.1 );
+	PlayCycle_Blend( $hiderFight_hiderR, ANIMCHANNEL_LEGS, "flee", 6 );
+	sys.wait( 0.35 );
+	PlayCycle_Blend( $hiderFight_hiderL, ANIMCHANNEL_LEGS, "flee", 6 );
+	sys.wait( 0.5 );
+	$player1.startSoundShader( "salboss_conv1_tom01", SND_CHANNEL_VOICE );
+	sys.wait( 1.85 );
+		
+	TimeTweak( $SalvageBossHider1SecretDoor, 0.15, 0, 0.25 );
+	$SalvageBossHider1SecretDoor.move( UP, 128 );
+	sys.wait( 1 );
+	$hiderFight_hiderL.remove();
+	$hiderFight_hiderR.remove();
+}
+
+//============================================================================
+//SvgBWallWalkPistonsTurnOn()
+//============================================================================
+void SvgBWallWalkPistonsTurnOn() {
+	$pumpSoundsNull.startSound( "snd_pumpsStart", SND_SCRIPT_0, 1 );//"machine_piston_puzzle_start"
+	sys.wait( 1 );
+	$pumpSoundsNull.startSound( "snd_pumpsLoop", SND_SCRIPT_1, 1 );//"machine_piston_puzzle_pumping"
+}
+
+//==========================================================================
+//VentRotation()
+//==========================================================================
+void VentRotation() {
+	float ts, velX, velZ;
+	vector deltaAng, rotAcc;
+
+	sys.threadname( "map_salvageboss::VentRotation" );
+	
+	TimeTweak( $sbVentMoverControl, 0, 0, GAME_FRAMETIME );
+	PL( "	VentRotation Ran" );
+
+	velX = 0;
+	velZ = 0;
+	deltaAng = '0 0 0';
+	ts = 0;
+	while( true ) {
+		ts += GAME_FRAMETIME;
+		rotAcc = '0 0 0';
+		while( ts >= 0.016 ) {
+			ts -= 0.016;
+
+			// X Rotation
+			velX += ( g_DestAngX - deltaAng_x ) / 128;
+			velX *= 0.95;
+			deltaAng_x += velX;
+
+			// Z Rotation
+			velZ += ( g_DestAngZ - deltaAng_z ) / 128;
+			velZ *= 0.95;
+			deltaAng_z += velZ;
+
+			rotAcc += Vec3Set( -velX, 0, -velZ );
+		}
+		$sbVentMoverControl.rotateOnce( rotAcc );
+		sys.waitFrame();
+	}
+}
+
+//==========================================================================
+//VentFallToGround()
+//==========================================================================
+void VentFallToGround() {
+	float ts, spd, moveAcc;
+	vector breakMark, v;
+
+	sys.threadname( "map_salvageboss::VentFallToGround" );
+
+	breakMark = $sbVentMoverBreakHeight.getOrigin();
+	spd = 0;
+	ts = 0;
+	do {
+		moveAcc = 0;
+		ts += GAME_FRAMETIME;
+		while( ts >= 0.016 ) {
+			ts -= 0.016;
+			spd += 0.275;
+			moveAcc += spd;
+		}
+		$sbVentMoverControl.move( DOWN, moveAcc );
+		sys.waitFrame();
+		v = $sbVentMoverControl.getOrigin();
+	} while( v_z > breakMark_z );
+}
+
+//============================================================================
+//============================================================================
+void Centurion_BossBar_On() {
+	$svgBossCenturion.takeDamage( TRUE );
+	sys.wait( 1 );
+	PL( "Boss bar set" );
+	$svgBossCenturion.bossBar( 1 );
+	sys.setProgress( 0 );
+	sys.showProgressBar( 1 );
+	sys.setProgress( 1 );
+	sys.trigger( $svgBossFightRelay );
+}
+
+void Centurion_BossBar_On_Thread() {
+	thread Centurion_BossBar_On();
+}
+
+//==========================================================================
+//VentBreakApart()
+//==========================================================================
+void VentBreakApart() {
+	if ( $svgBossKeyHolder.getIntKey( "ventBreakRan" ) == FALSE ) {
+		$player1.dialogStop();
+		$svgBossKeyHolder.setKey( "ventBreakRan", TRUE );
+		$sbVentMoverGrate.startSound( "snd_crash", SND_SCRIPT_0, 1 );
+		PL( "BreakApart" );
+		//spawn gibs and fx
+		sys.trigger( $svgBossVentBreakRelay );
+		$goat.unbind();
+		$sbVentMover.unbind();
+		$sbVentMoverGrate.unbind();
+		$sbVentMoverClip.unbind();
+		$svgb_ventSidePanel1.unbind();
+		$svgb_ventSidePanel2.unbind();
+		$goat.remove();
+		$sbVentMover.remove();
+		$sbVentMoverGrate.remove();
+		$sbVentMoverClip.remove();
+		sys.waitFrame();
+		sys.trigger( $svgb_ventSidePanel1 );
+		sys.trigger( $svgb_ventSidePanel2 );
+		$sbVentMoverControl.remove();
+	}
+}
+
+void FallingVentSequenceSafety_Internal() {
+	sys.wait( 11 );
+	sys.trigger( $bossSafetyRelay );
+}
+
+//==========================================================================
+//FallingVentSequence()
+//==========================================================================
+void FallingVentSequence() {
+	thread FallingVentSequenceSafety_Internal();
+	float i;
+	PL( "FallingVentSequence 1" );
+	sys.threadname( "map_salvageboss::FallingVentSequence" );
+	g_DestAngX = 0;
+	g_DestAngZ = 0;
+	sys.trigger( $svgBoss_ventBreakRelay );
+	$sbVentMoverGrate.startSound( "snd_creak1", SND_SCRIPT_0, 1 );
+	TimeTweak( $sbVentMoverControl, 0, 0, 2 );
+	$sbVentMoverControl.rotateOnce( '0 0 4' );//MF reveresed direction
+	sys.waitFor( $sbVentMoverControl );
+	PL( "FallingVentSequence 2" );
+	thread VentRotation();
+	PL( "FallingVentSequence 3" );
+	$sbVentMoverGrate.startSound( "snd_break1", SND_SCRIPT_0, 1 );
+	g_DestAngZ = -10;
+	sys.wait( 2 );
+	$sbVentMoverGrate.startSound( "snd_break2", SND_SCRIPT_0, 1 );
+	g_DestAngZ = -25;
+	sys.wait( 0.2 );
+	g_DestAngX = 7;
+
+	sys.wait( 1.75 );
+	$sbVentMoverGrate.startSound( "snd_creak2", SND_SCRIPT_1, 1 );
+	PL( "FallingVentSequence 4" );
+	for( i = 0; i < 8; i++ ) {
+		g_DestAngZ -= 7/8;
+		sys.wait( 2.0/8 );
+		PL( "	i = " + i );
+	}
+	PL( "	VentRotation killed inside FallingVentSequence" );
+	sys.killthread( "map_salvageboss::VentRotation" );
+	$sbVentMoverGrate.startSound( "snd_break3", SND_SCRIPT_1, 1 );
+
+	VentFallToGround();
+//	sys.wait( 1 );
+	VentBreakApart();
+}
+
+//==========================================================================
+//==========================================================================
+void FallingVentSequence_Thread() {
+	PL( "FallingVentSequence_Thread 1" );
+	thread FallingVentSequence();
+	PL( "FallingVentSequence_Thread 2" );
+}
+
+//==========================================================================
+//==========================================================================
+void VentCancelSafety() {
+	PL( "	VentCancelSafety ran" );
+	sys.killthread( "map_salvageboss::FallingVentSequence" );
+	sys.killthread( "map_salvageboss::VentRotation" );
+	sys.killthread( "map_salvageboss::VentFallToGround" );
+	VentBreakApart();
+	sys.wait( 2 );
+	sys.trigger( $svgBossCenturion );
+	sys.wait( 2 );
+	sys.trigger( $svgBossCenturion );
+	sys.wait( 2 );
+	sys.trigger( $svgBossCenturion );
+	sys.wait( 2 );
+	sys.trigger( $svgBossCenturion );
+}
+
+void Centurion_NoDamage() {
+	$svgBossCenturion.takeDamage( FALSE );
+}
+
+void Centurion_NoDamage_Thread() {
+	thread Centurion_NoDamage();
+}
+
+//void Centurion_TakeDamage() {
+//	$svgBossCenturion.takeDamage( TRUE );
+//}
+//
+//void Centurion_TakeDamage_Thread() {
+//	thread Centurion_TakeDamage();
+//}
+
+//============================================================================
+//Centurion_LargeRoar()
+//
+//Desciption: after the Centurion reaches a certain health level, it roars and opens up the forcefields
+//============================================================================
+void Centurion_LargeRoar() {
+	//flicker lights
+	//turn off forcefields
+	//trigger particle sparks and sounds
+	//turn on lights in tunnels; maybe dim lights in rooms to make them stand out
+	//open tunnel doors
+	PL( "Large Roar pre trigger" );
+	$svgBossCenturion.takeDamage( FALSE );
+	sys.trigger( $svgBossLargeRoarRelay );
+	sys.wait( 3.9583 );
+	$svgBossCenturion.takeDamage( TRUE );
+//	PL( "Large Roar threading..." );
+//	thread Centurion_LargeRoar_Thread();
+	PL( "Large Roar post trigger" );
+}
+
+void Centurion_LargeRoar_Thread() {
+//	PL( "Large Roar" );
+//	sys.trigger( $svgBossLargeRoarRelay );
+	PL( "Large Roar threading..." );
+	thread Centurion_LargeRoar();
+	PL( "Large Roar threaded" );
+}
+
+void Centurion_RoarFx() {
+	sys.trigger( $svgbCentRoarDustRelay );
+	sys.wait( 0.05 );
+	sys.trigger( $svgbCentRoarDustRelay );
+	sys.wait( 0.15 );
+	sys.trigger( $svgbCentRoarDustRelay );
+	sys.wait( 0.07 );
+	sys.trigger( $svgbCentRoarDustRelay );
+	sys.wait( 2 );
+	PL( "invunerability over");
+	$player1.dialogStop();
+}
+
+//void Centurion_LargeRoar_Thread() {
+//	PL( "Large Roar threading..." );
+//	thread Centurion_LargeRoar();
+//}
+
+//============================================================================
+//Centurion_StartEncounter()
+//
+//Desciption: various fx here as needed
+//============================================================================
+void Centurion_StartEncounter() {
+	PL( "Start Encounter" );
+	float x = 0;
+	
+	sys.trigger( $svgBossCenturion_Door );
+	sys.trigger( $svgBossCenturion );
+	sys.trigger( $svgBossCenturion_DoorFxRelay );
+	sys.trigger( $svgBossCenturion_DoorRoar );
+	sys.waitFrame();
+	$svgBossCenturion.takeDamage( FALSE );
+	while( ( $svgBossKeyHolder.getIntKey( "healthStage2" ) == FALSE ) && ( x < 60 ) ) {
+		PL( "Time until roar is forced = " + ( 60 - x ) );
+		x++;
+		sys.wait( 1 );
+	}
+	PL( "Large Roar check" );
+	waitForLivingPlayer();
+	$player1.dialogStart( TRUE, FALSE, FALSE );
+	PL( "Large Roar : Player alive" );
+	$svgBossCenturion.centurionRoar();
+	PL( "svgBossCenturion.centurionRoar called..." );
+}
+
+//============================================================================
+//Centurion_PlayerInsideBox( entity eSelf )
+//
+//Desciption:
+//============================================================================
+void Centurion_PlayerInsideBox( entity eSelf ) {
+	entity eBoxLoc;
+	PL( "Player Inside Box : " + eSelf.getKey( "location" ) );
+	$svgBossKeyHolder.setKey( "boxLocation", eSelf.getKey( "location" ) );//location is: North or South
+	eBoxLoc = sys.getEntity( eSelf.getKey( "target" ) );
+	$svgBossCenturion.playerInBox( TRUE, eBoxLoc );
+}
+
+//============================================================================
+//Centurion_PlayerOutsideBox( entity eSelf )
+//
+//Desciption:
+//============================================================================
+void Centurion_PlayerOutsideBox( entity eSelf ) {
+	entity eBoxLoc;
+	PL( "Player Outside Box : " + eSelf.getKey( "location" ) );
+	eBoxLoc = sys.getEntity( eSelf.getKey( "target" ) );
+	$svgBossCenturion.playerInBox( FALSE, eBoxLoc );
+}
+
+//============================================================================
+//Centurion_ForceToggle( entity eSelf )
+//
+//Desciption:
+//toggle for the forcefield
+//
+//	-forcefield on: set centurions forcefieldon state;
+//	-forcefield off: set centurions forcefieldoff state;
+//		-also causes tunnel lights to flicker on/off for a second
+//============================================================================
+void Centurion_ForceToggle( entity eSelf ) {//there is a system for each hole
+	string	sPrefix;
+	entity	eForcefield, eForcefieldGui, eOnFXRelay, eOffFXRelay;
+	
+	sPrefix = eSelf.getName();
+
+	eForcefield		= sys.getEntity( sPrefix + "Forcefield" );
+	eForcefieldGui	= sys.getEntity( sPrefix + "ForcefieldGui" );
+	eOnFXRelay		= sys.getEntity( sPrefix + "OnFXRelay" );
+	eOffFXRelay		= sys.getEntity( sPrefix + "OffFXRelay" );
+	
+	if ( eSelf.getIntKey( "isActive" ) == FALSE ) {
+		eSelf.setKey( "isActive", TRUE );
+		
+		if ( eSelf.getIntKey( "forceFieldIsOn" ) == FALSE ) {//if off turn on
+			eForcefieldGui.setSkin( "skins/consoles/GuiToGui3" );//dimmed
+			eSelf.setKey( "forceFieldIsOn", TRUE );
+			$svgBossCenturion.preForcefieldNotify();
+			//preturn on power up : timing is = the time it takes to get the arm into position + 0.01
+			PL( "Forcefield : powering up..." );
+			sys.wait( 1.72 );//the gunIn anim's time
+			
+			//turn on sequence
+			PL( "Forcefield : Turning on..." );
+			sys.trigger( eForcefield );
+			sys.trigger( eOnFXRelay );
+			sys.wait( 0.5 );
+			//fully on; allow centurion roar and arm chop
+			$svgBossCenturion.takeDamage( TRUE );//Damage is turned off on centurion approach, and at the start of each gun in hole anim.  this turns it back on the instant before the arm is chopped.
+			$svgBossCenturion.forcefieldToggle( TRUE );
+			sys.wait( 0.25 );//give entity a chance to react
+			eForcefieldGui.setSkin( "skins/consoles/GuiToGui2" );
+		}
+		else {//turn off
+			eForcefieldGui.setSkin( "skins/consoles/GuiToGui3" );//dimmed
+			eSelf.setKey( "forceFieldIsOn", FALSE );
+			$svgBossCenturion.forcefieldToggle( FALSE );
+			sys.trigger( eForcefield );
+			sys.trigger( eOffFXRelay );
+			//gui is in processing state
+			sys.wait( 0.5 );//NEW TEST
+			//gui is ready now
+			eForcefieldGui.setSkin( "" );
+			PL( "Forcefeild is Off..." );
+		}
+		if ( $svgBossKeyHolder.getIntKey( "deactivateGuis" ) != TRUE ) {//gunIn == FALSE && powerroar == FALSE if the roar or chop sequence has begun, disallow until later
+			PL( "Guis Reactivated" );
+			eSelf.setKey( "isActive", FALSE );//allow this function to run again
+		}
+		else {
+			eForcefieldGui.setSkin( "skins/consoles/guitonodraw" );//off
+		}
+	}
+	else {
+		PL( "Error sound on gui played" );
+		eForcefieldGui.setSkin( "skins/consoles/GuiToGui3" );//off and dimmed
+		eSelf.startSound( "snd_error", SND_SCRIPT_0, 1 );//needs snd shader and ent key
+	}
+}
+
+//============================================================================
+//Centurion_PowerRoar()
+//
+//Desciption: called by centurion boss anim : power_roar.  This function turns off the forcefields, flickers lights, and 
+//	lets the Centurion know that the forcefields are indeed off.
+//	note: if the player quickly tries to turn it off right as the power roar starts, one event will happen first and disable the other.
+//============================================================================
+void Centurion_PowerRoar() {
+	entity eGuiRelay, eForcefield, eForcefieldGui, ePowerRoarFxRelay;
+	float fTunnelState1, fTunnelState2;
+	string sPlayerLocation;
+	//get player's position
+	sPlayerLocation = $svgBossKeyHolder.getKey( "boxLocation" );//, eSelf.getKey( "location" ) );//location is: North or South
+	//set UP affected entities based on this info
+	
+	eGuiRelay			= sys.getEntity( "svgBossBox" + sPlayerLocation );//named generically since it's name is used as a prefix
+	eForcefield			= sys.getEntity( "svgBossBox" + sPlayerLocation + "Forcefield" );
+	eForcefieldGui		= sys.getEntity( "svgBossBox" + sPlayerLocation + "ForcefieldGui" );
+	ePowerRoarFxRelay	= sys.getEntity( "svgBossBox" + sPlayerLocation + "PowerRoarFxRelay" );
+	
+	//disable gui relays
+	//tag the forcefield as active so it cannot be toggled back and forth after the roar starts
+	eGuiRelay.setKey( "isActive", TRUE );
+	$svgBossKeyHolder.setKey( "deactivateGuis", TRUE );//prevent active state from getting reset in toggle function
+	
+//	eGuiRelay.disable();//gui trigger_relay $centTunnel1
+	$svgBossCenturion.takeDamage( FALSE );
+	//turn off the forcefield
+	sys.wait( 0.792 );//anim timing sync
+	if ( eGuiRelay.getIntKey( "forceFieldIsOn" ) == TRUE ) {//safety
+		sys.trigger( eForcefield );
+		eGuiRelay.setKey( "forceFieldIsOn", FALSE );
+	}
+	//visually 'turn off' the guis:
+	//eForcefieldGui.setSkin( "skins/consoles/GuiToGui3" );//dimmed or off?
+	eForcefieldGui.setSkin( "skins/consoles/guitonodraw" );//off
+	PL( "Forcefield Gui set to NoDraw" );
+	//light flicker, sparks, etc
+	sys.trigger( ePowerRoarFxRelay );//attached 'back on' relay has delays = to the below wait
+	PL("triggered power roar fx" );
+	//set Centurion's states
+	$svgBossCenturion.forcefieldToggle( FALSE );
+	PL("force toggle set" );
+	sys.wait( 2 );//back on' relay has delays = to this wait
+//!!SCRIPT PAUSES HERE!
+	
+	//turn gui visuals back on	: relay
+	//turn lights back on		: relay
+	sys.wait( 1 );//wait for fx to finish; 
+	//total wait time >= (powerroar + gunIn) times
+	PL( "Forcefield Gui Re-enabled" );
+	//enable gui relays
+	eForcefieldGui.setSkin( "" );
+	eGuiRelay.setKey( "isActive", FALSE );
+	$svgBossKeyHolder.setKey( "deactivateGuis", FALSE );
+//	eGuiRelay.enable();	
+}
+
+void Centurion_PowerRoar_Thread() {
+	thread Centurion_PowerRoar();
+}
+
+//============================================================================
+//Centurion_ArmPush()
+//This function simulates collision for the centurion arm
+//============================================================================
+void Centurion_ArmPush() {
+	entity ePushClip, ePushHurt1, ePushHurt2;
+	string sPlayerLocation;
+	//get player's position
+	sPlayerLocation = $svgBossKeyHolder.getKey( "boxLocation" );
+	PL( "Arm push Start" );
+	ePushClip = sys.getEntity( "svgBoss_PushClip_" + sPlayerLocation );
+	ePushHurt1 = sys.getEntity( "svgBoss_PushHurt1_" + sPlayerLocation );
+	ePushHurt2 = sys.getEntity( "svgBoss_PushHurt2_" + sPlayerLocation );
+	TimeTweak( ePushClip, 0, 0, 0.5 );
+	sys.wait( 0.25 );
+	PL( "Arm push post wait" );
+	if ( sPlayerLocation == "North" ) {
+		ePushClip.setOrigin( '880 4848 352' );
+		ePushClip.move( NORTH, 72 );
+		sys.waitFor( ePushClip );
+		sys.wait( 0.3 );
+		TimeTweak( ePushClip, 0, 0, 0.15 );
+		ePushClip.move( NORTH, 128 );
+	} 
+	else {
+		ePushClip.setOrigin( '880 3598 352' );
+		ePushClip.move( SOUTH, 72 );
+		sys.waitFor( ePushClip );
+		sys.wait( 0.3 );
+		TimeTweak( ePushClip, 0, 0, 0.15 );
+		ePushClip.move( SOUTH, 128 );
+	} 
+	sys.waitFor( ePushClip );
+	sys.wait( 0.15 );
+	ePushHurt1.enable();
+	ePushHurt2.enable();
+}
+
+void Centurion_ArmPush_Thread() {
+	thread Centurion_ArmPush();
+}
+	
+//============================================================================
+//============================================================================
+void Centurion_ArmPush_Off( string sPlayerLocation ) {
+	entity ePushClip, ePushHurt1, ePushHurt2;
+
+	ePushClip = sys.getEntity( "svgBoss_PushClip_" + sPlayerLocation );
+	ePushHurt1 = sys.getEntity( "svgBoss_PushHurt1_" + sPlayerLocation );
+	ePushHurt2 = sys.getEntity( "svgBoss_PushHurt2_" + sPlayerLocation );
+	ePushClip.remove();
+	ePushHurt1.remove();
+	ePushHurt2.remove();
+}
+
+//============================================================================
+//Centurion_ArmChopStart()
+//
+//called from anim: arm_chopped
+//Desciption: global forcefield turn off and flicker, guis deactivated permanently; possibly spawn gun and gib fx
+//============================================================================
+void Centurion_ArmChopStart() {
+	entity eChopFxRelay, eAutoCannon;
+	float fAutoCannonAngle;
+	vector vAutoCannonLoc;
+	string sPlayerLocation;
+	
+	sPlayerLocation = $svgBossKeyHolder.getKey( "boxLocation" );//location is: North or South
+	thread Centurion_ArmPush_Off( sPlayerLocation );
+	
+	//set UP affected entities based on this info
+	eChopFxRelay = sys.getEntity( "svgBossBox" + sPlayerLocation + "ChopFxRelay" );
+//	eGuiRelay			= sys.getEntity( "svgBossBox" + sPlayerLocation );//named generically since it's name is used as a prefix
+	
+//	vAutoCannonLoc = eChopFxRelay.getOrigin();
+	
+	//take over all gui controls from here; disallow input
+	$svgBossBoxNorth.setKey( "isActive", TRUE );
+	$svgBossBoxSouth.setKey( "isActive", TRUE );
+	$svgBossKeyHolder.setKey( "deactivateGuis", TRUE );
+	$svgBossBoxNorthForcefieldGui.setSkin( "skins/consoles/guitonodraw" );
+	$svgBossBoxSouthForcefieldGui.setSkin( "skins/consoles/guitonodraw" );
+	//fx spawn from arm stump during anim and continuously afterwords (until death)
+	//use joint binding.  toggle this system on after arm chop and off at death.
+//	sys.trigger( $svgBossArmChopFx );//on.  wiring trigger turns this off later.
+	//spawn autocannon
+//	sys.setSpawnArg( "origin", vAutoCannonLoc_x + " " + vAutoCannonLoc_y + " " + vAutoCannonLoc_z );
+//	sys.setSpawnArg( "angle", fAutoCannonAngle );
+//	eAutoCannon = sys.spawn( "weapon_autocannon" ); 
+
+	//play sickening bone and flesh arm chop noise in anim
+	//spawn a few gibs
+	//skin swap on centurion
+	sys.trigger( eChopFxRelay );//wired delay also turns guis to static
+	
+	sys.wait( 1.5 );//for roar
+	//centurion arm chopped roar pain animation and sound plays from the anim
+	//turn off any forcefields that are on:
+	if ( $svgBossBoxNorth.getIntKey( "forceFieldIsOn" ) == TRUE ) {
+		sys.trigger( $svgBossBoxNorthForcefield );
+		$svgBossBoxNorth.setKey( "forceFieldIsOn", FALSE );
+	}
+	if ( $svgBossBoxSouth.getIntKey( "forceFieldIsOn" ) == TRUE ) {
+		sys.trigger( $svgBossBoxSouthForcefield );
+		$svgBossBoxSouth.setKey( "forceFieldIsOn", FALSE );
+	}
+	$svgBossCenturion.forcefieldToggle( FALSE );
+	//flicker lights in tunnels off/dim
+	//permanently turn off guis and forcefields
+	thread PlayMapMusic( "snd_salvageboss_boss_lvl2", TRUE, MUS_TRANSITION_OVERLAP );
+	thread AmmoSpawners();
+	//remove room triggers
+}
+
+void Centurion_ArmChopStart_Thread () {
+	thread Centurion_ArmChopStart();
+}
+
+//============================================================================
+//Centurion_Death()
+//
+//Desciption: possibly just use wiring.  death notes collected here
+//============================================================================
+void Centurion_Death() {
+	PL( "Centurion is dead: effects triggered" );
+	$player1.dialogStop();//safety
+	g_bSVGSpawnAmmo = FALSE;//turn off ammo spawners
+//	sys.showProgressBar( 0 );
+	//disable Guis and forcefields
+	$svgBossBoxNorth.setKey( "isActive", TRUE );
+	$svgBossBoxSouth.setKey( "isActive", TRUE );
+	$svgBossKeyHolder.setKey( "deactivateGuis", TRUE );
+	
+	$svgBossBoxNorthForcefieldGui.setSkin( "skins/consoles/guitonodraw" );//off	
+	$svgBossBoxSouthForcefieldGui.setSkin( "skins/consoles/guitonodraw" );//off	
+		
+	if ( $svgBossBoxNorth.getIntKey( "forceFieldIsOn" ) == TRUE ) {
+		sys.trigger( $svgBossBoxNorthForcefield );
+		$svgBossBoxNorth.setKey( "forceFieldIsOn", FALSE );
+	}
+	if ( $svgBossBoxSouth.getIntKey( "forceFieldIsOn" ) == TRUE ) {
+		sys.trigger( $svgBossBoxSouthForcefield );
+		$svgBossBoxSouth.setKey( "forceFieldIsOn", FALSE );
+	}
+	//disable playerInBox triggers with wiring
+	
+	thread Centurion_ArmPush_Off( "North" );
+	thread Centurion_ArmPush_Off( "South" );
+	//trigger the arm fx off
+//	sys.trigger( $svgBossArmChopFx );//off
+	//hunter comes in through the door
+	//other? special death scream that shakes the screen?
+	//spawn in dust cloud where he lands?
+	thread PlayMapMusic( "snd_salvageboss_boss_lvl3", FALSE, MUS_TRANSITION_CUTOFF );
+	sys.wait( 1.5 );
+	$player1.startSoundShader( "salboss_tom_killcenturion", SND_CHANNEL_VOICE );
+}
+
+//============================================================================
+//Svb_SphereVoice_Boss()
+//============================================================================
+void Svb_SphereVoice_Boss() {
+	SphereVoice_Start();
+	sys.trigger( $speaker_spherevoice_1 );
+	sys.wait( 4 );
+//	$player1.startSoundShader( "salboss_tom_spherevoiceresponse01", SND_SCRIPT_0 );
+//	sys.wait( 2 );
+	SphereVoice_Stop();
+	$player1.startSoundShader( "salboss_tom_spherevoiceresponse01", SND_CHANNEL_VOICE );
+	sys.wait( 3.5 );
+//	sys.wait( 0.5 );
+	waitForLivingPlayer();
+	$player1.startSoundShader( "salboss_tom_spherevoiceresponse02", SND_CHANNEL_VOICE );
+	sys.wait( 1.5 );
+	sys.trigger( $svgbDoorOpenRelay );
+}
+
+//============================================================================
+//Starts the whole sequence
+//============================================================================
+void Goat_Portal_Setup() {
+//	$goat.setBlendFrames( ANIMCHANNEL_LEGS, 0 );
+//	$goat.setBlendFrames( ANIMCHANNEL_HEAD, 0 );
+//	$goat.setBlendFrames( ANIMCHANNEL_TORSO, 0 );
+	$goat.allowMovement( 1 );
+	$goat.DisableWalkIK();
+	sys.trigger( $goat );
+	sys.waitFrame();
+	$goat.hide();
+	sys.wait( 0.25 );
+	$player1.startSoundShader( "salboss_tom_deadendvent", SND_CHANNEL_VOICE );
+}	
+
+void Conversation_Goat() {
+	float fGoatTiming, fCurrentTime;
+	
+	fGoatTiming = $goat.animLength( ANIMCHANNEL_LEGS, "goat_portal" );
+	PL( "GoatTiming = " + fGoatTiming );//23.3
+	sys.wait( 2 );
+	$player1.startSoundShader( "salboss_tom_goat01", SND_CHANNEL_VOICE );//Hey you
+	sys.waitForSilence( $player1,2 );
+	$player1.startSoundShader( "salboss_tom_goat02", SND_CHANNEL_VOICE );//How do I get down
+	sys.waitForSilence( $player1,3 );
+	$player1.startSoundShader( "salboss_tom_goat03", SND_CHANNEL_VOICE );//Hey Up here
+	sys.waitForSilence( $player1,4 );
+	$player1.startSoundShader( "salboss_tom_goat04", SND_CHANNEL_VOICE );//Holy shit
+	sys.waitForSilence( $player1,3 );
+	$player1.startSoundShader( "salboss_tom_goat05", SND_CHANNEL_VOICE );//Look out!
+	sys.waitForSilence( $player1,2.5 );
+	$player1.startSoundShader( "salboss_tom_goat06", SND_CHANNEL_VOICE );//Run
+	sys.waitForSilence( $player1,1.75 );
+	$player1.startSoundShader( "salboss_tom_goat07", SND_CHANNEL_VOICE );//aw, god...
+//	sys.waitForSilence( $player1,1 );
+}
+
+
+//============================================================================
+//Starts the whole sequence
+//============================================================================
+void Goat_Portal() {
+	waitForLivingPlayer();
+	$player1.dialogStart( TRUE, FALSE, FALSE );
+	sys.trigger( $goatPortal );
+	$sbVentMoverClip.setOrigin( '884 3688 912' );
+	$sbVentMoverClip.bind( $sbVentMoverControl );
+	sys.wait( 1 );
+	sys.waitFrame();
+	$goat.show();
+	$goat.setState( "state_Nothing" );
+	$goat.setContents( 0 );
+	$goat.setClipmask( 0 );
+	
+	PlayAnim_Blend( $goat, ANIMCHANNEL_HEAD, "sal_goat02", 0 );
+	PlayAnim_Blend( $goat, ANIMCHANNEL_LEGS, "goat_portal", 0 );
+	thread Conversation_Goat();
+	sys.wait( 1 );
+	thread PlayMapMusic( "snd_salvageboss_boss_lvl1", TRUE, MUS_TRANSITION_OVERLAP );
+	sys.trigger( $goatPortal );
+	PL( "anim length: " + $goat.animLength( ANIMCHANNEL_LEGS, "goat_portal" ) );
+	sys.wait( $goat.animLength( ANIMCHANNEL_LEGS, "goat_portal" ) - 12 );
+	thread Centurion_StartEncounter();
+	sys.wait( 10 );
+	//goat prays
+	PlayAnim_Blend( $goat, ANIMCHANNEL_HEAD, "sal_goat01", 0 );
+	sys.wait( 2 );
+	PlayCycle_Blend( $goat, ANIMCHANNEL_LEGS, "goat_kneel_idle", 6 );
+//	PlayAnim_Blend( $goat, ANIMCHANNEL_HEAD, "goat_portal", 0 );//ADD goat loop dialog here
+		
+//	sys.waitForSilence( $shuttlePrincess.getHead(), 2 );
+//	thread SpeechTransition_Blend( $shuttlePrincess, "sh_callmeelhuit", "sh_idle_A", 6 );
+}
+
+//============================================================================
+//
+//============================================================================
+void Goat_Smack() {
+	sys.trigger( $svgBossCenturion_Door );
+//	sys.wait( 0.5 );
+	PlayAnim_Blend( $goat, ANIMCHANNEL_LEGS, "goat_clingtovent", 6 );
+	PlayAnim_Blend( $goat, ANIMCHANNEL_HEAD, "sal_goat10", 0 );
+//	sys.wait( 0.5 );
+	PL( "goat waiting" );
+	sys.wait( 7.5 );
+	PL( "goat waited" );
+//	$player1.startSoundShader( "sal_tom10", SND_CHANNEL_VOICE );
+//	sys.waitForSilence( $player1, 3 );
+//	$player1.startSoundShader( "sal_tom11", SND_CHANNEL_VOICE );
+	PlayAnim_Blend( $goat, ANIMCHANNEL_HEAD, "sal_goat11", 0 );
+}
+
+//============================================================================
+//============================================================================
+//PORTAL SPIN SCRIPTS:
+//============================================================================
+//============================================================================
+void PortalSpin_Inner2() {
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.5, 	0.25, 	1.0 );
+	$svgbPortalRingInnerCtrl2.move( SOUTH,	128 );
+	sys.waitFor( $svgbPortalRingInnerCtrl2 );//sys.wait( 1.0 );
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.25, 	0.0, 	0.5 );//bounce start
+	$svgbPortalRingInnerCtrl2.move( NORTH, 	144 );//128
+	sys.waitFor( $svgbPortalRingInnerCtrl2 );//1.0
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.0, 	0.1, 	0.25 );//1
+	$svgbPortalRingInnerCtrl2.move( NORTH, 	80 );//inner bounce cont.  mid Bounce 	//64
+	sys.waitFor( $svgbPortalRingInnerCtrl2 );//1.0
+	
+	//outer almost up : 1.75 + ~.25
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.3, 	0.15, 	1.0 );
+	$svgbPortalRingInnerCtrl2.move( SOUTH, 	144 );//mid bounce back//64				//96 //112
+	sys.waitFor( $svgbPortalRingInnerCtrl2 );
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.15, 	0.15, 	0.75 );
+	$svgbPortalRingInnerCtrl2.move(	NORTH, 	72 );//48 mid bounce back 2
+	sys.waitFor( $svgbPortalRingInnerCtrl2 );
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.1, 	0.1, 	0.5 );
+	$svgbPortalRingInnerCtrl2.move(	SOUTH, 	32 );//24 mid bounce back 2
+	sys.waitFor( $svgbPortalRingInnerCtrl2 );
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.05, 	0.05, 	0.25 );
+	$svgbPortalRingInnerCtrl2.move(	NORTH, 	12 );//8 mid bounce back 2
+	sys.waitFor( $svgbPortalRingInnerCtrl2 );
+	TimeTweak( $svgbPortalRingInnerCtrl2,		0.0, 	0.05, 	0.2 );
+	$svgbPortalRingInnerCtrl2.move(	SOUTH, 	4 );//4 mid bounce back 2
+
+}
+//============================================================================
+//============================================================================
+void PortalSpin_Mid2() {
+	//1 sec behind PortalSpin_Inner2
+	TimeTweak( $svgbPortalRingMidCtrl2,			0.1, 	0.0, 	0.5 );//1.75
+	$svgbPortalRingMidCtrl2.move( 	NORTH, 	16 );//total 48
+	sys.waitFor( $svgbPortalRingMidCtrl2 );
+	TimeTweak( $svgbPortalRingMidCtrl2,			0.0, 	0.15, 	0.65 );//1.75
+	$svgbPortalRingMidCtrl2.move( 	NORTH, 	88 );//32
+	sys.waitFor( $svgbPortalRingMidCtrl2 );
+	TimeTweak( $svgbPortalRingMidCtrl2,			0.1, 	0.05, 	0.75 );
+	$svgbPortalRingMidCtrl2.move( 	SOUTH, 	136 );//48 //72 //128
+	sys.waitFor( $svgbPortalRingMidCtrl2 );
+	TimeTweak( $svgbPortalRingMidCtrl2,			0.15, 	0.15, 	0.75 );
+	$svgbPortalRingMidCtrl2.move( 	NORTH, 	44 );//32 needed, went 44
+	sys.waitFor( $svgbPortalRingMidCtrl2 );
+	TimeTweak( $svgbPortalRingMidCtrl2,			0.1, 	0.1, 	0.5 );
+	$svgbPortalRingMidCtrl2.move( 	SOUTH, 	18 );//12
+	sys.waitFor( $svgbPortalRingMidCtrl2 );
+	TimeTweak( $svgbPortalRingMidCtrl2,			0.05, 	0.05, 	0.25 );
+	$svgbPortalRingMidCtrl2.move( 	NORTH, 	9 );//6
+	sys.waitFor( $svgbPortalRingMidCtrl2 );
+	TimeTweak( $svgbPortalRingMidCtrl2,			0.0, 	0.05, 	0.2 );
+	$svgbPortalRingMidCtrl2.move( 	SOUTH, 	3 );//3
+}
+
+//============================================================================
+//PortalSpinStart()
+//============================================================================
+void PortalSpinStart() {
+	vector vLightColor, vConeColor;
+
+	if ( $svgbPortalRingInnerCtrl.getIntKey( "initRan" ) == FALSE ) {
+		thread SalvageBoss_Music_Portal();
+		$svgbPortalRingInnerCtrl.setKey( "initRan", TRUE );
+
+		$svgbPortalRingMidCtrl.unbind();
+		$svgbPortalRingInnerCtrl.unbind();
+		sys.trigger( $svgPortalFX_Rise );
+		TimeTweak( $svgbPortalRingInnerCtrl,		0.0,	0.5,	3.0	);
+		$svgbPortalRingInnerCtrl.move( 	UP, 	640 );//480  inner starts//640 //688
+		sys.wait( 1.75 );
+		TimeTweak( $svgbPortalRingMidCtrl,			0.0,	0.0,	1.75 );
+		$svgbPortalRingMidCtrl.move( 	UP, 	560 );//560 //608
+		sys.wait( 0.25 );
+		thread PortalSpin_Inner2();
+		sys.wait( 1.0 );
+		TimeTweak( $svgbPortalRingInnerCtrl,		0.25,	0.0,	0.5	);//1.0
+		$svgbPortalRingInnerCtrl.move( 	DOWN, 	80 );//480
+		thread PortalSpin_Mid2();
+		TimeTweak( $svgbPortalRingOuterCtrl,		0.5,	0.25, 	1.0	);
+		$svgbPortalRingOuterCtrl.move( UP, 510 );//Outer starts//480 //528 //480
+		sys.wait( 0.5 );//inner done moveingdown, mid done moving up at end of this time
+		sys.wait( 1.0 );//Lubos
+		$svgbPortalRingInnerCtrl.bind( $svgbPortalRingMidCtrl );
+		TimeTweak( $svgbPortalRingMidCtrl,			0.0,	0.15,	0.5	);
+		$svgbPortalRingMidCtrl.move( 	DOWN, 	50 );// inner and mid down
+		sys.wait( 0.5 );//inner ~passes center at end of this time
+//		sys.waitFor( $svgbPortalRingMidCtrl );
+		$svgbPortalRingMidCtrl.bind( $svgbPortalRingOuterCtrl );
+		TimeTweak( $svgbPortalRingOuterCtrl,			0.15,	0.25,	0.5	);
+		$svgbPortalRingOuterCtrl.move( 	DOWN, 	30 );
+//		sys.wait( 0.15 );//mid ~passes center at end of this time
+	}
+	else {
+		sys.trigger( $svgBPortalRingSource );
+		$svgbPortalRingOuterCtrl.move( UP, 172 );//184//152 //Now 220
+		sys.waitFor( $svgbPortalRingOuterCtrl );
+	}
+////sys.trigger( $svgPortalFX_Rise );//off
+	sys.trigger( $svgPortalFX_Float );//on
+	
+	sys.trigger( $svgbPortalRingBeamsRelay );
+	sys.trigger( $svgPortalFX_SparksGroupRelay );//on
+	sys.trigger( $svgPortalFX_Sparks2A );//on
+	
+	sys.trigger( $svgPortalFX_Sparks2B );//on
+	
+	thread SpinCycle( $svgbPortalRingInnerCtrl2, "y", 67 );
+	sys.wait( 0.25 );
+	sys.trigger( $svgPortalFX_Sparks2A2 );
+	sys.wait( 0.25 );
+	sys.trigger( $svgPortalFX_Sparks2B2 );
+	sys.wait( 0.25 );
+	sys.trigger( $svgPortalFX_Sparks2A3 );
+	sys.wait( 0.25 );
+	sys.trigger( $svgPortalFX_Sparks2B3 );
+	sys.wait( 1 );
+	thread SpinCycle( $svgbPortalRingInnerCtrl, "z", 296 );
+	thread SpinCycle( $svgbPortalRingInnerSoundCtrl, "z", 296 );//sound mover
+	sys.wait( 0.25 );
+	sys.trigger( $svgBPortalRingSource );//moved due to increased portal open time
+	thread Parm_FadeLocal( $svgBPortalRingSource, 5, 2.5, 10, 256, 30 );//distance fade increase
+	vLightColor = $svgbPortalRingLight.getVectorKey( "_color" );
+	vConeColor = $svgbPortalRingLightCone.getVectorKey( "_color" );
+	thread Light_FadeColor ( $svgbPortalRingLight, 2.5, '0 0 0', vLightColor , 30 );
+	thread Parm_FadeColorLocal ( $svgbPortalRingLightCone, 2.5, '0 0 0', vConeColor , 30 );
+	sys.wait( 0.75 );
+	thread SpinCycle( $svgbPortalRingMidCtrl2, "y", -49 );
+	
+//	sys.trigger( $svgBPortalRingSource );//old portal timing
+	
+	sys.wait( 2 );
+	thread SpinCycle( $svgbPortalRingMidCtrl, "x", 181 );
+	thread SpinCycle( $svgbPortalRingMidSoundCtrl, "x", 181 );//sound mover
+	sys.wait( 1 );
+	thread SpinCycle( $svgbPortalRingOuterCtrl2, "y", 29 );
+	sys.wait( 2 );
+	$svgbRingSoundActivatorOuter.bind( $svgbPortalRingOuterCtrl );//wait until the outer ring is in position
+	thread SpinCycle( $svgbPortalRingOuterCtrl, "z", 131 );
+
+}
+
+//============================================================================
+//PortalSpinStop()
+//============================================================================
+void PortalSpinStop() {
+	$svgbPortalRingOuterCtrl.setKey( "isRunning", FALSE );
+	sys.wait( 3 );
+	$svgbPortalRingMidCtrl.setKey( "isRunning", FALSE );
+	$svgbPortalRingMidSoundCtrl.setKey( "isRunning", FALSE );
+	sys.wait( 3 );
+	$svgbPortalRingInnerCtrl.setKey( "isRunning", FALSE );
+	$svgbPortalRingInnerSoundCtrl.setKey( "isRunning", FALSE );
+	$svgbPortalRingOuterCtrl2.setKey( "isRunning", FALSE );
+	sys.wait( 3 );
+	sys.trigger( $svgbPortalRingCollisionRelay1 );//switch fake collision 
+	$svgbPortalRingMidCtrl2.setKey( "isRunning", FALSE );
+	sys.wait( 3 );
+	$svgbPortalRingInnerCtrl2.setKey( "isRunning", FALSE );
+	sys.wait( 1 );
+	sys.trigger( $svgPortalFX_Float );//off
+	sys.trigger( $svgPortalFX_FloatEnd );//on
+	sys.wait( 1 );
+	sys.trigger( $svgPortalFX_FloatFall );//on
+	sys.trigger( $svgPortalFX_SmokeA1 );//on
+	sys.trigger( $svgPortalFX_SmokeB1 );//on
+	sys.wait( 0.75 );
+	sys.trigger( $svgbPortalRingBeamsRelay );
+	sys.trigger( $svgPortalFX_SparksGroupRelay );//off
+	sys.trigger( $svgPortalFX_Sparks2A );//off
+	sys.trigger( $svgPortalFX_Sparks2A2 );
+	sys.trigger( $svgPortalFX_Sparks2A3 );
+	sys.trigger( $svgPortalFX_Sparks2B );//off
+	sys.trigger( $svgPortalFX_Sparks2B2 );
+	sys.trigger( $svgPortalFX_Sparks2B3 );
+	sys.trigger( $svgPortalFX_SmokeA2 );//on
+	sys.trigger( $svgPortalFX_SmokeB2 );//on
+	sys.wait( 0.25 );
+//	sys.wait( 9 );
+	TimeTweak( $svgbPortalRingOuterCtrl, 2, 2.5, 5 );
+	$svgbPortalRingOuterCtrl.move( DOWN, 172 );//184//152
+	thread Parm_FadeLocal( $svgBPortalRingSource, 5, 4.5, 256, 512, 30 );//distance fade increase
+	//sys.trigger( $svgPortalFX_FloatFall );//on
+	sys.wait( 3.5 );
+	sys.trigger( $svgbPortalRingCollisionRelay2 );//turn off fake collision
+	sys.wait( 0.5 );
+	sys.trigger( $svgbPortalRingBeamsRelay2 );
+}
+
+//============================================================================
+//============================================================================
+void PortalSpinPresets() {
+	TimeTweak( $svgbPortalRingOuterCtrl, 0, 0, 0.1 );
+	TimeTweak( $svgbPortalRingMidCtrl, 0, 0, 0.1 );
+	TimeTweak( $svgbPortalRingInnerCtrl, 0, 0, 0.1 );
+	$svgbPortalRingOuterCtrl.move( DOWN, 528 );
+	sys.waitFor( $svgbPortalRingOuterCtrl );
+	
+	$svgbPortalRingLight.setColor( 0, 0, 0 );
+	$svgbPortalRingLightCone.setColor( 0, 0, 0 );
+}
+
+//============================================================================
+//============================================================================
+void SvgbSpinPortalOuterSound() {
+//	PL( "SvgbSpinPortalOuterSound" );
+	if ( $svgbPortalRingOuter.getIntKey( "soundPlaying" ) == FALSE ) {
+//		PL( "SvgbSpinPortalOuterSound 1" );
+		$svgbPortalRingOuter.setKey( "soundPlaying", TRUE );
+		$svgbPortalRingOuter.startSound( "snd_SpinSoundOuter", SND_SCRIPT_0, 1 );
+		sys.wait( 2 );
+		$svgbPortalRingOuter.setKey( "soundPlaying", FALSE );
+	}
+	else {
+//		PL( "SvgbSpinPortalOuterSound 2" );
+		$svgbPortalRingOuter.startSound( "snd_SpinSoundOuter", SND_SCRIPT_1, 1 );
+	}
+}
+
+//============================================================================
+//============================================================================
+void SvgbSpinPortalMidSound() {
+//	PL( "SvgbSpinPortalMidSound" );
+	if ( $svgbPortalRingMid.getIntKey( "soundPlaying" ) == FALSE ) {
+//		PL( "SvgbSpinPortalMidSound 1" );
+		$svgbPortalRingMid.setKey( "soundPlaying", TRUE );
+		$svgbPortalRingMid.startSound( "snd_SpinSoundMid", SND_SCRIPT_0, 1 );
+		sys.wait( 1 );
+		$svgbPortalRingMid.setKey( "soundPlaying", FALSE );
+	}
+	else {
+//		PL( "SvgbSpinPortalMidSound 2" );
+		$svgbPortalRingMid.startSound( "snd_SpinSoundMid", SND_SCRIPT_1, 1 );
+	}
+}
+
+//============================================================================
+//============================================================================
+void SvgbSpinPortalInnerSound() {
+//	PL( "SvgbSpinPortalInnerSound" );
+	if ( $svgbPortalRingInner.getIntKey( "soundPlaying" ) == FALSE ) {
+//		PL( "SvgbSpinPortalInnerSound 1" );
+		$svgbPortalRingInner.setKey( "soundPlaying", TRUE );
+		$svgbPortalRingInner.startSound( "snd_SpinSoundInner", SND_SCRIPT_0, 1 );
+		sys.wait( 0.5 );
+		$svgbPortalRingInner.setKey( "soundPlaying", FALSE );
+	}
+	else {
+//		PL( "SvgbSpinPortalInnerSound 2" );
+		$svgbPortalRingInner.startSound( "snd_SpinSoundInner", SND_SCRIPT_1, 1 );
+	}
+}
+
+//============================================================================
+//============================================================================
+void IntroMoverMachines() {
+	TimeTweak( $blaIntroMoverCtrl, 0, 0, 8 );
+	sys.wait( 3 );
+	while( true ) {
+		$blaIntroMoverCtrl.setOrigin( $blaIntroMoverPos1.getOrigin() );
+		$blaIntroMoverCtrl.moveTo( $blaIntroMoverPos2 );
+		sys.wait( 0.75 );
+		sys.trigger( $blaIntroMoverEmitter );
+		sys.wait( 3 );
+		sys.trigger( $blaIntroMoverEmitter );
+		sys.waitFor( $blaIntroMoverCtrl );
+		sys.wait( 10 + sys.random( 5 ) );
+		sys.waitPVS( $blaIntroMoverCtrl );
+	}
+}
+
+//============================================================================
+//LotaTunnel_DialogOn()
+//
+//Desciption:
+//============================================================================
+void LotaTunnel_DialogOn() {
+	waitForLivingPlayer();
+	sys.trigger( $superLotaRelay );
+	$player1.dialogStart( TRUE, TRUE, FALSE );// arguments are (bool bDisallowPlayerDeath, bool bVoiceDuckingOn, bool bLowerWeapon)
+}
+
+//============================================================================
+//============================================================================
+void main_salvage() {
+	$svgbFreezer1BodyBag1bCtrl.rotate( '0 11 0' );
+	$svgbFreezer1BodyBag1cCtrl.rotate( '0 8.5 0' );
+	$svgbFreezer1BodyBag2aCtrl.rotate( '0 8 0' );
+	$svgbFreezer1BodyBag2cCtrl.rotate( '0 9.5 0' );
+	$svgbFreezer1BodyBag3aCtrl.rotate( '0 12 0' );
+	$svgbFreezer1BodyBag3bCtrl.rotate( '0 10.2 0' );
+
+	$star_rotation_center1.rotate( '0 2 0' );
+	$sphere_city_rotator.rotate( '0 3 0' );
+}
+
+//============================================================================
+//============================================================================
+void main_salvageBoss() {
+	PortalSpinPresets();
+	thread IntroMoverMachines();
+	//hider door
+	TimeTweak( $SalvageBossHider1SecretDoor, 0, 0, 0.1 );
+	TimeTweak( $SalvageBossHider2SecretDoor, 0, 0, 0.1 );
+	$SalvageBossHider1SecretDoor.move( DOWN, 128 );
+	$SalvageBossHider2SecretDoor.move( DOWN, 128 );
+	//TESTS
+	$svgBossEggSpawner1.hide();
+	$svgBossEggSpawner2.hide();
+}
+
+} // end namespace

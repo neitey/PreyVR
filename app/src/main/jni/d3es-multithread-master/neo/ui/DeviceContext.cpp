@@ -1148,23 +1148,6 @@ int idDeviceContext::DrawText(const char *text, float textScale, int textAlign, 
 
 	SetFontByScale(textScale);
 
-	//Lubos BEGIN
-	idStr key = text;
-	if (key.CmpPrefix("#str_lubos") == 0) {
-		if (pVRClientInfo) {
-			if (key.Cmp("#str_lubos_title") == 0) {
-				text = pVRClientInfo->downloaderTitle;
-			} else if (key.Cmp("#str_lubos_text") == 0) {
-				text = pVRClientInfo->downloaderText;
-			} else if (key.Cmp("#str_lubos_button") == 0) {
-				text = pVRClientInfo->downloaderButton;
-			}
-		} else {
-			text = "";
-		}
-	}
-	//Lubos END
-
 	textWidth = 0;
 	newLinePtr = NULL;
 
