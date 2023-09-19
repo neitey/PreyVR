@@ -333,16 +333,20 @@ import java.util.Vector;
 		}
 		return true;
 	}
-	
+
 	public void copy_asset(String path, String name, boolean force) {
-		File f = new File(path + "/" + name);
+		copy_asset(path, name, name, force);
+	}
+
+	public void copy_asset(String path, String srcName, String dstName, boolean force) {
+		File f = new File(path + "/" + dstName);
 		if (!f.exists() || force) {
 			
 			//Ensure we have an appropriate folder
-			String fullname = path + "/" + name;
+			String fullname = path + "/" + dstName;
 			String directory = fullname.substring(0, fullname.lastIndexOf("/"));
 			new File(directory).mkdirs();
-			_copy_asset(name, path + "/" + name);
+			_copy_asset(srcName, path + "/" + dstName);
 		}
 	}
 
