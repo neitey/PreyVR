@@ -56,7 +56,7 @@ struct version_s {
 	char	string[256];
 } version;
 
-idCVar vr_refresh( "vr_refresh", "60", CVAR_INTEGER | CVAR_ARCHIVE, "Refresh rate" );
+idCVar vr_refreshrate( "vr_refreshrate", "60", CVAR_INTEGER | CVAR_ARCHIVE, "Refresh rate" );
 idCVar vr_supersampling( "vr_supersampling", "-1.0", CVAR_FLOAT | CVAR_ARCHIVE, "Supersampling" );
 idCVar vr_msaa( "vr_msaa",  "1", CVAR_FLOAT | CVAR_ARCHIVE, "MSAA" );
 
@@ -2695,7 +2695,7 @@ void idCommonLocal::Frame(void)
 		
 		Doom3Quest_FrameSetup(cvarSystem->GetCVarInteger("vr_weaponHand"),
 							  cvarSystem->GetCVarInteger("vr_switchSticks"),
-							  60);//Lubos:cvarSystem->GetCVarInteger("vr_refresh"));
+							  cvarSystem->GetCVarInteger("vr_refreshrate"));
 
 		if (game) {
 			game->SetVRClientInfo(pVRClientInfo);

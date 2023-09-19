@@ -71,7 +71,7 @@ typedef enum {
 #define STRTABLE_ID				"#str_"
 #define STRTABLE_ID_LENGTH		5
 
-extern idCVar vr_refresh;
+extern idCVar vr_refreshrate;
 extern idCVar vr_supersampling;
 extern idCVar vr_msaa;
 
