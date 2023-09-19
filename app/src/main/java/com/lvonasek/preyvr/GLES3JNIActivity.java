@@ -8,10 +8,13 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Pair;
 import android.view.SurfaceHolder;
@@ -48,6 +51,8 @@ import java.util.Vector;
 	}
 
 	private static final String APPLICATION = "Doom3Quest";
+	private static final int CFG_VERSION_CURRENT = 1;
+	private static final String CFG_VERSION_KEY = "CFG_VERSION_KEY";
 
 	private static final String[] DATA_DEMO = {"demo00.pk4", "demo01.pk4", "demo02.pk4", "demo03.pk4", "demo04.pk4", "demo05.pk4", "demo06.pk4", "demo07.pk4"};
 	private static final String[] DATA_FULL = {"pak000.pk4", "pak001.pk4", "pak002.pk4", "pak003.pk4", "pak004.pk4"};
@@ -55,6 +60,7 @@ import java.util.Vector;
 
 	private File root = new File("/sdcard/PreyVR");
 	private File base = new File(root, "preybase");
+	private File saves = new File(root, "saves/preybase");
 
 	private String commandLineParams;
 
@@ -206,10 +212,41 @@ import java.util.Vector;
 
 		//Base game
 		base.mkdirs();
-		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
-		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "vr_support.pk4", true);
 		new File(base, "vr_support_update.pk4").delete();
+
+		//Config
+		saves.mkdirs();
+		String configFile;
+		boolean updateConfig = false;
+		switch (Build.PRODUCT)
+		{
+			//Quest 1
+			case "monterey":
+			case "vr_monterey":
+				configFile = "quest1_default.cfg";
+				break;
+			//Quest 2, Quest Pro, unknown
+			case "hollywood":
+			case "seacliff":
+			default:
+				configFile = "quest2_default.cfg";
+				break;
+			//Quest 3
+			case "eureka":
+			case "stinson":
+				configFile = "quest3_default.cfg";
+				SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+				updateConfig = pref.getInt(CFG_VERSION_KEY, 0) != CFG_VERSION_CURRENT;
+				if (updateConfig) {
+					Log.d(APPLICATION, "User config will be recreated.");
+					SharedPreferences.Editor e = pref.edit();
+					e.putInt(CFG_VERSION_KEY, CFG_VERSION_CURRENT);
+					e.commit();
+				}
+				break;
+		}
+		copy_asset(saves.getAbsolutePath(), configFile, "preyconfig.cfg", updateConfig);
 
 		//Demo or full version menu layout
 		String demoLayout = "vr_support_demo.pk4";
@@ -250,7 +287,7 @@ import java.util.Vector;
 		//Parse the config file for these values
 		float ss = -1.0F;
 		long msaa = 1; // default for both HMDs
-		File config = new File(base, "preyconfig.cfg");
+		File config = new File(saves, "preyconfig.cfg");
 		if(config.exists())
 		{
 			BufferedReader br;
