@@ -82,8 +82,8 @@ const int CPU_LEVEL			= 4;
 const int GPU_LEVEL			= 4;
 
 //Passed in from the Java code
-int NUM_MULTI_SAMPLES	= -1;
-float SS_MULTIPLIER    = -1.0f;
+int NUM_MULTI_SAMPLES	= 1;
+float SS_MULTIPLIER    = 1.0f;
 
 vrClientInfo vr;
 vrClientInfo *pVRClientInfo;
@@ -1166,8 +1166,6 @@ void ActivateContext()
     gAppState.RenderThreadTid = gettid();
 }
 
-int questType;
-
 void * AppThreadFunction(void * parm ) {
 
 	java.Vm = jVM;
@@ -1203,37 +1201,6 @@ void * AppThreadFunction(void * parm ) {
 
 	// This app will handle android gamepad events itself.
 	vrapi_SetPropertyInt(&gAppState.Java, VRAPI_EAT_NATIVE_GAMEPAD_EVENTS, 0);
-
-	//Set device defaults
-	if (vrapi_GetSystemPropertyInt(&java, VRAPI_SYS_PROP_DEVICE_TYPE) == VRAPI_DEVICE_TYPE_OCULUSQUEST)
-	{
-		questType = 1;
-		if (SS_MULTIPLIER == -1.0f)
-		{
-			SS_MULTIPLIER = 1.0f;
-		}
-
-		if (NUM_MULTI_SAMPLES == -1)
-		{
-			NUM_MULTI_SAMPLES = 1;
-		}
-	}
-	else if (vrapi_GetSystemPropertyInt(&java, VRAPI_SYS_PROP_DEVICE_TYPE) == VRAPI_DEVICE_TYPE_OCULUSQUEST2)
-	{
-		questType = 2;
-		if (SS_MULTIPLIER == -1.0f)
-		{
-			SS_MULTIPLIER = 1.0f;//Lubos
-		}
-
-		if (NUM_MULTI_SAMPLES == -1)
-		{
-			NUM_MULTI_SAMPLES = 1;//Lubos
-		}
-	} else {
-	    //Don't know what headset this is!? abort
-        return NULL;
-	}
 
 	//Using a symmetrical render target
 	m_height = m_width = (int)(vrapi_GetSystemPropertyInt(&java, VRAPI_SYS_PROP_SUGGESTED_EYE_TEXTURE_WIDTH) *  SS_MULTIPLIER);
@@ -1587,7 +1554,7 @@ int JNI_OnLoad(JavaVM* vm, void* reserved)
 }
 
 JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onCreate( JNIEnv * env, jclass activityClass, jobject activity,
-																	   jstring commandLineParams, jlong refresh, jfloat ss, jlong msaa)
+																	   jstring commandLineParams, jfloat ss, jlong msaa)
 {
 	ALOGV( "    GLES3JNILib::onCreate()" );
 

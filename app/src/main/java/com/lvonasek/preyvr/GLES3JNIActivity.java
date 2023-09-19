@@ -248,7 +248,6 @@ import java.util.Vector;
 		}
 
 		//Parse the config file for these values
-		long refresh = 60; // Default to 60
 		float ss = -1.0F;
 		long msaa = 1; // default for both HMDs
 		File config = new File(base, "preyconfig.cfg");
@@ -263,9 +262,7 @@ import java.util.Vector;
 					int i2 = s.lastIndexOf("\"");
 					if (i1 != -1 && i2 != -1) {
 						String value = s.substring(i1+1, i2);
-						if (s.contains("vr_refresh")) {
-							refresh = Long.parseLong(value);
-						} else if (s.contains("vr_msaa")) {
+						if (s.contains("vr_msaa")) {
 							msaa = Long.parseLong(value);
 						} else if (s.contains("vr_supersampling")) {
 							ss = Float.parseFloat(value);
@@ -273,8 +270,7 @@ import java.util.Vector;
 					}
 				}
 				br.close();
-			} catch (IOException | NumberFormatException e) {
-				// TODO Auto-generated catch block
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -289,7 +285,7 @@ import java.util.Vector;
 			externalHapticsServiceClients.add(client);
 		}
 
-		GLES3JNILib.onCreate( this, commandLineParams, refresh, ss, msaa );
+		GLES3JNILib.onCreate( this, commandLineParams, ss, msaa );
 	}
 
 	private void unpack_data(String[] data) {
