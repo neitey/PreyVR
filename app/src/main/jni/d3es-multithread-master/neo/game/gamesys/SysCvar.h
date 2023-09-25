@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_CVAR_H__
 #define __SYS_CVAR_H__
 
-#include "framework/CVarSystem.h"
-
 extern idCVar	developer;
 
 extern idCVar	g_cinematic;
@@ -48,7 +46,6 @@ extern idCVar	g_skipParticles;
 extern idCVar	g_bloodEffects;
 extern idCVar	g_projectileLights;
 extern idCVar	g_doubleVision;
-extern idCVar	g_hitEffect;
 extern idCVar	g_muzzleFlash;
 
 extern idCVar	g_disasm;
@@ -87,12 +84,6 @@ extern idCVar	g_showEnemies;
 extern idCVar	g_frametime;
 extern idCVar	g_timeentities;
 
-extern idCVar   g_testFullscreenFX;
-extern idCVar   g_testHelltimeFX;
-extern idCVar   g_testMultiplayerFX;
-extern idCVar   g_testBloomIntensity;
-extern idCVar   g_testBloomNumPasses;
-
 extern idCVar	ai_debugScript;
 extern idCVar	ai_debugMove;
 extern idCVar	ai_debugTrajectory;
@@ -101,7 +92,6 @@ extern idCVar	ai_showCombatNodes;
 extern idCVar	ai_showPaths;
 extern idCVar	ai_showObstacleAvoidance;
 extern idCVar	ai_blockedFailSafe;
-extern idCVar	ai_showHealth;
 
 extern idCVar	g_dvTime;
 extern idCVar	g_dvAmplitude;
@@ -127,9 +117,9 @@ extern idCVar	g_vehicleSuspensionKCompress;
 extern idCVar	g_vehicleSuspensionDamping;
 extern idCVar	g_vehicleTireFriction;
 
-extern idCVar	g_vehicleDebug;
-extern idCVar	g_debugShockwave;
+#ifdef _PORTALSKY // un noted changes from original sdk
 extern idCVar	g_enablePortalSky;
+#endif
 
 extern idCVar	ik_enable;
 extern idCVar	ik_debug;
@@ -138,6 +128,12 @@ extern idCVar	af_useLinearTime;
 extern idCVar	af_useImpulseFriction;
 extern idCVar	af_useJointImpulseFriction;
 extern idCVar	af_useSymmetry;
+
+#ifdef _WATER_PHYSICS // un noted changes from original sdk
+extern idCVar	af_useBodyDensityBuoyancy;
+extern idCVar	af_useFixedDensityBuoyancy;
+#endif
+
 extern idCVar	af_skipSelfCollision;
 extern idCVar	af_skipLimits;
 extern idCVar	af_skipFriction;
@@ -171,6 +167,10 @@ extern idCVar	rb_showMass;
 extern idCVar	rb_showInertia;
 extern idCVar	rb_showVelocity;
 extern idCVar	rb_showActive;
+
+#ifdef _WATER_PHYSICS // un noted changes from original sdk
+extern idCVar	rb_showBuoyancy;
+#endif
 
 extern idCVar	pm_jumpheight;
 extern idCVar	pm_stepsize;
@@ -210,6 +210,7 @@ extern idCVar	pm_thirdPerson;
 extern idCVar	pm_thirdPersonDeath;
 extern idCVar	pm_modelView;
 extern idCVar	pm_airTics;
+extern idCVar	pm_character;	//rev 2019
 
 extern idCVar	g_showPlayerShadow;
 extern idCVar	g_showHud;
@@ -220,6 +221,7 @@ extern idCVar	g_gun_y;
 extern idCVar	g_gun_z;
 extern idCVar	g_viewNodalX;
 extern idCVar	g_viewNodalZ;
+extern idCVar	g_fov;
 extern idCVar	g_testDeath;
 extern idCVar	g_skipViewEffects;
 extern idCVar   g_mpWeaponAngleScale;
@@ -234,25 +236,6 @@ extern idCVar	g_testModelAnimate;
 extern idCVar	g_testModelBlend;
 extern idCVar	g_exportMask;
 extern idCVar	g_flushSave;
-
-extern idCVar	g_enableSlowmo;
-extern idCVar	g_slowmoStepRate;
-extern idCVar	g_testFullscreenFX;
-extern idCVar	g_testHelltimeFX;
-extern idCVar	g_testMultiplayerFX;
-extern idCVar	g_lowresFullscreenFX;
-extern idCVar	g_moveableDamageScale;
-extern idCVar	g_testBloomSpeed;
-extern idCVar	g_testBloomIntensity;
-extern idCVar	g_testBloomNumPasses;
-
-extern idCVar	g_grabberHoldSeconds;
-extern idCVar	g_grabberEnableShake;
-extern idCVar	g_grabberRandomMotion;
-extern idCVar	g_grabberHardStop;
-extern idCVar	g_grabberDamping;
-
-extern idCVar	g_xp_bind_run_once;
 
 extern idCVar	aas_test;
 extern idCVar	aas_showAreas;
@@ -277,50 +260,63 @@ extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
 
-extern idCVar si_flagDropTimeLimit;
-extern idCVar si_midnight;
-
-extern idCVar g_flagAttachJoint;
-extern idCVar g_flagAttachOffsetX;
-extern idCVar g_flagAttachOffsetY;
-extern idCVar g_flagAttachOffsetZ;
-extern idCVar g_flagAttachAngleX;
-extern idCVar g_flagAttachAngleY;
-extern idCVar g_flagAttachAngleZ;
-
-extern idCVar g_CTFArrows;
-
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
-
-extern idCVar	g_grabberHoldSeconds;
-extern idCVar	g_grabberEnableShake;
-extern idCVar	g_grabberRandomMotion;
-extern idCVar	g_grabberHardStop;
-extern idCVar	g_grabberDamping;
-
-extern idCVar	g_xp_bind_run_once;
-
-//VR CVARS
-extern idCVar vr_weaponHand;
-extern idCVar vr_ipd;
-extern idCVar vr_heightoffset;
-extern idCVar vr_controlscheme;
-extern idCVar	vr_shakeamplitude;
-extern idCVar	vr_knockback;
-extern idCVar vr_throwables;
-extern idCVar vr_turnmode;
-extern idCVar vr_turnangle;
-extern idCVar vr_hudmode;
-extern idCVar g_infiniteAmmo;
-extern idCVar g_useWeaponDepthHack;
-extern idCVar g_weaponShadows;
-extern idCVar timescale;
-
-
 
 extern const char *si_gameTypeArgs[];
 
 extern const char *ui_skinArgs[];
+
+extern idCVar	r_bloom; // un noted changes from original sdk
+extern idCVar	r_bloom_blur_mult;
+extern idCVar	r_bloom_src_mult;
+extern idCVar   r_bloom_contrast;
+extern idCVar   r_bloom_contrast_mult;				// clone_jc_denton
+extern idCVar   r_bloom_contrast_min;				// clone_jc_denton
+extern idCVar   r_bloom_shiftSensitivity_delay;		// clone_jc_denton
+extern idCVar   r_bloom_blurIterations;				// clone_jc_denton
+extern idCVar   r_bloom_buffer;						// clone_jc_denton
+
+// HDR related - J.C.Denton
+
+extern idCVar r_HDR_enable;
+extern idCVar r_HDR_postProcess;				
+extern idCVar r_HDR_middleGray;			
+extern idCVar r_HDR_brightPassThreshold;
+extern idCVar r_HDR_brightPassOffset;	
+extern idCVar r_HDR_min_luminance;	
+extern idCVar r_HDR_max_luminance;	
+extern idCVar r_HDR_colorCurveBias;
+extern idCVar r_HDR_sceneExposure;
+extern idCVar r_HDR_gammaCorrection;
+extern idCVar r_HDR_enableDebugMode;
+extern idCVar r_HDR_debugTextureIndex;
+extern idCVar r_HDR_eyeAdjustmentDelay;
+extern idCVar r_HDR_maxColorIntensity;
+extern idCVar r_HDR_bloomIntensity;
+extern idCVar r_HDR_haloIntensity;
+extern idCVar r_HDR_lumUpdateRate;
+extern idCVar r_HDR_eyeAdjustmentDelay;
+extern idCVar r_HDR_eyeAdjustmentBias;	
+extern idCVar r_HDR_eyeAdjustmentBloomBias;
+extern idCVar r_HDR_vignetteBias;
+
+//Ivan start
+extern idCVar hardcorps_bind_run_once;
+extern idCVar s_music_volume;
+extern idCVar g_mouselook;
+//extern idCVar ai_debugXlock;
+//Ivan end
+
+//rev 2020
+extern idCVar	pm_thirdPersonZ;
+/*
+//Revility start
+extern idCVar	pm_thirdPersonUp;
+extern idCVar	pm_thirdPersonGo;
+extern idCVar	pm_thirdPersonCamHeight;
+extern idCVar	pm_thirdPersonCamWay;
+//Revility End
+*/
 
 #endif /* !__SYS_CVAR_H__ */

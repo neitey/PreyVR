@@ -33,13 +33,10 @@ Vagary specific AI code
 
 ***********************************************************************/
 
-#include "idlib/precompiled.h"
-#include "script/Script_Thread.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-#include "Moveable.h"
-
-#include "ai/AI.h"
+#include "../Game_local.h"
 
 class idAI_Vagary : public idAI {
 public:

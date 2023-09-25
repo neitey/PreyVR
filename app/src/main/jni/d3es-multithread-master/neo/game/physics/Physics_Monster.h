@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __PHYSICS_MONSTER_H__
 #define __PHYSICS_MONSTER_H__
 
-#include "idlib/math/Vector.h"
-
-#include "physics/Physics_Actor.h"
-
 /*
 ===================================================================================
 

@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_ACTOR_H__
 #define __GAME_ACTOR_H__
 
-#include "AFEntity.h"
-#include "IK.h"
-#include "PlayerView.h"
-
 /*
 ===============================================================================
 
@@ -56,7 +52,6 @@ extern const idEventDef AI_PlayCycle;
 extern const idEventDef AI_AnimDone;
 extern const idEventDef AI_SetBlendFrames;
 extern const idEventDef AI_GetBlendFrames;
-extern const idEventDef AI_SetState;
 
 class idDeclParticle;
 
@@ -109,6 +104,10 @@ typedef struct {
 	jointHandle_t			to;
 } copyJoints_t;
 
+//ivan start
+class idDamagingFx; 
+//ivan end
+
 class idActor : public idAFEntity_Gibbable {
 public:
 	CLASS_PROTOTYPE( idActor );
@@ -119,6 +118,14 @@ public:
 
 	idLinkList<idActor>		enemyNode;			// node linked into an entity's enemy list for quick lookups of who is attacking him
 	idLinkList<idActor>		enemyList;			// list of characters that have targeted the player as their enemy
+
+	//ivan start - public stuff also read by other entitites
+	float					fastXpos;
+	bool					isXlocked;
+	bool					isOnScreen;
+	bool					updXlock;
+	//bool					ignoredByAI;
+	//ivan end
 
 public:
 							idActor( void );
@@ -167,7 +174,7 @@ public:
 							// damage
 	void					SetupDamageGroups( void );
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
-	int						GetDamageForLocation( int damage, int location, bool headMultiplier = false );
+	int						GetDamageForLocation( int damage, int location );
 	const char *			GetDamageGroup( int location );
 	void					ClearPain( void );
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
@@ -200,7 +207,6 @@ public:
 	virtual	renderView_t *	GetRenderView();
 
 							// animation state control
-	int						PlayAnim( int channel, const char* name );
 	int						GetAnim( int channel, const char *name );
 	void					UpdateAnimState( void );
 	void					SetAnimState( int channel, const char *name, int blendFrames );
@@ -211,19 +217,8 @@ public:
 	bool					AnimDone( int channel, int blendFrames ) const;
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
-	idEntity*				GetHeadEntity()
-	{
-		return head.GetEntity();
-	};
-
-	void					PlayFootStepSound( void );
-
 protected:
 	friend class			idAnimState;
-
-	// Carl: navigation (originally in AI.h)
-	idAAS* 					aas;
-	int						travelFlags;
 
 	float					fovDot;				// cos( fovDegrees )
 	idVec3					eyeOffset;			// offset of eye relative to physics origin
@@ -237,6 +232,8 @@ protected:
 
 	idStrList				damageGroups;		// body damage groups
 	idList<float>			damageScale;		// damage scale per damage gruop
+
+	bool					force_torso_override;	//ivan
 
 	bool						use_combat_bbox;	// whether to use the bounding box for combat collision
 	idEntityPtr<idAFAttachment>	head;
@@ -252,9 +249,6 @@ protected:
 	jointHandle_t			soundJoint;
 
 	idIK_Walk				walkIK;
-    // Koz
-    idIK_Reach				armIK;
-    // Koz
 
 	idStr					animPrefix;
 	idStr					painAnim;
@@ -271,10 +265,6 @@ protected:
 	idAnimState				headAnim;
 	idAnimState				torsoAnim;
 	idAnimState				legsAnim;
-    // Koz
-    idAnimState				leftHandAnim;
-    idAnimState				rightHandAnim;
-    // Koz end
 
 	bool					allowPain;
 	bool					allowEyeFocus;
@@ -284,7 +274,13 @@ protected:
 
 	idList<idAttachInfo>	attachments;
 
-	int						damageCap;
+	//ivan start - dmgFxs
+	idList< idEntityPtr<idDamagingFx> >	dmgFxEntities;
+
+	void					StartDamageFx( int type );
+	void					StopDamageFxs( void );
+	void					CheckDamageFx( const idDict *damageDef );
+	//ivan end
 
 	virtual void			Gib( const idVec3 &dir, const char *damageDefName );
 
@@ -294,12 +290,11 @@ protected:
 							// copies animation from body to head joints
 	void					CopyJointsFromBodyToHead( void );
 
-
 private:
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
 	void					FinishSetup( void );
 	void					SetupHead( void );
-
+	void					PlayFootStepSound( void );
 
 	void					Event_EnableEyeFocus( void );
 	void					Event_DisableEyeFocus( void );
@@ -341,12 +336,10 @@ private:
 	void					Event_SetState( const char *name );
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
-	void					Event_SetDamageGroupScale(const char *groupName, float scale);
-	void					Event_SetDamageGroupScaleAll(float scale);
-	void					Event_GetDamageGroupScale(const char *groupName);
-	void					Event_SetDamageCap(float _damageCap);
-	void					Event_SetWaitState(const char *waitState);
-	void					Event_GetWaitState();
+	//ivan start
+	void					Event_IsOnScreen( void );
+	void					Event_IsXlocked( void );
+	//ivan end
 };
 
 #endif /* !__GAME_ACTOR_H__ */

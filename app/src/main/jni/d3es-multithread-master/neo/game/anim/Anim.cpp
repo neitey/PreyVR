@@ -26,11 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Game_local.h"
-
-#include "anim/Anim.h"
+#include "../Game_local.h"
 
 bool idAnimManager::forceExport = false;
 
@@ -106,14 +105,6 @@ idMD5Anim::Length
 ====================
 */
 int idMD5Anim::Length( void ) const {
-	if ( strstr( name, "idle" ) && strstr( name, "md5/weapons" ) )
-	{
-		// let the idle animations play for the soulcube, artifact, & bloodstone
-		if ( !strstr( name, "soulcube" ) && !strstr( name, "artifact" ) && !strstr( name, "blood_orb" ) )
-		{
-			return 1;	// set anmination length to 1
-		}
-	}
 	return animLength;
 }
 

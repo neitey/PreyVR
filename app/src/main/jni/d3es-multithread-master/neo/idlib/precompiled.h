@@ -279,7 +279,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
 	#elif defined _RIVENSIN
 	#include "../rivensin/Game_local.h"
 	#elif defined _HARDCORPS
-	#include "../hardcorps/Game_local.h"
+	#include "../game/Game_local.h"
 	#elif defined _QUAKE4
 	#include "../quake4/Game_local.h"
 	#elif defined _RAVEN

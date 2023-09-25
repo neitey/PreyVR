@@ -2763,12 +2763,9 @@ void idSessionLocal::PacifierUpdate()
 void setupScreenLayer()
 {
     int inMenu = (((idSessionLocal*)session)->guiActive != 0);
-    int inGameGui = ( game && game->InGameGuiActive());
-    int objectiveActive = ( game && game->ObjectiveSystemActive());
-    int cinematic = ( game && game->InCinematic());
     bool loading = (((idSessionLocal*)session)->insideExecuteMapChange);
 
-    Doom3Quest_setUseScreenLayer(inMenu?1:0 + inGameGui?2:0 + objectiveActive?4:0 + cinematic?8:0 + loading?16:0);
+    Doom3Quest_setUseScreenLayer(inMenu?1:0 + loading?16:0);
 }
 
 /*

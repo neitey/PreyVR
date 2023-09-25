@@ -106,20 +106,6 @@ public:
 	// Set the local client number. Distinguishes listen ( == 0 ) / dedicated ( == -1 )
 	virtual void				SetLocalClient( int clientNum ) = 0;
 
-	virtual void 				SetVRClientInfo(vrClientInfo *pVRClientInfo) = 0;
-	virtual void				CheckRenderCvars() = 0;
-	virtual void 				EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn) = 0;
-    virtual bool 				CMDButtonsAttackCall(int &teleportCanceled) = 0;
-    virtual bool 				CMDButtonsPhysicalCrouch() = 0;
-
-	virtual bool 				InCinematic() = 0;
-
-	// Release the mouse when the PDA is open
-	virtual bool				IsPDAOpen() const = 0;
-
-	//GB Trying to move animator function
-	virtual bool				AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis ) = 0;
-
 	// Koz begin
 	// VR State
 	bool						isVR = 1;
@@ -165,9 +151,6 @@ public:
 
 	// Runs a game frame, may return a session command for level changing, etc
 	virtual gameReturn_t		RunFrame( const usercmd_t *clientCmds ) = 0;
-
-	// Indicates to the game library that the frame has now ended
-	virtual void 				EndFrame() = 0;
 
 	// Makes rendering and sound system calls to display for a given clientNum.
 	virtual bool				Draw( int clientNum ) = 0;
@@ -236,10 +219,6 @@ public:
 	virtual bool				DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] ) = 0;
 
 	virtual void				GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) = 0;
-
-	// Added by Emile
-	virtual bool				InGameGuiActive() = 0;
-	virtual bool			    ObjectiveSystemActive() = 0;
 };
 
 extern idGame *					game;

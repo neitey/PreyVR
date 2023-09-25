@@ -26,10 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "framework/Common.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "ai/AAS_local.h"
+#include "AAS_local.h"
 
 #define SUBSAMPLE_WALK_PATH		1
 #define SUBSAMPLE_FLY_PATH		0
@@ -299,6 +299,8 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	curAreaNum = areaNum;
 
 	for ( i = 0; i < maxWalkPathIterations; i++ ) {
+
+		//ivan: testing this.
 
 		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach ) ) {
 			break;

@@ -26,14 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "framework/Licensee.h"
-#include "MayaImport/maya_main.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-#include "Game_local.h"
+#include "../Game_local.h"
 
-#include "anim/Anim.h"
+#include "../../MayaImport/maya_main.h"
 
 /***********************************************************************
 
@@ -242,18 +240,16 @@ bool idModelExport::ConvertMayaToMD5( void ) {
 	}
 
 	// we need to make sure we have a full path, so convert the filename to an OS path
-	// _D3XP :: we work out of the cdpath, at least until we get Alienbrain
-	src = fileSystem->RelativePathToOSPath(src, "fs_cdpath");
-	dest = fileSystem->RelativePathToOSPath(dest, "fs_cdpath");
+	src = fileSystem->RelativePathToOSPath( src );
+	dest = fileSystem->RelativePathToOSPath( dest );
 
-	dest.ExtractFilePath(path);
-
-	if (path.Length()) {
-		fileSystem->CreateOSPath(path);
+	dest.ExtractFilePath( path );
+	if ( path.Length() ) {
+		fileSystem->CreateOSPath( path );
 	}
 
 	// get the os path in case it needs to create one
-	path = fileSystem->RelativePathToOSPath("", "fs_cdpath" /* _D3XP */);
+	path = fileSystem->RelativePathToOSPath( "" );
 
 	common->SetRefreshOnPrint( true );
 	Maya_Error = Maya_ConvertModel( path, commandLine );

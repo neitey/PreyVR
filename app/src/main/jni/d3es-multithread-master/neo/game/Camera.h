@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_CAMERA_H__
 #define __GAME_CAMERA_H__
 
-#include "idlib/math/Quat.h"
-
-#include "Entity.h"
-
 /*
 ===============================================================================
 
@@ -97,16 +93,6 @@ typedef struct {
 	float				fov;
 } cameraFrame_t;
 
-// Koz
-typedef struct
-{
-	int					cutFrame;
-	bool				posOverride;
-	bool				rotOverride;
-	idVec3				posNew;
-	idCQuat				rotNew;
-} cameraCut_t;
-
 class idCameraAnim : public idCamera {
 public:
 	CLASS_PROTOTYPE( idCameraAnim );
@@ -127,8 +113,7 @@ private:
 	int						frameRate;
 	int						starttime;
 	int						cycle;
-	//idList<int>				cameraCuts;
-	idList<cameraCut_t>		cameraCuts; // Koz enable position and angle overrides for camera cut positions. ( When using immersive cutscenes, overrides allow better clamped camera positions without having to completely rewrite the camera files. )
+	idList<int>				cameraCuts;
 	idList<cameraFrame_t>	camera;
 	idEntityPtr<idEntity>	activator;
 

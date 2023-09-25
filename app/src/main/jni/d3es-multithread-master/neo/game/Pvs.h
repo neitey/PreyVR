@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_PVS_H__
 #define __GAME_PVS_H__
 
-#include "idlib/geometry/Winding.h"
-#include "idlib/math/Vector.h"
-#include "idlib/bv/Bounds.h"
-
 /*
 ===================================================================================
 
@@ -96,7 +92,10 @@ public:
 	void				WritePVS( const pvsHandle_t handle, idBitMsg &msg );
 	void				ReadPVS( const pvsHandle_t handle, const idBitMsg &msg );
 #endif
-	bool				CheckAreasForPortalSky(const pvsHandle_t handle, const idVec3 &origin);
+
+#ifdef _PORTALSKY //un noted code change from original sdk
+	bool				CheckAreasForPortalSky( const pvsHandle_t handle, const idVec3 &origin );
+#endif
 
 private:
 	int					numAreas;

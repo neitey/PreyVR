@@ -26,15 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "physics/Physics_RigidBody.h"
-#include "Entity.h"
-#include "Light.h"
-#include "Player.h"
-#include "Fx.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "SecurityCamera.h"
+#include "Game_local.h"
 
 /***********************************************************************
 

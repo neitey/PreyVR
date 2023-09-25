@@ -866,8 +866,6 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe );
 		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward);
 
-		game->EvaluateVRMoveMode(viewangles, cmd, buttonCurrentlyClicked, yaw);
-
 		// check to make sure the angles haven't wrapped
 		if( viewangles[PITCH] - oldAngles[PITCH] > 90 )
 		{

@@ -29,13 +29,14 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_MOVER_H__
 #define __GAME_MOVER_H__
 
-#include "physics/Physics_Parametric.h"
-#include "Entity.h"
-
 extern const idEventDef EV_TeamBlocked;
 extern const idEventDef EV_PartBlocked;
 extern const idEventDef EV_ReachedPos;
 extern const idEventDef EV_ReachedAng;
+
+//ivan start
+extern const idEventDef EV_GoToBinaryPos;
+//ivan end
 
 /*
 ===============================================================================
@@ -117,6 +118,15 @@ protected:
 
 	idPhysics_Parametric	physicsObj;
 
+	//ivan start - promoted to protected
+	float					move_speed;
+	int						move_time;
+	int						deceltime;
+	int						acceltime;
+	moverCommand_t			lastCommand;
+	idVec3					dest_position;
+	//ivan end
+
 	void					Event_OpenPortal( void );
 	void					Event_ClosePortal( void );
 	void					Event_PartBlocked( idEntity *blockingEntity );
@@ -141,16 +151,19 @@ private:
 	int						rotate_thread;
 	idAngles				dest_angles;
 	idAngles				angle_delta;
-	idVec3					dest_position;
+	//idVec3					dest_position; //ivan - promoted to protected
 	idVec3					move_delta;
+	/*
+	//ivan - promoted to protected
 	float					move_speed;
 	int						move_time;
 	int						deceltime;
 	int						acceltime;
+	*/
 	bool					stopRotation;
 	bool					useSplineAngles;
 	idEntityPtr<idEntity>	splineEnt;
-	moverCommand_t			lastCommand;
+	//moverCommand_t			lastCommand; //ivan - promoted to protected
 	float					damage;
 
 	qhandle_t				areaPortal;		// 0 = no portal
@@ -197,6 +210,56 @@ private:
 	void					Event_IsMoving( void );
 	void					Event_IsRotating( void );
 };
+
+#define TEAM_TEST
+//ivan start
+class idPathMover : public idMover {
+public:
+	CLASS_PROTOTYPE( idPathMover );
+
+						idPathMover( void );
+
+	void					Spawn();
+
+	void					Save( idSaveGame *savefile ) const;
+	void					Restore( idRestoreGame *savefile );
+
+#ifdef TEAM_TEST
+	//idPathMover *			GetMoveMaster( void ) const { return moveMaster; };
+	//void					SetBlocked( bool b );
+	//bool					IsBlocked( void );
+#endif
+
+protected:
+	virtual void			DoneMoving( void );
+
+private:
+	idEntityPtr<idEntity>	currentTarget;
+	bool					restoreSettings;
+	bool					toggleOnTrigger;
+	bool					startOnTrigger;
+	bool					nextOnTrigger;
+	bool					allowRestart;
+	bool					resetOnRestart;
+	//int						nextTriggerTime;
+#ifdef TEAM_TEST
+	//idPathMover *			moveMaster;
+	idStr					team;
+	//void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
+#endif
+
+	void					StartPath( void ); 
+	void					SuspendPath( void ); 
+	void					ContinuePath( void );
+  	bool					SetNextTarget( void );
+	void					PerformTriggerEnt( void );	
+
+	void					Event_PostSpawn( void );
+	void					Event_Trigger( idEntity *activator );
+	void					Event_StartNextMov( void );
+};
+
+//ivan end
 
 class idSplinePath : public idEntity {
 public:
@@ -264,7 +327,6 @@ private:
 	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
 	void					Event_Activate( idEntity *activator );
 	void					Event_PostFloorArrival();
-	void					Event_SetGuiStates();
 
 };
 
@@ -319,6 +381,8 @@ public:
 
 	void					SetPortalState( bool open );
 
+	void					DelayReturnToPos1( int delay ); //ivan
+
 protected:
 	idVec3					pos1;
 	idVec3					pos2;
@@ -345,7 +409,6 @@ protected:
 	idPhysics_Parametric	physicsObj;
 	qhandle_t				areaPortal;			// 0 = no portal
 	bool					blocked;
-	bool					playerOnly;
 	idList< idEntityPtr<idEntity> >	guiTargets;
 
 	void					MatchActivateTeam( moverState_t newstate, int time );
@@ -359,6 +422,7 @@ protected:
 
 	void					Event_SetCallback( void );
 	void					Event_ReturnToPos1( void );
+	void					Event_UseToReturnToPos1( void ); //ivan
 	void					Event_Use_BinaryMover( idEntity *activator );
 	void					Event_Reached_BinaryMover( void );
 	void					Event_MatchActivateTeam( moverState_t newstate, int time );
@@ -368,6 +432,10 @@ protected:
 	void					Event_ClosePortal( void );
 	void					Event_FindGuiTargets( void );
 	void					Event_InitGuiTargets( void );
+
+	//ivan start
+	void					Event_GoToPos( int dest );
+	//ivan end
 
 	static void				GetMovedir( float dir, idVec3 &movedir );
 };
@@ -392,7 +460,6 @@ public:
 
 	bool					IsOpen( void );
 	bool					IsNoTouch( void );
-	bool					AllowPlayerOnly(idEntity *ent);
 	int						IsLocked( void );
 	void					Lock( int f );
 	void					Use( idEntity *other, idEntity *activator );
@@ -440,6 +507,14 @@ private:
 	void					Event_ClosePortal( void );
 };
 
+//ivan start - must match .def values!
+typedef enum {
+	PLAT_MODE_DEFAULT			= 0,
+	PLAT_MODE_AUTOREVERT		= 1,
+	PLAT_MODE_BINARY_ELEVATOR	= 2
+} platMode_t;
+//ivan end
+
 class idPlat : public idMover_Binary {
 public:
 	CLASS_PROTOTYPE( idPlat );
@@ -456,19 +531,38 @@ public:
 	virtual void			PreBind( void );
 	virtual void			PostBind( void );
 
-private:
+private: //ivan - was: private
 	idClipModel *			trigger;
+	idClipModel *			trigger_dest; //ivan
 	idVec3					localTriggerOrigin;
 	idMat3					localTriggerAxis;
+	platMode_t				mode; //ivan
 
 	void					GetLocalTriggerPosition( const idClipModel *trigger );
-	void					SpawnPlatTrigger( idVec3 &pos );
-
+	void					SpawnPlatTrigger( bool top ); //ivan - was idVec3 &pos
+	//ivan start
+	void					Setup( void );
+	bool					GetTargetPos( idVec3 &pos ); 
+	void					Event_PostSpawn( void );
+	void 					Event_GoToBinaryPos( int dest );
+	//ivan end
 	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
 	void					Event_PartBlocked( idEntity *blockingEntity );
 	void					Event_Touch( idEntity *other, trace_t *trace );
 };
 
+#if 0
+//ivan start
+class idPlatAutoRevert : public idPlat {
+public:
+	CLASS_PROTOTYPE( idPlatAutoRevert );
+
+							idPlatAutoRevert( void );
+private:
+	void					Event_Touch( idEntity *other, trace_t *trace );
+};
+//ivan end
+#endif
 
 /*
 ===============================================================================

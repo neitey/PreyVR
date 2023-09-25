@@ -29,13 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SAVEGAME_H__
 #define __SAVEGAME_H__
 
-#include "idlib/precompiled.h"
-#include "framework/DeclFX.h"
-#include "renderer/Model.h"
-#include "renderer/RenderSystem.h"
-
-#include "Class.h"
-
 /*
 
 Save game related helper classes.
@@ -158,8 +151,23 @@ public:
 	//						Used to retrieve the saved game buildNumber from within class Restore methods
 	int						GetBuildNumber( void );
 
+	// DG: added these methods, internalSavegameVersion makes us independent of the global BUILD_NUMBER
+	void					ReadInternalSavegameVersion( void )
+	{
+		ReadInt( internalSavegameVersion );
+	}
+
+	// if it's 0, this is from a GetBuildNumber() < 1305 savegame
+	// otherwise, compare it to idGameLocal::INTERNAL_SAVEGAME_VERSION
+	int						GetInternalSavegameVersion( void ) const
+	{
+		return internalSavegameVersion;
+	}
+	// DG end
+
 private:
 	int						buildNumber;
+	int						internalSavegameVersion; // DG added this
 
 	idFile *				file;
 

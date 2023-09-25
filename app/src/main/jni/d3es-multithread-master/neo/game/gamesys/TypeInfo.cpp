@@ -30,11 +30,10 @@ If you have questions concerning this license or the applicable additional terms
 #define private		public
 #define protected	public
 
-#include "idlib/precompiled.h"
-#include "framework/Common.h"
-#include "framework/FileSystem.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Entity.h"
+#include "../Game_local.h"
 
 #ifdef ID_DEBUG_MEMORY
 #include "GameTypeInfo.h"				// Make sure this is up to date!
@@ -564,9 +563,26 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 	}
 
 	// if this is a pointer
+
+#ifdef __ANDROID__
+#ifdef __aarch64__
+#define D3_SIZEOFPTR 8
+#else
+#define D3_SIZEOFPTR 4
+#endif
+
+#endif
+#if D3_SIZEOFPTR == 4
+	const uintptr_t uninitPtr = (uintptr_t)0xcdcdcdcdUL;
+#elif D3_SIZEOFPTR == 8
+	const uintptr_t uninitPtr = (uintptr_t)0xcdcdcdcdcdcdcdcdULL;
+#else
+	#error "Unexpected pointer size"
+#endif
+
 	isPointer = 0;
 	for ( i = typeString.Length(); i > 0 && typeString[i - 1] == '*'; i -= 2 ) {
-		if ( varPtr == (void *)0xcdcdcdcd || ( varPtr != NULL && *((unsigned int *)varPtr) == 0xcdcdcdcd ) ) {
+		if ( varPtr == (void*)uninitPtr || ( varPtr != NULL && *((unsigned int *)varPtr) == 0xcdcdcdcd ) ) {
 			common->Warning( "%s%s::%s%s references uninitialized memory", prefix, scope, varName, "" );
 			return typeSize;
 		}

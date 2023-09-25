@@ -26,14 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "idlib/precompiled.h"
-
-#include "gamesys/SysCvar.h"
-#include "physics/Force.h"
-#include "Entity.h"
-
-#include "physics/Physics_StaticMulti.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics, idPhysics_StaticMulti )
 END_CLASS

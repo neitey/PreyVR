@@ -26,11 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-
-#include "AF.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
@@ -921,6 +920,19 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 				name.c_str(), self->name.c_str(), self->GetPhysics()->GetOrigin().ToString(0), animator->GetJointName( (jointHandle_t)i ) );
 		}
 	}
+
+#ifdef _WATER_PHYSICS //un noted change from original sdk
+	// load how the body will be floated in liquid
+	bool isFixedDensity;
+	if( ent->spawnArgs.GetBool( "fixedDensityBuoyancy", "1", isFixedDensity ) )
+		physicsObj.SetFixedDensityBuoyancy( isFixedDensity );
+
+	// load liquid density from file
+	float liquidDensity;
+	if( ent->spawnArgs.GetFloat( "liquidDensity", "", liquidDensity ) )
+		physicsObj.SetLiquidDensity( liquidDensity );
+#endif
+
 
 	physicsObj.SetMass( file->totalMass );
 	physicsObj.SetChanged();

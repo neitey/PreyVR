@@ -26,22 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "framework/async/NetworkSystem.h"
-#include "framework/FileSystem.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/TypeInfo.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-#include "ai/AI.h"
-#include "anim/Anim_Testmodel.h"
-#include "Entity.h"
-#include "Moveable.h"
-#include "WorldSpawn.h"
-#include "Fx.h"
-#include "Misc.h"
+#include "../Game_local.h"
 
-#include "SysCmds.h"
+#include "TypeInfo.h"
 
 /*
 ==================
@@ -154,27 +144,6 @@ void Cmd_ReloadScript_f( const idCmdArgs &args ) {
 
 	// recompile the scripts
 	gameLocal.program.Startup( SCRIPT_DEFAULT );
-
-	// loads a game specific main script file
-	idStr gamedir;
-	int i;
-
-	for (i = 0; i < 2; i++) {
-		if (i == 0) {
-			gamedir = cvarSystem->GetCVarString("fs_game_base");
-		} else if (i == 1) {
-			gamedir = cvarSystem->GetCVarString("fs_game");
-		}
-
-		if (gamedir.Length() > 0) {
-			idStr scriptFile = va("script/%s_main.script", gamedir.c_str());
-
-			if (fileSystem->ReadFile(scriptFile.c_str(), NULL) > 0) {
-				gameLocal.program.CompileFile(scriptFile.c_str());
-				gameLocal.program.FinishCompilation();
-			}
-		}
-	}
 
 	// error out so that the user can rerun the scripts
 	gameLocal.Error( "Exiting map to reload scripts" );
@@ -322,21 +291,37 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		give_all = false;
 	}
 
+	
 	if ( give_all || ( idStr::Cmpn( name, "weapon", 6 ) == 0 ) ) {
 		if ( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) ) {
 			gameLocal.world->spawnArgs.SetBool( "no_Weapons", false );
 			for( i = 0; i < gameLocal.numClients; i++ ) {
-				if ( gameLocal.entities[ i ] ) {
-					gameLocal.entities[ i ]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[ i ]->spawnArgs.GetString( "def_weapon1" ) );
+				if ( gameLocal.entities[ i ] ) {			
+					gameLocal.entities[ i ]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[ i ]->spawnArgs.GetString( "def_weapon0" ) ); //ivan - was: def_weapon1 - 0 is chainsaw
 				}
 			}
 		}
 	}
 
-	if ( ( idStr::Cmpn( name, "weapon_", 7 ) == 0 ) || ( idStr::Cmpn( name, "item_", 5 ) == 0 ) || ( idStr::Cmpn( name, "ammo_", 5 ) == 0 ) ) {
+	//ivan start - spawn instead of give
+	/*
+	//was 
+	if ( ( idStr::Cmpn( name, "weapon_", 7 ) == 0 ) ||  ( idStr::Cmpn( name, "item_", 5 ) == 0 ) || ( idStr::Cmpn( name, "ammo_", 5 ) == 0 ) ) {
 		player->GiveItem( name );
 		return;
 	}
+	*/
+
+	if ( ( idStr::Cmpn( name, "weapon_", 7 ) == 0 ) || ( idStr::Cmpn( name, "item_", 5 ) == 0 ) ) {
+		player->SpawnInsteadOfGiving( name ); //new!
+		return;
+	}
+
+	if ( idStr::Cmpn( name, "ammo_", 5 ) == 0 ) {
+		player->GiveItem( name );
+		return;		
+	}
+	//ivan end
 
 	if ( give_all || idStr::Icmp( name, "health" ) == 0 )	{
 		player->health = player->inventory.maxHealth;
@@ -345,12 +330,24 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		}
 	}
 
-	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {
-        player->inventory.duplicateWeapons |= player->inventory.weapons;
-        player->inventory.weapons = ( int )( BIT( MAX_WEAPONS ) - 1 );
-        player->inventory.foundWeapons |= player->inventory.weapons;
+	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {		
+		
+		//ivan start
+		/*
+		//commented out
+		player->inventory.weapons = BIT( MAX_WEAPONS ) - 1; 
 		player->CacheWeapons();
+		*/
+		
+		//spawning weapons every time player uses 'give all' could be a bad idea.
+		if( give_all ){
+			gameLocal.Printf("Health, armor and ammo given.\nUse 'give weapons' to spawn the weapons.\n");
+		}else{
+			player->SpawnAllWeapons(); 
+		}
 
+		//ivan end
+		
 		if ( !give_all ) {
 			return;
 		}
@@ -382,38 +379,8 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	if (idStr::Icmp(name, "invulnerability") == 0) {
-		if (args.Argc() > 2) {
-			player->GivePowerUp(INVULNERABILITY, atoi(args.Argv(2)));
-		} else {
-			player->GivePowerUp(INVULNERABILITY, 30000);
-		}
-
-		return;
-	}
-
-	if (idStr::Icmp(name, "helltime") == 0) {
-		if (args.Argc() > 2) {
-			player->GivePowerUp(HELLTIME, atoi(args.Argv(2)));
-		} else {
-			player->GivePowerUp(HELLTIME, 30000);
-		}
-
-		return;
-	}
-
-	if (idStr::Icmp(name, "envirosuit") == 0) {
-		if (args.Argc() > 2) {
-			player->GivePowerUp(ENVIROSUIT, atoi(args.Argv(2)));
-		} else {
-			player->GivePowerUp(ENVIROSUIT, 30000);
-		}
-
-		return;
-	}
-
 	if ( idStr::Icmp( name, "pda" ) == 0 ) {
-		player->GivePDA( args.Argv(2), NULL, true );
+		player->GivePDA( args.Argv(2), NULL );
 		return;
 	}
 
@@ -422,7 +389,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	if ( !give_all && !player->Give( args.Argv(1), args.Argv(2), -1 ) ) {
+	if ( !give_all && !player->Give( args.Argv(1), args.Argv(2) ) ) {
 		gameLocal.Printf( "unknown item\n" );
 	}
 }
@@ -632,20 +599,6 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 		player = gameLocal.localClientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ gameLocal.localClientNum ] ) : NULL;
 		if ( player ) {
 			name = player->GetUserInfo()->GetString( "ui_name", "player" );
-		}
-
-		// Append the player's location to team chat messages in CTF
-		if (gameLocal.mpGame.IsGametypeFlagBased() && team && player) {
-			idLocationEntity *locationEntity = gameLocal.LocationForPoint(player->GetEyePosition());
-
-			if (locationEntity) {
-				idStr temp = "[";
-				temp += locationEntity->GetLocation();
-				temp += "] ";
-				temp += text;
-				text = temp;
-			}
-
 		}
 	} else {
 		name = "server";
@@ -1642,13 +1595,7 @@ static void Cmd_WeaponSplat_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	// Carl dual wielding, splat blood on both weapons
-	for( int hand = 0; hand < 2; hand++ )
-	{
-		idWeapon* weapon = player->GetWeaponInHand( hand );
-		if( weapon )
-			weapon->BloodSplat( 2.0f );
-	}
+	player->weapon.GetEntity()->BloodSplat( 2.0f );
 }
 
 /*
@@ -2050,6 +1997,18 @@ static void Cmd_SaveParticles_f( const idCmdArgs &args ) {
 	mapFile->Write( mapName, ".map" );
 }
 
+#ifdef _DENTONMOD
+/*
+==================
+Cmd_UpdateCookedMathData_f
+==================
+*/
+static void Cmd_UpdateCookedMathData_f( const idCmdArgs &args )
+{
+	// This would cause a cooked math data update. 
+	r_HDR_colorCurveBias.SetModified();
+}
+#endif
 
 /*
 ==================
@@ -2100,7 +2059,7 @@ static void Cmd_RecordViewNotes_f( const idCmdArgs &args ) {
 
 	idStr str = args.Argv(1);
 	str.SetFileExtension( ".txt" );
-	idFile *file = fileSystem->OpenFileAppend(str, false, "fs_cdpath");
+	idFile *file = fileSystem->OpenFileAppend( str );
 	if ( file ) {
 		file->WriteFloatString( "\"view\"\t( %s )\t( %s )\r\n", origin.ToString(), axis.ToString() );
 		file->WriteFloatString( "\"comments\"\t\"%s: %s\"\r\n\r\n", args.Argv(2), args.Argv(3) );
@@ -2340,32 +2299,6 @@ void Cmd_NextGUI_f( const idCmdArgs &args ) {
 	player->Teleport( origin, angles, NULL );
 }
 
-void Cmd_SetActorState_f(const idCmdArgs &args)
-{
-
-	if (args.Argc() != 3) {
-		common->Printf("usage: setActorState <entity name> <state>\n");
-		return;
-	}
-
-	idEntity *ent;
-	ent = gameLocal.FindEntity(args.Argv(1));
-
-	if (!ent) {
-		gameLocal.Printf("entity not found\n");
-		return;
-	}
-
-
-	if (!ent->IsType(idActor::Type)) {
-		gameLocal.Printf("entity not an actor\n");
-		return;
-	}
-
-	idActor *actor = (idActor *)ent;
-	actor->PostEventMS(&AI_SetState, 0, args.Argv(2));
-}
-
 static void ArgCompletion_DefFile( const idCmdArgs &args, void(*callback)( const char *s ) ) {
 	cmdSystem->ArgCompletion_FolderExtension( args, callback, "def/", true, ".def", NULL );
 }
@@ -2501,7 +2434,6 @@ void idGameLocal::InitConsoleCommands( void ) {
 	// localization help commands
 	cmdSystem->AddCommand( "nextGUI",				Cmd_NextGUI_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleport the player to the next func_static with a gui" );
 	cmdSystem->AddCommand( "testid",				Cmd_TestId_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"output the string for the specified id." );
-	cmdSystem->AddCommand("setActorState",			Cmd_SetActorState_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"Manually sets an actors script state", idGameLocal::ArgCompletion_EntityName);
 }
 
 /*

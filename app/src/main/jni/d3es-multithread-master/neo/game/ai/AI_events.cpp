@@ -26,12 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "Moveable.h"
-#include "Misc.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-#include "ai/AI.h"
+#include "../Game_local.h"
 
 /***********************************************************************
 
@@ -51,9 +49,6 @@ const idEventDef AI_CreateMissile( "createMissile", "s", 'e' );
 const idEventDef AI_AttackMissile( "attackMissile", "s", 'e' );
 const idEventDef AI_FireMissileAtTarget( "fireMissileAtTarget", "ss", 'e' );
 const idEventDef AI_LaunchMissile( "launchMissile", "vv", 'e' );
-const idEventDef AI_LaunchHomingMissile( "launchHomingMissile" );
-const idEventDef AI_SetHomingMissileGoal( "setHomingMissileGoal" );
-const idEventDef AI_LaunchProjectile("launchProjectile", "s");
 const idEventDef AI_AttackMelee( "attackMelee", "s", 'd' );
 const idEventDef AI_DirectDamage( "directDamage", "es" );
 const idEventDef AI_RadiusDamageFromJoint( "radiusDamageFromJoint", "ss" );
@@ -165,12 +160,10 @@ const idEventDef AI_CanReachPosition( "canReachPosition", "v", 'd' );
 const idEventDef AI_CanReachEntity( "canReachEntity", "E", 'd' );
 const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
-const idEventDef AI_MoveToPositionDirect("moveToPositionDirect", "v");
-const idEventDef AI_AvoidObstacles("avoidObstacles", "d");
-const idEventDef AI_TriggerFX("triggerFX", "ss");
-const idEventDef AI_StartEmitter("startEmitter", "sss", 'e');
-const idEventDef AI_GetEmitter("getEmitter", "s", 'e');
-const idEventDef AI_StopEmitter("stopEmitter", "s");
+
+//ivan start - from ROE
+const idEventDef AI_MoveToPositionDirect( "moveToPositionDirect", "v" );
+//ivan end
 
 CLASS_DECLARATION( idActor, idAI )
 	EVENT( EV_Activate,							idAI::Event_Activate )
@@ -187,9 +180,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_AttackMissile,					idAI::Event_AttackMissile )
 	EVENT( AI_FireMissileAtTarget,				idAI::Event_FireMissileAtTarget )
 	EVENT( AI_LaunchMissile,					idAI::Event_LaunchMissile )
-	EVENT( AI_LaunchHomingMissile,				idAI::Event_LaunchHomingMissile )
-	EVENT( AI_SetHomingMissileGoal,				idAI::Event_SetHomingMissileGoal )
-	EVENT(AI_LaunchProjectile,					idAI::Event_LaunchProjectile)
 	EVENT( AI_AttackMelee,						idAI::Event_AttackMelee )
 	EVENT( AI_DirectDamage,						idAI::Event_DirectDamage )
 	EVENT( AI_RadiusDamageFromJoint,			idAI::Event_RadiusDamageFromJoint )
@@ -304,12 +294,9 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEntity,					idAI::Event_CanReachEntity )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
-	EVENT(AI_MoveToPositionDirect,				idAI::Event_MoveToPositionDirect)
-	EVENT(AI_AvoidObstacles, 					idAI::Event_AvoidObstacles)
-	EVENT(AI_TriggerFX,						idAI::Event_TriggerFX)
-	EVENT(AI_StartEmitter,						idAI::Event_StartEmitter)
-	EVENT(AI_GetEmitter,						idAI::Event_GetEmitter)
-	EVENT(AI_StopEmitter,						idAI::Event_StopEmitter)
+	//ivan start - from ROE
+	EVENT( AI_MoveToPositionDirect,				idAI::Event_MoveToPositionDirect )
+	//ivan end
 END_CLASS
 
 /*
@@ -356,7 +343,7 @@ void idAI::Event_FindEnemy( int useFOV ) {
 				continue;
 			}
 
-			if ( CanSee( actor, useFOV != 0 ) ) {
+			if ( AllowSeeActor( actor ) && CanSee( actor, useFOV != 0 ) ) { //ivan - AllowSeeActor() added
 				idThread::ReturnEntity( actor );
 				return;
 			}
@@ -400,7 +387,7 @@ void idAI::Event_FindEnemyAI( int useFOV ) {
 
 		delta = physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin();
 		dist = delta.LengthSqr();
-		if ( ( dist < bestDist ) && CanSee( actor, useFOV != 0 ) ) {
+		if ( ( dist < bestDist ) && AllowSeeActor( actor ) && CanSee( actor, useFOV != 0 ) ) { //ivan - AllowSeeActor() added
 			bestDist = dist;
 			bestEnemy = actor;
 		}
@@ -674,64 +661,6 @@ void idAI::Event_LaunchMissile( const idVec3 &org, const idAngles &ang ) {
 
 /*
 =====================
-idAI::Event_LaunchProjectile
-=====================
-*/
-void idAI::Event_LaunchProjectile(const char *entityDefName)
-{
-	idVec3				muzzle, start, dir;
-	const idDict		*projDef;
-	idMat3				axis;
-	const idClipModel	*projClip;
-	idBounds			projBounds;
-	trace_t				tr;
-	idEntity			*ent;
-	const char			*clsname;
-	float				distance;
-	idProjectile		*proj = NULL;
-
-	projDef = gameLocal.FindEntityDefDict(entityDefName);
-
-	gameLocal.SpawnEntityDef(*projDef, &ent, false);
-
-	if (!ent) {
-		clsname = projectileDef->GetString("classname");
-		gameLocal.Error("Could not spawn entityDef '%s'", clsname);
-	}
-
-	if (!ent->IsType(idProjectile::Type)) {
-		clsname = ent->GetClassname();
-		gameLocal.Error("'%s' is not an idProjectile", clsname);
-	}
-
-	proj = (idProjectile *)ent;
-
-	GetMuzzle("pistol", muzzle, axis);
-	proj->Create(this, muzzle, axis[0]);
-
-	// make sure the projectile starts inside the monster bounding box
-	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	projClip = proj->GetPhysics()->GetClipModel();
-	projBounds = projClip->GetBounds().Rotate(projClip->GetAxis());
-
-	if ((ownerBounds - projBounds).RayIntersection(muzzle, viewAxis[ 0 ], distance)) {
-		start = muzzle + distance * viewAxis[ 0 ];
-	} else {
-		start = ownerBounds.GetCenter();
-	}
-
-	gameLocal.clip.Translation(tr, start, muzzle, projClip, projClip->GetAxis(), MASK_SHOT_RENDERMODEL, this);
-	muzzle = tr.endpos;
-
-	GetAimDir(muzzle, enemy.GetEntity(), this, dir);
-
-	proj->Launch(muzzle, dir, vec3_origin);
-
-	TriggerWeaponEffects(muzzle);
-}
-
-/*
-=====================
 idAI::Event_AttackMelee
 =====================
 */
@@ -826,7 +755,7 @@ void idAI::Event_MeleeAttackToJoint( const char *jointname, const char *meleeDef
 	start = GetEyePosition();
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorYellow, start, end, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, start, end, gameLocal.msec );
 	}
 
 	gameLocal.clip.TranslationEntities( trace, start, end, NULL, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
@@ -850,7 +779,6 @@ idAI::Event_CanBecomeSolid
 void idAI::Event_CanBecomeSolid( void ) {
 	int			i;
 	int			num;
-	bool		returnValue = true;
 	idEntity *	hit;
 	idClipModel *cm;
 	idClipModel *clipModels[ MAX_GENTITIES ];
@@ -869,29 +797,13 @@ void idAI::Event_CanBecomeSolid( void ) {
 			continue;
 		}
 
-		if (spawnClearMoveables && hit->IsType(idMoveable::Type) || hit->IsType(idBarrel::Type) || hit->IsType(idExplodingBarrel::Type)) {
-			idVec3 push;
-			push = hit->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-			push.z = 30.f;
-			push.NormalizeFast();
-
-			if ((idMath::Fabs(push.x) < 0.15f) && (idMath::Fabs(push.y) < 0.15f)) {
-				push.x = 10.f;
-				push.y = 10.f;
-				push.z = 15.f;
-				push.NormalizeFast();
-			}
-
-			push *= 300.f;
-			hit->GetPhysics()->SetLinearVelocity(push);
-		}
-
 		if ( physicsObj.ClipContents( cm ) ) {
-			returnValue = false;
+			idThread::ReturnFloat( false );
+			return;
 		}
 	}
 
-	idThread::ReturnFloat(returnValue);
+	idThread::ReturnFloat( true );
 }
 
 /*
@@ -1214,38 +1126,6 @@ void idAI::Event_GetCombatNode( void ) {
 	if ( !enemyEnt || !EnemyPositionValid() ) {
 		// don't return a combat node if we don't have an enemy or
 		// if we can see he's not in the last place we saw him
-		if (team == 0) {
-			// find the closest attack node to the player
-			bestNode = NULL;
-			const idVec3 &myPos = physicsObj.GetOrigin();
-			const idVec3 &playerPos = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
-
-			bestDist = (myPos - playerPos).LengthSqr();
-
-			for (i = 0; i < targets.Num(); i++) {
-				targetEnt = targets[ i ].GetEntity();
-
-				if (!targetEnt || !targetEnt->IsType(idCombatNode::Type)) {
-					continue;
-				}
-
-				node = static_cast<idCombatNode *>(targetEnt);
-
-				if (!node->IsDisabled()) {
-					idVec3 org = node->GetPhysics()->GetOrigin();
-					dist = (playerPos - org).LengthSqr();
-
-					if (dist < bestDist) {
-						bestNode = node;
-						bestDist = dist;
-					}
-				}
-			}
-
-			idThread::ReturnEntity(bestNode);
-			return;
-		}
-
 		idThread::ReturnEntity( NULL );
 		return;
 	}
@@ -1299,13 +1179,6 @@ void idAI::Event_EnemyInCombatCone( idEntity *ent, int use_current_enemy_locatio
 	if ( !ent || !ent->IsType( idCombatNode::Type ) ) {
 		// not a combat node
 		idThread::ReturnInt( false );
-		return;
-	}
-
-	//Allow the level designers define attack nodes that the enemy should never leave.
-	//This is different that the turrent type combat nodes because they can play an animation
-	if (ent->spawnArgs.GetBool("neverLeave", "0")) {
-		idThread::ReturnInt(true);
 		return;
 	}
 
@@ -1418,6 +1291,12 @@ void idAI::Event_CanSeeEntity( idEntity *ent ) {
 		idThread::ReturnInt( false );
 		return;
 	}
+
+	/*
+	//ivan comment - damn we cannot know if he is trying to find an enemy
+	//assume he is not.
+	AllowSeeActor() &&
+	*/
 
 	bool cansee = CanSee( ent, false );
 	idThread::ReturnInt( cansee );
@@ -1797,8 +1676,8 @@ void idAI::Event_TestChargeAttack( void ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), end - physicsObj.GetOrigin(), 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), end, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), end, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), end, gameLocal.msec );
+		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), end, gameLocal.msec );
 	}
 
 	if ( ( path.endEvent == 0 ) || ( path.blockingEntity == enemyEnt ) ) {
@@ -1843,8 +1722,8 @@ void idAI::Event_TestAnimMoveTowardEnemy( const char *animname ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), moveVec, 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
+		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
 	}
 
 	idThread::ReturnInt( path.endEvent == 0 );
@@ -1871,8 +1750,8 @@ void idAI::Event_TestAnimMove( const char *animname ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), moveVec, 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
+		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
 	}
 
 	idThread::ReturnInt( path.endEvent == 0 );
@@ -1889,10 +1768,10 @@ void idAI::Event_TestMoveToPosition( const idVec3 &position ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), position - physicsObj.GetOrigin(), 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), position, USERCMD_MSEC );
-		gameRenderWorld->DebugBounds( colorYellow, physicsObj.GetBounds(), position, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), position, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorYellow, physicsObj.GetBounds(), position, gameLocal.msec );
 		if ( path.endEvent ) {
-			gameRenderWorld->DebugBounds( colorRed, physicsObj.GetBounds(), path.endPos, USERCMD_MSEC );
+			gameRenderWorld->DebugBounds( colorRed, physicsObj.GetBounds(), path.endPos, gameLocal.msec );
 		}
 	}
 
@@ -1967,8 +1846,6 @@ idAI::Event_PreBurn
 =====================
 */
 void idAI::Event_PreBurn( void ) {
-	// No grabbing after the burn has started!
-	noGrab = true;
 	// for now this just turns shadows off
 	renderEntity.noShadow = true;
 }
@@ -1982,6 +1859,10 @@ void idAI::Event_Burn( void ) {
 	renderEntity.shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
 	SpawnParticles( "smoke_burnParticleSystem" );
 	UpdateVisuals();
+	
+	//ivan start - turn off dmgfxs on burn
+	StopDamageFxs();
+	//ivan end
 }
 
 /*
@@ -2165,6 +2046,11 @@ void idAI::Event_RestoreMove( void ) {
 	}
 
 	if ( GetMovePos( goalPos ) ) {
+		//ivan start
+		if(isXlocked){
+			goalPos.x = fastXpos;
+		}
+		//ivan end
 		CheckObstacleAvoidance( goalPos, dest );
 	}
 }
@@ -2566,9 +2452,65 @@ void idAI::Event_LocateEnemy( void ) {
 	}
 
 	enemyEnt->GetAASLocation( aas, lastReachableEnemyPos, areaNum );
-	SetEnemyPosition();
+	idAI::SetEnemyPosition(); //ivan - force call to idAI:: to avoid updating the lastVisibleEnemyTime value
+	//was SetEnemyPosition();
 	UpdateEnemyPosition();
 }
+
+//ivan start
+
+/*
+=====================
+idAI::Event_EnemyCanBeEngaged
+=====================
+
+void idAI::Event_EnemyCanBeEngaged( idEntity *ent ) {
+	
+	idVec3	entPos; 
+	const idVec3 &org = physicsObj.GetOrigin();
+	float dX, dY, dZ;
+
+	if( !ent ){
+		idThread::ReturnInt( false );
+		return;
+	}
+
+	//upd deltas stuff
+	entPos = ent->GetPhysics()->GetOrigin();
+
+	dX = idMath::Fabs( entPos.x - org.x );
+	dY = idMath::Fabs( entPos.y - org.y );
+	dZ = idMath::Fabs( entPos.z - org.z );
+	//gameLocal.Printf("dX: %f\n", dX);
+	//gameLocal.Printf("dY: %f\n", dY);
+	//gameLocal.Printf("dZ: %f\n", dZ);
+
+	//Inhibit Attacks based on deltas
+
+	if ( isXlocked && !updXlock ){ //if locked but cannot change he can fire regardless X pos
+		if ( (dY < AI_Y_DELTA_CANSEE_MAX) && (dZ < AI_Z_DELTA_CANSEE_MAX) ){
+			//gameLocal.Printf("AI_INHIBIT_ATTACK = false;\n");
+			idThread::ReturnInt( true );
+			return;
+		}else{ //don't let it attack if too far on Z or Y axis (out of screen!).
+			//gameLocal.Printf("AI_INHIBIT_ATTACK = true;\n");
+			idThread::ReturnInt( false );
+			return;
+		}
+	}else{
+		if ( (dX < AI_X_DELTA_CANSEE_MAX) && (dY < AI_Y_DELTA_CANSEE_MAX) && (dZ < AI_Z_DELTA_CANSEE_MAX) ){
+			//gameLocal.Printf("AI_INHIBIT_ATTACK = false;\n");
+			idThread::ReturnInt( true );
+			return;
+		}else{ //don't let it attack if too far on Z or Y axis (out of screen!) or if not near enough on X axis.
+			//gameLocal.Printf("AI_INHIBIT_ATTACK = true;\n");
+			idThread::ReturnInt( false );
+			return;
+		}
+	}	
+}
+*/
+//ivan end
 
 /*
 ================
@@ -2841,137 +2783,17 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 	idThread::ReturnVector( pos );
 }
 
+//ivan start - from ROE
+
 /*
 ================
 idAI::Event_MoveToPositionDirect
 ================
 */
-void idAI::Event_MoveToPositionDirect(const idVec3 &pos)
-{
-	StopMove(MOVE_STATUS_DONE);
-	DirectMoveToPosition(pos);
+void idAI::Event_MoveToPositionDirect( const idVec3 &pos ) {
+	StopMove( MOVE_STATUS_DONE );
+	DirectMoveToPosition( pos );
 }
 
-/*
-================
-idAI::Event_AvoidObstacles
-================
-*/
-void idAI::Event_AvoidObstacles(int ignore)
-{
-	ignore_obstacles = (ignore == 1) ? false : true;
-}
 
-/*
-================
-idAI::Event_TriggerFX
-================
-*/
-void idAI::Event_TriggerFX(const char *joint, const char *fx)
-{
-	TriggerFX(joint, fx);
-}
-
-void idAI::Event_StartEmitter(const char *name, const char *joint, const char *particle)
-{
-	idEntity *ent = StartEmitter(name, joint, particle);
-	idThread::ReturnEntity(ent);
-}
-
-void idAI::Event_GetEmitter(const char *name)
-{
-	idThread::ReturnEntity(GetEmitter(name));
-}
-
-void idAI::Event_StopEmitter(const char *name)
-{
-	StopEmitter(name);
-}
-
-/*
-=====================
-idAI::Event_LaunchHomingMissile
-=====================
-*/
-void idAI::Event_LaunchHomingMissile() {
-	idVec3		start;
-	trace_t		tr;
-	idBounds	projBounds;
-	const idClipModel *projClip;
-	idMat3		axis;
-	float		distance;
-
-	if ( !projectileDef ) {
-		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-
-	idActor *enemy = GetEnemy();
-	if ( enemy == NULL ) {
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-
-	idVec3 org = GetPhysics()->GetOrigin() + idVec3( 0.0f, 0.0f, 250.0f );
-	idVec3 goal = enemy->GetPhysics()->GetOrigin();
-	homingMissileGoal = goal;
-
-//	axis = ( goal - org ).ToMat3();
-//	axis.Identity();
-	if ( !projectile.GetEntity() ) {
-		idHomingProjectile *homing = ( idHomingProjectile * ) CreateProjectile( org, idVec3( 0.0f, 0.0f, 1.0f ) );
-		if ( homing != NULL ) {
-			homing->SetEnemy( enemy );
-			homing->SetSeekPos( homingMissileGoal );
-		}
-	}
-
-	// make sure the projectile starts inside the monster bounding box
-	const idBounds &ownerBounds = physicsObj.GetAbsBounds();
-	projClip = projectile.GetEntity()->GetPhysics()->GetClipModel();
-	projBounds = projClip->GetBounds().Rotate( projClip->GetAxis() );
-
-	// check if the owner bounds is bigger than the projectile bounds
-	if ( ( ( ownerBounds[1][0] - ownerBounds[0][0] ) > ( projBounds[1][0] - projBounds[0][0] ) ) &&
-		( ( ownerBounds[1][1] - ownerBounds[0][1] ) > ( projBounds[1][1] - projBounds[0][1] ) ) &&
-		( ( ownerBounds[1][2] - ownerBounds[0][2] ) > ( projBounds[1][2] - projBounds[0][2] ) ) ) {
-			if ( (ownerBounds - projBounds).RayIntersection( org, viewAxis[ 0 ], distance ) ) {
-				start = org + distance * viewAxis[ 0 ];
-			} else {
-				start = ownerBounds.GetCenter();
-			}
-	} else {
-		// projectile bounds bigger than the owner bounds, so just start it from the center
-		start = ownerBounds.GetCenter();
-	}
-
-	gameLocal.clip.Translation( tr, start, org, projClip, projClip->GetAxis(), MASK_SHOT_RENDERMODEL, this );
-
-	// launch the projectile
-	idThread::ReturnEntity( projectile.GetEntity() );
-	idVec3 dir = homingMissileGoal - org;
-	idAngles ang = dir.ToAngles();
-	ang.pitch = -45.0f;
-	projectile.GetEntity()->Launch( org, ang.ToForward(), vec3_origin );
-	projectile = NULL;
-
-	TriggerWeaponEffects( tr.endpos );
-
-	lastAttackTime = gameLocal.time;
-}
-
-/*
-=====================
-idAI::Event_SetHomingMissileGoal
-=====================
-*/
-void idAI::Event_SetHomingMissileGoal() {
-	idActor *enemy = GetEnemy();
-	if ( enemy == NULL ) {
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-
-	homingMissileGoal = enemy->GetPhysics()->GetOrigin();
-}
+//ivan end

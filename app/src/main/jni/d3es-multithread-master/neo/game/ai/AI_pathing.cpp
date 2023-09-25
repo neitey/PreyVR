@@ -26,13 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-#include "Moveable.h"
-#include "WorldSpawn.h"
-
-#include "ai/AI.h"
+#include "../Game_local.h"
 
 #include <stddef.h>
 

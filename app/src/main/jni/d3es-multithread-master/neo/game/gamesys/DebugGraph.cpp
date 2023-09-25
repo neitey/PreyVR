@@ -26,11 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "Player.h"
-#include "Game_local.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "DebugGraph.h"
+#include "../Game_local.h"
 
 /*
 ================
@@ -88,7 +87,7 @@ void idDebugGraph::Draw( const idVec4 &color, float scale ) const {
 		vec1 = pos + axis[ 2 ] * value1 - axis[ 1 ] * ( i - 1 ) + axis[ 0 ] * samples.Num();
 		vec2 = pos + axis[ 2 ] * value2 - axis[ 1 ] * i + axis[ 0 ] * samples.Num();
 
-		gameRenderWorld->DebugLine( color, vec1, vec2, USERCMD_MSEC, false );
+		gameRenderWorld->DebugLine( color, vec1, vec2, gameLocal.msec, false );
 		value1 = value2;
 	}
 }

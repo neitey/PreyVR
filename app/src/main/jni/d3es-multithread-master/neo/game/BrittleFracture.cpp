@@ -26,13 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "framework/DeclEntityDef.h"
-#include "renderer/ModelManager.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Fx.h"
-
-#include "BrittleFracture.h"
+#include "Game_local.h"
 
 CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_Activate, idBrittleFracture::Event_Activate )
@@ -71,8 +68,6 @@ idBrittleFracture::idBrittleFracture( void ) {
 	changed = false;
 
 	fl.networkSync = true;
-
-	isXraySurface = false;
 }
 
 /*
@@ -156,8 +151,6 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool( shards[i]->atEdge );
 		savefile->WriteStaticObject( shards[i]->physicsObj );
 	}
-
-	savefile->WriteBool(isXraySurface);
 }
 
 /*
@@ -245,8 +238,6 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 			shards[i]->clipModel = shards[i]->physicsObj.GetClipModel();
 		}
 	}
-
-	savefile->ReadBool(isXraySurface);
 }
 
 /*
@@ -283,22 +274,6 @@ void idBrittleFracture::Spawn( void ) {
 
 	// FIXME: set "bleed" so idProjectile calls AddDamageEffect
 	spawnArgs.SetBool( "bleed", 1 );
-
-	// check for xray surface
-	if (1) {
-		const idRenderModel *model = renderEntity.hModel;
-
-		isXraySurface = false;
-
-		for (int i = 0; i < model->NumSurfaces(); i++) {
-			const modelSurface_t *surf = model->Surface(i);
-
-			if (idStr(surf->shader->GetName()) == "textures/smf/window_scratch") {
-				isXraySurface = true;
-				break;
-			}
-		}
-	}
 
 	CreateFractures( renderEntity.hModel );
 
@@ -648,6 +623,11 @@ void idBrittleFracture::Think( void ) {
 
 	RunPhysics();
 	Present();
+
+#ifdef _DENTONMOD_ENTITY_CPP
+	if ( thinkFlags & TH_UPDATEWOUNDPARTICLES )
+		UpdateParticles();
+#endif
 }
 
 /*
@@ -691,7 +671,11 @@ void idBrittleFracture::AddForce( idEntity *ent, int id, const idVec3 &point, co
 idBrittleFracture::ProjectDecal
 ================
 */
+#ifdef _DENTONMOD
+void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, const int time, const char *damageDefName, idEntity *soundEnt ) {
+#else
 void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, const int time, const char *damageDefName ) {
+#endif
 	int i, j, bits, clipBits;
 	float a, c, s;
 	idVec2 st[MAX_POINTS_ON_WINDING];
@@ -718,10 +702,34 @@ void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, co
 		// try to get the sound from the damage def
 		const idDeclEntityDef *damageDef = NULL;
 		const idSoundShader *sndShader = NULL;
+
 		if ( damageDefName ) {
 			damageDef = gameLocal.FindEntityDef( damageDefName, false );
-			if ( damageDef ) {
+
+			if (damageDef) {
+#ifdef _DENTONMOD
+				const char *sound = damageDef->dict.GetString( "snd_shatter" );
+
+				if( *sound == '\0' ) {
+					sound = damageDef->dict.GetString( "snd_glass" );
+				}
+
+				if ( *sound != '\0' ) {
+					if( soundEnt == NULL ) {
+						StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_ANY, 0, false, NULL );
+					} else {
+						soundEnt->StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_ANY, 0, false, NULL );
+					}
+				} else {
+					StartSound( "snd_bullethole", SND_CHANNEL_ANY, 0, false, NULL );
+				}
+			}
+		}
+#else// Above code means the same as below but strangely enough the code written below doesnt work.
 				sndShader = declManager->FindSound( damageDef->dict.GetString( "snd_shatter", "" ) );
+				if( !sndShader ) {
+					sndShader = declManager->FindSound( damageDef->dict.GetString( "snd_glass", "" ) );
+				}
 			}
 		}
 
@@ -730,6 +738,7 @@ void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, co
 		} else {
 			StartSound( "snd_bullethole", SND_CHANNEL_ANY, 0, false, NULL );
 		}
+#endif
 	}
 
 	a = gameLocal.random.RandomFloat() * idMath::TWO_PI;
@@ -1019,10 +1028,65 @@ void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int dam
 idBrittleFracture::AddDamageEffect
 ================
 */
+#ifdef _DENTONMOD
+void idBrittleFracture::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName, idEntity *soundEnt ) {
+#else
 void idBrittleFracture::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) {
+
 	if ( !disableFracture ) {
 		ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName );
 	}
+#endif
+	
+
+#ifdef _DENTONMOD
+	if ( !disableFracture ) {
+		ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName, soundEnt );
+	}
+	
+	// a damage effect is added			-By Clone JC Denton
+
+	const idDeclEntityDef *def = gameLocal.FindEntityDef( damageDefName, false );
+	if ( def == NULL ) {
+		return;
+	}
+	if (disableFracture) { //play sound only when the flag is set, otherwise idBrittleFracture::ProjectDecal will take care of playing the sound 
+
+		const char *sound = def->dict.GetString( "snd_shatter" );
+
+		if( *sound == '\0' ) {
+			sound = def->dict.GetString( "snd_glass" );
+		}
+
+		if ( *sound != '\0' ) {
+			if( soundEnt == NULL ) {
+				StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_ANY, 0, false, NULL );
+			} else {
+				soundEnt->StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_ANY, 0, false, NULL );
+			}
+		} else {
+			StartSound( "snd_bullethole", SND_CHANNEL_ANY, 0, false, NULL );
+		}
+	}
+
+	const char *bleed = def->dict.GetString( "smoke_wound_glass" );
+
+	if ( *bleed != '\0' ) {
+		entDamageEffect_t	*de = new entDamageEffect_t;
+		de->next = this->entDamageEffects;
+		this->entDamageEffects = de;
+
+		de->origin = (collision.c.point - renderEntity.origin) * renderEntity.axis.Transpose();
+		de->dir = collision.c.normal * renderEntity.axis.Transpose();
+		de->type = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, bleed ) );
+
+		de->time = -1;	//	We use this as a flag initially, idEntity::UpdateParticles() will actually set it to proper value.
+
+		if (!(thinkFlags & TH_UPDATEWOUNDPARTICLES)) {// if flag was not set before set it now
+			BecomeActive( TH_UPDATEWOUNDPARTICLES );
+		}
+	}
+#endif
 }
 
 /*
@@ -1049,11 +1113,7 @@ void idBrittleFracture::Fracture_r( idFixedWinding &w ) {
 		}
 
 		// randomly create a split plane
-		if (isXraySurface) {
-			a = idMath::TWO_PI / 2.f;
-		} else {
-			a = gameLocal.random.RandomFloat() * idMath::TWO_PI;
-		}
+		a = gameLocal.random.RandomFloat() * idMath::TWO_PI;
 		c = cos( a );
 		s = -sin( a );
 		axis[2] = windingPlane.Normal();
@@ -1122,58 +1182,19 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin(), 0 );
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), 0 );
 
+	for ( i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++ ) {
+		surf = renderModel->Surface( i );
+		material = surf->shader;
 
-	if (isXraySurface) {
-		for (i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++) {
-			surf = renderModel->Surface(i);
-			material = surf->shader;
-
+		for ( j = 0; j < surf->geometry->numIndexes; j += 3 ) {
 			w.Clear();
-
-			int k = 0;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
-
-			k = 1;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
-
-			k = 3;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
-
-			k = 2;
-			v = &surf->geometry->verts[k];
-			w.AddPoint(v->xyz);
-			w[k].s = v->st[0];
-			w[k].t = v->st[1];
-
-			Fracture_r(w);
-		}
-
-	} else {
-		for (i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++) {
-			surf = renderModel->Surface(i);
-			material = surf->shader;
-
-			for (j = 0; j < surf->geometry->numIndexes; j += 3) {
-				w.Clear();
-
-				for (k = 0; k < 3; k++) {
-					v = &surf->geometry->verts[ surf->geometry->indexes[ j + 2 - k ] ];
-					w.AddPoint(v->xyz);
-					w[k].s = v->st[0];
-					w[k].t = v->st[1];
-				}
-
-				Fracture_r(w);
+			for ( k = 0; k < 3; k++ ) {
+				v = &surf->geometry->verts[ surf->geometry->indexes[ j + 2 - k ] ];
+				w.AddPoint( v->xyz );
+				w[k].s = v->st[0];
+				w[k].t = v->st[1];
 			}
+			Fracture_r( w );
 		}
 	}
 

@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __FORCE_DRAG_H__
 #define __FORCE_DRAG_H__
 
-#include "physics/Force.h"
-
 /*
 ===============================================================================
 

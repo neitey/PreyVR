@@ -26,13 +26,13 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "ai/AI.h"
-#include "Player.h"
-#include "Game_local.h"
 
-#include "ai/AAS_local.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
+
+#include "../Game_local.h"
+
+#include "AAS_local.h"
 
 /*
 ============
@@ -232,7 +232,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 idAASLocal::ShowWalkPath
 ============
 */
-void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const {
+void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const {
 	int i, areaNum, curAreaNum, travelTime;
 	idReachability *reach;
 	idVec3 org, areaCenter;

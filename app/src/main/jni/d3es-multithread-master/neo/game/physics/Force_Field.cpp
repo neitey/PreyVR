@@ -26,12 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "physics/Physics_Player.h"
-#include "physics/Physics_Monster.h"
-#include "WorldSpawn.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "physics/Force_Field.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idForce, idForce_Field )
 END_CLASS
@@ -44,6 +42,12 @@ idForce_Field::idForce_Field
 idForce_Field::idForce_Field( void ) {
 	type			= FORCEFIELD_UNIFORM;
 	applyType		= FORCEFIELD_APPLY_FORCE;
+	//ivan start
+	magnitudeType	= FORCEFIELD_MAGNITUDE_FIXED; 
+	distance_radius	= 0.0f;
+	distance_offset	= 0.0f;
+	oldVelocityPct	= 0.0f;
+	//ivan end
 	magnitude		= 0.0f;
 	dir.Set( 0, 0, 1 );
 	randomTorque	= 0.0f;
@@ -71,6 +75,12 @@ idForce_Field::Save
 void idForce_Field::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( type );
 	savefile->WriteInt( applyType);
+	//ivan start
+	savefile->WriteInt( magnitudeType);
+	savefile->WriteFloat( distance_radius );
+	savefile->WriteFloat( distance_offset );
+	savefile->WriteFloat( oldVelocityPct );
+	//ivan end
 	savefile->WriteFloat( magnitude );
 	savefile->WriteVec3( dir );
 	savefile->WriteFloat( randomTorque );
@@ -87,6 +97,12 @@ idForce_Field::Restore
 void idForce_Field::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)type );
 	savefile->ReadInt( (int &)applyType);
+	//ivan start
+	savefile->ReadInt( (int &)magnitudeType);
+	savefile->ReadFloat( distance_radius );
+	savefile->ReadFloat( distance_offset );
+	savefile->ReadFloat( oldVelocityPct );
+	//ivan end
 	savefile->ReadFloat( magnitude );
 	savefile->ReadVec3( dir );
 	savefile->ReadFloat( randomTorque );
@@ -147,6 +163,47 @@ void idForce_Field::RandomTorque( float force ) {
 	randomTorque = force;
 }
 
+//ivan start
+/*
+================
+idForce_Field::SetDistanceBounds
+================
+*/
+void idForce_Field::SetDistanceBounds( float offset, float radius ) {
+	distance_offset = offset;
+	distance_radius = radius;
+}
+
+/*
+================
+idForce_Field::GetDistancePct
+================
+*/
+float idForce_Field::GetDistancePct( float distance, bool inverse ) { //inverse means 1 inside and 0 outside the sphere
+	float resultPct;
+
+	//distance = idMath::Sqrt( distance );  //use sqrt distance
+
+	if( distance_radius <= 0.0f ){
+		if( distance_offset <= 0.0f ){ 
+			return 1.0f; //don't use pct
+		}else{ //either 0 or 1 if smaller or greater than offset
+			resultPct = ( (distance - distance_offset) > 0 ) ? 1.0f : 0.0f;
+		}
+	}else{
+		resultPct = (distance - distance_offset)/distance_radius;
+		if( resultPct < 0.0f ){ resultPct = 0.0f; } //less than the offset is zero
+		if( resultPct > 1.0f ) { resultPct = 1.0f; } //greater than offset+radius
+	}
+
+	if( inverse ){
+		resultPct = 1 - resultPct;
+	}
+	
+	return resultPct;
+}
+//ivan end
+
 /*
 ================
 idForce_Field::Evaluate
@@ -157,6 +214,11 @@ void idForce_Field::Evaluate( int time ) {
 	idBounds bounds;
 	idVec3 force, torque, angularVelocity;
 	idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+	//ivan start
+	idVec3 distanceVec; 
+	float realMagnitude;
+	idVec3 oldVelocity;
+	//ivan end
 
 	assert( clipModel );
 
@@ -190,10 +252,13 @@ void idForce_Field::Evaluate( int time ) {
 			}
 		}
 
-		if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1,
-									clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) {
-			continue;
+		if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1, clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) {
+			continue; // un noted changes from original sdk
 		}
+
+		//ivan start
+		distanceVec = cm->GetOrigin() - clipModel->GetOrigin();
+		//ivan end
 
 		switch( type ) {
 			case FORCEFIELD_UNIFORM: {
@@ -201,12 +266,14 @@ void idForce_Field::Evaluate( int time ) {
 				break;
 			}
 			case FORCEFIELD_EXPLOSION: {
-				force = cm->GetOrigin() - clipModel->GetOrigin();
+				//ivan - was: force = cm->GetOrigin() - clipModel->GetOrigin();
+				force = distanceVec;
 				force.Normalize();
 				break;
 			}
 			case FORCEFIELD_IMPLOSION: {
-				force = clipModel->GetOrigin() - cm->GetOrigin();
+				//ivan - was: force = clipModel->GetOrigin() - cm->GetOrigin();
+				force = -distanceVec;
 				force.Normalize();
 				break;
 			}
@@ -225,18 +292,59 @@ void idForce_Field::Evaluate( int time ) {
 			}
 		}
 
+		//ivan start - magnitude
+		switch( magnitudeType ) {
+			case FORCEFIELD_MAGNITUDE_FIXED: {
+				realMagnitude = magnitude; //do nothing, just use the default magnitude
+				break;
+			}
+			case FORCEFIELD_MAGNITUDE_DISTANCE: {
+				realMagnitude = magnitude * GetDistancePct( distanceVec.LengthFast(), false );
+				break;
+			}
+			case FORCEFIELD_MAGNITUDE_DISTANCE_INV: {
+				realMagnitude = magnitude * GetDistancePct( distanceVec.LengthFast(), true );
+				break;
+			}
+			default: {
+				gameLocal.Error( "idForce_Field: invalid magnitude type" );
+				break;
+			}
+		}
+		
+		//test - todo: bool key
+		if ( physics->IsType( idPhysics_Player::Type ) ) {
+			int playerHint = static_cast<idPhysics_Player *>( physics )->GetHintForForceFields();
+			if( playerHint > 0 ){
+				realMagnitude += realMagnitude * ( force.z > 0.0f ? 0.1f : -0.1f );  //increase upward forces, decrease downward ones
+			}else if( playerHint < 0 ){
+				realMagnitude += realMagnitude * ( force.z > 0.0f ? -0.1f : 0.1f );  //decrease upward forces, increase downward ones
+			}
+		}
+		//ivan end		
+
 		switch( applyType ) {
 			case FORCEFIELD_APPLY_FORCE: {
 				if ( randomTorque != 0.0f ) {
-					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * magnitude );
+					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * realMagnitude ); // un noted changes from original sdk
 				}
 				else {
-					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * magnitude );
+					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * realMagnitude ); // un noted changes from original sdk
 				}
 				break;
 			}
 			case FORCEFIELD_APPLY_VELOCITY: {
-				physics->SetLinearVelocity( force * magnitude, cm->GetId() );
+				//ivan start
+
+				if( oldVelocityPct > 0 ){
+					oldVelocity = oldVelocityPct * physics->GetLinearVelocity();
+				}else{
+					oldVelocity.Zero();
+				}
+
+				physics->SetLinearVelocity( oldVelocity + force * realMagnitude, cm->GetId() );
+				//was: physics->SetLinearVelocity( force * realMagnitude, cm->GetId() );
+				//ivan end
 				if ( randomTorque != 0.0f ) {
 					angularVelocity = physics->GetAngularVelocity( cm->GetId() );
 					physics->SetAngularVelocity( 0.5f * (angularVelocity + torque * randomTorque), cm->GetId() );
@@ -245,10 +353,10 @@ void idForce_Field::Evaluate( int time ) {
 			}
 			case FORCEFIELD_APPLY_IMPULSE: {
 				if ( randomTorque != 0.0f ) {
-					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * magnitude );
+					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * realMagnitude ); // un noted changes from original sdk
 				}
 				else {
-					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * magnitude );
+					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * realMagnitude ); // un noted changes from original sdk
 				}
 				break;
 			}

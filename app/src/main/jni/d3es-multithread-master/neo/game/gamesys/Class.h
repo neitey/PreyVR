@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_CLASS_H__
 #define __SYS_CLASS_H__
 
-#include "idlib/containers/Hierarchy.h"
-
-#include "Event.h"
-
 class idClass;
 class idTypeInfo;
 
@@ -163,7 +159,7 @@ on abstract classes only.
 		( idEventFunc<idClass> * )nameofclass::eventCallbacks, nameofclass::CreateInstance, ( void ( idClass::* )( void ) )&nameofclass::Spawn,	\
 		( void ( idClass::* )( idSaveGame * ) const )&nameofclass::Save, ( void ( idClass::* )( idRestoreGame * ) )&nameofclass::Restore );	\
 	idClass *nameofclass::CreateInstance( void ) {													\
-		gameLocal.Error( "Cannot instantiate abstract class %s.", #nameofclass );					\
+		gameLocal.Error( "Cannot instanciate abstract class %s.", #nameofclass );					\
 		return NULL;																				\
 	}																								\
 	idTypeInfo *nameofclass::GetType( void ) const {												\

@@ -26,10 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "physics/Physics.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "physics/Force_Spring.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idForce, idForce_Spring )
 END_CLASS
@@ -50,6 +50,8 @@ idForce_Spring::idForce_Spring( void ) {
 	physics2		= NULL;
 	id2				= 0;
 	p2				= vec3_zero;
+	physics1		= NULL; // un noted changes from original sdk not sure why they were re organized in code
+	physics2		= NULL; // un noted changes from original sdk
 }
 
 /*
@@ -59,6 +61,56 @@ idForce_Spring::~idForce_Spring
 */
 idForce_Spring::~idForce_Spring( void ) {
 }
+
+//ivan start
+/*
+================
+idForce_Spring::Save
+================
+*/
+void idForce_Spring::Save( idSaveGame *savefile ) const {
+	savefile->WriteFloat( Kstretch );
+	savefile->WriteFloat( Kcompress );
+	savefile->WriteFloat( damping );
+	savefile->WriteFloat( restLength );
+
+	savefile->WriteInt( id1 );
+	savefile->WriteInt( id2 );
+	savefile->WriteVec3( p1 ); 
+	savefile->WriteVec3( p2 ); 
+
+	/*
+	//Not saved:
+	physics1
+	physics2
+	*/
+}
+
+/*
+================
+idForce_Spring::Restore
+================
+*/
+void idForce_Spring::Restore( idRestoreGame *savefile ) {
+	savefile->ReadFloat( Kstretch );
+	savefile->ReadFloat( Kcompress );
+	savefile->ReadFloat( damping );
+	savefile->ReadFloat( restLength );
+
+	savefile->ReadInt( id1 );
+	savefile->ReadInt( id2 );
+	savefile->ReadVec3( p1 ); 
+	savefile->ReadVec3( p2 ); 
+
+	// Owner needs to call SetPosition!!
+
+	/*
+	//Not saved:
+	physics1
+	physics2
+	*/
+}
+//ivan end
 
 /*
 ================

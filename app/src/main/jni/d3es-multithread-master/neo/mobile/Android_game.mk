@@ -12,9 +12,8 @@ $(D3QUEST_TOP_PATH)/neo/game \
 $(SDL_INCLUDE_PATHS)
 
 
-LOCAL_CPPFLAGS := -DGAME_DLL -fPIC -D_K_CLANG
+LOCAL_CPPFLAGS := -DGAME_DLL -fPIC -D_K_CLANG -D_HARDCORPS -D_DENTONMOD -D_WATER_PHYSICS
 LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
-LOCAL_CPPFLAGS += -D_D3LE -D_D3XP -DCTF
 
 
 LOCAL_CPPFLAGS += -Wno-sign-compare \
@@ -92,7 +91,6 @@ src_game = \
 	game/GameEdit.cpp \
 	game/Game_local.cpp \
 	game/Game_network.cpp \
-	game/Grabber.cpp \
 	game/Item.cpp \
 	game/IK.cpp \
 	game/Light.cpp \
@@ -110,7 +108,6 @@ src_game = \
 	game/Sound.cpp \
 	game/Target.cpp \
 	game/Trigger.cpp \
-	game/Vr.cpp \
 	game/Weapon.cpp \
 	game/WorldSpawn.cpp \
 	game/ai/AAS.cpp \
@@ -141,7 +138,6 @@ src_game = \
 	game/physics/Force_Constant.cpp \
 	game/physics/Force_Drag.cpp \
 	game/physics/Force_Field.cpp \
-	game/physics/Force_Grab.cpp \
 	game/physics/Force_Spring.cpp \
 	game/physics/Physics.cpp \
 	game/physics/Physics_AF.cpp \
@@ -154,6 +150,11 @@ src_game = \
 	game/physics/Physics_Static.cpp \
 	game/physics/Physics_StaticMulti.cpp \
 	game/physics/Push.cpp \
+    game/Liquid.cpp \
+    game/TrailGenerator.cpp \
+    game/ai/AI_bot.cpp \
+    game/physics/Physics_Liquid.cpp \
+    game/tracer.cpp \
 
 LOCAL_SRC_FILES = $(src_idlib) $(src_game)
 

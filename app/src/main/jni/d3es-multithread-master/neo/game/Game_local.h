@@ -31,21 +31,24 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "GameBase.h"
 
-#include "idlib/containers/StrList.h"
-#include "idlib/containers/LinkList.h"
-#include "idlib/BitMsg.h"
-#include "Game.h"
-
+#include "gamesys/Event.h"
+#include "gamesys/Class.h"
+#include "gamesys/SysCvar.h"
+#include "gamesys/SysCmds.h"
 #include "gamesys/SaveGame.h"
+#include "gamesys/DebugGraph.h"
+
+#include "script/Script_Program.h"
+
+#include "anim/Anim.h"
+
+#include "ai/AAS.h"
+
 #include "physics/Clip.h"
 #include "physics/Push.h"
-#include "script/Script_Program.h"
-#include "ai/AAS.h"
-#include "anim/Anim.h"
+
 #include "Pvs.h"
 #include "MultiplayerGame.h"
-
-#include "../../../Doom3Quest/VrClientInfo.h"
 
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
 // This is real evil but allows the code to inspect arbitrary class variables.
@@ -76,11 +79,13 @@ class idCamera;
 class idWorldspawn;
 class idTestModel;
 class idSmokeParticles;
+class idTrailManager; //ivan //rev 2019
 class idEntityFx;
 class idTypeInfo;
 class idThread;
 class idEditEntities;
 class idLocationEntity;
+class idMusic; //ff1.3
 
 //============================================================================
 extern const int NUM_RENDER_PORTAL_BITS;
@@ -111,56 +116,6 @@ typedef struct snapshot_s {
 	int						pvs[ENTITY_PVS_SIZE];
 	struct snapshot_s *		next;
 } snapshot_t;
-
-struct timeState_t {
-	int					time;
-	int					previousTime;
-	int					msec;
-	int					framenum;
-	int					realClientTime;
-
-	void				Set(int t, int pt, int ms, int f, int rct)		{
-		time = t;
-		previousTime = pt;
-		msec = ms;
-		framenum = f;
-		realClientTime = rct;
-	};
-	void				Get(int &t, int &pt, int &ms, int &f, int &rct)	{
-		t = time;
-		pt = previousTime;
-		ms = msec;
-		f = framenum;
-		rct = realClientTime;
-	};
-	void				Save(idSaveGame *savefile) const	{
-		savefile->WriteInt(time);
-		savefile->WriteInt(previousTime);
-		savefile->WriteInt(msec);
-		savefile->WriteInt(framenum);
-		savefile->WriteInt(realClientTime);
-	}
-	void				Restore(idRestoreGame *savefile)	{
-		savefile->ReadInt(time);
-		savefile->ReadInt(previousTime);
-		savefile->ReadInt(msec);
-		savefile->ReadInt(framenum);
-		savefile->ReadInt(realClientTime);
-	}
-	void				Increment()							{
-		framenum++;
-		previousTime = time;
-		time += msec;
-		realClientTime = time;
-	};
-};
-
-enum slowmoState_t {
-	SLOWMO_STATE_OFF,
-	SLOWMO_STATE_RAMPUP,
-	SLOWMO_STATE_ON,
-	SLOWMO_STATE_RAMPDOWN
-};
 
 const int MAX_EVENT_PARAM_SIZE		= 128;
 
@@ -213,7 +168,6 @@ typedef enum {
 typedef struct {
 	idEntity	*ent;
 	int			dist;
-	int			team;
 } spawnSpot_t;
 
 //============================================================================
@@ -251,25 +205,12 @@ template< class type >
 class idEntityPtr {
 public:
 							idEntityPtr();
+
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
-	idEntityPtr& 			operator=( const type* ent );
-	idEntityPtr& 			operator=( const idEntityPtr& ep );
-
-    bool					operator==( const idEntityPtr& ep )
-    {
-        return spawnId == ep.spawnId;
-    }
-	type* 					operator->() const
-	{
-		return GetEntity();
-	}
-	operator type* () const
-	{
-		return GetEntity();
-	}
+	idEntityPtr<type> &		operator=( type *ent );
 
 	// synchronize entity pointers over the network
 	int						GetSpawnId( void ) const { return spawnId; }
@@ -327,6 +268,7 @@ public:
 
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
+	idTrailManager *		trailsManager;			// global trails //rev 2019
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
@@ -338,7 +280,7 @@ public:
 	int						framenum;
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
-	int						msec;					// time since last update in milliseconds
+	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
@@ -360,32 +302,23 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+#ifdef _PORTALSKY
 	idEntityPtr<idEntity>	portalSkyEnt;
 	bool					portalSkyActive;
 
-	void					SetPortalSkyEnt(idEntity *ent);
+	void					SetPortalSkyEnt( idEntity *ent );
 	bool					IsPortalSkyAcive();
+#endif
 
-	timeState_t				fast;
-	timeState_t				slow;
+	//ivan start
+	int						secrets_spawned_counter;
+	int						secrets_found_counter;
+	int						enemies_spawned_counter;
+	int						enemies_killed_counter;
 
-	slowmoState_t			slowmoState;
-	float					slowmoMsec;
-
-	bool					quickSlowmoReset;
-
-	virtual void			SelectTimeGroup(int timeGroup);
-	virtual int				GetTimeGroupTime(int timeGroup);
-
-	virtual void			GetBestGameType(const char *map, const char *gametype, char buf[ MAX_STRING_CHARS ]);
-
-	void					ComputeSlowMsec();
-	void					RunTimeGroup2();
-
-	void					ResetSlowTimeVars();
-	void					QuickSlowmoReset();
-
-	bool					NeedRestart();
+	//max distance values for projectiles 
+	float					projSeeDistance;
+	//ivan end
 
 	// ---------------------- Public idGame Interface -------------------
 
@@ -394,21 +327,10 @@ public:
 	virtual void			Init( void );
 	virtual void			Shutdown( void );
 	virtual void			SetLocalClient( int clientNum );
-	virtual void 			SetVRClientInfo(vrClientInfo *pVRClientInfo);
-	virtual void			EvaluateVRMoveMode(idVec3 &viewangles, usercmd_t &cmd, int buttonCurrentlyClicked, float snapTurn);
-
-	virtual void			CheckRenderCvars();
-
-	//GB Trying to move animator function
-	virtual bool			AnimatorGetJointTransform(idAnimator* animator, jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis );
-    virtual bool            CMDButtonsAttackCall(int &teleportCanceled);
-    virtual bool            CMDButtonsPhysicalCrouch();
-	virtual float			CalcTorsoYawDelta(usercmd_t &cmd);
 	virtual void			ThrottleUserInfo( void );
 	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify );
 	virtual const idDict *	GetUserInfo( int clientNum );
 	virtual void			SetServerInfo( const idDict &serverInfo );
-	virtual bool 			InCinematic();
 
 	virtual const idDict &	GetPersistentPlayerInfo( int clientNum );
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo );
@@ -419,7 +341,6 @@ public:
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
-	virtual void 			EndFrame();
 	virtual bool			Draw( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual idUserInterface	*StartMenu( void );
@@ -439,17 +360,10 @@ public:
 	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame );
 
 	virtual void			GetClientStats( int clientNum, char *data, const int len );
-
-	virtual bool			IsInGame() const
-	{
-		return GameState() == GAMESTATE_ACTIVE;
-	}
-
 	virtual void			SwitchTeam( int clientNum, int team );
 
 	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] );
-	virtual bool			InGameGuiActive();
-	virtual bool			ObjectiveSystemActive();
+
 	// ---------------------- Public idGameLocal Interface -------------------
 
 	void					Printf( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
@@ -482,7 +396,14 @@ public:
 	void					SetSkill( int value );
 	gameState_t				GameState( void ) const;
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
-	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
+	
+	//ivan start
+	bool					SpawnEntityDef_old( const idDict &customArgs, idEntity **ent, bool setDefaults, const idDeclEntityDef *def, const char	*classname ); //this was the old SpawnEntityDef!
+	bool		 			SpawnEntityDef_random( const idDict &customArgs, idEntity **ent, bool setDefaults, const idDeclEntityDef *def, const char	*classname );
+	void					RemoveBadKeysForRandom( idDict &args );
+	//ivan end
+
+	bool		 			SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
 	int						GetSpawnId( const idEntity *ent ) const;
 
 	const idDeclEntityDef *	FindEntityDef( const char *name, bool makeDefault = true ) const;
@@ -498,9 +419,10 @@ public:
 
 	bool					InPlayerPVS( idEntity *ent ) const;
 	bool					InPlayerConnectedArea( idEntity *ent ) const;
-	pvsHandle_t				GetPlayerPVS()			{
-		return playerPVS;
-	};
+
+#ifdef _PORTALSKY
+	pvsHandle_t				GetPlayerPVS()			{ return playerPVS; };
+#endif
 
 	void					SetCamera( idCamera *cam );
 	idCamera *				GetCamera( void ) const;
@@ -520,6 +442,7 @@ public:
 	idEntity *				FindEntityUsingDef( idEntity *from, const char *match ) const;
 	int						EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const;
 
+	void					HurtBox( idEntity *ent );	//rev 2020 hurt the player when on top of enemies
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
@@ -536,7 +459,7 @@ public:
 	// added the following to assist licensees with merge issues
 	int						GetFrameNum() const { return framenum; };
 	int						GetTime() const { return time; };
-	int						GetMSec() const { return USERCMD_MSEC; };
+	int						GetMSec() const { return msec; };
 
 	int						GetNextClientNum( int current ) const;
 	idPlayer *				GetClientByNum( int current ) const;
@@ -558,19 +481,24 @@ public:
 	void					SetGlobalMaterial( const idMaterial *mat );
 	const idMaterial *		GetGlobalMaterial();
 
-	virtual bool				IsPDAOpen() const;
-
 	void					SetGibTime( int _time ) { nextGibTime = _time; };
 	int						GetGibTime() { return nextGibTime; };
 
-	// Koz made public
-	void					SetScriptFPS( const float com_engineHz );
-	// Koz end
+	bool					NeedRestart();
+	
+	//ivan start
+	void					UpdateSeeDistances( float distance );
+
+	void					SetMusicEntity( idMusic *newMusicEnt );
+	void					StopMusic( void );
+	//ivan end
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
-
-	vrClientInfo 		*pVRClientInfo;
+	
+//rev 2021 dhewm 3 1.5.1 updates
+	const static int		INTERNAL_SAVEGAME_VERSION = 1; // DG: added this for >= 1305 savegames
+//rev 2021 dhewm 3 1.5.1 updates end	
 
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile *				mapFile;				// will be NULL during the game unless in-game editing is used
@@ -615,15 +543,15 @@ private:
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
 	int						currentInitialSpot;
 
-	idStaticList<spawnSpot_t, MAX_GENTITIES> teamSpawnSpots[2];
-	idStaticList<idEntity *, MAX_GENTITIES> teamInitialSpots[2];
-	int						teamCurrentInitialSpot[2];
-
 	idDict					newInfo;
 
 	idStrList				shakeSounds;
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
+
+	//ivan start
+	idEntityPtr<idMusic>	musicEntity;
+	//ivan end
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
@@ -668,11 +596,19 @@ private:
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
 
+	virtual void			SelectTimeGroup( int timeGroup );
+	virtual int				GetTimeGroupTime( int timeGroup );
+	virtual void			GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] );
+
 	void					Tokenize( idStrList &out, const char *in );
 
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
 
 	virtual void			GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
+
+	//ivan start
+	void					UpdateMusicVolume( void );
+	//ivan end
 };
 
 //============================================================================
@@ -690,42 +626,28 @@ public:
 //============================================================================
 
 template< class type >
-ID_INLINE idEntityPtr<type>::idEntityPtr()
-{
-    spawnId = 0;
+ID_INLINE idEntityPtr<type>::idEntityPtr() {
+	spawnId = 0;
 }
 
 template< class type >
-ID_INLINE void idEntityPtr<type>::Save( idSaveGame* savefile ) const
-{
-    savefile->WriteInt( spawnId );
+ID_INLINE void idEntityPtr<type>::Save( idSaveGame *savefile ) const {
+	savefile->WriteInt( spawnId );
 }
 
 template< class type >
-ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame* savefile )
-{
-    savefile->ReadInt( spawnId );
+ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame *savefile ) {
+	savefile->ReadInt( spawnId );
 }
 
 template< class type >
-ID_INLINE idEntityPtr<type>& idEntityPtr<type>::operator=( const type* ent )
-{
-    if( ent == NULL )
-    {
-        spawnId = 0;
-    }
-    else
-    {
-        spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
-    }
-    return *this;
-}
-
-template< class type >
-ID_INLINE idEntityPtr< type >& idEntityPtr<type>::operator=( const idEntityPtr& ep )
-{
-    spawnId = ep.spawnId;
-    return *this;
+ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
+	if ( ent == NULL ) {
+		spawnId = 0;
+	} else {
+		spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
+	}
+	return *this;
 }
 
 template< class type >
@@ -789,5 +711,78 @@ typedef enum {
 extern const float	DEFAULT_GRAVITY;
 extern const idVec3	DEFAULT_GRAVITY_VEC3;
 extern const int	CINEMATIC_SKIP_DELAY;
+
+/* DG: having includes here seems to confuse the compiler
+#ifdef _WATER_PHYSICS //un noted change from original sdk
+#include "physics/Physics_Liquid.h"
+#include "Liquid.h"
+#endif
+
+#ifdef _DENTONMOD
+#include "tracer.h"
+#endif
+
+#include "ai/AI_bot.h" //ivan
+*/
+
+#include "physics/Force.h"
+#include "physics/Force_Constant.h"
+#include "physics/Force_Drag.h"
+#include "physics/Force_Field.h"
+#include "physics/Force_Spring.h"
+#include "physics/Physics.h"
+#include "physics/Physics_Static.h"
+#include "physics/Physics_StaticMulti.h"
+#include "physics/Physics_Base.h"
+#include "physics/Physics_Actor.h"
+#include "physics/Physics_Monster.h"
+#include "physics/Physics_Player.h"
+#include "physics/Physics_Parametric.h"
+#include "physics/Physics_RigidBody.h"
+#include "physics/Physics_AF.h"
+#include "physics/Physics_Liquid.h"
+
+#include "SmokeParticles.h"
+
+#include "Entity.h"
+#include "GameEdit.h"
+#include "AF.h"
+#include "IK.h"
+#include "AFEntity.h"
+#include "TrailGenerator.h"
+#include "Misc.h"
+#include "Actor.h"
+#ifdef _DENTONMOD
+#include "tracer.h"
+#ifndef _DENTONMOD_PROJECTILE_CPP
+#define _DENTONMOD_PROJECTILE_CPP
+#endif
+#endif
+#include "Projectile.h"
+#include "Weapon.h"
+#include "Light.h"
+#include "WorldSpawn.h"
+#include "Item.h"
+#include "PlayerView.h"
+#include "PlayerIcon.h"
+#include "Player.h"
+#include "Mover.h"
+#include "Camera.h"
+#include "Moveable.h"
+#include "Target.h"
+#include "Trigger.h"
+#include "Sound.h"
+#include "Fx.h"
+#include "SecurityCamera.h"
+#include "BrittleFracture.h"
+#include "Liquid.h"
+
+#include "ai/AI.h"
+#include "ai/AI_bot.h"
+#include "anim/Anim_Testmodel.h"
+
+#include "script/Script_Compiler.h"
+#include "script/Script_Interpreter.h"
+#include "script/Script_Thread.h"
 
 #endif	/* !__GAME_LOCAL_H__ */

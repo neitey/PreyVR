@@ -26,11 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "Entity.h"
-#include "Actor.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "physics/Physics_Monster.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Monster )
 END_CLASS
@@ -451,6 +450,11 @@ bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	idMat3 masterAxis;
 	float timeStep;
 
+#ifdef _WATER_PHYSICS // un credited changes from original sdk
+	waterLevel = WATERLEVEL_NONE;
+	waterType = 0;
+#endif
+
 	timeStep = MS2SEC( timeStepMSec );
 
 	moveResult = MM_OK;
@@ -480,6 +484,11 @@ bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	current.velocity -= current.pushVelocity;
 
 	clipModel->Unlink();
+
+#ifdef _WATER_PHYSICS // un credited changes from original sdk
+	// check water level / type
+	idPhysics_Monster::SetWaterLevel();
+#endif
 
 	// check if on the ground
 	idPhysics_Monster::CheckGround( current );
@@ -780,7 +789,7 @@ void idPhysics_Monster::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteDeltaFloat( 0.0f, current.pushVelocity[0], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.pushVelocity[1], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.pushVelocity[2], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS );
-	msg.WriteLong( current.atRest );
+	msg.WriteInt( current.atRest );
 	msg.WriteBits( current.onGround, 1 );
 }
 
@@ -802,6 +811,6 @@ void idPhysics_Monster::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	current.pushVelocity[0] = msg.ReadDeltaFloat( 0.0f, MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS );
 	current.pushVelocity[1] = msg.ReadDeltaFloat( 0.0f, MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS );
 	current.pushVelocity[2] = msg.ReadDeltaFloat( 0.0f, MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS );
-	current.atRest = msg.ReadLong();
+	current.atRest = msg.ReadInt();
 	current.onGround = msg.ReadBits( 1 ) != 0;
 }

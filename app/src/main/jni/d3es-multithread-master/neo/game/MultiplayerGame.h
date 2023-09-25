@@ -29,12 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MULTIPLAYERGAME_H__
 #define	__MULTIPLAYERGAME_H__
 
-#include "idlib/BitMsg.h"
-#include "idlib/Str.h"
-#include "ui/UserInterface.h"
-
-#include "GameBase.h"
-
 /*
 ===============================================================================
 
@@ -44,25 +38,14 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 class idPlayer;
-class idItemTeam;
 
 typedef enum {
 	GAME_SP,
 	GAME_DM,
 	GAME_TOURNEY,
 	GAME_TDM,
-	GAME_LASTMAN,
-	GAME_CTF,
-	GAME_COUNT
+	GAME_LASTMAN
 } gameType_t;
-
-// Used by the UI
-typedef enum {
-	FLAGSTATUS_INBASE = 0,
-	FLAGSTATUS_TAKEN  = 1,
-	FLAGSTATUS_STRAY  = 2,
-	FLAGSTATUS_NONE   = 3
-} flagStatus_t;
 
 typedef enum {
 		PLAYER_VOTE_NONE,
@@ -86,11 +69,9 @@ const int CHAT_FADE_TIME	= 400;
 const int FRAGLIMIT_DELAY	= 2000;
 
 const int MP_PLAYER_MINFRAGS = -100;
-const int MP_PLAYER_MAXFRAGS = 400;	// in CTF frags are player points
+const int MP_PLAYER_MAXFRAGS = 100;
 const int MP_PLAYER_MAXWINS	= 100;
 const int MP_PLAYER_MAXPING	= 999;
-
-const int MP_CTF_MAXPOINTS = 25;
 
 typedef struct mpChatLine_s {
 	idStr			line;
@@ -108,13 +89,6 @@ typedef enum {
 	SND_TWO,
 	SND_ONE,
 	SND_SUDDENDEATH,
-	SND_FLAG_CAPTURED_YOURS,
-	SND_FLAG_CAPTURED_THEIRS,
-	SND_FLAG_RETURN,
-	SND_FLAG_TAKEN_YOURS,
-	SND_FLAG_TAKEN_THEIRS,
-	SND_FLAG_DROPPED_YOURS,
-	SND_FLAG_DROPPED_THEIRS,
 	SND_COUNT
 } snd_evt_t;
 
@@ -169,7 +143,6 @@ public:
 
 	static const char *GlobalSoundStrings[ SND_COUNT ];
 	void			PlayGlobalSound( int to, snd_evt_t evt, const char *shader = NULL );
-	void			PlayTeamSound(int toTeam, snd_evt_t evt, const char *shader = NULL);	// sound that's sent only to member of toTeam team
 
 	// more compact than a chat line
 	typedef enum {
@@ -188,13 +161,6 @@ public:
 		MSG_TELEFRAGGED,
 		MSG_JOINTEAM,
 		MSG_HOLYSHIT,
-		MSG_POINTLIMIT,
-
-		MSG_FLAGTAKEN,
-		MSG_FLAGDROP,
-		MSG_FLAGRETURN,
-		MSG_FLAGCAPTURE,
-		MSG_SCOREUPDATE,
 		MSG_COUNT
 	} msg_evt_t;
 	void			PrintMessageEvent( int to, msg_evt_t evt, int parm1 = -1, int parm2 = -1 );
@@ -268,15 +234,6 @@ public:
 
 	void			ServerClientConnect( int clientNum );
 
-	void            ClearHUDStatus(void);
-	int             GetFlagPoints(int team);	// Team points in CTF
-	void			SetFlagMsg(bool b);		// allow flag event messages to be sent
-	bool			IsFlagMsgOn(void);		// should flag event messages go through?
-	void			ClearGuis(void);
-
-	int             player_red_flag;            // Ent num of red flag carrier for HUD
-	int             player_blue_flag;           // Ent num of blue flag carrier for HUD
-
 	void			PlayerStats( int clientNum, char *data, const int len );
 
 private:
@@ -349,21 +306,14 @@ private:
 	gameType_t		lastGameType;			// for restarts
 	int				startFragLimit;			// synchronize to clients in initial state, set on -> GAMEON
 
-	idItemTeam 	*teamFlags[ 2 ];
-	int				teamPoints[ 2 ];
-
-	bool			flagMsgOn;
-
-	const char 	*gameTypeVoteMap[ GAME_COUNT ];
-
 private:
 	void			UpdatePlayerRanks();
 
 	// updates the passed gui with current score information
 	void			UpdateRankColor( idUserInterface *gui, const char *mask, int i, const idVec3 &vec );
 	void			UpdateScoreboard( idUserInterface *scoreBoard, idPlayer *player );
-	void			UpdateCTFScoreboard(idUserInterface *scoreBoard, idPlayer *player);
 
+	void			ClearGuis( void );
 	void			DrawScoreBoard( idPlayer *player );
 	void			UpdateHud( idPlayer *player, idUserInterface *hud );
 	bool			Warmup( void );
@@ -372,9 +322,6 @@ private:
 	idPlayer *		FragLimitHit( void );
 	idPlayer *		FragLeader( void );
 	bool			TimeLimitHit( void );
-	bool			PointLimitHit(void);
-	// return team with most points
-	int				WinningTeam(void);
 	void			NewState( gameState_t news, idPlayer *player = NULL );
 	void			UpdateWinsLosses( idPlayer *winner );
 	// fill any empty tourney slots based on the current tourney ranks
@@ -402,26 +349,6 @@ private:
 	void			VoiceChat( const idCmdArgs &args, bool team );
 	void			DumpTourneyLine( void );
 	void			SuddenRespawn( void );
-	void			FindTeamFlags(void);
-
-public:
-	idItemTeam 	*GetTeamFlag(int team);
-	flagStatus_t    GetFlagStatus(int team);
-	void			TeamScoreCTF(int team, int delta);
-	void			PlayerScoreCTF(int playerIdx, int delta);
-	// returns entityNum to team flag carrier, -1 if no flag carrier
-	int				GetFlagCarrier(int team);
-	void            UpdateScoreboardFlagStatus(void);
-
-	void			SetBestGametype(const char *map);
-	void			ReloadScoreboard();
-
-	idStr			GetBestGametype(const char *map, const char *gametype);
-
-	/* #ifdef CTF ... merge the below IsGametypeFlagBased */
-	bool            IsGametypeFlagBased(void);
-	bool            IsGametypeTeamBased(void);
-	/* #endif CTF */
 };
 
 ID_INLINE idMultiplayerGame::gameState_t idMultiplayerGame::GetGameState( void ) const {

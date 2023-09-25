@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_MISC_H__
 #define __GAME_MISC_H__
 
-#include "physics/Physics_Parametric.h"
-#include "physics/Force_Field.h"
-#include "physics/Force_Spring.h"
-
 /*
 ===============================================================================
 
@@ -156,22 +152,43 @@ class idDamagable : public idEntity {
 public:
 	CLASS_PROTOTYPE( idDamagable );
 
-						idDamagable( void );
+						idDamagable(); //un noted change from original sdk
+						~idDamagable(); //un noted change from original sdk
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
 	void				Spawn( void );
 	void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
-
-	virtual void		Hide(void);
-	virtual void		Show(void);
+	void				Think( void ); //ivan
 
 private:
 	int					count;
 	int					nextTriggerTime;
 
-	void				BecomeBroken( idEntity *activator );
+	//ivan start
+	qhandle_t			particleModelDefHandle;
+	qhandle_t			lightDefHandle;
+	renderEntity_t		particleRenderEntity;
+	renderLight_t		light;
+	int					lightTime;
+	bool				hasBrokenModel;
+
+	void				AddParticles( const char *name );
+	void				AddLight( const char *name );
+	void				ExplodingEffects( void );
+
+	
+	void				SpawnDebris( const char *prefix );
+	void				BrokenEntitiesVisible( bool visible );
+	void				SpawnDrops( void );
+
+	void				Event_ChainBecomeBroken( idEntity *activator, idEntity *chainInflictor );
+	void				Event_HideBrokenEntities( void );
+
+	//ivan end
+
+	void				BecomeBroken( idEntity *activator, idEntity *chainInflictor );
 	void				Event_BecomeBroken( idEntity *activator );
 	void				Event_RestoreDamagable( void );
 };
@@ -208,7 +225,11 @@ class idSpring : public idEntity {
 public:
 	CLASS_PROTOTYPE( idSpring );
 
+						idSpring(); //ivan
 	void				Spawn( void );
+
+	void				Save( idSaveGame *savefile ) const; //ivan
+	void				Restore( idRestoreGame *savefile ); //ivan
 
 	virtual void		Think( void );
 
@@ -296,8 +317,6 @@ private:
 	void					Event_Footstep( void );
 	void					Event_LaunchMissiles( const char *projectilename, const char *sound, const char *launchjoint, const char *targetjoint, int numshots, int framedelay );
 	void					Event_LaunchMissilesUpdate( int launchjoint, int targetjoint, int numshots, int framedelay );
-	void					Event_SetAnimation(const char *animName);
-	void					Event_GetAnimationLength();
 };
 
 
@@ -340,6 +359,51 @@ private:
 	bool				runGui;
 };
 
+//ivan start
+/*
+===============================================================================
+
+  idTrailWrapper
+
+===============================================================================
+*/
+
+class idTrailWrapper : public idEntity {
+public:
+	CLASS_PROTOTYPE( idTrailWrapper );
+
+						idTrailWrapper( void );
+						~idTrailWrapper( void );
+
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
+	void				Spawn( void );
+	virtual void		Hide( void );
+	virtual void		Show( void );
+
+	void				StartTrail( void );
+	void				FadeTrail( void );
+	void				StopTrail( void );
+	virtual void		Think( void );
+
+private:
+	idTrailGenerator*		trailGen;
+	int						trailSize;
+	//int						nextUpdTime;
+
+	idVec3					oldLowPoint;
+	idVec3					oldHighPoint;
+
+	idVec3					newLowPoint;
+	idVec3					newHighPoint;
+
+	void				InitTrail( void );
+	void				UpdateTrail( void );
+
+	void				Event_Activate( idEntity *activator );
+};
+//iva end
 
 /*
 ===============================================================================
@@ -369,38 +433,6 @@ private:
 
 };
 
-/*
-===============================================================================
-idFuncShootProjectile
-===============================================================================
-*/
-
-class idFuncShootProjectile : public idStaticEntity {
-public:
-	CLASS_PROTOTYPE( idFuncShootProjectile );
-
-	idFuncShootProjectile();
-
-	void						Save( idSaveGame *savefile ) const;
-	void						Restore( idRestoreGame *savefile );
-
-	void						Spawn();
-	void						Event_Activate( idEntity *activator );
-
-	virtual void				Think();
-
-	virtual void				WriteToSnapshot( idBitMsg &msg ) const;
-	virtual void				ReadFromSnapshot( const idBitMsg &msg );
-
-private:
-	int							mRespawnDelay;
-	int							mRespawnTime;
-	float						mShootSpeed;
-	idVec3						mShootDir;
-	idStr						mEntityDefName;
-	idEntityPtr< idEntity >		mLastProjectile;
-
-};
 
 /*
 ===============================================================================
@@ -541,6 +573,8 @@ private:
 ===============================================================================
 */
 
+extern const idEventDef EV_FadeBeamColor; //ivan //rev 2019
+
 class idBeam : public idEntity {
 public:
 	CLASS_PROTOTYPE( idBeam );
@@ -556,11 +590,49 @@ public:
 
 	void				SetMaster( idBeam *masterbeam );
 	void				SetBeamTarget( const idVec3 &origin );
+	idBeam*				AddChainNodeAtPos( const idVec3 &pos ); //ivan //rev 2019
 
 	virtual void		Show( void );
+	void				FadeColor( void ); //ivan //rev 2019
 
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
+
+private:
+	void				Event_MatchTarget( void );
+	void				Event_Activate( idEntity *activator );
+	void				Event_FadeColor( void ); //ivan //rev 2019
+
+	idEntityPtr<idBeam>	target;
+	idEntityPtr<idBeam>	master;
+
+	//ivan start //rev 2019
+	idVec4				fadeOutIntervals;
+	int					fadeTime;
+	//ivan end //rev 2019
+};
+
+//ivan start  //rev 2019
+/*
+===============================================================================
+
+  idBeam
+
+===============================================================================
+*/
+
+class idBeamChain : public idBeam {
+public:
+	CLASS_PROTOTYPE( idBeamChain );
+
+						idBeamChain();
+
+	void				Spawn( void );
+
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
+	virtual void		Show( void );
 
 private:
 	void				Event_MatchTarget( void );
@@ -569,8 +641,12 @@ private:
 	idEntityPtr<idBeam>	target;
 	idEntityPtr<idBeam>	master;
 };
+//ivan end //rev 2019
 
 
+#ifdef _WATER_PHYSICS //un noted change from original sdk
+//idLiquid has been removed
+#else
 /*
 ===============================================================================
 
@@ -596,7 +672,7 @@ private:
 
 	idRenderModelLiquid *model;
 };
-
+#endif
 
 /*
 ===============================================================================
@@ -802,109 +878,105 @@ private:
 	idList<idVec3>		lastTargetPos;
 };
 
+//ivan start
 /*
 ===============================================================================
 
-idShockwave
+  idProjLauncher
 
 ===============================================================================
 */
-class idShockwave : public idEntity
-{
+class idProjectile; //needed
+
+class idProjLauncher : public idEntity {
 public:
-	CLASS_PROTOTYPE(idShockwave);
+	CLASS_PROTOTYPE( idProjLauncher );
+			
+						idProjLauncher();
 
-	idShockwave();
-	~idShockwave();
+	void				Spawn( void );
 
-	void				Spawn(void);
-	void				Think(void);
-
-	void				Save(idSaveGame *savefile) const;
-	void				Restore(idRestoreGame *savefile);
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
 
 private:
-	void				Event_Activate(idEntity *activator);
+	idVec3				GetAimDir( idEntity *aimAtEnt ); 
+	idProjectile*		FireProjectile( idVec3 &dir ); 
+	//idProjectile*		FireProjAtTarget( idEntity* aimAtEnt );
 
-	bool				isActive;
-	int					startTime;
-	int					duration;
-
-	float				startSize;
-	float				endSize;
-	float				currentSize;
-
-	float				magnitude;
-
-	float				height;
-	bool				playerDamaged;
-	float				playerDamageSize;
-
+	void				Event_Activate( idEntity *activator );
+	void				Event_FireProjectile( idAngles &fireAng ); 
+	void				Event_FireProjAtTarget( idEntity* aimAtEnt );
+	
+	const idDict *		projectileDef;
+	idStr				projectileName;
 };
 
 /*
 ===============================================================================
 
-idFuncMountedObject
+  idRandomSpawner
 
 ===============================================================================
 */
-class idFuncMountedObject : public idEntity
-{
+
+class idRandomSpawner : public idEntity {
 public:
-	CLASS_PROTOTYPE(idFuncMountedObject);
+	CLASS_PROTOTYPE( idRandomSpawner );
 
-	idFuncMountedObject();
-	~idFuncMountedObject();
+						idRandomSpawner();
 
-	void				Spawn(void);
-	void				Think(void);
+	void				Spawn( void );
+	int					GetRndListLenght( void ){ return rndListLenght; };
 
-	void				GetAngleRestrictions(int &yaw_min, int &yaw_max, int &pitch);
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
 
 private:
-	int					harc;
-	int					varc;
+	idDict				commonSpawnArgs;				// key/value pairs used to spawn the other entities
+	int					rndListLenght;
 
-	void				Event_Touch(idEntity *other, trace_t *trace);
-	void				Event_Activate(idEntity *activator);
-
-public:
-	bool				isMounted;
-	function_t			*scriptFunction;
-	idPlayer 			*mountedPlayer;
+	void				Event_Activate( idEntity *activator );
 };
 
 
-class idFuncMountedWeapon : public idFuncMountedObject
-{
+/*
+===============================================================================
+
+  idRandomSpawnerSelector
+
+===============================================================================
+*/
+
+class idRandomSpawnerSelector : public idEntity {
 public:
-	CLASS_PROTOTYPE(idFuncMountedWeapon);
+	CLASS_PROTOTYPE( idRandomSpawnerSelector );
 
-	idFuncMountedWeapon();
-	~idFuncMountedWeapon();
-
-	void				Spawn(void);
-	void				Think(void);
-
+						idRandomSpawnerSelector();
 private:
-
-	// The actual turret that moves with the player's view
-	idEntity			*turret;
-
-	// the muzzle bone's position, used for launching projectiles and trailing smoke
-	idVec3				muzzleOrigin;
-	idMat3				muzzleAxis;
-
-	float				weaponLastFireTime;
-	float				weaponFireDelay;
-
-	const idDict 		*projectile;
-
-	const idSoundShader	*soundFireWeapon;
-
-	void				Event_PostSpawn(void);
+	void				Event_Activate( idEntity *activator );
 };
+
+/*
+===============================================================================
+
+  idRandomTargetSelector
+
+===============================================================================
+*/
+
+class idRandomTargetSelector : public idEntity {
+public:
+	CLASS_PROTOTYPE( idRandomTargetSelector );
+
+						idRandomTargetSelector();
+private:
+	void				Event_Activate( idEntity *activator );
+};
+//ivan end
+
+
+#ifdef _PORTALSKY
 
 /*
 ===============================================================================
@@ -913,17 +985,18 @@ idPortalSky
 
 ===============================================================================
 */
-class idPortalSky : public idEntity
-{
+class idPortalSky : public idEntity {
 public:
-	CLASS_PROTOTYPE(idPortalSky);
+	CLASS_PROTOTYPE( idPortalSky );
 
 	idPortalSky();
 	~idPortalSky();
 
-	void				Spawn(void);
-	void				Event_PostSpawn();
-	void				Event_Activate(idEntity *activator);
+	void				Spawn( void );
+	void				Event_PostSpawn( void );
+	void				Event_Activate( idEntity *activator );
 };
+
+#endif /* _PORTALSKY */
 
 #endif /* !__GAME_MISC_H__ */

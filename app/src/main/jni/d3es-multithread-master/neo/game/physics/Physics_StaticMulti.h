@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __PHYSICS_STATICMULTI_H__
 #define __PHYSICS_STATICMULTI_H__
 
-#include "physics/Physics_Static.h"
-
 /*
 ===============================================================================
 

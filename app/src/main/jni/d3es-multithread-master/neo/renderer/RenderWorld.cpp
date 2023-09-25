@@ -1029,27 +1029,6 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, idAnimator* ani
 
 	jointHandle_t guiJoints[4];
 
-	if (game->IsPDAOpen())
-	{
-
-		isPDA = idStr::Icmp( "models/md5/items/pda_view/pda_vr_idle.md5mesh", model->Name() ) == 0;
-
-		if ( isPDA )
-		{
-			guiJoints[3] = model->GetJointHandle( "BLgui" );
-			guiJoints[0] = model->GetJointHandle( "BRgui" );
-			guiJoints[1] = model->GetJointHandle( "TRgui" );
-			guiJoints[2] = model->GetJointHandle( "TLgui" );
-
-			for ( int checkJoint = 0; checkJoint < 4; checkJoint++ )
-			{
-				if ( guiJoints[checkJoint] == INVALID_JOINT ) isPDA = false;
-			}
-		}
-
-
-	}
-
 	if ( (model->IsDynamicModel() != DM_STATIC || def->parms.callback != NULL ) && !isPDA )
 	{
 		return pt;
@@ -1076,30 +1055,6 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, idAnimator* ani
 		if (!shader->HasGui() && !isPDA ) {
 			continue;
 		}
-
-		// Koz begin
-
-		if ( isPDA )
-		{
-
-			idMat3 discardAxis = mat3_identity;
-			idVec3 modelOrigin = def->parms.origin;
-			idMat3 modelAxis = def->parms.axis;
-
-			for ( int jj = 0; jj < 4; jj++ )
-			{
-				// overwrite surface coords for testing
-				//GBFIX
-				game->AnimatorGetJointTransform(animator, guiJoints[jj], Sys_Milliseconds(), tri->verts[jj].xyz, discardAxis );
-				//animator->GetJointTransform( guiJoints[jj], Sys_Milliseconds(), tri->verts[jj].xyz, discardAxis );
-
-				// draw debug lines from view start to gui corners
-				//	gameRenderWorld->DebugLine( colorYellow, start, modelOrigin + tri->verts[jj].xyz * modelAxis, 20 );
-
-			}
-
-		}
-		// Koz end
 
 		local = R_LocalTrace( localStart, localEnd, 0.0f, tri );
 		if ( local.fraction < 1.0 ) {

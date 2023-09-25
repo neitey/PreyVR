@@ -26,13 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-#include "Player.h"
-
-#include "anim/Anim_Testmodel.h"
+#include "../Game_local.h"
 
 /*
 =============================================================================

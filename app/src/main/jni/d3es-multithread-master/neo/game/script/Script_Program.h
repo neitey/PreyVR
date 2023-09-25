@@ -29,13 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SCRIPT_PROGRAM_H__
 #define __SCRIPT_PROGRAM_H__
 
-#include "idlib/containers/StrList.h"
-#include "idlib/containers/StaticList.h"
-#include "idlib/containers/HashIndex.h"
-#include "idlib/math/Vector.h"
-
-#include "../GameBase.h"
-
 class idEventDef;
 class idVarDef;
 class idTypeDef;
@@ -44,10 +37,13 @@ class idSaveGame;
 class idRestoreGame;
 
 #define MAX_STRING_LEN		128
-#define MAX_GLOBALS			296608			// in bytes - DG: increased this for better support of mods that use the vanilla game dll
+//#define MAX_GLOBALS			196608			// in bytes
+// DG: apparently the default value is not enough (=> idProgram::ReserveMem() throws error on game start on Linux amd64)
+//     so use the value D3XP uses
+#define MAX_GLOBALS			296608			// in bytes
 #define MAX_STRINGS			1024
-#define MAX_FUNCS			3584
-#define MAX_STATEMENTS		131072			// statement_t - 18 bytes last I checked
+#define MAX_FUNCS			3072
+#define MAX_STATEMENTS		81920			// statement_t - 18 bytes last I checked
 
 typedef enum {
 	ev_error = -1, ev_void, ev_scriptevent, ev_namespace, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_function, ev_virtualfunction, ev_pointer, ev_object, ev_jumpoffset, ev_argsize, ev_boolean
@@ -317,7 +313,7 @@ class idVarDef {
 	friend class idVarDefName;
 
 public:
-	int						num;
+	int						num;			// global index/ID of variable
 	varEval_t				value;
 	idVarDef *				scope;			// function, namespace, or object the var was defined in
 	int						numUsers;		// number of users if this is a constant
@@ -418,11 +414,19 @@ extern	idVarDef	def_boolean;
 
 typedef struct statement_s {
 	unsigned short	op;
+	unsigned short	flags; // DG: added this for ugly hacks
+	enum {
+		// op is OP_OBJECTCALL and when the statement was created the function/method
+		// implementation hasn't been parsed yet (only the declaration/prototype)
+		// see idCompiler::EmitFunctionParms() and idProgram::CalculateChecksum()
+		FLAG_OBJECTCALL_IMPL_NOT_PARSED_YET = 1,
+	};
+	// DG: moved linenumber and file up here to prevent wasting 8 bytes of padding on 64bit
+	unsigned short	linenumber;
+	unsigned short	file;
 	idVarDef		*a;
 	idVarDef		*b;
 	idVarDef		*c;
-	unsigned short	linenumber;
-	unsigned short	file;
 } statement_t;
 
 /***********************************************************************
@@ -474,7 +478,11 @@ public:
 	// save games
 	void										Save( idSaveGame *savefile ) const;
 	bool										Restore( idRestoreGame *savefile );
-	int											CalculateChecksum( void ) const;		// Used to insure program code has not
+	int											CalculateChecksum( bool forOldSavegame 
+#ifdef __ANDROID__
+			 = false 
+#endif
+			) const;		// Used to insure program code has not
 																						//    changed between savegames
 
 	void										Startup( const char *defaultScript );

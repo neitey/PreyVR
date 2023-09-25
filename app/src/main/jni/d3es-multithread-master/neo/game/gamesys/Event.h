@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_EVENT_H__
 #define __SYS_EVENT_H__
 
-#include "idlib/containers/LinkList.h"
-#include "cm/CollisionModel.h"
-
 // Event are used for scheduling tasks and for linking script commands.
 
 #define D_EVENT_MAXARGS				8			// if changed, enable the CREATE_EVENT_CODE define in Event.cpp to generate switch statement for idClass::ProcessEventArgPtr.
@@ -117,7 +114,6 @@ public:
 	static void					CancelEvents( const idClass *obj, const idEventDef *evdef = NULL );
 	static void					ClearEventList( void );
 	static void					ServiceEvents( void );
-	static void					ServiceFastEvents();
 	static void					Init( void );
 	static void					Shutdown( void );
 

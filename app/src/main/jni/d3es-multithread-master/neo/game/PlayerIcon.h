@@ -32,8 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 typedef enum {
 	ICON_LAG,
 	ICON_CHAT,
-	ICON_TEAM_RED,
-	ICON_TEAM_BLUE,
 	ICON_NONE
 } playerIconType_t;
 

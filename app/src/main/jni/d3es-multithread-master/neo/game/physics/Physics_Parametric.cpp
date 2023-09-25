@@ -26,10 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "Entity.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "physics/Physics_Parametric.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Parametric )
 END_CLASS
@@ -1031,8 +1031,8 @@ idPhysics_Parametric::WriteToSnapshot
 ================
 */
 void idPhysics_Parametric::WriteToSnapshot( idBitMsgDelta &msg ) const {
-	msg.WriteLong( current.time );
-	msg.WriteLong( current.atRest );
+	msg.WriteInt( current.time );
+	msg.WriteInt( current.atRest );
 	msg.WriteFloat( current.origin[0] );
 	msg.WriteFloat( current.origin[1] );
 	msg.WriteFloat( current.origin[2] );
@@ -1106,8 +1106,8 @@ void idPhysics_Parametric::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	idVec3 linearStartValue, linearSpeed, linearBaseSpeed, startPos, endPos;
 	idAngles angularStartValue, angularSpeed, angularBaseSpeed, startAng, endAng;
 
-	current.time = msg.ReadLong();
-	current.atRest = msg.ReadLong();
+	current.time = msg.ReadInt();
+	current.atRest = msg.ReadInt();
 	current.origin[0] = msg.ReadFloat();
 	current.origin[1] = msg.ReadFloat();
 	current.origin[2] = msg.ReadFloat();

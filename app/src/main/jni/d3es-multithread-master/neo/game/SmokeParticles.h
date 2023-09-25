@@ -29,12 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SMOKEPARTICLES_H__
 #define __SMOKEPARTICLES_H__
 
-#include "idlib/math/Random.h"
-#include "idlib/math/Vector.h"
-#include "idlib/math/Matrix.h"
-#include "framework/DeclParticle.h"
-#include "renderer/RenderWorld.h"
-
 /*
 ===============================================================================
 
@@ -64,7 +58,6 @@ typedef struct singleSmoke_s {
 	idRandom					random;
 	idVec3						origin;
 	idMat3						axis;
-	int							timeGroup;
 } singleSmoke_t;
 
 typedef struct {
@@ -82,8 +75,8 @@ public:
 	void						Shutdown( void );
 
 	// spits out a particle, returning false if the system will not emit any more particles in the future
-	bool						EmitSmoke(const idDeclParticle *smoke, const int startTime, const float diversity,
-	                                      const idVec3 &origin, const idMat3 &axis, int timeGroup /*_D3XP*/);
+	bool						EmitSmoke( const idDeclParticle *smoke, const int startTime, const float diversity,
+											const idVec3 &origin, const idMat3 &axis );
 
 	// free old smokes
 	void						FreeSmokes( void );

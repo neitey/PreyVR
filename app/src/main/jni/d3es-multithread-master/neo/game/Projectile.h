@@ -29,9 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_PROJECTILE_H__
 #define __GAME_PROJECTILE_H__
 
-#include "physics/Physics_RigidBody.h"
-#include "physics/Force_Constant.h"
-#include "Entity.h"
+//ivan start
+//#define PROJECTILE_SIDECOLLISIONS
+//ivan end
 
 /*
 ===============================================================================
@@ -56,15 +56,11 @@ public :
 	void					Restore( idRestoreGame *savefile );
 
 	void					Create( idEntity *owner, const idVec3 &start, const idVec3 &dir );
-	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f, const float motionThrowSpeed = 0.0f );
+
+	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
 	virtual void			FreeLightDef( void );
 
 	idEntity *				GetOwner( void ) const;
-	void					CatchProjectile( idEntity* o, const char* reflectName );
-    int						GetProjectileState();
-	void					Event_CreateProjectile( idEntity* owner, const idVec3& start, const idVec3& dir );
-	void					Event_LaunchProjectile( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity );
-	void					Event_SetGravity( float gravity );
 
 	virtual void			Think( void );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
@@ -80,15 +76,6 @@ public :
 		EVENT_MAXEVENTS
 	};
 
-	void					SetLaunchedFromGrabber( bool bl )
-	{
-		launchedFromGrabber = bl;
-	}
-	bool					GetLaunchedFromGrabber()
-	{
-		return launchedFromGrabber;
-	}
-
 	static void				DefaultDamageEffect( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity );
 	static bool				ClientPredictionCollide( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity, bool addDamageEffect );
 	virtual void			ClientPredictionThink( void );
@@ -96,18 +83,30 @@ public :
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
-protected:
+#ifdef _DENTONMOD
+	void					setTracerEffect( dnTracerEffect *effect) { tracerEffect = effect; }
+#endif
+
+protected:	
 	idEntityPtr<idEntity>	owner;
 
 	struct projectileFlags_s {
 		bool				detonate_on_world			: 1;
 		bool				detonate_on_actor			: 1;
 		bool				randomShaderSpin			: 1;
-		bool				isTracer					: 1;
-		bool				noSplashDamage				: 1;
+		bool				noSplashDamage				: 1; 
+		bool				impact_fx_played			: 1; // keeps track of fx played on collided body - BY JCD
+		//ivan start
+#ifdef PROJECTILE_SIDECOLLISIONS
+		bool				useSideCollisions			: 1;
+#endif
+		bool				autoCameraFuse				: 1;
+		//ivan end
 	} projectileFlags;
 
-	bool					launchedFromGrabber;
+#ifdef _DENTONMOD
+	dnTracerEffect *tracerEffect;
+#endif
 
 	float					thrust;
 	int						thrust_end;
@@ -126,10 +125,6 @@ protected:
 	const idDeclParticle *	smokeFly;
 	int						smokeFlyTime;
 
-	bool					mNoExplodeDisappear;
-	bool					mTouchTriggers;
-	int						originalTimeGroup;
-
 	typedef enum {
 		// must update these in script/doom_defs.script if changed
 		SPAWNED = 0,
@@ -141,14 +136,20 @@ protected:
 
 	projectileState_t		state;
 
+	//ivan start
+	//bool					useSideCollisions;
+	void					CheckCameraFuse( void );
+	void					FireRailTracer( const idVec3 &endPos, const idVec3 &dir, const idVec3 &velocity, const char * damageDefName ); //ivan
+#ifdef PROJECTILE_SIDECOLLISIONS
+	void					SideCollisionCheck( void );
+#endif
+	//ivan end
+
 private:
 	bool					netSyncPhysics;
-
-	idVec3					launchOrigin;
-	idMat3					launchAxis;
+	const idDeclEntityDef	*damageDef; // stores Damage Def -- By Clone JCD
 
 	void					AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity );
-
 	void					Event_Explode( void );
 	void					Event_Fizzle( void );
 	void					Event_RadiusDamage( idEntity *ignore );
@@ -168,9 +169,7 @@ public :
 
 	void					Spawn( void );
 	virtual void			Think( void );
-	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f, const float motionThrowSpeed = 0.0f );
-    void					SetEnemy( idEntity* ent );
-    void					Event_SetEnemy( idEntity* ent );
+	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
 
 protected:
 	float					speed;
@@ -199,7 +198,7 @@ public:
 
 	void					Spawn( void );
 	virtual void			Think( void );
-	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f, const float motionThrowSpeed = 0.0f );
+	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float power = 1.0f, const float dmgPower = 1.0f );
 
 protected:
 	virtual void			GetSeekPos( idVec3 &out );
@@ -238,7 +237,7 @@ public :
 
 	void					Spawn( void );
 	virtual void			Think( void );
-	virtual void			Launch( const idVec3& start, const idVec3& dir, const idVec3& pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f, const float motionThrowSpeed = 0.0f );
+	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
 	virtual void			Explode( const trace_t &collision, idEntity *ignore );
 
 private:
@@ -247,44 +246,20 @@ private:
 	qhandle_t				secondModelDefHandle;
 	int						nextDamageTime;
 	idStr					damageFreq;
+	
+	//ivan start
+	int						nextProjTime;
+	int						nextProjTargetNum;
+	const idDict *			secProjDef;
+	idStr					secProjName;
+
+	idVec3					GetAimDir( idEntity *aimAtEnt ); 
+	idProjectile*			FireSecProj( const idVec3 &dir ); 
+	//ivan end
 
 	void					FreeBeams();
 	void					Event_RemoveBeams();
 	void					ApplyDamage();
-};
-
-class idHomingProjectile : public idProjectile {
-public :
-CLASS_PROTOTYPE( idHomingProjectile );
-
-	idHomingProjectile();
-	~idHomingProjectile();
-
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
-
-	void					Spawn();
-	virtual void			Think();
-	virtual void			Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire = 0.0f, const float launchPower = 1.0f, const float dmgPower = 1.0f );
-	void					SetEnemy( idEntity *ent );
-	void					SetSeekPos( idVec3 pos );
-	void					Event_SetEnemy(idEntity *ent);
-
-protected:
-	float					speed;
-	idEntityPtr<idEntity>	enemy;
-	idVec3					seekPos;
-
-private:
-	idAngles				rndScale;
-	idAngles				rndAng;
-	idAngles				angles;
-	float					turn_max;
-	float					clamp_dist;
-	bool					burstMode;
-	bool					unGuided;
-	float					burstDist;
-	float					burstVelocity;
 };
 
 /*
@@ -320,9 +295,13 @@ public :
 private:
 	idEntityPtr<idEntity>	owner;
 	idPhysics_RigidBody		physicsObj;
-	const idDeclParticle *	smokeFly;
+	const idDeclParticle *	smokeFly; 
 	int						smokeFlyTime;
+	int						nextSoundTime;		// BY Clone JCD 
+	int						soundTimeDifference;	// BY Clone JCD 
+	bool					continuousSmoke;		//By Clone JCD
 	const idSoundShader *	sndBounce;
+	const idSoundShader *	sndRest;
 
 
 	void					Event_Explode( void );

@@ -28,17 +28,10 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __ANIM_H__
 #define __ANIM_H__
 
-#include "idlib/containers/StrList.h"
-#include "idlib/containers/HashTable.h"
-#include "idlib/Dict.h"
-#include "renderer/Model.h"
-
-#include "../physics/Clip.h"
-
 //
 // animation channels
 // these can be changed by modmakers and licensees to be whatever they need.
-const int ANIM_NumAnimChannels		= 7;
+const int ANIM_NumAnimChannels		= 5;
 const int ANIM_MaxAnimsPerChannel	= 3;
 const int ANIM_MaxSyncedAnims		= 3;
 
@@ -50,10 +43,6 @@ const int ANIMCHANNEL_TORSO			= 1;
 const int ANIMCHANNEL_LEGS			= 2;
 const int ANIMCHANNEL_HEAD			= 3;
 const int ANIMCHANNEL_EYELIDS		= 4;
-// Koz add channels for right and left hand;
-const int ANIMCHANNEL_RIGHTHAND		= 5;
-const int ANIMCHANNEL_LEFTHAND		= 6;
-// Koz end
 
 // for converting from 24 frames per second to milliseconds
 ID_INLINE int FRAME2MS( int framenum ) {
@@ -139,6 +128,7 @@ typedef enum {
 	FC_MUZZLEFLASH,
 	FC_CREATEMISSILE,
 	FC_LAUNCHMISSILE,
+	//FC_FIREWEAPON, //ivan
 	FC_FIREMISSILEATTARGET,
 	FC_FOOTSTEP,
 	FC_LEFTFOOT,
@@ -157,10 +147,15 @@ typedef enum {
 	FC_DISABLE_LEG_IK,
 	FC_RECORDDEMO,
 	FC_AVIGAME,
-	FC_LAUNCH_PROJECTILE,
-	FC_TRIGGER_FX,
-	FC_START_EMITTER,
-	FC_STOP_EMITTER,
+	//ivan start
+
+	FC_FIREWEAPON, 
+	FC_START_AUTOMELEE,
+	FC_STOP_AUTOMELEE,
+	FC_START_KICK, 
+	FC_STOP_KICK,
+	FC_SCRIPTFUNCTIONWEAPON 
+	//ivan end
 } frameCommandType_t;
 
 typedef struct {
@@ -185,6 +180,7 @@ typedef struct {
 	bool					random_cycle_start			: 1;
 	bool					ai_no_turn					: 1;
 	bool					anim_turn					: 1;
+	bool					exclusive_commands			: 1; //ivan
 } animFlags_t;
 
 
@@ -576,7 +572,8 @@ public:
 
 private:
 	void						FreeData( void );
-	void						PushAnims( int channel, int currentTime, int blendTime );
+	//was: void						PushAnims( int channel, int currentTime, int blendTime );
+	void						PushAnims( int channel, int currentTime, int blendTime, bool exclusiveCommands = false );  //ivan
 
 private:
 	const idDeclModelDef *		modelDef;

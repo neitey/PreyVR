@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_ITEM_H__
 #define __GAME_ITEM_H__
 
-#include "physics/Physics_RigidBody.h"
-#include "Entity.h"
-
 /*
 ===============================================================================
 
@@ -40,7 +37,15 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idItem : public idEntity {
+
+/*
+===============================================================================
+
+  idItem
+
+===============================================================================
+*/
+class idItem : public idEntity { 
 public:
 	CLASS_PROTOTYPE( idItem );
 
@@ -57,14 +62,12 @@ public:
 	virtual void			Think( void );
 	virtual void			Present();
 
+	void					SetShellMrt( const char * newMtrName ); //ivan 
+
 	enum {
 		EVENT_PICKUP = idEntity::EVENT_MAXEVENTS,
 		EVENT_RESPAWN,
 		EVENT_RESPAWNFX,
-		EVENT_TAKEFLAG,
-		EVENT_DROPFLAG,
-		EVENT_FLAGRETURN,
-		EVENT_FLAGCAPTURE,
 		EVENT_MAXEVENTS
 	};
 
@@ -74,12 +77,16 @@ public:
 	// networking
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+	//int						GetWeaponNum( void ) { return weaponNum; }; //ivan
+
+protected:
+	bool					canPickUp;
+	int						weaponNum; //ivan
 
 private:
 	idVec3					orgOrigin;
 	bool					spin;
 	bool					pulse;
-	bool					canPickUp;
 
 	// for item pulse effect
 	int						itemShellHandle;
@@ -93,13 +100,43 @@ private:
 
 	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const;
 	static bool				ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
+	
+	//ivan start
+	void					CallScriptFunction( void ) const; 
+	void					CheckWeaponNum( void );
+	void					Event_CheckWeaponNum( void );
+	//ivan end
 
 	void					Event_DropToFloor( void );
 	void					Event_Touch( idEntity *other, trace_t *trace );
 	void					Event_Trigger( idEntity *activator );
 	void					Event_Respawn( void );
 	void					Event_RespawnFx( void );
+	
 };
+
+//ivan start
+
+/*
+===============================================================================
+
+  idItemInteract
+
+===============================================================================
+*/
+class idItemInteract : public idItem { 
+public:
+	CLASS_PROTOTYPE( idItemInteract );
+
+	void					Spawn( void );
+	virtual bool			CanInteract( int flags ) const;
+
+private:
+	void					Event_Interact( idEntity *activator, int flags ); 
+	void					Event_Touch( idEntity *other, trace_t *trace );
+};
+//ivan end
+
 
 class idItemPowerup : public idItem {
 public:
@@ -165,92 +202,24 @@ public:
 
 	void					Spawn( void );
 	virtual void			Think( void );
-	virtual bool			Collide(const trace_t &collision, const idVec3 &velocity);
 	virtual bool			Pickup( idPlayer *player );
 
 	static void				DropItems( idAnimatedEntity *ent, const char *type, idList<idEntity *> *list );
-	static idEntity	*		DropItem( const char *classname, const idVec3 &origin, const idMat3 &axis, const idVec3 &velocity, int activateDelay, int removeDelay );
+	static idEntity	*		DropItem( const char *classname, const idVec3 &origin, const idMat3 &axis, const idVec3 &velocity, int activateDelay, int removeDelay, bool dropToFloor = true ); //ivan - dropToFloor added
 
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
-protected:
+private:
 	idPhysics_RigidBody		physicsObj;
 	idClipModel *			trigger;
 	const idDeclParticle *	smoke;
 	int						smokeTime;
 
-	int						nextSoundTime;
-	bool					repeatSmoke;	// never stop updating the particles
-
 	void					Gib( const idVec3 &dir, const char *damageDefName );
 
 	void					Event_DropToFloor( void );
 	void					Event_Gib( const char *damageDefName );
-};
-
-
-class idItemTeam : public idMoveableItem
-{
-public:
-CLASS_PROTOTYPE(idItemTeam);
-
-	idItemTeam();
-	virtual					~idItemTeam();
-
-	void                    Spawn();
-	virtual bool			Pickup(idPlayer *player);
-	virtual bool			ClientReceiveEvent(int event, int time, const idBitMsg &msg);
-	virtual void			Think(void);
-
-	void					Drop(bool death = false);	// was the drop caused by death of carrier?
-	void					Return(idPlayer *player = NULL);
-	void					Capture(void);
-
-	virtual void			FreeLightDef(void);
-	virtual void			Present(void);
-
-	// networking
-	virtual void			WriteToSnapshot(idBitMsgDelta &msg) const;
-	virtual void			ReadFromSnapshot(const idBitMsgDelta &msg);
-
-public:
-	int                     team;
-	// TODO : turn this into a state :
-	bool					carried;			// is it beeing carried by a player?
-	bool					dropped;			// was it dropped?
-
-private:
-	idVec3					returnOrigin;
-	idMat3					returnAxis;
-	int						lastDrop;
-
-	const idDeclSkin 		*skinDefault;
-	const idDeclSkin 		*skinCarried;
-
-	const function_t 		*scriptTaken;
-	const function_t 		*scriptDropped;
-	const function_t 		*scriptReturned;
-	const function_t 		*scriptCaptured;
-
-	renderLight_t           itemGlow;           // Used by flags when they are picked up
-	int                     itemGlowHandle;
-
-	int						lastNuggetDrop;
-	const char 			*nuggetName;
-
-private:
-
-	void					Event_TakeFlag(idPlayer *player);
-	void					Event_DropFlag(bool death);
-	void					Event_FlagReturn(idPlayer *player = NULL);
-	void					Event_FlagCapture(void);
-
-	void					PrivateReturn(void);
-	function_t 			*LoadScript(const char *script);
-
-	void					SpawnNugget(idVec3 pos);
-	void                    UpdateGuis(void);
 };
 
 class idMoveablePDAItem : public idMoveableItem {
@@ -259,6 +228,28 @@ public:
 
 	virtual bool			GiveToPlayer( idPlayer *player );
 };
+
+//ivan start
+
+/*
+===============================================================================
+
+  idMoveableItemInteract
+
+===============================================================================
+*/
+class idMoveableItemInteract : public idMoveableItem { 
+public:
+	CLASS_PROTOTYPE( idMoveableItemInteract );
+
+	void					Spawn( void );
+	virtual bool			CanInteract( int flags ) const;
+
+private:
+	void					Event_Interact( idEntity *activator, int flags ); 
+	void					Event_Touch( idEntity *other, trace_t *trace );
+};
+//ivan end
 
 /*
 ===============================================================================

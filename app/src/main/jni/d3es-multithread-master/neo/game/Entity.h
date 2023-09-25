@@ -29,15 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
 
-#include "idlib/math/Curve.h"
-#include "framework/DeclParticle.h"
-
-#include "physics/Physics_Static.h"
-#include "physics/Physics.h"
-#include "script/Script_Program.h"
-#include "gamesys/Class.h"
-#include "gamesys/Event.h"
-#include "Game_local.h"
+#ifdef _DENTONMOD
+#ifndef _DENTONMOD_ENTITY_CPP
+#define _DENTONMOD_ENTITY_CPP
+#endif
+#endif
 
 /*
 ===============================================================================
@@ -57,6 +53,8 @@ extern const idEventDef EV_Activate;
 extern const idEventDef EV_ActivateTargets;
 extern const idEventDef EV_Hide;
 extern const idEventDef EV_Show;
+extern const idEventDef EV_PlatformUnder;	//rev 2020
+extern const idEventDef EV_PlatformOver;	//rev 2020
 extern const idEventDef EV_GetShaderParm;
 extern const idEventDef EV_SetShaderParm;
 extern const idEventDef EV_SetOwner;
@@ -68,6 +66,14 @@ extern const idEventDef EV_SetSkin;
 extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
+//ivan start
+extern const idEventDef EV_Interact;
+//ivan end
+
+#ifdef _WATER_PHYSICS //un noted change from original sdk
+extern const idEventDef EV_GetMass;
+extern const idEventDef EV_IsInLiquid;
+#endif
 
 // Think flags
 enum {
@@ -76,8 +82,27 @@ enum {
 	TH_PHYSICS				= 2,		// run physics each frame
 	TH_ANIMATE				= 4,		// update animation each frame
 	TH_UPDATEVISUALS		= 8,		// update renderEntity
+
+#ifdef _DENTONMOD_ENTITY_CPP
+	TH_UPDATEPARTICLES		= 16,		// This flag is used by various classes derived from entity in various situations
+	TH_UPDATEWOUNDPARTICLES = 32		// so create a new flag. By Clone JC Denton
+
+#else
 	TH_UPDATEPARTICLES		= 16
+#endif
 };
+
+//ivan start - interact modes
+// Interact flags
+enum {
+	INTERACT_NONE		= 0,
+	INTERACT_IMPULSE	= 1,	//used for reload impulse
+	INTERACT_UP			= 2,	
+	INTERACT_DOWN		= 4	
+};
+
+//static const int MIN_RENDER_TIME = 50; //ms
+//ivan end
 
 //
 // Signals
@@ -113,6 +138,23 @@ public:
 	idList<signal_t> signal[ NUM_SIGNALS ];
 };
 
+#ifdef _DENTONMOD_ENTITY_CPP
+
+//-----------------------------------------------------------------------------------------------
+// enDamage effect holds information about wound effects being played on the entities 
+//																	- Clone JC Denton
+//-----------------------------------------------------------------------------------------------
+typedef struct entDamageEffect_s {
+	idVec3					origin;
+	idVec3					dir; //new
+//	idMat3					axis;
+	int						time;
+//	bool					isTimeInitialized; // New flag which sets time at right time.
+	const idDeclParticle*	type;
+	struct entDamageEffect_s *	next;
+} entDamageEffect_t;
+
+#endif
 
 class idEntity : public idClass {
 public:
@@ -127,7 +169,6 @@ public:
 	idLinkList<idEntity>	snapshotNode;			// for being linked into snapshotEntities list
 	int						snapshotSequence;		// last snapshot this entity was in
 	int						snapshotBits;			// number of bits this entity occupied in the last snapshot
-	bool					snapshotStale;			// Set to true if this entity is considered stale in the snapshot
 
 	idStr					name;					// name of entity
 	idDict					spawnArgs;				// key/value pairs used to spawn and initialize entity
@@ -157,21 +198,7 @@ public:
 		bool				isDormant			:1;	// if true the entity is dormant
 		bool				hasAwakened			:1;	// before a monster has been awakened the first time, use full PVS for dormant instead of area-connected
 		bool				networkSync			:1; // if true the entity is synchronized over the network
-		bool				grabbed				:1;	// if true object is currently being grabbed
 	} fl;
-
-	int						timeGroup;
-
-	bool					noGrab;
-
-	renderEntity_t			xrayEntity;
-	qhandle_t				xrayEntityHandle;
-	const idDeclSkin 		*xraySkin;
-
-	void					DetermineTimeGroup(bool slowmo);
-
-	void					SetGrabbedState(bool grabbed);
-	bool					IsGrabbed();
 
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
@@ -188,10 +215,7 @@ public:
 	void					SetName( const char *name );
 	const char *			GetName( void ) const;
 	virtual void			UpdateChangeableSpawnArgs( const idDict *source );
-    int						GetEntityNumber() const
-    {
-        return entityNumber;
-    }
+
 							// clients generate views based on all the player specific options,
 							// cameras have custom code, and everything else just uses the axis orientation
 	virtual renderView_t *	GetRenderView();
@@ -205,6 +229,9 @@ public:
 	void					BecomeActive( int flags );
 	void					BecomeInactive( int flags );
 	void					UpdatePVSAreas( const idVec3 &pos );
+#ifdef _DENTONMOD_ENTITY_CPP
+	void					UpdateParticles	( void ); // damage particle effects - By Clone JCD 
+#endif
 
 	// visuals
 	virtual void			Present( void );
@@ -223,6 +250,8 @@ public:
 	virtual void			FreeLightDef( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
+	virtual void			PlatformUnder( void );	//rev 2020
+	virtual void			PlatformOver( void );	//rev 2020
 	bool					IsHidden( void ) const;
 	void					UpdateVisuals( void );
 	void					UpdateModel( void );
@@ -244,6 +273,7 @@ public:
 	bool					StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length );
 	bool					StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length );
 	void					StopSound( const s_channelType channel, bool broadcast );	// pass SND_CHANNEL_ANY to stop all sounds
+	void					FadeSound( int channel, float to, float over ); //ivan
 	void					SetSoundVolume( float volume );
 	void					UpdateSound( void );
 	int						GetListenerId( void ) const;
@@ -322,7 +352,12 @@ public:
 							// applies damage to this entity
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
 							// adds a damage effect like overlays, blood, sparks, debris etc.
+#ifdef _DENTONMOD
+							//the soundEnt parameter helps unifying how sound is played upon projectile impact.
+	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName, idEntity *soundEnt = NULL );
+#else
 	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
+#endif
 							// callback function for when another entity received damage from this entity.  damage can be adjusted and returned to the caller.
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
 							// notifies this entity that it is in pain
@@ -354,6 +389,14 @@ public:
 	// misc
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
 	bool					TouchTriggers( void ) const;
+
+	//ivan start
+	virtual bool			CanInteract( int flags ) const;
+	bool					InteractTouchingTriggers( int flags ) const;
+	idEntity *				GetFirstValidTarget( void ) const;
+	idEntity*				GetRandomTarget( const char *ignore );
+	//ivan end
+
 	idCurve_Spline<idVec3> *GetSpline( void ) const;
 	virtual void			ShowEditingDialog( void );
 
@@ -382,7 +425,20 @@ public:
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
 	int						modelDefHandle;						// handle to static renderer model
+#ifdef _WATER_PHYSICS
+    int                     modelDefHandlePost;					// new 6th venom
+    const idMaterial        *shaderPost;						// new
+#endif
 	refSound_t				refSound;							// used to present sound to the audio engine
+#ifdef _DENTONMOD_ENTITY_CPP
+	entDamageEffect_t *		entDamageEffects;			// We are going to add damage effect to every entity.
+#endif 
+	/*
+	//ivan start - test
+	bool					updLastRenderTime; //not saved
+	int						lastRenderTime;
+	//ivan end
+	*/
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object
@@ -444,6 +500,8 @@ private:
 	void					Event_IsHidden( void );
 	void					Event_Hide( void );
 	void					Event_Show( void );
+	void					Event_PlatformUnder( void ); 	//rev 2020
+	void					Event_PlatformOver( void );		//rev 2020
 	void					Event_CacheSoundShader( const char *soundName );
 	void					Event_StartSoundShader( const char *soundName, int channel );
 	void					Event_StopSound( int channel, int netSync );
@@ -483,11 +541,22 @@ private:
 	void					Event_HasFunction( const char *name );
 	void					Event_CallFunction( const char *name );
 	void					Event_SetNeverDormant( int enable );
-	void					Event_SetGui(int guiNum, const char *guiName);
-	void					Event_PrecacheGui(const char *guiName);
-	void					Event_GetGuiParm(int guiNum, const char *key);
-	void					Event_GetGuiParmFloat(int guiNum, const char *key);
+
+#ifdef _WATER_PHYSICS //un noted change from original sdk
+	void					Event_GetMass( int body );
+	void					Event_IsInLiquid( void );
+#endif
+
+	//smart AI start
+	void					Event_GetRandomTargetTypePrefix( const char *typePrefix, const char *ignoreType );
+	void					Event_GetClosestTargetTypePrefix( const char *typePrefix, const char *ignoreType );
 	void					Event_GuiNamedEvent(int guiNum, const char *event);
+	void					Event_StartRandomSound( const char *soundBaseName, int channel, int netSync );
+	void					Event_AddSoundSkin( const char *soundSkinName );
+
+	void					AddSoundSkin( const char *soundSkinName );
+	void					SetDefaultSoundSkin( void );
+	//smart AI end
 };
 
 /*
@@ -503,9 +572,11 @@ typedef struct damageEffect_s {
 	idVec3					localOrigin;
 	idVec3					localNormal;
 	int						time;
+
 	const idDeclParticle*	type;
 	struct damageEffect_s *	next;
 } damageEffect_t;
+
 
 class idAnimatedEntity : public idEntity {
 public:
@@ -529,8 +600,13 @@ public:
 	bool					GetJointTransformForAnim( jointHandle_t jointHandle, int animNum, int currentTime, idVec3 &offset, idMat3 &axis ) const;
 
 	virtual int				GetDefaultSurfaceType( void ) const;
+#ifdef _DENTONMOD
+	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName, idEntity *soundEnt );
+	void					AddLocalDamageEffect( jointHandle_t jointNum, const idVec3 &localPoint, const idVec3 &localNormal, const idVec3 &localDir, const idDeclEntityDef *def, const idMaterial *collisionMaterial, idEntity *soundEnt = NULL );
+#else
 	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
 	void					AddLocalDamageEffect( jointHandle_t jointNum, const idVec3 &localPoint, const idVec3 &localNormal, const idVec3 &localDir, const idDeclEntityDef *def, const idMaterial *collisionMaterial );
+#endif
 	void					UpdateDamageEffects( void );
 
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
@@ -542,9 +618,12 @@ public:
 
 protected:
 	idAnimator				animator;
+
 	damageEffect_t *		damageEffects;
 
 private:
+	int						nextBloodPoolTime; //un noted change from original sdk
+
 	void					Event_GetJointHandle( const char *jointname );
 	void					Event_ClearAllJoints( void );
 	void					Event_ClearJoint( jointHandle_t jointnum );
@@ -553,73 +632,5 @@ private:
 	void					Event_GetJointPos( jointHandle_t jointnum );
 	void					Event_GetJointAngle( jointHandle_t jointnum );
 };
-
-class SetTimeState
-{
-	bool					activated;
-	bool					previousFast;
-	bool					fast;
-
-public:
-	SetTimeState();
-	SetTimeState(int timeGroup);
-	~SetTimeState();
-
-	void					PushState(int timeGroup);
-};
-
-ID_INLINE SetTimeState::SetTimeState()
-{
-	activated = false;
-}
-
-ID_INLINE SetTimeState::SetTimeState(int timeGroup)
-{
-	activated = false;
-	PushState(timeGroup);
-}
-
-ID_INLINE void SetTimeState::PushState(int timeGroup)
-{
-
-	// Don't mess with time in Multiplayer
-	if (!gameLocal.isMultiplayer) {
-
-		activated = true;
-
-		// determine previous fast setting
-		if (gameLocal.time == gameLocal.slow.time) {
-			previousFast = false;
-		} else {
-			previousFast = true;
-		}
-
-		// determine new fast setting
-		if (timeGroup) {
-			fast = true;
-		} else {
-			fast = false;
-		}
-
-		// set correct time
-		if (fast) {
-			gameLocal.fast.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		} else {
-			gameLocal.slow.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		}
-	}
-}
-
-ID_INLINE SetTimeState::~SetTimeState()
-{
-	if (activated && !gameLocal.isMultiplayer) {
-		// set previous correct time
-		if (previousFast) {
-			gameLocal.fast.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		} else {
-			gameLocal.slow.Get(gameLocal.time, gameLocal.previousTime, gameLocal.msec, gameLocal.framenum, gameLocal.realClientTime);
-		}
-	}
-}
 
 #endif /* !__GAME_ENTITY_H__ */

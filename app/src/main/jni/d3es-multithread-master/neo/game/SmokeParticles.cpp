@@ -26,12 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
-#include "Game_local.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Entity.h"
-#include "SmokeParticles.h"
+#include "Game_local.h"
 
 static const char *smokeParticle_SnapshotName = "_SmokeParticle_Snapshot_";
 
@@ -131,14 +129,7 @@ void idSmokeParticles::FreeSmokes( void ) {
 		for ( last = NULL, smoke = active->smokes; smoke; smoke = next ) {
 			next = smoke->next;
 
-			float frac;
-
-			if (smoke->timeGroup) {
-				frac = (float)(gameLocal.fast.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			} else {
-				frac = (float)(gameLocal.slow.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			}
-
+			float frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
 			if ( frac >= 1.0f ) {
 				// remove the particle from the stage list
 				if ( last != NULL ) {
@@ -171,10 +162,8 @@ idSmokeParticles::EmitSmoke
 Called by game code to drop another particle into the list
 ================
 */
-bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemStartTime, const float diversity, const idVec3 &origin, const idMat3 &axis, int timeGroup /*_D3XP*/)
-{
+bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemStartTime, const float diversity, const idVec3 &origin, const idMat3 &axis ) {
 	bool	continues = false;
-	SetTimeState ts(timeGroup);
 
 	if ( !smoke ) {
 		return false;
@@ -231,7 +220,7 @@ bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemSt
 			if ( nowCount >= stage->totalParticles ) {
 				nowCount = stage->totalParticles-1;
 			}
-			prevCount = floor(((float)(deltaMsec - gameLocal.msec /*_D3XP - FIX - was USERCMD_MSEC*/) / finalParticleTime) * stage->totalParticles);
+			prevCount = floor( ((float)( deltaMsec - USERCMD_MSEC ) / finalParticleTime) * stage->totalParticles );
 			if ( prevCount < -1 ) {
 				prevCount = -1;
 			}
@@ -276,7 +265,6 @@ bool idSmokeParticles::EmitSmoke(const idDeclParticle *smoke, const int systemSt
 			freeSmokes = freeSmokes->next;
 			numActiveSmokes++;
 
-			newSmoke->timeGroup = timeGroup;
 			newSmoke->index = prevCount;
 			newSmoke->axis = axis;
 			newSmoke->origin = origin;
@@ -351,11 +339,7 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 		for ( last = NULL, smoke = active->smokes; smoke; smoke = next ) {
 			next = smoke->next;
 
-			if (smoke->timeGroup) {
-				g.frac = (float)(gameLocal.fast.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			} else {
-				g.frac = (float)(gameLocal.time - smoke->privateStartTime) / (stage->particleLife * 1000);
-			}
+			g.frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
 			if ( g.frac >= 1.0f ) {
 				// remove the particle from the stage list
 				if ( last != NULL ) {

@@ -29,14 +29,18 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_FX_H__
 #define __GAME_FX_H__
 
-#include "renderer/RenderWorld.h"
-
-#include "Entity.h"
-
 /*
 ===============================================================================
 
   Special effects.
+
+  Ivan notes: 
+  - duration = 0 --> endless ( it lasts al long as the others are active). 
+  - duration = -1 --> like 0, but disabled when fade starts
+  If there are only endless ones, the fx is self-removed instantly unless "manualRemove" is set.
+
+  - delay = -1 --> activated when fade starts
+  If "manualRemove" is not set the fx will self-remove after the max "duration" value.
 
 ===============================================================================
 */
@@ -67,25 +71,39 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think();
+	virtual void			Think( void ); //un noted change from original sdk
 	void					Setup( const char *fx );
 	void					Run( int time );
-	void					Start( int time );
+	virtual void			Start( int time ); //ivan - virtual added
 	void					Stop( void );
 	const int				Duration( void );
 	const char *			EffectName( void );
 	const char *			Joint( void );
-	const bool				Done();
+	const bool				Done( void ); //un noted change from original sdk
+
+	//ivan start
+	void					FadeOutFx( void ); 
+	const int				FadeDuration( void );
+	//ivan end
+
 
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual void			ClientPredictionThink( void );
 
-	static idEntityFx *		StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind );
+	//static idEntityFx *		StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind ); //un noted change from original sdk
+	static idEntityFx *		StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind, bool orientated = true, jointHandle_t jointnum = INVALID_JOINT ); //ivan
+	static void				StartFxUtility( idEntityFx *nfx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind, bool orientated = true, jointHandle_t jointnum = INVALID_JOINT ); //ivan
 
 protected:
 	void					Event_Trigger( idEntity *activator );
 	void					Event_ClearFx( void );
+
+	//ivan start
+	void					Event_FadeFx( void ); 
+	void					SetupFade( void );
+	void					ResetShaderParms( void );
+	//ivan end
 
 	void					CleanUp( void );
 	void					CleanUpSingleAction( const idFXSingleAction& fxaction, idFXLocalAction& laction );
@@ -96,6 +114,11 @@ protected:
 	const idDeclFX *		fxEffect;				// GetFX() should be called before using fxEffect as a pointer
 	idList<idFXLocalAction>	actions;
 	idStr					systemName;
+	//ivan start
+	bool					manualRemove; 
+	bool					manualFadeIsOn;
+	bool					endlessSounds;
+	//ivan end
 };
 
 class idTeleporter : public idEntityFx {
@@ -106,5 +129,46 @@ private:
 	// teleporters to this location
 	void					Event_DoAction( idEntity *activator );
 };
+
+//ivan start
+
+// see 'dmgFxTypeString' array 
+enum {
+	DMGFX_NONE = 0, //no fx
+	DMGFX_FLAMES,
+	DMGFX_ELECTRO,
+	DMGFX_TOXIC,
+	NUM_DMGFX_TYPES //always the last
+};
+
+class idDamagingFx : public idEntityFx {
+public:
+	CLASS_PROTOTYPE( idDamagingFx );
+
+							idDamagingFx();
+	virtual					~idDamagingFx();
+
+	void					Spawn( void );
+
+	virtual void			Think( void );
+	static idDamagingFx *	StartDamagingFx( int type, idEntity *victimEnt );
+	virtual void			Start( int time );
+	void					Restart( void );
+
+	void					Save( idSaveGame *savefile ) const;
+	void					Restore( idRestoreGame *savefile );
+	int						GetDmgFxType( void ){ return dmgfxType; };
+
+private:
+	
+	idStr					damageDefString;
+	idEntityPtr<idEntity>	victim;
+	int						nextDamageTime;
+	int						damageRate;
+	int						endDamageTime;
+	int						dmgfxType;
+};
+
+//ivan end
 
 #endif /* !__GAME_FX_H__ */

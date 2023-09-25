@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __PHYSICS_ACTOR_H__
 #define __PHYSICS_ACTOR_H__
 
-#include "physics/Physics_Base.h"
-
 /*
 ===================================================================================
 
@@ -42,6 +40,16 @@ If you have questions concerning this license or the applicable additional terms
 
 ===================================================================================
 */
+
+#ifdef _WATER_PHYSICS // un noted changes from original sdk
+//ivan - must match .def values!
+typedef enum {
+	WATERLEVEL_NONE = 0,
+	WATERLEVEL_FEET,
+	WATERLEVEL_WAIST,
+	WATERLEVEL_HEAD
+} waterLevel_t;
+#endif
 
 class idPhysics_Actor : public idPhysics_Base {
 
@@ -60,6 +68,14 @@ public:
 	idEntity *				GetGroundEntity( void ) const;
 							// align the clip model with the gravity direction
 	void					SetClipModelAxis( void );
+
+#ifdef _WATER_PHYSICS // un noted changes from original sdk
+							// water stuff
+	virtual waterLevel_t	GetWaterLevel( void ) const;
+	virtual int				GetWaterType( void ) const;
+	int						nextWaterSplash; //ivan - meant to be used by func_splash
+	int						nextWaterSnd; //ivan - meant to be used by func_splash
+#endif
 
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
@@ -96,6 +112,9 @@ public:	// common physics interface
 	bool					EvaluateContacts( void );
 
 protected:
+#ifdef _WATER_PHYSICS // un noted changes from original sdk
+	virtual void			SetWaterLevel( void );
+#endif
 	idClipModel *			clipModel;			// clip model used for collision detection
 	idMat3					clipModelAxis;		// axis of clip model aligned with gravity direction
 
@@ -109,6 +128,10 @@ protected:
 	float					masterDeltaYaw;
 
 	// results of last evaluate
+#ifdef _WATER_PHYSICS // un noted changes from original sdk
+	waterLevel_t			waterLevel;
+	int						waterType;
+#endif
 	idEntityPtr<idEntity>	groundEntityPtr;
 };
 

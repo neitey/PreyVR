@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_TRIGGER_H__
 #define __GAME_TRIGGER_H__
 
-#include "gamesys/Event.h"
-#include "Entity.h"
-
 extern const idEventDef EV_Enable;
 extern const idEventDef EV_Disable;
 
@@ -89,26 +86,167 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-protected:
+protected: //ivan - was private: 
 	float				wait;
 	float				random;
 	float				delay;
 	float				random_delay;
-	int					nextTriggerTime;
-	idStr				requires;
+	int					nextTriggerTime; 
+	idStr				requires; 
 	int					removeItem;
 	bool				touchClient;
 	bool				touchOther;
-	bool				triggerFirst;
+	bool				triggerFirst; 
 	bool				triggerWithSelf;
 
 	bool				CheckFacing( idEntity *activator );
-	void				TriggerAction( idEntity *activator );
+	virtual void		TriggerAction( idEntity *activator ); //ivan - virtual added
 	void				Event_TriggerAction( idEntity *activator );
 	void				Event_Trigger( idEntity *activator );
 	void				Event_Touch( idEntity *other, trace_t *trace );
 };
 
+//ivan start
+
+/*
+===============================================================================
+
+  idTrigger_CheckPoint
+
+===============================================================================
+*/
+class idTrigger_CheckPoint : public idTrigger_Multi {
+public:
+	CLASS_PROTOTYPE( idTrigger_CheckPoint );
+
+						idTrigger_CheckPoint( void );
+
+private: 
+	void				TriggerAction( idEntity *activator ); 
+};
+
+
+/*
+===============================================================================
+
+  idTrigger_ForceMov
+
+===============================================================================
+*/
+class idTrigger_ForceMov : public idTrigger_Multi {
+public:
+	CLASS_PROTOTYPE( idTrigger_ForceMov );
+
+						idTrigger_ForceMov( void );
+
+private: 
+	bool				ActionMovToTarget( idPlayer *player ); 
+	bool				ActionSafeXpos( idPlayer *player ); 
+
+	void				TriggerAction( idEntity *activator ); 
+};
+
+/*
+===============================================================================
+
+  idTrigger_BlockMov
+
+===============================================================================
+*/
+class idTrigger_BlockMov : public idTrigger_Multi {
+public:
+	CLASS_PROTOTYPE( idTrigger_BlockMov );
+
+						idTrigger_BlockMov( void );
+
+private: 
+	void				TriggerAction( idEntity *activator ); 
+};
+
+
+/*
+===============================================================================
+
+  idTrigger_Interact
+
+===============================================================================
+*/
+//const int MAX_TRIGINT_MODES = 2;
+
+class idTrigger_Interact : public idTrigger {
+public:
+	CLASS_PROTOTYPE( idTrigger_Interact );
+						
+						idTrigger_Interact( void );
+
+	void				Spawn( void );
+	virtual bool		CanInteract( int flags ) const;
+
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
+protected:
+	float				wait;
+	int					nextInteractTime; 
+	int					interactFlags;
+	bool				triggerFirst; 
+	
+	virtual void		InteractionAction( idPlayer *player, int flags );
+	void				Event_Trigger( idEntity *activator );
+	void				Event_Interact( idEntity *activator, int flags ); 	
+	void				Event_Touch( idEntity *other, trace_t *trace );
+};
+
+/*
+===============================================================================
+
+  idTrigger_Interact_ChangeXpos
+
+===============================================================================
+*/
+class idTrigger_Interact_ChangeXpos : public idTrigger_Interact {
+public:
+	CLASS_PROTOTYPE( idTrigger_Interact_ChangeXpos );
+						
+						idTrigger_Interact_ChangeXpos( void );
+
+	void				Spawn( void );
+
+private:	
+	virtual void		InteractionAction( idPlayer *player, int flags );
+	idEntity *			GetTargetGreaterX( bool greaterX );
+	void				CheckTargets( void );
+	void				Event_CheckTargets( void );
+	
+};
+
+#if 0
+/*
+===============================================================================
+
+  idTrigger_Secret
+
+===============================================================================
+*/
+
+class idTrigger_Secret : public idTrigger {
+public:
+	CLASS_PROTOTYPE( idTrigger_Secret );
+						
+						idTrigger_Secret( void );
+	void				Spawn( void );
+
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+	
+private:
+	bool				found;
+
+	void				TriggerAction( idEntity *activator );
+	void				Event_Trigger( idEntity *activator );
+};
+#endif
+//ivan end
 
 /*
 ===============================================================================
@@ -137,8 +275,6 @@ private:
 	int					nextTriggerTime;
 	bool				triggerFirst;
 	idStr				entityName;
-
-	bool				testPartialName;
 
 	void				TriggerAction( idEntity *activator );
 	void				Event_TriggerAction( idEntity *activator );
@@ -287,30 +423,6 @@ private:
 	idClipModel *		clipModel;
 
 	void				Event_Trigger( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-  Trigger that responces to CTF flags
-
-===============================================================================
-*/
-class idTrigger_Flag : public idTrigger_Multi
-{
-public:
-CLASS_PROTOTYPE(idTrigger_Flag);
-
-	idTrigger_Flag(void);
-	void				Spawn(void);
-
-private:
-	int					team;
-	bool				player;			// flag must be attached/carried by player
-
-	const idEventDef 	*eventFlag;
-
-	void				Event_Touch(idEntity *other, trace_t *trace);
 };
 
 #endif /* !__GAME_TRIGGER_H__ */

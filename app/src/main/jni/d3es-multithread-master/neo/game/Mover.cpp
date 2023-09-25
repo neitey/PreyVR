@@ -26,12 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
-#include "Player.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Mover.h"
+#include "Game_local.h"
 
 // a mover will update any gui entities in it's target list with
 // a key/val pair of "mover" "state" from below.. guis can represent
@@ -387,8 +385,34 @@ idMover::Hide
 ================
 */
 void idMover::Hide( void ) {
+	//ivan start
+
+	/* was:
 	idEntity::Hide();
 	physicsObj.SetContents( 0 );
+	*/
+
+	idEntity *ent;
+	idEntity *next;
+
+	//hide myself
+	idEntity::Hide();
+	physicsObj.SetContents( 0 );
+
+	//hide entities bound to me
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) {
+			if ( g_debugMover.GetBool() ) {
+				gameLocal.Printf("idMover '%s' is hiding '%s'\n", name.c_str(), ent->GetName() );
+			}
+			ent->Hide();
+			if ( ent->IsType( idLight::Type ) ) {
+				static_cast<idLight *>( ent )->Off();
+			}
+		}
+	}
+	//ivan end
 }
 
 /*
@@ -397,12 +421,42 @@ idMover::Show
 ================
 */
 void idMover::Show( void ) {
+	//ivan start
+
+	/* was:
 	idEntity::Show();
 	if ( spawnArgs.GetBool( "solid", "1" ) ) {
 		physicsObj.SetContents( CONTENTS_SOLID );
 	}
 	SetPhysics( &physicsObj );
+	*/
+
+	idEntity *ent;
+	idEntity *next;
+
+	//show myself
+	idEntity::Show();
+	if ( spawnArgs.GetBool( "solid", "1" ) ) {
+		physicsObj.SetContents( CONTENTS_SOLID );
+	}
+	SetPhysics( &physicsObj );
+
+	//show entities bound to me
+	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
+		next = ent->GetNextTeamEntity();
+		if ( ent->GetBindMaster() == this ) {
+			if ( g_debugMover.GetBool() ) {			
+				gameLocal.Printf("idMover '%s' is showing '%s'\n", name.c_str(), ent->GetName() );
+			}
+			ent->Show();
+			if ( ent->IsType( idLight::Type ) ) {
+				static_cast<idLight *>( ent )->On();
+			}
+		}
+	}
 }
+
+
 
 /*
 ============
@@ -608,7 +662,6 @@ idMover::DoneMoving
 ================
 */
 void idMover::DoneMoving( void ) {
-
 	if ( lastCommand != MOVER_SPLINE ) {
 		// set our final position so that we get rid of any numerical inaccuracy
 		physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_position, vec3_origin, vec3_origin );
@@ -1535,6 +1588,393 @@ void idMover::SetPortalState( bool open ) {
 	gameLocal.SetPortalState( areaPortal, open ? PS_BLOCK_NONE : PS_BLOCK_ALL );
 }
 
+//ivan start
+/*
+===============================================================================
+
+idPathMover
+
+===============================================================================
+*/
+
+const idEventDef EV_PathMover_StartNextMov( "<startNextMov>", NULL );
+CLASS_DECLARATION( idMover, idPathMover )
+	EVENT( EV_PostSpawn,				idPathMover::Event_PostSpawn )
+	EVENT( EV_Activate,					idPathMover::Event_Trigger )
+	EVENT( EV_PathMover_StartNextMov,	idPathMover::Event_StartNextMov )
+#ifdef TEAM_TEST
+	//EVENT( EV_TeamBlocked,				idPathMover::Event_TeamBlocked )
+#endif
+END_CLASS
+
+/*
+================
+idPathMover::idPathMover
+================
+*/
+idPathMover::idPathMover( void ) {
+	currentTarget = NULL;
+	restoreSettings = false;
+	toggleOnTrigger = false;
+	startOnTrigger = false;
+	nextOnTrigger = false;
+	allowRestart = false;
+	resetOnRestart = false;
+}
+
+/*
+================
+idPathMover::Save
+================
+*/
+void idPathMover::Save( idSaveGame *savefile ) const {
+	currentTarget.Save( savefile );
+	savefile->WriteBool( restoreSettings ); 
+	savefile->WriteBool( toggleOnTrigger ); 
+	savefile->WriteBool( startOnTrigger );
+	savefile->WriteBool( nextOnTrigger );
+	savefile->WriteBool( allowRestart );
+	savefile->WriteBool( resetOnRestart );
+#ifdef TEAM_TEST
+	savefile->WriteString( team );
+#endif
+}
+
+/*
+================
+idPathMover::Restore
+================
+*/
+void idPathMover::Restore( idRestoreGame *savefile ) {
+	currentTarget.Restore( savefile );
+	savefile->ReadBool( restoreSettings ); 
+	savefile->ReadBool( toggleOnTrigger ); 
+	savefile->ReadBool( startOnTrigger );
+	savefile->ReadBool( nextOnTrigger );
+	savefile->ReadBool( allowRestart );
+	savefile->ReadBool( resetOnRestart );
+#ifdef TEAM_TEST
+	savefile->ReadString( team );
+#endif
+}
+
+/*
+================
+idPathMover::Spawn
+================
+*/
+void idPathMover::Spawn( void ) {
+	int restartMode;
+
+	//get settings
+	spawnArgs.GetBool( "toggleOnTrigger", "0", toggleOnTrigger );
+	spawnArgs.GetBool( "start_off", "0", startOnTrigger );
+	spawnArgs.GetBool( "nextOnTrigger", "0", nextOnTrigger );
+	spawnArgs.GetInt( "allowRestart", "0", restartMode );
+	allowRestart = (restartMode > 0);
+	resetOnRestart = (restartMode > 1);
+	
+
+	//check targets start
+	if ( spawnArgs.MatchPrefix( "target" ) ) {
+		if ( !startOnTrigger ){
+			if ( gameLocal.GameState() == GAMESTATE_STARTUP ) {
+				PostEventMS( &EV_PostSpawn, 0 );
+			} else {
+				// not during startup, so it's ok to get the targets
+				StartPath();
+			}
+		}
+	} else { //no targets!
+		gameLocal.Warning("%s has no targets!", GetName() );
+	}
+	//check targets end
+
+#ifdef TEAM_TEST
+	idEntity	*ent;
+	const char	*temp;
+	
+	spawnArgs.GetString( "team", "", &temp );
+	team = temp;
+
+	if ( !team.Length() ) {
+		ent = this;
+	} else {
+		// find the first entity spawned on this team (which could be us)
+		for( ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if ( ent->IsType( idPathMover::Type ) && !idStr::Icmp( static_cast<idPathMover *>(ent)->team.c_str(), temp ) ) {
+				break;
+			}
+		}
+		if ( !ent ) {
+			ent = this;
+		}
+	}
+	//moveMaster = static_cast<idPathMover *>(ent);
+
+	// create a physics team for the binary mover parts
+	if ( ent != this ) {
+		JoinTeam( ent );
+	}
+#endif
+}
+
+#ifdef TEAM_TEST
+/*
+================
+idPathMover::Blocked_Door
+================
+
+void idPathMover::Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity ) {
+	gameLocal.Printf("%s --> Event_TeamBlocked\n", GetName());
+	//funziona, ma per ora inutile.
+}
+*/
+#endif
+
+/*
+===============
+idPathMover::Event_PostSpawn
+===============
+*/
+void idPathMover::Event_PostSpawn( void ) {
+	StartPath();
+}
+
+/*
+===============
+idPathMover::StartPath
+===============
+*/
+void idPathMover::StartPath( void ) {
+	//gameLocal.Warning("%s : dPathMover::StartPath", GetName() );
+	int i;
+	idEntity *firstTarget = NULL;
+
+	for ( i = 0; i < targets.Num(); i++ ) {
+		firstTarget = targets[ i ].GetEntity();
+		if( firstTarget ) break;
+	}
+
+	if( !firstTarget ){
+		gameLocal.Warning("%s has no targets!", GetName() );
+		return;
+	}
+
+	//set curretn target!
+	currentTarget = firstTarget;
+
+	ContinuePath();
+}
+
+/*
+================
+idPathMover::ContinuePath
+================
+*/
+void idPathMover::ContinuePath( void ){
+	//gameLocal.Warning("%s : dPathMover::ContinuePath", GetName() );
+	int	target_acceltime;
+	int	target_deceltime;
+	int	target_move_time;
+	float	target_move_speed;
+	bool	somethingChanged;
+	idEntity * currentTargetEnt;
+
+	//get current target
+	currentTargetEnt = currentTarget.GetEntity();
+	if( !currentTargetEnt ){
+		gameLocal.Warning("%s : no current Target in ContinuePath", GetName() );	
+		return;
+	}
+
+	//fix for teleport
+	if( currentTargetEnt->spawnArgs.GetBool( "teleport", "0" ) ){
+		//gameLocal.Warning("%s : teleport in ContinuePath", GetName() );
+		SetOrigin( currentTargetEnt->GetPhysics()->GetOrigin() );
+		//WARNING: this can create a chain or recursive calls. StartNextMovement -> MoveToTarget -> StartNextMovement -> ...
+		if ( !nextOnTrigger ) { //if nextOnTrigger, then it'll move next when triggered
+			PostEventMS( &EV_PathMover_StartNextMov, 0 );
+		}
+		return;
+	}
+    //fix end
+
+	//upd settings if needed
+	somethingChanged = false;
+	restoreSettings		= currentTargetEnt->spawnArgs.GetBool( "restoreSettings", "1" );
+	target_acceltime	= 1000.0f * currentTargetEnt->spawnArgs.GetFloat( "accel_time", "-1" );
+	target_deceltime	= 1000.0f * currentTargetEnt->spawnArgs.GetFloat( "decel_time", "-1" );
+	target_move_time	= 1000.0f * currentTargetEnt->spawnArgs.GetFloat( "move_time", "-1" );
+	target_move_speed	= currentTargetEnt->spawnArgs.GetFloat( "move_speed", "-1" );
+
+	if( target_acceltime > 0.0f && acceltime != target_acceltime ){
+		acceltime = target_acceltime; 
+		somethingChanged = true; 
+	}
+	if( target_deceltime > 0.0f && deceltime != target_deceltime ){
+		deceltime = target_deceltime; 
+		somethingChanged = true; 
+	}
+	if( target_move_time > 0.0f && move_time != target_move_time ){
+		move_time = target_move_time; 
+		somethingChanged = true; 
+	}
+	if( target_move_speed > 0.0f && move_speed != target_move_speed ){
+		move_speed = target_move_speed; 
+		somethingChanged = true; 
+	}
+
+	if( !somethingChanged ){ restoreSettings = false; }  //avoid restoring changes if nothing has changed
+
+	//go!
+	MoveToPos( currentTargetEnt->GetPhysics()->GetOrigin() );
+}
+
+/*
+================
+idPathMover::SuspendPath
+================
+*/
+void idPathMover::SuspendPath( void ){
+	//gameLocal.Warning("%s : dPathMover::SuspendPath", GetName() );
+	physicsObj.GetLocalOrigin( dest_position ); //!
+	idMover::DoneMoving(); //NOTE: don't call our one: it would skip to the next target and change settings!
+}
+
+/*
+================
+idPathMover::Event_Trigger
+================
+*/
+void idPathMover::Event_Trigger( idEntity *activator ) {
+	//start the first time
+	if( startOnTrigger ){
+		startOnTrigger = false;
+		StartPath();
+		return;
+	}
+
+	//do something if needed
+	if ( lastCommand == MOVER_NONE ) { //idle
+		if( currentTarget.GetEntity() ){
+			if ( toggleOnTrigger || nextOnTrigger ) { 
+				ContinuePath(); //next or resume
+			} 
+		}else if( allowRestart ){
+			if( resetOnRestart ){
+				SetOrigin( spawnArgs.GetVector( "origin" ) );
+			}
+			StartPath(); //restart
+		}
+	}else if ( toggleOnTrigger ) { //it is doing something
+		SuspendPath(); //stop 
+	}
+}
+
+/*
+================
+idPathMover::Event_StartNextMov
+================
+*/
+void idPathMover::Event_StartNextMov( void ) {
+	//gameLocal.Warning("%s : dPathMover::Event_StartNextMov", GetName() );
+	if( SetNextTarget() ){
+		ContinuePath(); 
+	}
+}
+
+/*
+================
+idPathMover::SetNextTarget
+================
+*/
+bool idPathMover::SetNextTarget( void ) {
+	idEntity * nextTarget = NULL;
+	idEntity * currentTargetEnt;
+	int i;
+
+	currentTargetEnt = currentTarget.GetEntity();
+	//currentTarget = NULL; //don't clear it so we can resume!
+
+	//search next
+	if( !currentTargetEnt ){
+		gameLocal.Warning("%s : did someone removed the current target?", GetName() );	
+		return false;
+	}
+
+	for ( i = 0; i < currentTargetEnt->targets.Num(); i++ ) {
+		nextTarget = currentTargetEnt->targets[ i ].GetEntity();
+		if( nextTarget ) break;
+	}
+
+	currentTarget = nextTarget; //this is NULL if no next target
+
+	/*
+	if( !nextTarget ){
+		gameLocal.Warning("%s stopped its path: no target next.", GetName() );
+	}
+	*/
+
+	return ( nextTarget != NULL );
+}
+
+/*
+================
+idPathMover::PerformTriggerEnt
+================
+*/
+void idPathMover::PerformTriggerEnt( void ) {	
+	const char *entname;
+	idEntity * currentTargetEnt;
+
+	currentTargetEnt = currentTarget.GetEntity();
+
+	if( !currentTargetEnt ){
+		return; //no current target
+	}
+
+	if ( currentTargetEnt->spawnArgs.GetString( "triggerEnt", NULL, &entname ) ) {
+		//trigger it
+		idEntity *ent = gameLocal.FindEntity( entname );
+		if ( ent ) {
+			if ( ent->RespondsTo( EV_Activate ) || ent->HasSignal( SIG_TRIGGER ) ) {
+				ent->Signal( SIG_TRIGGER );
+				ent->ProcessEvent( &EV_Activate, this );
+			} 
+		}
+	}
+}
+
+/*
+================
+idPathMover::DoneMoving
+================
+*/
+void idPathMover::DoneMoving( void ) {	
+	//gameLocal.Warning("%s : dPathMover::DoneMoving", GetName() );
+	idMover::DoneMoving();
+
+	//restore settings if needed
+	if( restoreSettings ){
+		acceltime		= 1000.0f * spawnArgs.GetFloat( "accel_time", "0" );
+		deceltime		= 1000.0f * spawnArgs.GetFloat( "decel_time", "0" );
+		move_time		= 1000.0f * spawnArgs.GetFloat( "move_time", "1" );	// safe default value
+		move_speed		= spawnArgs.GetFloat( "move_speed", "0" );
+	}
+
+	//trigger if needed
+	PerformTriggerEnt();
+
+	//if nextOnTrigger, then it'll move next when triggered
+	if ( SetNextTarget() && !nextOnTrigger ) { 
+	   ContinuePath();
+	}
+}
+
+
+//ivan end
+
 /*
 ===============================================================================
 
@@ -1572,7 +2012,6 @@ idElevator
 */
 const idEventDef EV_PostArrival( "postArrival", NULL );
 const idEventDef EV_GotoFloor( "gotoFloor", "d" );
-const idEventDef EV_SetGuiStates("setGuiStates");
 
 CLASS_DECLARATION( idMover, idElevator )
 	EVENT( EV_Activate,				idElevator::Event_Activate )
@@ -1581,7 +2020,6 @@ CLASS_DECLARATION( idMover, idElevator )
 	EVENT( EV_PostArrival,			idElevator::Event_PostFloorArrival )
 	EVENT( EV_GotoFloor,			idElevator::Event_GotoFloor )
 	EVENT( EV_Touch,				idElevator::Event_Touch )
-	EVENT(EV_SetGuiStates,			idElevator::Event_SetGuiStates)
 END_CLASS
 
 /*
@@ -1975,11 +2413,6 @@ void idElevator::Event_PostFloorArrival() {
 	}
 }
 
-void idElevator::Event_SetGuiStates()
-{
-	SetGuiStates((currentFloor == 1) ? guiBinaryMoverStates[0] : guiBinaryMoverStates[1]);
-}
-
 /*
 ================
 idElevator::DoneMoving
@@ -2079,6 +2512,7 @@ Pos1 is "at rest", pos2 is "activated"
 */
 
 const idEventDef EV_Mover_ReturnToPos1( "<returntopos1>", NULL );
+const idEventDef EV_Mover_UseToReturnToPos1( "<useToReturnToPos1>", NULL );  //ivan
 const idEventDef EV_Mover_MatchTeam( "<matchteam>", "dd" );
 const idEventDef EV_Mover_Enable( "enable", NULL );
 const idEventDef EV_Mover_Disable( "disable", NULL );
@@ -2087,6 +2521,7 @@ CLASS_DECLARATION( idEntity, idMover_Binary )
 	EVENT( EV_FindGuiTargets,			idMover_Binary::Event_FindGuiTargets )
 	EVENT( EV_Thread_SetCallback,		idMover_Binary::Event_SetCallback )
 	EVENT( EV_Mover_ReturnToPos1,		idMover_Binary::Event_ReturnToPos1 )
+	EVENT( EV_Mover_UseToReturnToPos1,	idMover_Binary::Event_UseToReturnToPos1 )//ivan
 	EVENT( EV_Activate,					idMover_Binary::Event_Use_BinaryMover )
 	EVENT( EV_ReachedPos,				idMover_Binary::Event_Reached_BinaryMover )
 	EVENT( EV_Mover_MatchTeam,			idMover_Binary::Event_MatchActivateTeam )
@@ -2126,7 +2561,6 @@ idMover_Binary::idMover_Binary() {
 	updateStatus = 0;
 	areaPortal = 0;
 	blocked = false;
-	playerOnly = false;
 	fl.networkSync = true;
 }
 
@@ -2166,7 +2600,7 @@ void idMover_Binary::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteVec3( pos1 );
 	savefile->WriteVec3( pos2 );
-	savefile->WriteInt( (moverState_t)moverState );
+	savefile->WriteInt( (int)moverState ); //ivan - was: moverState_t
 
 	savefile->WriteObject( moveMaster );
 	savefile->WriteObject( activateChain );
@@ -2205,7 +2639,6 @@ void idMover_Binary::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt( gameRenderWorld->GetPortalState( areaPortal ) );
 	}
 	savefile->WriteBool( blocked );
-	savefile->WriteBool(playerOnly);
 
 	savefile->WriteInt( guiTargets.Num() );
 	for( i = 0; i < guiTargets.Num(); i++ ) {
@@ -2267,7 +2700,6 @@ void idMover_Binary::Restore( idRestoreGame *savefile ) {
 		gameLocal.SetPortalState( areaPortal, portalState );
 	}
 	savefile->ReadBool( blocked );
-	savefile->ReadBool(playerOnly);
 
 	guiTargets.Clear();
 	savefile->ReadInt( num );
@@ -2577,9 +3009,6 @@ void idMover_Binary::Event_OpenPortal( void ) {
 		if ( slave->areaPortal ) {
 			slave->SetPortalState( true );
 		}
-		if (slave->playerOnly) {
-			gameLocal.SetAASAreaState(slave->GetPhysics()->GetAbsBounds(), AREACONTENTS_CLUSTERPORTAL, false);
-		}
 	}
 }
 
@@ -2597,9 +3026,6 @@ void idMover_Binary::Event_ClosePortal( void ) {
 		if ( !slave->IsHidden() ) {
 			if ( slave->areaPortal ) {
 				slave->SetPortalState( false );
-			}
-			if (slave->playerOnly) {
-				gameLocal.SetAASAreaState(slave->GetPhysics()->GetAbsBounds(), AREACONTENTS_CLUSTERPORTAL, true);
 			}
 		}
 	}
@@ -2620,7 +3046,6 @@ idMover_Binary::Event_Reached_BinaryMover
 ================
 */
 void idMover_Binary::Event_Reached_BinaryMover( void ) {
-
 	if ( moverState == MOVER_1TO2 ) {
 		// reached pos2
 		idThread::ObjectMoveDone( move_thread, this );
@@ -2636,9 +3061,12 @@ void idMover_Binary::Event_Reached_BinaryMover( void ) {
 
 		UpdateBuddies( 1 );
 
-		if ( enabled && wait >= 0 && !spawnArgs.GetBool( "toggle" ) ) {
-			// return to pos1 after a delay
-			PostEventSec( &EV_Mover_ReturnToPos1, wait );
+		
+		if( spawnArgs.GetBool( "comeBack", "1" ) ){ //ivan - if true the entity comes back
+			if ( enabled && wait >= 0 && !spawnArgs.GetBool( "toggle" ) ) {
+				// return to pos1 after a delay
+				PostEventSec( &EV_Mover_ReturnToPos1, wait );
+			}
 		}
 
 		// fire targets
@@ -2835,14 +3263,13 @@ void idMover_Binary::Use_BinaryMover( idEntity *activator ) {
 
 	// if all the way up, just delay before coming down
 	if ( moverState == MOVER_POS2 ) {
-		idMover_Binary *slave;
-
 		if ( wait == -1 ) {
 			return;
 		}
 
 		SetGuiStates( guiBinaryMoverStates[MOVER_2TO1] );
 
+		idMover_Binary *slave; //un noted change from original sdk
 		for ( slave = this; slave != NULL; slave = slave->activateChain ) {
 			slave->CancelEvents( &EV_Mover_ReturnToPos1 );
 			slave->PostEventSec( &EV_Mover_ReturnToPos1, spawnArgs.GetBool( "toggle" ) ? 0 : wait );
@@ -2862,6 +3289,39 @@ void idMover_Binary::Use_BinaryMover( idEntity *activator ) {
 		return;
 	}
 }
+
+//ivan start
+
+
+/*
+================
+idMover_Binary::Event_UseToReturnToPos1
+================
+*/
+void idMover_Binary::Event_UseToReturnToPos1( void ) {
+	if( moverState == MOVER_POS2 || moverState == MOVER_1TO2 ){
+		Use_BinaryMover(this);
+	}
+}
+
+/*
+================
+idMover_Binary::DelayReturnToPos1
+================
+*/
+void idMover_Binary::DelayReturnToPos1( int delay ) {
+	if ( moveMaster != this ) {
+		moveMaster->DelayReturnToPos1( delay );
+		return;
+	}
+
+	idMover_Binary *slave;
+	for ( slave = this; slave != NULL; slave = slave->activateChain ) {
+		slave->CancelEvents( &EV_Mover_UseToReturnToPos1 ); 
+		slave->PostEventMS( &EV_Mover_UseToReturnToPos1, delay );
+	}
+}
+//ivan end
 
 /*
 ================
@@ -3267,7 +3727,6 @@ void idDoor::Spawn( void ) {
 	spawnArgs.GetBool( "crusher", "0", crusher );
 	spawnArgs.GetBool( "start_open", "0", start_open );
 	spawnArgs.GetBool( "no_touch", "0", noTouch );
-	spawnArgs.GetBool("player_only", "0", playerOnly);
 
 	// expects syncLock to be a door that must be closed before this door will open
 	spawnArgs.GetString( "syncLock", "", syncLock );
@@ -3326,10 +3785,6 @@ void idDoor::Spawn( void ) {
 	if ( !start_open ) {
 		// start closed
 		ProcessEvent( &EV_Mover_ClosePortal );
-
-		if (playerOnly) {
-			gameLocal.SetAASAreaState(GetPhysics()->GetAbsBounds(), AREACONTENTS_CLUSTERPORTAL, true);
-		}
 	}
 
 	int locked = spawnArgs.GetInt( "locked" );
@@ -3602,20 +4057,6 @@ bool idDoor::IsNoTouch( void ) {
 }
 
 /*
-================
-idDoor::AllowPlayerOnly
-================
-*/
-bool idDoor::AllowPlayerOnly(idEntity *ent)
-{
-	if (playerOnly && !ent->IsType(idPlayer::Type)) {
-		return false;
-	}
-
-	return true;
-}
-
-/*
 ======================
 idDoor::CalcTriggerBounds
 
@@ -3648,9 +4089,13 @@ void idDoor::CalcTriggerBounds( float size, idBounds &bounds ) {
 			best = i;
 		}
 	}
+	
+	int expand_bounds; //rev 2020	
+	expand_bounds = spawnArgs.GetInt( "expand_bounds" ); //rev 2020		
+	
 	normalAxisIndex = best;
-	bounds[0][ best ] -= size;
-	bounds[1][ best ] += size;
+	bounds[0][ best ] -= size + expand_bounds;		//rev 2020 increase bounds to trigger doors to open via touch
+	bounds[1][ best ] += size + expand_bounds;		//rev 2020 increase bounds to trigger doors to open via touch
 	bounds[0] -= GetPhysics()->GetOrigin();
 	bounds[1] -= GetPhysics()->GetOrigin();
 }
@@ -3843,9 +4288,7 @@ void idDoor::Event_Touch( idEntity *other, trace_t *trace ) {
 
 	if ( trigger && trace->c.id == trigger->GetId() ) {
 		if ( !IsNoTouch() && !IsLocked() && GetMoverState() != MOVER_1TO2 ) {
-			if (AllowPlayerOnly(other)) {
-				Use(this, other);
-			}
+			Use( this, other );
 		}
 	} else if ( sndTrigger && trace->c.id == sndTrigger->GetId() ) {
 		if ( other && other->IsType( idPlayer::Type ) && IsLocked() && gameLocal.time > nextSndTriggerTime ) {
@@ -4036,10 +4479,19 @@ idPlat
 ===============================================================================
 */
 
+//ivan start
+const idEventDef EV_GoToBinaryPos( "goToPos", "d" );
+//ivan end
+
 CLASS_DECLARATION( idMover_Binary, idPlat )
 	EVENT( EV_Touch,			idPlat::Event_Touch )
 	EVENT( EV_TeamBlocked,		idPlat::Event_TeamBlocked )
 	EVENT( EV_PartBlocked,		idPlat::Event_PartBlocked )
+
+	//ivan start
+	EVENT( EV_PostSpawn,		idPlat::Event_PostSpawn ) 
+	EVENT( EV_GoToBinaryPos,	idPlat::Event_GoToBinaryPos )
+	//ivan end
 END_CLASS
 
 /*
@@ -4049,6 +4501,7 @@ idPlat::idPlat
 */
 idPlat::idPlat( void ) {
 	trigger = NULL;
+	trigger_dest = NULL; //ivan 
 	localTriggerOrigin.Zero();
 	localTriggerAxis.Identity();
 }
@@ -4062,6 +4515,12 @@ idPlat::~idPlat( void ) {
 	if ( trigger ) {
 		delete trigger;
 	}
+
+	//ivan start
+	if ( trigger_dest ) {
+		delete trigger_dest;
+	}
+	//ivan end
 }
 
 /*
@@ -4073,6 +4532,10 @@ void idPlat::Save( idSaveGame *savefile ) const {
 	savefile->WriteClipModel( trigger );
 	savefile->WriteVec3( localTriggerOrigin );
 	savefile->WriteMat3( localTriggerAxis );
+	//ivan start
+	savefile->WriteClipModel( trigger_dest );
+	savefile->WriteInt( (int)mode ); 
+	//ivan end
 }
 
 /*
@@ -4084,6 +4547,43 @@ void idPlat::Restore( idRestoreGame *savefile ) {
 	savefile->ReadClipModel( trigger );
 	savefile->ReadVec3( localTriggerOrigin );
 	savefile->ReadMat3( localTriggerAxis );
+	//ivan start
+	savefile->ReadClipModel( trigger_dest );
+	savefile->ReadInt( (int &)mode ); 
+	//ivan end
+}
+
+//ivan start
+/*
+===============
+idPlat::GetTargetPos
+===============
+*/
+bool idPlat::GetTargetPos( idVec3 &pos ) {
+	int i;
+	idEntity *firstTarget = NULL;
+
+	for ( i = 0; i < targets.Num(); i++ ) {
+		firstTarget = targets[ i ].GetEntity();
+		if(firstTarget) break;
+	}
+
+	if( !firstTarget ){
+		//gameLocal.Warning("%s has no targets!", GetName() );
+		return false;
+	}
+
+	pos = firstTarget->GetPhysics()->GetOrigin();
+	return true;
+}
+
+/*
+===============
+idPlat::Event_PostSpawn
+===============
+*/
+void idPlat::Event_PostSpawn( void ){
+	Setup();
 }
 
 /*
@@ -4091,7 +4591,21 @@ void idPlat::Restore( idRestoreGame *savefile ) {
 idPlat::Spawn
 ===============
 */
-void idPlat::Spawn( void ) {
+void idPlat::Spawn( void ) {	 //un noted change from original sdk
+	if ( spawnArgs.GetBool( "use_target", "0" ) && ( gameLocal.GameState() == GAMESTATE_STARTUP ) ) {
+		PostEventMS( &EV_PostSpawn, 0 );
+	} else {
+		// not during startup, so it's ok to get the targets
+		Setup();
+	}
+}
+
+/*
+===============
+idPlat::Setup
+===============
+*/
+void idPlat::Setup( void ) {
 	float	lip;
 	float	height;
 	float	time;
@@ -4112,12 +4626,37 @@ void idPlat::Spawn( void ) {
 		height = ( GetPhysics()->GetBounds()[1][2] - GetPhysics()->GetBounds()[0][2] ) - lip;
 	}
 
-	spawnArgs.GetBool( "no_touch", "0", noTouch );
+	//ivan start
+	mode = (platMode_t) spawnArgs.GetInt( "mode", "0" );
 
-	// pos1 is the rest (bottom) position, pos2 is the top
-	pos2 = GetPhysics()->GetOrigin();
-	pos1 = pos2;
-	pos1[2] -= height;
+	//was: spawnArgs.GetBool( "no_touch", "0", noTouch );
+
+	//noTouch is always true for PLAT_MODE_AUTOREVERT mode 
+	//because we use the entity itself for collision detection --> don't spawn the trigger 
+	if( mode == PLAT_MODE_AUTOREVERT ){
+		noTouch = true;
+	}else{
+		spawnArgs.GetBool( "no_touch", "0", noTouch );
+	}
+
+	//toggle is always true for PLAT_MODE_AUTOREVERT mode 
+	//so it never goes back on its own
+	if( mode == PLAT_MODE_BINARY_ELEVATOR ){
+		spawnArgs.SetBool("toggle", true);
+	}
+	
+
+	//use a target to define the top pos 
+	if( spawnArgs.GetBool( "use_target", "0" ) && GetTargetPos( pos2 ) ){
+		// pos1 is the rest (bottom) position, pos2 is the top
+		pos1 = GetPhysics()->GetOrigin();
+	}else{ //old
+		// pos1 is the rest (bottom) position, pos2 is the top
+		pos2 = GetPhysics()->GetOrigin();
+		pos1 = pos2;
+		pos1[2] -= height;
+	} //ivan end
+	
 
 	if ( spawnArgs.GetFloat( "time", "1", time ) ) {
 		InitTime( pos1, pos2, time, accel, decel );
@@ -4131,9 +4670,16 @@ void idPlat::Spawn( void ) {
 	// spawn the trigger if one hasn't been custom made
 	if ( !noTouch ) {
 		// spawn trigger
-		SpawnPlatTrigger( pos1 );
+		SpawnPlatTrigger( false ); //bottom (rest) pos //un noted change from original sdk
+
+		//ivan start
+		if( mode == PLAT_MODE_BINARY_ELEVATOR ){
+			SpawnPlatTrigger( true ); //top (dest) pos
+		}
+		//ivan end
 	}
 }
+//ivan end
 
 /*
 ================
@@ -4147,10 +4693,16 @@ void idPlat::Think( void ) {
 	idMover_Binary::Think();
 
 	if ( thinkFlags & TH_PHYSICS ) {
-		// update trigger position
+		// update trigger position in case we are bound to something
 		if ( GetMasterPosition( masterOrigin, masterAxis ) ) {
 			if ( trigger ) {
 				trigger->Link( gameLocal.clip, this, 0, masterOrigin + localTriggerOrigin * masterAxis, localTriggerAxis * masterAxis );
+
+				//ivan start - use the same info for trigger_dest - just add the delta (pos2 - pos1)
+				if ( trigger_dest ) {
+					trigger_dest->Link( gameLocal.clip, this, 0, trigger->GetOrigin() + pos2 - pos1, trigger->GetAxis() );
+				}
+				//ivan end
 			}
 		}
 	}
@@ -4198,7 +4750,7 @@ void idPlat::GetLocalTriggerPosition( const idClipModel *trigger ) {
 idPlat::SpawnPlatTrigger
 ===============
 */
-void idPlat::SpawnPlatTrigger( idVec3 &pos ) {
+void idPlat::SpawnPlatTrigger( bool dest ) { //ivan - was idVec3 &pos
 	idBounds		bounds;
 	idVec3			tmin;
 	idVec3			tmax;
@@ -4225,9 +4777,25 @@ void idPlat::SpawnPlatTrigger( idVec3 &pos ) {
 		tmax[1] = tmin[1] + 1;
 	}
 
+	//ivan start
+	if( dest ){
+		trigger_dest = new idClipModel( idTraceModel( idBounds( tmin, tmax ) ) );
+		trigger_dest->Link( gameLocal.clip, this, 254, pos2, mat3_identity );
+		trigger_dest->SetContents( CONTENTS_TRIGGER );
+	}else{
+		trigger = new idClipModel( idTraceModel( idBounds( tmin, tmax ) ) );
+		trigger->Link( gameLocal.clip, this, 255, pos1, mat3_identity ); //was: GetPhysics()->GetOrigin()
+		trigger->SetContents( CONTENTS_TRIGGER );
+	}
+	
+
+	/*
+	//was:
 	trigger = new idClipModel( idTraceModel( idBounds( tmin, tmax ) ) );
 	trigger->Link( gameLocal.clip, this, 255, GetPhysics()->GetOrigin(), mat3_identity );
 	trigger->SetContents( CONTENTS_TRIGGER );
+	*/
+	//ivan end
 }
 
 /*
@@ -4236,6 +4804,9 @@ idPlat::Event_Touch
 ===============
 */
 void idPlat::Event_Touch( idEntity *other, trace_t *trace ) {
+	//ivan start
+	/*
+	was:
 	if ( !other->IsType( idPlayer::Type ) ) {
 		return;
 	}
@@ -4243,6 +4814,50 @@ void idPlat::Event_Touch( idEntity *other, trace_t *trace ) {
 	if ( ( GetMoverState() == MOVER_POS1 ) && trigger && ( trace->c.id == trigger->GetId() ) && ( other->health > 0 ) ) {
 		Use_BinaryMover( other );
 	}
+	*/
+	
+	if ( !other->IsType( idPlayer::Type ) ) {
+		return;
+	}
+
+	if( other->health <= 0 ){ //un noted change from original sdk
+		return;
+	}
+	
+	
+	if( mode == PLAT_MODE_BINARY_ELEVATOR ){
+		if( gameLocal.time - stateStartTime > SEC2MS(wait) ){
+			if ( moverState == MOVER_POS1 ) { //use the trigger
+				if ( trigger && ( trace->c.id == trigger->GetId() ) ) { //if the trigger has been touched
+					//gameLocal.Printf("GotoPosition2 %d\n", trace->c.id);
+					Use_BinaryMover( other ); 
+				}
+			} else if ( moverState == MOVER_POS2 ){
+				if ( trigger_dest && ( trace->c.id == trigger_dest->GetId() ) ) {
+					//gameLocal.Printf("GotoPosition1 %d\n", trace->c.id);
+					Use_BinaryMover( other ); 
+				}
+			}
+		}
+	}else if( mode == PLAT_MODE_AUTOREVERT ){
+		//It shouldn't use a trigger. We need accurate collision detection, so we use the entity itself.
+
+		//go to dest pos if we are at (ot going to) the default pos
+		if ( moverState == MOVER_POS1 || moverState == MOVER_2TO1 ) { 
+			Use_BinaryMover( other ); 
+		}
+
+		//NOTE: this is meant to be placed after the Use_BinaryMover call. Don't add "else" and don't move it above.
+		//delay the return until player is touching me 
+		if ( moverState == MOVER_POS2 || moverState == MOVER_1TO2 ){ //no need to delay if we are already coming back
+			DelayReturnToPos1( 100 );
+		}
+	}else{ //default
+		if ( ( moverState == MOVER_POS1 ) && trigger && ( trace->c.id == trigger->GetId() ) ) {
+			Use_BinaryMover( other );
+		}
+	}
+	//ivan end
 }
 
 /*
@@ -4266,6 +4881,93 @@ void idPlat::Event_PartBlocked( idEntity *blockingEntity ) {
 	}
 }
 
+//ivan start
+/*
+===============
+idPlat::Event_GoToBinaryPos
+===============
+*/
+void idPlat::Event_GoToBinaryPos( int dest ) {
+	idPlayer *player;
+
+	player = gameLocal.GetLocalPlayer();
+	if ( !player ) {
+		return;
+	}
+	
+	if ( dest != 0 ) {
+		//go to default pos if we are at (ot going to) the dest pos
+		if ( moverState == MOVER_POS2 || moverState == MOVER_1TO2 ) { 
+			Use_BinaryMover( player ); 
+		}
+	}else{
+		//go to dest pos if we are at (ot going to) the default pos
+		if ( moverState == MOVER_POS1 || moverState == MOVER_2TO1 ) { 
+			Use_BinaryMover( player ); 
+		}
+	}
+}
+//ivan end
+
+
+#if 0
+//ivan start
+/*
+===============================================================================
+
+idPlatAutoRevert
+
+===============================================================================
+*/
+CLASS_DECLARATION( idPlat, idPlatAutoRevert )
+	EVENT( EV_Touch,			idPlatAutoRevert::Event_Touch )
+END_CLASS
+
+/*
+===============
+idPlatAutoRevert::idPlatAutoRevert
+===============
+*/
+idPlatAutoRevert::idPlatAutoRevert( void ) {
+}
+
+/*
+==============
+idPlatAutoRevert::Event_Touch
+===============
+*/
+void idPlatAutoRevert::Event_Touch( idEntity *other, trace_t *trace ) {
+	//gameLocal.Printf("touched, state: %d\n", moverState);
+
+	if ( !other->IsType( idPlayer::Type ) ) {
+		return;
+	}
+
+	if( other->health <= 0 ){
+		return;
+	}
+
+	/*
+	//It shouldn't use a trigger. We need accurate collision detection, so we use the entity itself.
+	//Make sure "no_touch" is true in the def.
+	if( trigger && ( trace->c.id != trigger->GetId() ) ){ //if we use a trigger, use only it.
+		return;
+	}
+	*/
+
+	//go to dest pos if we are at (ot going to) the default pos
+	if ( moverState == MOVER_POS1 || moverState == MOVER_2TO1 ) { 
+		Use_BinaryMover( other ); 
+	}
+
+	//delay the return until player is touching me 
+	if ( moverState == MOVER_POS2 || moverState == MOVER_1TO2 ){ //no need to delay if we are already coming back
+		DelayReturnToPos1( 100 );
+	}
+}
+
+//ivan end
+#endif
 
 /*
 ===============================================================================
@@ -4560,6 +5262,7 @@ idPendulum::idPendulum
 */
 idPendulum::idPendulum( void ) {
 }
+
 
 /*
 ===============

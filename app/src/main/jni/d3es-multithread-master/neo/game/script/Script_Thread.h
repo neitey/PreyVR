@@ -29,10 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SCRIPT_THREAD_H__
 #define __SCRIPT_THREAD_H__
 
-#include "script/Script_Interpreter.h"
-#include "gamesys/Class.h"
-#include "gamesys/Event.h"
-
 extern const idEventDef EV_Thread_Execute;
 extern const idEventDef EV_Thread_SetCallback;
 extern const idEventDef EV_Thread_TerminateThread;
@@ -125,7 +121,6 @@ private:
 	void						Event_SetCvar( const char *name, const char *value ) const;
 	void						Event_GetCvar( const char *name ) const;
 	void						Event_Random( float range ) const;
-	void						Event_RandomInt(int range) const;
 	void						Event_GetTime( void );
 	void						Event_KillThread( const char *name );
 	void						Event_GetEntity( const char *name );
@@ -145,16 +140,12 @@ private:
 	void						Event_AngToUp( idAngles &ang );
 	void						Event_GetSine( float angle );
 	void						Event_GetCosine( float angle );
-	void						Event_GetArcSine(float a);
-	void						Event_GetArcCosine(float a);
 	void						Event_GetSquareRoot( float theSquare );
 	void						Event_VecNormalize( idVec3 &vec );
 	void						Event_VecLength( idVec3 &vec );
 	void						Event_VecDotProduct( idVec3 &vec1, idVec3 &vec2 );
 	void						Event_VecCrossProduct( idVec3 &vec1, idVec3 &vec2 );
 	void						Event_VecToAngles( idVec3 &vec );
-	void						Event_VecToOrthoBasisAngles(idVec3 &vec);
-	void						Event_RotateVector(idVec3 &vec, idVec3 &ang);
 	void						Event_OnSignal( int signal, idEntity *ent, const char *func );
 	void						Event_ClearSignalThread( int signal, idEntity *ent );
 	void						Event_SetCamera( idEntity *ent );
@@ -192,6 +183,10 @@ private:
 	void						Event_DebugBounds( const idVec3 &color, const idVec3 &mins, const idVec3 &maxs, const float lifetime );
 	void						Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime );
 	void						Event_InfluenceActive( void );
+	
+	//ivan start
+	void						Event_StopCurrentMusic( void );
+	//ivan end
 
 public:
 								CLASS_PROTOTYPE( idThread );

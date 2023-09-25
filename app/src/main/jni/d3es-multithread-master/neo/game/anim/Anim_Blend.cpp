@@ -26,19 +26,13 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "renderer/ModelManager.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "gamesys/SysCvar.h"
-#include "ai/AI.h"
-#include "Entity.h"
-#include "Fx.h"
-#include "Game_local.h"
-
-#include "anim/Anim.h"
+#include "../Game_local.h"
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
-		"all", "torso", "legs", "head", "eyelids", "rightHand", "leftHand"
+	"all", "torso", "legs", "head", "eyelids"
 };
 
 /***********************************************************************
@@ -321,7 +315,17 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		}
 		fc.type = FC_SCRIPTFUNCTIONOBJECT;
 		fc.string = new idStr( token );
-	} else if ( token == "event" ) {
+	}
+	//ivan start
+	else if ( token == "weapon_call" ) {
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		fc.type = FC_SCRIPTFUNCTIONWEAPON;
+		fc.string = new idStr( token );
+	}
+	//ivan end
+	else if ( token == "event" ) {
 		if( !src.ReadTokenOnLine( &token ) ) {
 			return "Unexpected end of line";
 		}
@@ -557,7 +561,69 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		}
 		fc.type = FC_LAUNCHMISSILE;
 		fc.string = new idStr( token );
-	} else if ( token == "fire_missile_at_target" ) {
+	}
+	//ivan start
+	else if ( token == "fire_weapon" ) { 
+		fc.type = FC_FIREWEAPON;
+	} 
+	/*
+	else if ( token == "startMeleeBeam" ) { 
+		if( !src.ReadTokenOnLine( &token ) ) {
+			//return "Unexpected end of line";
+			fc.string = new idStr( "0" ); //default is 0
+		}else{
+			fc.string = new idStr( token );
+		}
+		fc.type = FC_START_MELEE_BEAM;
+	} 
+	else if ( token == "stopMeleeBeam" ) { 
+		fc.type = FC_STOP_MELEE_BEAM;
+	} 
+	*/
+	else if ( token == "startAutoMelee" ) {
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		
+		fc.string = new idStr( token ); //dmg mult
+
+		if( !src.ReadTokenOnLine( &token ) ) {
+			fc.index = -1; //default is no beam
+		}else{
+			fc.index = atoi( token ); 
+		}
+
+		fc.type = FC_START_AUTOMELEE;
+		
+	}
+	else if ( token == "stopAutoMelee" ) { 
+		fc.type = FC_STOP_AUTOMELEE;
+	}
+
+	else if ( token == "startKick" ) {
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+
+		if ( !gameLocal.FindEntityDef( token, false ) ) {
+			return "Unknown melee def";
+		}
+		
+		fc.string = new idStr( token ); //save the meleeName in fc.string
+
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+
+		fc.type = FC_START_KICK;
+		fc.index = atoi( token ); //save dmg mult - yes this is the lazy way, but float values cannot be used anyway...
+	}
+	else if ( token == "stopKick" ) { 
+		fc.type = FC_STOP_KICK;
+	}
+
+	//ivan end
+	else if ( token == "fire_missile_at_target" ) {
 		if( !src.ReadTokenOnLine( &token ) ) {
 			return "Unexpected end of line";
 		}
@@ -571,78 +637,6 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_FIREMISSILEATTARGET;
 		fc.string = new idStr( token );
 		fc.index = jointInfo->num;
-	} else if (token == "launch_projectile") {
-		if (!src.ReadTokenOnLine(&token)) {
-			return "Unexpected end of line";
-		}
-
-		if (!declManager->FindDeclWithoutParsing(DECL_ENTITYDEF, token, false)) {
-			return "Unknown projectile def";
-		}
-
-		fc.type = FC_LAUNCH_PROJECTILE;
-		fc.string = new idStr(token);
-	} else if (token == "trigger_fx") {
-
-		if (!src.ReadTokenOnLine(&token)) {
-			return "Unexpected end of line";
-		}
-
-		jointInfo = modelDef->FindJoint(token);
-
-		if (!jointInfo) {
-			return va("Joint '%s' not found", token.c_str());
-		}
-
-		if (!src.ReadTokenOnLine(&token)) {
-			return "Unexpected end of line";
-		}
-
-		if (!declManager->FindType(DECL_FX, token, false)) {
-			return "Unknown FX def";
-		}
-
-		fc.type = FC_TRIGGER_FX;
-		fc.string = new idStr(token);
-		fc.index = jointInfo->num;
-
-	} else if (token == "start_emitter") {
-
-		idStr str;
-
-		if (!src.ReadTokenOnLine(&token)) {
-			return "Unexpected end of line";
-		}
-
-		str = token + " ";
-
-		if (!src.ReadTokenOnLine(&token)) {
-			return "Unexpected end of line";
-		}
-
-		jointInfo = modelDef->FindJoint(token);
-
-		if (!jointInfo) {
-			return va("Joint '%s' not found", token.c_str());
-		}
-
-		if (!src.ReadTokenOnLine(&token)) {
-			return "Unexpected end of line";
-		}
-
-		str += token;
-		fc.type = FC_START_EMITTER;
-		fc.string = new idStr(str);
-		fc.index = jointInfo->num;
-
-	} else if (token == "stop_emitter") {
-
-		if (!src.ReadTokenOnLine(&token)) {
-			return "Unexpected end of line";
-		}
-
-		fc.type = FC_STOP_EMITTER;
-		fc.string = new idStr(token);
 	} else if ( token == "footstep" ) {
 		fc.type = FC_FOOTSTEP;
 	} else if ( token == "leftfoot" ) {
@@ -763,6 +757,23 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					gameLocal.CallObjectFrameCommand( ent, command.string->c_str() );
 					break;
 				}
+				//ivan start
+				case FC_SCRIPTFUNCTIONWEAPON: {
+					if( !ent->IsType( idPlayer::Type )) break;
+
+					//cast it
+					idPlayer * castedEnt;
+					idWeapon * castedEntWeapon;
+
+					castedEnt = static_cast<idPlayer *>( ent );
+					castedEntWeapon = castedEnt->weapon.GetEntity();
+
+					if(castedEntWeapon){
+						gameLocal.CallObjectFrameCommand( castedEntWeapon, command.string->c_str() );
+					}
+					break;
+				}
+				//ivan end								  
 				case FC_EVENTFUNCTION: {
 					const idEventDef *ev = idEventDef::FindEvent( command.string->c_str() );
 					ent->ProcessEvent( ev );
@@ -893,7 +904,6 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 
 					target = gameLocal.FindEntity( command.string->c_str() );
 					if ( target ) {
-						SetTimeState ts(target->timeGroup);
 						target->Signal( SIG_TRIGGER );
 						target->ProcessEvent( &EV_Activate, ent );
 						target->TriggerGuis();
@@ -935,30 +945,67 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					ent->ProcessEvent( &AI_AttackMissile, command.string->c_str() );
 					break;
 				}
+				//ivan start
+				case FC_FIREWEAPON: {
+					ent->ProcessEvent( &AI_Bot_FireWeapon );
+					break;
+				}
+				/*
+				case FC_START_MELEE_BEAM: {
+					int value;
+					value = atoi(command.string->c_str());
+
+					ent->ProcessEvent( &EV_Weapon_StartMeleeBeam, value );
+					break;
+				}
+				case FC_STOP_MELEE_BEAM: {
+					ent->ProcessEvent( &EV_Weapon_StopMeleeBeam );
+					break;
+				}
+				*/
+									
+				case FC_START_AUTOMELEE: {
+					float value;
+					value = atof(command.string->c_str());
+
+					ent->ProcessEvent( &EV_Weapon_StartAutoMelee, value, command.index );
+					break;
+				}
+				case FC_STOP_AUTOMELEE: {
+					ent->ProcessEvent( &EV_Weapon_StopAutoMelee );
+					break;
+				}
+				case FC_START_KICK: {
+					ent->ProcessEvent( &EV_Player_StartKick, command.string->c_str(), float(command.index) );
+					break;
+				}
+				case FC_STOP_KICK: {
+					ent->ProcessEvent( &EV_Player_StopKick );
+					break;
+				}/*
+				case FC_COMBOALLOWHIGHPAIN: {
+					ent->ProcessEvent( &EV_Player_ComboForceHighPain, 0 );
+					break;
+				}
+				case FC_COMBODENYHIGHPAIN: {
+					ent->ProcessEvent( &EV_Player_ComboForceHighPain, -1 );
+					break;
+				}
+				
+				case FC_ENABLEGRAVITYINANIMMOVE: {
+					float value = atof(command.string->c_str());
+					ent->ProcessEvent( &EV_Player_SetGravityInAnimMove, value );
+					break;
+				}
+				case FC_DISABLEGRAVITYINANIMMOVE: {
+					ent->ProcessEvent( &EV_Player_SetGravityInAnimMove, 0.0f );
+					break;
+				}
+				*/
+				//ivan end
 				case FC_FIREMISSILEATTARGET: {
 					ent->ProcessEvent( &AI_FireMissileAtTarget, modelDef->GetJointName( command.index ), command.string->c_str() );
 					break;
-				}
-				case FC_LAUNCH_PROJECTILE: {
-					ent->ProcessEvent(&AI_LaunchProjectile, command.string->c_str());
-					break;
-				}
-				case FC_TRIGGER_FX: {
-					ent->ProcessEvent(&AI_TriggerFX, modelDef->GetJointName(command.index), command.string->c_str());
-					break;
-				}
-				case FC_START_EMITTER: {
-					int index = command.string->Find(" ");
-
-					if (index >= 0) {
-						idStr name = command.string->Left(index);
-						idStr particle = command.string->Right(command.string->Length() - index - 1);
-						ent->ProcessEvent(&AI_StartEmitter, name.c_str(), modelDef->GetJointName(command.index), particle.c_str());
-					}
-				}
-
-				case FC_STOP_EMITTER: {
-					ent->ProcessEvent(&AI_StopEmitter, command.string->c_str());
 				}
 				case FC_FOOTSTEP : {
 					ent->ProcessEvent( &EV_Footstep );
@@ -2590,7 +2637,13 @@ bool idDeclModelDef::ParseAnim( idLexer &src, int numDefaultAnims ) {
 			}
 			if ( token == "}" ) {
 				break;
-			}else if ( token == "prevent_idle_override" ) {
+			}
+			//ivan start
+			else if ( token == "exclusive_commands" ) {
+				flags.exclusive_commands = true;
+			}
+			//ivan end
+			else if ( token == "prevent_idle_override" ) {
 				flags.prevent_idle_override = true;
 			} else if ( token == "random_cycle_start" ) {
 				flags.random_cycle_start = true;
@@ -3333,7 +3386,8 @@ void idAnimator::FreeData( void ) {
 idAnimator::PushAnims
 =====================
 */
-void idAnimator::PushAnims( int channelNum, int currentTime, int blendTime ) {
+//was: void idAnimator::PushAnims( int channelNum, int currentTime, int blendTime ) {
+void idAnimator::PushAnims( int channelNum, int currentTime, int blendTime, bool exclusiveCommands ) { //ivan
 	int			i;
 	idAnimBlend *channel;
 
@@ -3342,9 +3396,22 @@ void idAnimator::PushAnims( int channelNum, int currentTime, int blendTime ) {
 		return;
 	}
 
+	//ivan - set the allowFrameCommands flags if needed
+	/*	was:
 	for( i = ANIM_MaxAnimsPerChannel - 1; i > 0; i-- ) {
 		channel[ i ] = channel[ i - 1 ];
 	}
+	*/
+
+	for( i = ANIM_MaxAnimsPerChannel - 1; i > 0; i-- ) {
+		channel[ i ] = channel[ i - 1 ];
+		if( exclusiveCommands ){
+			//gameLocal.Printf("Disable commands for other anims on the same channel\n" );
+			channel[ i ].AllowFrameCommands( false ); //the others can only if not exlusive
+		}
+	}
+
+	//ivan end
 
 	channel[ 0 ].Reset( modelDef );
 	channel[ 1 ].Clear( currentTime, blendTime );
@@ -3621,8 +3688,13 @@ void idAnimator::PlayAnim( int channelNum, int animNum, int currentTime, int ble
 		return;
 	}
 
-	PushAnims( channelNum, currentTime, blendTime );
-	channels[ channelNum ][ 0 ].PlayAnim( modelDef, animNum, currentTime, blendTime );
+	//ivan start
+	// shift the other anims on the same channel so new one is always at pos 0
+	//was: PushAnims( channelNum, currentTime, blendTime );	
+	PushAnims( channelNum, currentTime, blendTime, GetAnimFlags( animNum ).exclusive_commands ); //use the flag!
+	//ivan end
+
+	channels[ channelNum ][ 0 ].PlayAnim( modelDef, animNum, currentTime, blendTime ); 
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}
@@ -4535,8 +4607,8 @@ bool idAnimator::GetJointTransform( jointHandle_t jointHandle, int currentTime, 
 	if ( !modelDef || ( jointHandle < 0 ) || ( jointHandle >= modelDef->NumJoints() ) ) {
 		return false;
 	}
-    if(currentTime != -1)
-	    CreateFrame( currentTime, false );
+
+	CreateFrame( currentTime, false );
 
 	offset = joints[ jointHandle ].ToVec3();
 	axis = joints[ jointHandle ].ToMat3();

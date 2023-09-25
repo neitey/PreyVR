@@ -26,11 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
 #include "Game_local.h"
-
-#include "Pvs.h"
 
 #define MAX_BOUNDS_AREAS	16
 
@@ -1420,35 +1419,36 @@ void idPVS::ReadPVS( const pvsHandle_t handle, const idBitMsg &msg ) {
 
 #endif
 
+#ifdef _PORTALSKY //un noted code change from original sdk
 /*
 ================
 idPVS::CheckAreasForPortalSky
 ================
 */
-bool idPVS::CheckAreasForPortalSky(const pvsHandle_t handle, const idVec3 &origin)
-{
+bool idPVS::CheckAreasForPortalSky( const pvsHandle_t handle, const idVec3 &origin ) {
 	int j, sourceArea;
 
-	if (handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h) {
+	if ( handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h ) {
 		return false;
 	}
 
-	sourceArea = gameRenderWorld->PointInArea(origin);
+	sourceArea = gameRenderWorld->PointInArea( origin );
 
-	if (sourceArea == -1) {
+	if ( sourceArea == -1 ) {
 		return false;
 	}
 
-	for (j = 0; j < numAreas; j++) {
+	for ( j = 0; j < numAreas; j++ ) {
 
-		if (!(currentPVS[handle.i].pvs[j>>3] & (1 << (j&7)))) {
+		if ( !( currentPVS[handle.i].pvs[j>>3] & (1 << (j&7)) ) ) {
 			continue;
 		}
 
-		if (gameRenderWorld->CheckAreaForPortalSky(j)) {
+		if ( gameRenderWorld->CheckAreaForPortalSky( j ) ) {
 			return true;
 		}
 	}
 
 	return false;
 }
+#endif

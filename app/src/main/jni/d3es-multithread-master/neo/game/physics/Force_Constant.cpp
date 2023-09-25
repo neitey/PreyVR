@@ -26,11 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "physics/Physics.h"
-#include "gamesys/SaveGame.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "physics/Force_Constant.h"
+#include "../Game_local.h"
 
 CLASS_DECLARATION( idForce, idForce_Constant )
 END_CLASS

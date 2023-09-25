@@ -26,11 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "gamesys/SysCvar.h"
-#include "script/Script_Thread.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Class.h"
+#include "../Game_local.h"
+
+#include "TypeInfo.h"
 
 /*
 
@@ -942,13 +943,6 @@ bool idClass::ProcessEventArgPtr( const idEventDef *ev, intptr_t *data ) {
 
 	assert( ev );
 	assert( idEvent::initialized );
-
-	SetTimeState ts;
-
-	if (IsType(idEntity::Type)) {
-		idEntity *ent = (idEntity *)this;
-		ts.PushState(ent->timeGroup);
-	}
 
 	if ( g_debugTriggers.GetBool() && ( ev == &EV_Activate ) && IsType( idEntity::Type ) ) {
 		const idEntity *ent = *reinterpret_cast<idEntity **>( data );

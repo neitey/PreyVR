@@ -29,13 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_MOVEABLE_H__
 #define __GAME_MOVEABLE_H__
 
-#include "physics/Physics_RigidBody.h"
-#include "script/Script_Thread.h"
-#include "gamesys/Event.h"
-#include "Entity.h"
-#include "Player.h"
-#include "Projectile.h"
-
 /*
 ===============================================================================
 
@@ -46,6 +39,9 @@ If you have questions concerning this license or the applicable additional terms
 
 extern const idEventDef EV_BecomeNonSolid;
 extern const idEventDef EV_IsAtRest;
+//ivan start
+extern const idEventDef EV_ActivatePhysics; 
+//ivan end
 
 class idMoveable : public idEntity {
 public:
@@ -70,18 +66,11 @@ public:
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
-    void					SetAttacker( idEntity* ent );
-    const idEntity* 		GetAttacker()
-    {
-        return attacker;
-    }
 
 protected:
 	idPhysics_RigidBody		physicsObj;				// physics object
 	idStr					brokenModel;			// model set when health drops down to or below zero
 	idStr					damage;					// if > 0 apply damage to hit entities
-	idStr					monsterDamage;
-	idEntity				*attacker;
 	idStr					fxCollide;				// fx system to start when collides with something
 	int						nextCollideFxTime;		// next time it is ok to spawn collision fx
 	float					minDamageVelocity;		// minimum velocity before moveable applies damage
@@ -94,6 +83,15 @@ protected:
 	bool					canDamage;				// only apply damage when this is set
 	int						nextDamageTime;			// next time the movable can hurt the player
 	int						nextSoundTime;			// next time the moveable can make a sound
+
+	//ivan start
+	float					lockedXpos;
+	bool					isXlocked;
+#ifdef _WATER_PHYSICS
+	void					Event_ActivateIfInWater( void );
+#endif
+	void					Event_ActivatePhysics( void );
+	//ivan end
 
 	const idMaterial *		GetRenderModelMaterial( void ) const;
 	void					BecomeNonSolid( void );
@@ -165,11 +163,6 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-    bool					IsStable();
-    void					SetStability( bool stability );
-	void					StartBurning();
-	void					StopBurning();
-
 	virtual void			Think( void );
 	virtual void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 								const char *damageDefName, const float damageScale, const int location );
@@ -202,11 +195,11 @@ private:
 	int						particleTime;
 	int						lightTime;
 	float					time;
-    bool					isStable;
 
 	void					AddParticles( const char *name, bool burn );
 	void					AddLight( const char *name , bool burn );
 	void					ExplodingEffects( void );
+	void					SpawnDrops( void ); //ivan
 
 	void					Event_Activate( idEntity *activator );
 	void					Event_Respawn();

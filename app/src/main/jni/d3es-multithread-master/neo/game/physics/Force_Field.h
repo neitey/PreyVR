@@ -29,11 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __FORCE_FIELD_H__
 #define __FORCE_FIELD_H__
 
-#include "physics/Force.h"
-#include "physics/Clip.h"
-#include "Entity.h"
-#include "AFEntity.h"
-
 /*
 ===============================================================================
 
@@ -53,6 +48,14 @@ enum forceFieldApplyType {
 	FORCEFIELD_APPLY_VELOCITY,
 	FORCEFIELD_APPLY_IMPULSE
 };
+
+//ivan start
+enum forceFieldMagnitudeType {
+	FORCEFIELD_MAGNITUDE_FIXED, //no changes to the specified magnitude
+	FORCEFIELD_MAGNITUDE_DISTANCE, //the closer it is, the higher the magnitude is
+	FORCEFIELD_MAGNITUDE_DISTANCE_INV
+};
+//ivan end
 
 class idForce_Field : public idForce {
 
@@ -80,6 +83,13 @@ public:
 	void				SetMonsterOnly( bool set ) { monsterOnly = set; }
 						// clip model describing the extents of the force field
 	void				SetClipModel( idClipModel *clipModel );
+	//ivan start
+						// should the force field apply a force, velocity or impulse
+	void				SetMagnitudeType( const forceFieldMagnitudeType type ) { magnitudeType = type; }
+	void				SetOldVelocityPct( float oldPct ) { oldVelocityPct = oldPct; }
+	void				SetDistanceBounds( float offset, float radius );
+	//ivan end
+
 
 public: // common force interface
 	virtual void		Evaluate( int time );
@@ -88,12 +98,23 @@ private:
 	// force properties
 	forceFieldType		type;
 	forceFieldApplyType	applyType;
+	//ivan start
+	forceFieldMagnitudeType		magnitudeType; 
+	float				distance_radius;
+	float				distance_offset;
+	float				oldVelocityPct;
+	//ivan end
 	float				magnitude;
 	idVec3				dir;
 	float				randomTorque;
 	bool				playerOnly;
 	bool				monsterOnly;
 	idClipModel *		clipModel;
+
+	//ivan start
+	float				GetDistancePct( float distance, bool inverse );
+	//ivan end
+	
 };
 
 #endif /* !__FORCE_FIELD_H__ */

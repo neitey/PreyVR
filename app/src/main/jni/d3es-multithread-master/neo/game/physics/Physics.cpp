@@ -26,10 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "Game_local.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "physics/Physics.h"
+#include "../Game_local.h"
 
 ABSTRACT_DECLARATION( idClass, idPhysics )
 END_CLASS

@@ -26,11 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "script/Script_Thread.h"
-#include "Player.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "Trigger.h"
+#include "Game_local.h"
 
 /*
 ===============================================================================
@@ -384,7 +383,6 @@ bool idTrigger_Multi::CheckFacing( idEntity *activator ) {
 	return true;
 }
 
-
 /*
 ================
 idTrigger_Multi::TriggerAction
@@ -397,9 +395,9 @@ void idTrigger_Multi::TriggerAction( idEntity *activator ) {
 	if ( wait >= 0 ) {
 		nextTriggerTime = gameLocal.time + SEC2MS( wait + random * gameLocal.random.CRandomFloat() );
 	} else {
-		// If the player spawned inside the trigger, the player Spawn function called Think directly,
-		// allowing for multiple triggers on a trigger_once.  Increasing the nextTriggerTime prevents it.
-		nextTriggerTime = gameLocal.time + 99999;
+		// we can't just remove (this) here, because this is a touch function
+		// called while looping through area links...
+		nextTriggerTime = gameLocal.time + 1;
 		PostEventMS( &EV_Remove, 0 );
 	}
 }
@@ -460,7 +458,7 @@ void idTrigger_Multi::Event_Trigger( idEntity *activator ) {
 idTrigger_Multi::Event_Touch
 ================
 */
-void idTrigger_Multi::Event_Touch( idEntity *other, trace_t *trace ) {
+void idTrigger_Multi::Event_Touch( idEntity *other, trace_t *trace ) {	
 	if( triggerFirst ) {
 		return;
 	}
@@ -505,6 +503,576 @@ void idTrigger_Multi::Event_Touch( idEntity *other, trace_t *trace ) {
 	}
 }
 
+//ivan start
+
+
+/*
+===============================================================================
+
+  idTrigger_CheckPoint
+	
+===============================================================================
+*/
+
+CLASS_DECLARATION( idTrigger_Multi, idTrigger_CheckPoint )
+END_CLASS
+
+/*
+================
+idTrigger_CheckPoint::idTrigger_CheckPoint
+================
+*/
+idTrigger_CheckPoint::idTrigger_CheckPoint( void ) {
+}
+
+/*
+================
+idTrigger_CheckPoint::TriggerAction
+================
+*/
+void idTrigger_CheckPoint::TriggerAction( idEntity *activator ) {
+	//behaves like default trigger
+	idTrigger_Multi::TriggerAction( activator );
+	
+	//gameLocal.Printf("idTrigger_CheckPoint::TriggerAction\n");
+
+	//is it a player?
+	if ( activator->IsType( idPlayer::Type ) ){
+		static_cast< idPlayer* >( activator )->SaveCheckPointPos( this, spawnArgs.GetBool("useMyOrigin", "0") );
+	}
+}
+
+
+/*
+===============================================================================
+
+  idTrigger_ForceMov
+	
+===============================================================================
+*/
+
+CLASS_DECLARATION( idTrigger_Multi, idTrigger_ForceMov )
+END_CLASS
+
+/*
+================
+idTrigger_ForceMov::idTrigger_ForceMov
+================
+*/
+idTrigger_ForceMov::idTrigger_ForceMov( void ) {
+}
+
+/*
+================
+idTrigger_ForceMov::ActionMovToTarget
+================
+*/
+bool idTrigger_ForceMov::ActionMovToTarget( idPlayer *player ){
+	//valid target?
+	idEntity *validtarget = GetFirstValidTarget();
+	if( !validtarget ){ 
+		gameLocal.Warning("%s has no valid targets!", GetName() );
+		return false;
+	}
+
+	//start movement
+	return player->StartForcedMov( validtarget, 0, false, true, spawnArgs.GetBool( "forceStart", "0" ) ); //no abort, total force, optional total force
+}
+	
+/*
+================
+idTrigger_ForceMov::ActionSafeXpos
+================
+*/
+bool idTrigger_ForceMov::ActionSafeXpos( idPlayer *player ){
+	int delta = idMath::Abs( player->GetPhysics()->GetOrigin().x - GetPhysics()->GetOrigin().x );
+	if( delta != 0 ){
+		if( delta < 10 ){ //near enough to snap in line
+			player->fastXpos = GetPhysics()->GetOrigin().x;
+			return true;
+		}else{
+			bool success = player->StartForcedMov( this, 0, false, true, true ); //move toward my origin, no abort, total force, force start
+			if( success ){
+				player->SetLock2D( true ); //will be locked when the movement ends
+			}
+			return success;
+		}
+	}
+	return true; //if already aligned, than job already done!
+}
+
+/*
+================
+idTrigger_ForceMov::TriggerAction
+================
+*/
+void idTrigger_ForceMov::TriggerAction( idEntity *activator ) {
+	idPlayer *player;
+	bool actionDone;
+
+	//gameLocal.Printf("idTrigger_ForceMov::TriggerAction\n");
+
+	//is it a player?
+	if ( !activator->IsType( idPlayer::Type ) ){
+		gameLocal.Warning("activator is not an idPlayer");
+		return;
+	}
+	player = static_cast< idPlayer* >( activator );
+
+	if( spawnArgs.GetBool( "safeXpos", "0") ){
+		actionDone = ActionSafeXpos( player );
+	}else{
+		actionDone = ActionMovToTarget( player );
+	}
+
+	if( actionDone ){ 
+		//gameLocal.Warning("idTrigger_ForceMov actionDone");
+		CallScript();
+
+		if ( wait >= 0 ) {
+			nextTriggerTime = gameLocal.time + SEC2MS( wait + random * gameLocal.random.CRandomFloat() );
+		} else {
+			// we can't just remove (this) here, because this is a touch function
+			// called while looping through area links...
+			nextTriggerTime = gameLocal.time + 1;
+			PostEventMS( &EV_Remove, 0 );
+		}
+	}else{ //it's like never triggered because we haven't done what we should had to.
+		nextTriggerTime = gameLocal.time + 1; //try again the next frame!
+	}
+}
+
+/*
+===============================================================================
+
+  idTrigger_BlockMov
+	
+===============================================================================
+*/
+
+CLASS_DECLARATION( idTrigger_Multi, idTrigger_BlockMov )
+END_CLASS
+
+/*
+================
+idTrigger_BlockMov::idTrigger_BlockMov
+================
+*/
+idTrigger_BlockMov::idTrigger_BlockMov( void ) {
+	
+}
+
+/*
+================
+idTrigger_BlockMov::TriggerAction
+================
+*/
+void idTrigger_BlockMov::TriggerAction( idEntity *activator ) {
+
+	//gameLocal.Printf("idTrigger_BlockMov::TriggerAction\n");
+
+	//is it a player?
+	if ( activator->IsType( idPlayer::Type ) ){
+		static_cast< idPlayer* >( activator )->BlockForcedMov();
+	}
+	nextTriggerTime = gameLocal.time + 1; //try again the next frame!
+}
+
+
+/*
+===============================================================================
+
+  idTrigger_Interact
+	
+===============================================================================
+*/
+
+CLASS_DECLARATION( idTrigger, idTrigger_Interact )
+	EVENT( EV_Activate,			idTrigger_Interact::Event_Trigger )
+	EVENT( EV_Interact,			idTrigger_Interact::Event_Interact )
+	EVENT( EV_Touch,			idTrigger_Interact::Event_Touch ) //only for hud info
+END_CLASS
+
+/*
+================
+idTrigger_Interact::idTrigger_Interact
+================
+*/
+idTrigger_Interact::idTrigger_Interact( void ) {
+	wait = 0.0f;
+	nextInteractTime = 0;
+	triggerFirst = false;
+	//memset( interactModes, INTERACT_NONE, sizeof( interactModes ) ); 
+	interactFlags = 0;
+}
+
+/*
+================
+idTrigger_Interact::Save
+================
+*/
+void idTrigger_Interact::Save( idSaveGame *savefile ) const {
+	//int i;
+	savefile->WriteFloat( wait );
+	savefile->WriteInt( nextInteractTime );
+	savefile->WriteBool( triggerFirst );
+
+	/*for( i = 0; i < MAX_TRIGINT_MODES; i++ ) {
+		savefile->WriteInt( interactModes[ i ] );
+	}*/
+	savefile->WriteInt( interactFlags ); 
+}
+
+/*
+================
+idTrigger_Interact::Restore
+================
+*/
+void idTrigger_Interact::Restore( idRestoreGame *savefile ) {
+	//int i;
+	savefile->ReadFloat( wait );
+	savefile->ReadInt( nextInteractTime );
+	savefile->ReadBool( triggerFirst );
+
+	/*for( i = 0; i < MAX_TRIGINT_MODES; i++ ) {
+		savefile->ReadInt( interactModes[ i ] );
+	}*/
+	savefile->ReadInt( interactFlags );
+}
+
+
+/*
+================
+idTrigger_Interact::Spawn
+================
+*/
+void idTrigger_Interact::Spawn( void ) {
+	//int i;
+	
+	spawnArgs.GetFloat( "wait", "0.5", wait );
+	spawnArgs.GetBool( "triggerFirst", "0", triggerFirst );
+
+	//for( i = 0; i < MAX_TRIGINT_MODES; i++ ) {
+	//	spawnArgs.GetInt( va( "interactMode%d", i ), "0", interactModes[ i ] ); //0 is INTERACT_NONE
+	//}
+
+	//add all interact flags
+	interactFlags = 0;
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "interactMode" );   
+	while ( kv ) {
+		interactFlags |= spawnArgs.GetInt( kv->GetKey().c_str(), "0"); //TODO: check if it's valid
+		kv = spawnArgs.MatchPrefix( "interactMode", kv );
+	}      
+
+	nextInteractTime = 0;
+}
+
+/*
+================
+idTrigger_Interact::Event_Touch
+
+NOTE: should only be used for hud info.
+================
+*/
+void idTrigger_Interact::Event_Touch( idEntity *other, trace_t *trace ) {
+	if( triggerFirst ) {
+		return;
+	}
+
+	if ( other->IsType( idPlayer::Type ) ) {
+		static_cast< idPlayer * >( other )->AddPossibleInteract( interactFlags );
+	}
+}
+
+/*
+============
+idTrigger_Interact::CanInteract
+============
+*/
+bool idTrigger_Interact::CanInteract( int flags ) const {
+
+	//if not activated
+	if( triggerFirst ) {
+		return false;
+	}
+
+	//if enough time passed by
+	if ( nextInteractTime > gameLocal.time ) {
+		// can't interact until the wait is over
+		return false;
+	}
+
+	//check if there is a matching mode
+	if( interactFlags & flags ){ return true; }
+
+	return false;
+}
+
+/*
+================
+idTrigger_Interact::Event_Interact
+================
+*/
+void idTrigger_Interact::Event_Interact( idEntity *activator, int flags ) {	
+	if ( !activator ) return;
+	if ( !activator->IsType( idPlayer::Type ) ) return;
+	//if ( !CanInteract( flags ) ) return; //NOTE: it has been already checked in idEntity::InteractTouchingTriggers!!
+	
+	nextInteractTime = gameLocal.time + 1;
+	InteractionAction( static_cast< idPlayer* >( activator ), flags );
+} 
+
+/*
+================
+idTrigger_Interact::InteractionAction
+================
+*/
+void idTrigger_Interact::InteractionAction( idPlayer *player, int flags ) { 
+	ActivateTargets( player );
+	CallScript();
+	
+	//show text on hud
+	const char *infoText = spawnArgs.GetString( "infoText" );
+	if ( *infoText != '\0' ) {
+		player->ShowInfo( infoText );
+	}
+
+	//wait or remove
+	if ( wait >= 0 ) {
+		nextInteractTime = gameLocal.time + SEC2MS( wait );
+	} else {
+		nextInteractTime = gameLocal.time + 1;
+		PostEventMS( &EV_Remove, 0 ); //remove ourselves - interact 1 time only
+	}
+}
+
+
+
+/*
+================
+idTrigger_Interact::Event_Trigger
+================
+*/
+void idTrigger_Interact::Event_Trigger( idEntity *activator ) { //when triggered (EV_Activate)
+	if ( triggerFirst ) {
+		triggerFirst = false;
+	}
+} 
+
+/*
+===============================================================================
+
+  idTrigger_Interact_ChangeXpos
+	
+===============================================================================
+*/
+
+const idEventDef EV_CheckTargets( "<checkTargets>", NULL );
+
+CLASS_DECLARATION( idTrigger_Interact, idTrigger_Interact_ChangeXpos )
+	//EVENT( EV_Activate,			idTrigger_Interact_ChangeXpos::Event_Trigger ) //inherited
+	//EVENT( EV_Interact,			idTrigger_Interact_ChangeXpos::Event_Interact ) //inherited
+	EVENT( EV_CheckTargets,		idTrigger_Interact_ChangeXpos::Event_CheckTargets )
+END_CLASS
+
+/*
+================
+idTrigger_Interact_ChangeXpos::idTrigger_Interact_ChangeXpos
+================
+*/
+idTrigger_Interact_ChangeXpos::idTrigger_Interact_ChangeXpos( void ) {
+}
+
+/*
+================
+idTrigger_Interact_ChangeXpos::Spawn
+================
+*/
+void idTrigger_Interact_ChangeXpos::Spawn( void ) {
+	//check targets start
+	if ( spawnArgs.MatchPrefix( "target" ) ) {
+		if ( gameLocal.GameState() == GAMESTATE_STARTUP ) {
+			PostEventMS( &EV_CheckTargets, 0 );
+		} else {
+			// not during startup, so it's ok to get the targets
+			CheckTargets();
+		}
+	} else { //no targets!
+		gameLocal.Warning("%s has no targets!", GetName() );
+		interactFlags = 0; //never interact
+		Disable(); //never interact again
+	}
+	//check targets end
+}
+
+/*
+===============
+idTrigger_Interact_ChangeXpos::Event_CheckTargets
+===============
+*/
+void idTrigger_Interact_ChangeXpos::Event_CheckTargets( void ) {
+	CheckTargets();
+}
+
+/*
+===============
+idTrigger_Interact_ChangeXpos::CheckTargets
+===============
+*/
+void idTrigger_Interact_ChangeXpos::CheckTargets( void ) {
+	bool hasTargetWithHigherX = ( GetTargetGreaterX( true ) != NULL );
+	bool hasTargetWithLowerX = ( GetTargetGreaterX( false ) != NULL );
+
+	interactFlags = 0; //reset the flags
+
+	if(hasTargetWithHigherX){
+		//gameLocal.Printf("%s hasTargetWithHigherX\n", GetName() );
+		interactFlags |= INTERACT_UP;
+	}
+	if(hasTargetWithLowerX){
+		//gameLocal.Printf("%s hasTargetWithLowerX\n", GetName() );
+		interactFlags |= INTERACT_DOWN;
+	}
+}
+
+/*
+================
+idTrigger_Interact_ChangeXpos::InteractionAction
+================
+*/
+void idTrigger_Interact_ChangeXpos::InteractionAction( idPlayer *player, int flags ) { 
+	idEntity	*validtarget;
+	bool		greaterX;
+	
+	greaterX = 0 != ( flags & INTERACT_UP ); //we assume that if it's not UP it is DOWN, because it doesn't respond to other modes. 
+	validtarget = GetTargetGreaterX( greaterX );
+	if( validtarget ){
+		if( player->StartForcedMov( validtarget, 0, spawnArgs.GetBool( "canAbort", "1" ) ) ){
+			CallScript();
+		}
+	}else{ //someone removed a target!!
+		gameLocal.Warning("idTrigger_Interact_ChangeXpos::failed to find the target\n");
+		//remove the flag for the future so we'll never respond again to this mode
+		if(greaterX){
+			interactFlags &= ~ INTERACT_UP; 
+		}else{
+			interactFlags &= ~ INTERACT_DOWN; 
+		}
+	}
+
+	if ( wait > 0 ) {
+		nextInteractTime = gameLocal.time + SEC2MS( wait );
+	}else {
+		nextInteractTime = gameLocal.time + 1;
+		//PostEventMS( &EV_Remove, 0 ); //NEVER remove this kind of trigger!
+	}
+}
+
+/*
+================
+idTrigger_Interact_ChangeXpos::GetTargetGreaterX
+================
+*/
+idEntity * idTrigger_Interact_ChangeXpos::GetTargetGreaterX( bool greaterX ) {
+	idEntity *ent;
+	float deltaX;
+
+	for( int i = 0; i < targets.Num(); i++){
+		ent = targets[ i ].GetEntity();
+		if( !ent ) continue; 
+
+		deltaX = ent->GetPhysics()->GetOrigin().x - GetPhysics()->GetOrigin().x;
+		//gameLocal.Printf("upOrDown: %d, deltaX: %f \n", upOrDown ,deltaX );
+
+		if( greaterX && deltaX > 10.0f ) return ent;
+		if( !greaterX && deltaX < -10.0f ) return ent;
+	}
+	return NULL;
+}
+
+#if 0
+/*
+===============================================================================
+
+  idTrigger_Secret
+	
+===============================================================================
+*/
+
+CLASS_DECLARATION( idTrigger, idTrigger_Secret )
+	EVENT( EV_Activate,			idTrigger_Secret::Event_Trigger )
+END_CLASS
+
+/*
+================
+idTrigger_Secret::idTrigger_Secret
+================
+*/
+idTrigger_Secret::idTrigger_Secret( void ) {
+	found = false;
+}
+
+/*
+================
+idTrigger_Secret::Save
+================
+*/
+void idTrigger_Secret::Save( idSaveGame *savefile ) const {
+	savefile->WriteBool( found );
+}
+
+/*
+================
+idTrigger_Secret::Restore
+================
+*/
+void idTrigger_Secret::Restore( idRestoreGame *savefile ) {
+	savefile->ReadBool( found );
+}
+
+
+/*
+================
+idTrigger_Secret::Spawn
+================
+*/
+void idTrigger_Secret::Spawn( void ) {
+	gameLocal.secrets_spawned_counter++;
+	Disable(); //never interact with anything.
+}
+
+/*
+================
+idTrigger_Secret::TriggerAction
+================
+*/
+void idTrigger_Secret::TriggerAction( idEntity *activator ) {
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player ) {
+		player->AddSecretFound();
+	}
+	
+	ActivateTargets( activator );
+	CallScript();
+
+	//PostEventMS( &EV_Remove, 0 );
+}
+
+/*
+================
+idTrigger_Secret::Event_Trigger
+================
+*/
+void idTrigger_Secret::Event_Trigger( idEntity *activator ) {
+	if( !found ){
+		TriggerAction( activator );
+		found = true;
+	}
+}
+#endif
+
+//ivan end
+
 /*
 ===============================================================================
 
@@ -531,7 +1099,6 @@ idTrigger_EntityName::idTrigger_EntityName( void ) {
 	random_delay = 0.0f;
 	nextTriggerTime = 0;
 	triggerFirst = false;
-	testPartialName = false;
 }
 
 /*
@@ -547,7 +1114,6 @@ void idTrigger_EntityName::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( nextTriggerTime );
 	savefile->WriteBool( triggerFirst );
 	savefile->WriteString( entityName );
-	savefile->WriteBool( testPartialName );
 }
 
 /*
@@ -563,7 +1129,6 @@ void idTrigger_EntityName::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( nextTriggerTime );
 	savefile->ReadBool( triggerFirst );
 	savefile->ReadString( entityName );
-	savefile->ReadBool( testPartialName );
 }
 
 /*
@@ -599,12 +1164,6 @@ void idTrigger_EntityName::Spawn( void ) {
 	if ( !spawnArgs.GetBool( "noTouch" ) ) {
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
-
-#ifdef __ANDROID__
-	testPartialName = spawnArgs.GetBool( "testPartialName", testPartialName ? "1" : "0" );
-#else
-	testPartialName = spawnArgs.GetBool( "testPartialName", testPartialName );
-#endif
 }
 
 /*
@@ -651,16 +1210,8 @@ void idTrigger_EntityName::Event_Trigger( idEntity *activator ) {
 		return;
 	}
 
-	bool validEntity = false;
-	if ( activator ) {
-		if ( testPartialName ) {
-			if ( activator->name.Find( entityName, false ) >= 0 ) {
-				validEntity = true;
-			}
-		}
-		if ( activator->name == entityName ) {
-			validEntity = true;
-		}
+	if ( !activator || ( activator->name != entityName ) ) {
+		return;
 	}
 
 	if ( triggerFirst ) {
@@ -695,19 +1246,7 @@ void idTrigger_EntityName::Event_Touch( idEntity *other, trace_t *trace ) {
 		return;
 	}
 
-	bool validEntity = false;
-	if ( other ) {
-		if ( testPartialName ) {
-			if ( other->name.Find( entityName, false ) >= 0 ) {
-				validEntity = true;
-			}
-		}
-		if ( other->name == entityName ) {
-			validEntity = true;
-		}
-	}
-
-	if ( !validEntity ) {
+	if ( !other || ( other->name != entityName ) ) {
 		return;
 	}
 
@@ -1026,21 +1565,8 @@ void idTrigger_Hurt::Event_Touch( idEntity *other, trace_t *trace ) {
 	const char *damage;
 
 	if ( on && other && gameLocal.time >= nextTime ) {
-		bool playerOnly = spawnArgs.GetBool("playerOnly");
-
-		if (playerOnly) {
-			if (!other->IsType(idPlayer::Type)) {
-				return;
-			}
-		}
-		idVec3 dir = vec3_origin;
-
-		if (spawnArgs.GetBool("kick_from_center", "0")) {
-			dir = other->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-			dir.Normalize();
-		}
-
-		other->Damage(NULL, NULL, dir, damage, 1.0f, INVALID_JOINT);
+		damage = spawnArgs.GetString( "def_damage", "damage_painTrigger" );
+		other->Damage( NULL, NULL, vec3_origin, damage, 1.0f, INVALID_JOINT );
 
 		ActivateTargets( other );
 		CallScript();
@@ -1231,116 +1757,4 @@ idTrigger_Touch::Disable
 */
 void idTrigger_Touch::Disable( void ) {
 	BecomeInactive( TH_THINK );
-}
-/*
-===============================================================================
-
-  idTrigger_Flag
-
-===============================================================================
-*/
-
-CLASS_DECLARATION(idTrigger_Multi, idTrigger_Flag)
-				EVENT(EV_Touch, idTrigger_Flag::Event_Touch)
-END_CLASS
-
-idTrigger_Flag::idTrigger_Flag(void)
-{
-	team		= -1;
-	player		= false;
-	eventFlag	= NULL;
-}
-
-void idTrigger_Flag::Spawn(void)
-{
-	team = spawnArgs.GetInt("team", "0");
-	player = spawnArgs.GetBool("player", "0");
-
-	idStr funcname = spawnArgs.GetString("eventflag", "");
-
-	if (funcname.Length()) {
-		eventFlag = idEventDef::FindEvent(funcname);  // gameLocal.program.FindFunction( funcname );//, &idItemTeam::Type );
-
-		if (eventFlag == NULL) {
-			gameLocal.Warning("trigger '%s' at (%s) event unknown '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), funcname.c_str());
-		}
-	} else {
-		eventFlag = NULL;
-	}
-
-	idTrigger_Multi::Spawn();
-}
-
-void idTrigger_Flag::Event_Touch(idEntity *other, trace_t *trace)
-{
-
-	bool bTrigger = false;
-	idItemTeam *flag = NULL;
-
-	if (player) {
-		if (!other->IsType(idPlayer::Type))
-			return;
-
-		idPlayer *player = static_cast<idPlayer *>(other);
-
-		if (player->carryingFlag == false)
-			return;
-
-		if (team != -1 && (player->team != team || (player->team != 0 && player->team != 1)))
-			return;
-
-		idItemTeam *flags[2];
-
-		flags[0] = gameLocal.mpGame.GetTeamFlag(0);
-		flags[1] = gameLocal.mpGame.GetTeamFlag(1);
-
-		int iFriend = 1 - player->team;			// index to the flag player team wants
-		int iOpp	= player->team;				// index to the flag opp team wants
-
-		// flag is captured if :
-		// 1)flag is truely bound to the player
-		// 2)opponent flag has been return
-		if (flags[iFriend]->carried && !flags[iFriend]->dropped &&  //flags[iFriend]->IsBoundTo( player ) &&
-		    !flags[iOpp]->carried && !flags[iOpp]->dropped)
-			flag = flags[iFriend];
-		else
-			return;
-	} else {
-		if (!other->IsType(idItemTeam::Type))
-			return;
-
-		idItemTeam *item = static_cast<idItemTeam *>(other);
-
-		if (item->team == team || team == -1) {
-			flag = item;
-		} else
-			return;
-	}
-
-	if (flag) {
-		switch (eventFlag->GetNumArgs()) {
-			default :
-			case 0 :
-				flag->PostEventMS(eventFlag, 0);
-				break;
-			case 1 :
-				flag->PostEventMS(eventFlag, 0, 0);
-				break;
-			case 2 :
-				flag->PostEventMS(eventFlag, 0, 0, 0);
-				break;
-		}
-
-		/*
-				ServerSendEvent( eventFlag->GetEventNum(), NULL, true, false );
-
-				idThread *thread;
-				if ( scriptFlag ) {
-					thread = new idThread();
-					thread->CallFunction( flag, scriptFlag, false );
-					thread->DelayedStart( 0 );
-				}
-		*/
-		idTrigger_Multi::Event_Touch(other, trace);
-	}
 }

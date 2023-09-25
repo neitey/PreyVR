@@ -26,12 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
-#include "gamesys/SaveGame.h"
-#include "Entity.h"
-#include "Game_local.h"
+#include "../../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "physics/Clip.h"
+#include "../Game_local.h"
 
 #define	MAX_SECTOR_DEPTH				12
 #define MAX_SECTORS						((1<<(MAX_SECTOR_DEPTH+1))-1)
@@ -965,7 +963,7 @@ idClip::TestHugeTranslation
 */
 ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, const idVec3 &start, const idVec3 &end, const idMat3 &trmAxis ) {
 	if ( mdl != NULL && ( end - start ).LengthSqr() > Square( CM_MAX_TRACE_DIST ) ) {
-		assert( 0 );
+
 
 		results.fraction = 0.0f;
 		results.endpos = start;
@@ -979,6 +977,10 @@ ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, co
 		} else {
 			gameLocal.Printf( "huge translation for clip model %d\n", mdl->GetId() );
 		}
+
+		gameLocal.Printf( "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n", start.x, start.y, start.z, end.x, end.y, end.z);
+
+		assert( 0 );
 		return true;
 	}
 	return false;
