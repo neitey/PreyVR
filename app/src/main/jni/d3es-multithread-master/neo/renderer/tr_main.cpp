@@ -865,6 +865,23 @@ void R_SetViewMatrix( viewDef_t *viewDef ) {
 		0, 0, 0, 1
 	};
 
+	//Lubos BEGIN
+	if (!pVRClientInfo->inMenu)
+	{
+		idAngles angles;
+		angles.pitch = pVRClientInfo->hmdorientation_temp[PITCH];
+		angles.yaw = pVRClientInfo->hmdorientation_temp[YAW];
+		angles.roll = pVRClientInfo->hmdorientation_temp[ROLL];
+		viewDef->renderView.viewaxis = angles.ToMat3() * viewDef->renderView.viewaxis;
+
+		idVec3 position;
+		position.y = -pVRClientInfo->hmdposition_last[0];
+		position.z = pVRClientInfo->hmdposition_last[1] - 1.5f;
+		position.x = -pVRClientInfo->hmdposition_last[2];
+		viewDef->renderView.vieworg += position * 32.0f;
+	}
+	//Lubos END
+
 	{
 		world = &(viewDef->worldSpace);
 

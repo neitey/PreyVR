@@ -45,6 +45,7 @@ typedef struct {
     vec3_t weaponangles_delta_temp;
 
     //Lubos BEGIN
+    bool inMenu;
     vec2_t uiScale;
     vec2_t uiOffset;
     //Lubos END
