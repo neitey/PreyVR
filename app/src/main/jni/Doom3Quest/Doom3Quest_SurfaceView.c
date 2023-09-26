@@ -2076,7 +2076,7 @@ int JNI_OnLoad(JavaVM* vm, void* reserved)
 	return SDL_JNI_OnLoad(vm, reserved);
 }
 
-JNIEXPORT jlong JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onCreate( JNIEnv * env, jclass activityClass, jobject activity,
+JNIEXPORT jlong JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onCreate( JNIEnv * env, jclass activityClass, jobject activity,
 																	   jstring commandLineParams, jlong refresh, jfloat ss, jlong msaa)
 {
 	ALOGV( "    GLES3JNILib::onCreate()" );
@@ -2126,7 +2126,7 @@ JNIEXPORT jlong JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onCreate( JNIEnv 
 }
 
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onStart( JNIEnv * env, jobject obj, jlong handle, jobject obj1)
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onStart( JNIEnv * env, jobject obj, jlong handle, jobject obj1)
 {
 	ALOGV( "    GLES3JNILib::onStart()" );
 
@@ -2147,7 +2147,7 @@ JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onStart( JNIEnv * 
 	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
 }
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onResume( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onResume( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onResume()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
@@ -2156,7 +2156,7 @@ JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onResume( JNIEnv *
 	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
 }
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onPause( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onPause( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onPause()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
@@ -2165,7 +2165,7 @@ JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onPause( JNIEnv * 
 	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
 }
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onStop( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onStop( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onStop()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
@@ -2174,7 +2174,7 @@ JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onStop( JNIEnv * e
 	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
 }
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onDestroy( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onDestroy( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onDestroy()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
@@ -2195,7 +2195,7 @@ Surface lifecycle
 ================================================================================
 */
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onSurfaceCreated( JNIEnv * env, jobject obj, jlong handle, jobject surface )
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onSurfaceCreated( JNIEnv * env, jobject obj, jlong handle, jobject surface )
 {
 	ALOGV( "    GLES3JNILib::onSurfaceCreated()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
@@ -2218,7 +2218,7 @@ JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onSurfaceCreated( 
 	ovrMessageQueue_PostMessage( &appThread->MessageQueue, &message );
 }
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onSurfaceChanged( JNIEnv * env, jobject obj, jlong handle, jobject surface )
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onSurfaceChanged( JNIEnv * env, jobject obj, jlong handle, jobject surface )
 {
 	ALOGV( "    GLES3JNILib::onSurfaceChanged()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);
@@ -2260,7 +2260,7 @@ JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onSurfaceChanged( 
 	}
 }
 
-JNIEXPORT void JNICALL Java_com_drbeef_doom3quest_GLES3JNILib_onSurfaceDestroyed( JNIEnv * env, jobject obj, jlong handle )
+JNIEXPORT void JNICALL Java_com_lvonasek_hardcorps_GLES3JNILib_onSurfaceDestroyed( JNIEnv * env, jobject obj, jlong handle )
 {
 	ALOGV( "    GLES3JNILib::onSurfaceDestroyed()" );
 	ovrAppThread * appThread = (ovrAppThread *)((size_t)handle);

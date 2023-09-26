@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		package="com.drbeef.doom3quest"
+		package="com.lvonasek.hardcorps"
 		android:versionCode="27"
 		android:versionName="1.2.3"
 		android:installLocation="auto">
@@ -20,7 +20,7 @@
 
 	<application android:allowBackup="false"
 		android:icon="@drawable/ic_qquest"
-		android:label="@string/doom3quest"
+		android:label="@string/app_name"
 		android:extractNativeLibs="true">
 
 		<meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only"/>
@@ -31,9 +31,9 @@
         <!-- If targeting API level 24+, configChanges should additionally include 'density'. -->
         <!-- If targeting API level 24+, android:resizeableActivity="false" should be added. -->
 		<activity
-				android:name="com.drbeef.doom3quest.GLES3JNIActivity"
+				android:name="com.lvonasek.hardcorps.GLES3JNIActivity"
 				android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
-				android:label="@string/doom3quest"
+				android:label="@string/app_name"
 				android:launchMode="singleTask"
 				android:screenOrientation="landscape"
 				android:resizeableActivity="false"

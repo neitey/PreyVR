@@ -1,5 +1,5 @@
 
-package com.drbeef.doom3quest;
+package com.lvonasek.hardcorps;
 
 import android.app.Activity;
 import android.view.Surface;
