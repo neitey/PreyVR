@@ -3532,7 +3532,21 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 
 	weapon.GetEntity()->UpdateGUI();
 
-	_hud->Redraw( gameLocal.realClientTime );
+	//Lubos BEGIN
+	if (game->isVR) {
+		pVRClientInfo->uiOffset[0] = 240;
+		pVRClientInfo->uiOffset[1] = 180;
+		pVRClientInfo->uiScale[0] = 0.35f;
+		pVRClientInfo->uiScale[1] = 0.35f;
+		_hud->Redraw( gameLocal.realClientTime );
+		pVRClientInfo->uiOffset[0] = 0;
+		pVRClientInfo->uiOffset[1] = 0;
+		pVRClientInfo->uiScale[0] = 1;
+		pVRClientInfo->uiScale[1] = 1;
+	} else {
+		_hud->Redraw( gameLocal.realClientTime );
+	}
+	//Lubos END
 
 	// weapon targeting crosshair
 	if ( g_mouselook.GetBool() ){ //was: if ( !GuiActive() ) { //un noted change from original sdk
