@@ -600,7 +600,7 @@ void idUsercmdGenLocal::KeyMove(void)
 	side += KEY_MOVESPEED * ButtonState(UB_MOVERIGHT);
 	side -= KEY_MOVESPEED * ButtonState(UB_MOVELEFT);
 
-	up -= KEY_MOVESPEED * toggled_crouch.on;
+	up -= KEY_MOVESPEED * ButtonState(UB_DOWN);//Lubos
 	up += KEY_MOVESPEED * ButtonState(UB_UP);
 
 	forward += KEY_MOVESPEED * ButtonState(UB_FORWARD);
@@ -863,8 +863,10 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 
 		//Maybe this is right as long as I don't include HMD
-		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe );
-		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward);
+		//Lubos BEGIN
+		cmd.rightmove = idMath::ClampChar( cmd.rightmove + forward );
+		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + strafe );
+		//Lubos END
 
 		// check to make sure the angles haven't wrapped
 		if( viewangles[PITCH] - oldAngles[PITCH] > 90 )
