@@ -206,42 +206,21 @@ import java.util.Vector;
 	public void create() {
 
 		File root = new File("/sdcard/Doom3Quest");
-		File base = new File(root, "base");
-		File roe = new File(root, "d3xp");
-		File lm = new File(root, "d3le");
+		File base = new File(root, "hardcorps");
 
 		boolean exitAfterCopy = false;
 
 		//If this is first run on clean system, or user hasn't copied anything yet, just exit after we have copied
-		if (!(new File(base, "pak000.pk4").exists()))
+		if (!(new File(base, "pak666.pk4").exists()))
 		{
 			exitAfterCopy = true;
 		}
-		copy_asset(root.getAbsolutePath(), "commandline.txt", false);
 
 		//Base game
 		base.mkdirs();
 		copy_asset(base.getAbsolutePath(), "pak399.pk4", true);
 		copy_asset(base.getAbsolutePath(), "quest1_default.cfg", true);
 		copy_asset(base.getAbsolutePath(), "quest2_default.cfg", true);
-
-		//DLC - Resurrection of Evil support
-		if (roe.exists())
-		{
-			copy_asset(roe.getAbsolutePath(), "pak399.pk4", true);
-			copy_asset(roe.getAbsolutePath(), "pak399roe.pk4", true);
-			copy_asset(roe.getAbsolutePath(), "quest1_default.cfg", true);
-			copy_asset(roe.getAbsolutePath(), "quest2_default.cfg", true);
-		}
-
-		//DLC - The Lost Mission
-		if (lm.exists())
-		{
-			copy_asset(lm.getAbsolutePath(), "pak399.pk4", true);
-			copy_asset(lm.getAbsolutePath(), "pak399lm.pk4", true);
-			copy_asset(lm.getAbsolutePath(), "quest1_default.cfg", true);
-			copy_asset(lm.getAbsolutePath(), "quest2_default.cfg", true);
-		}
 
 		if (exitAfterCopy)
 		{
@@ -250,27 +229,7 @@ import java.util.Vector;
 		}
 
 		//Read these from a file and pass through
-		commandLineParams = "doom3quest";
-
-		//See if user is trying to use command line params
-		File cmd = new File(root.getAbsolutePath(), "commandline.txt");
-		if(cmd.exists()) // should exist now!
-		{
-			BufferedReader br;
-			try {
-				br = new BufferedReader(new FileReader(cmd));
-				String s;
-				StringBuilder sb=new StringBuilder(0);
-				while ((s=br.readLine())!=null)
-					sb.append(s).append(" ");
-				br.close();
-
-				commandLineParams = new String(sb.toString());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+		commandLineParams = "doom3quest +set fs_game hardcorps";
 
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
