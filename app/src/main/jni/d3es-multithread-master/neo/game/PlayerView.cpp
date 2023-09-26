@@ -602,7 +602,7 @@ idPlayerView::DoubleVision
 */
 void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view, int offset ) {
 
-	if ( !g_doubleVision.GetBool() ) {
+	if ( !g_doubleVision.GetBool() || game->isVR ) {
 		SingleView( hud, view );
 		return;
 	}
@@ -986,7 +986,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
  		r_HDR_enable.ClearModified();
  	}
 
-	if ( r_HDR_postProcess.GetBool() ) 
+	if ( r_HDR_postProcess.GetBool() )
 	{
 		this->UpdateBackBufferParameters();
 
