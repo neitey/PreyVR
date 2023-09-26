@@ -2693,6 +2693,10 @@ void idCommonLocal::Frame(void)
 							  cvarSystem->GetCVarInteger("vr_switchSticks"),
 							  cvarSystem->GetCVarInteger("vr_refresh"));
 
+		if (game) {
+			game->SetVRClientInfo(pVRClientInfo);
+		}
+
 		// write config file if anything changed
 		WriteConfiguration();
 

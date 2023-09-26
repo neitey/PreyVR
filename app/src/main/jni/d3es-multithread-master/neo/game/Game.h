@@ -106,6 +106,8 @@ public:
 	// Set the local client number. Distinguishes listen ( == 0 ) / dedicated ( == -1 )
 	virtual void				SetLocalClient( int clientNum ) = 0;
 
+	virtual void 				SetVRClientInfo(vrClientInfo *pVRClientInfo) = 0;//Lubos
+
 	// Koz begin
 	// VR State
 	bool						isVR = 1;

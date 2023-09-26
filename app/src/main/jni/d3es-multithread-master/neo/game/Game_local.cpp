@@ -4913,3 +4913,17 @@ void idGameLocal::UpdateMusicVolume( void ) {
 }
 
 //ivan end
+
+//Lubos BEGIN
+vrClientInfo *pVRClientInfo;
+
+void idGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
+	pVRClientInfo = pVR;
+
+	static bool firstTime = true;
+	if (firstTime) {
+		common->HapticEnable();
+		firstTime = false;
+	}
+}
+//Lubos END
