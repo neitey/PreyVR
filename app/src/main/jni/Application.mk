@@ -4,6 +4,8 @@
 ROOT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))../../../../..
 NDK_MODULE_PATH := $(ROOT_DIR)
 
+APP_OPTIM := release
+
 APP_PLATFORM := android-19
 
 APP_CFLAGS += -Wl,--no-undefined
