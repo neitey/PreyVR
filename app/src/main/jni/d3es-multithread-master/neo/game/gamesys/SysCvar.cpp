@@ -396,3 +396,8 @@ idCVar pm_thirdPersonCamHeight(		"pm_thirdPersonCamHeight",		"0",			CVAR_GAME | 
 idCVar pm_thirdPersonCamWay(		"pm_thirdPersonCamWay",			"0",			CVAR_GAME | CVAR_FLOAT, "Y length of camera from normal view position in 3rd person" );	
 //Revility End
 */
+
+//Lubos BEGIN
+idCVar vr_ipd(						"vr_ipd",					"0.065",		CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "VR IPD" );
+idCVar vr_scale(                    "vr_scale",                  "1.0",         CVAR_FLOAT | CVAR_ARCHIVE | CVAR_GAME, "World scale. Everything virtual is this times as big." );
+//Lubos END
