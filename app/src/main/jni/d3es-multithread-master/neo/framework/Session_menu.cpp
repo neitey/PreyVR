@@ -807,6 +807,13 @@ void idSessionLocal::HandleMainMenuCommands(const char *menuCommand)
 				if (dict && dict->GetBool(gametype)) {
 					const char *mapName = dict->GetString("name");
 
+					//Lubos BEGIN
+					const char *path = dict->GetString("path");
+					if (idStr(path).CmpPrefix("game/dm") != 0) {
+						continue;
+					}
+					//Lubos END
+
 					if (mapName[ 0 ] == '\0') {
 						mapName = dict->GetString("path");
 					}
