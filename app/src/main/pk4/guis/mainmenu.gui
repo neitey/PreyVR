@@ -213,6 +213,11 @@ windowDef desktop {
 			transition "MainOG_Bar_5::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
 			transition "MainOG_Title5_text::rect" "105 308 300 25" "105 308 300 25" "1";
 
+			set "MainOG_Title6_text::forecolor" MAIN_FORECOLOR_STRING ;
+			transition "MainOG_Bar_6::rect" "105 343 80 19.5" "105 343 80 19.5" "1";
+			transition "MainOG_Bar_6::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
+			transition "MainOG_Title6_text::rect" "123 335 300 25" "123 335 300 25" "1";
+
 			set "MainIG_Title1_text::forecolor" MAIN_FORECOLOR_STRING ;
 			transition "MainIG_Bar_1::rect" "62 208 178 19.5" "62 208 178 19.5" "1";
 			transition "MainIG_Bar_1::matcolor" "1 1 1 0.6" "1 1 1 0.6" "1";
@@ -394,6 +399,12 @@ windowDef desktop {
 				matcolor	1, 1, 1, 0.7
 				background  "guis/assets/menu/bar2.tga"
 			}
+			windowDef MainOG_Bar_6 {
+				rect		105, 343, 80, 19.5
+				backcolor	0, 0, 0, 0
+				matcolor	1, 1, 1, 0.7
+				background  "guis/assets/menu/bar3.tga"
+			}
 
 			windowDef MainOG_Title1_text {
 				rect		76, 200, 300, 25
@@ -426,13 +437,21 @@ windowDef desktop {
 				forecolor	MAIN_FORECOLOR_COMMA
 				textscale	0.39
 				font		"fonts/menu"
-				text		"#str_20208"
+				text		"#str_20135"	// MultiPrey
 			}
 			windowDef MainOG_Title5_text {
 				rect		105, 308, 300, 25
 				backcolor	0, 0, 0, 0
 				forecolor	MAIN_FORECOLOR_COMMA
 				textscale	0.39
+				font		"fonts/menu"
+				text		"#str_20208"
+			}
+			windowDef MainOG_Title6_text {
+				rect		123, 335, 300, 25
+				backcolor	0, 0, 0, 0
+				forecolor	MAIN_FORECOLOR_COMMA
+				textscale	0.4
 				font		"fonts/menu"
 				text		"#str_20554"
 			}
@@ -518,7 +537,7 @@ windowDef desktop {
 				}
 				onAction {
 					set "cmd" "play guisounds_menu_clickin";
-					resetTime "Options_AnimIn" "0" ;
+					resetTime "Multiplayer_AnimIn" "0" ;
 				}
 			}
 			windowDef MainOG_Title5 {
@@ -535,6 +554,26 @@ windowDef desktop {
 					transition "MainOG_Bar_5::rect" "84 316 115 19.5" "89 316 115 19.5" "200";
 					transition "MainOG_Bar_5::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
 					transition "MainOG_Title5_text::rect" "96 308 300 25" "105 308 300 25" "200";
+				}
+				onAction {
+					set "cmd" "play guisounds_menu_clickin";
+					resetTime "Options_AnimIn" "0" ;
+				}
+			}
+			windowDef MainOG_Title6 {
+				rect		105, 340, 200, 20
+				backcolor	0, 0, 0, 0
+				onMouseEnter {
+					set "MainOG_Title6_text::forecolor" MAIN_FORECOLOR_MOUSEOVER_STRING ;
+					transition "MainOG_Bar_6::rect" "105 343 80 19.5" "100 343 80 19.5" "150";
+					transition "MainOG_Bar_6::matcolor" "1 1 1 0.6" "1 1 1 1" "150";
+					transition "MainOG_Title6_text::rect" "123 335 300 25" "114 335 300 25" "150";
+				}
+				onMouseExit {
+					set "MainOG_Title6_text::forecolor" MAIN_FORECOLOR_STRING ;
+					transition "MainOG_Bar_6::rect" "100 343 80 19.5" "105 343 80 19.5" "200";
+					transition "MainOG_Bar_6::matcolor" "1 1 1 1" "1 1 1 0.6" "200";
+					transition "MainOG_Title6_text::rect" "114 335 300 25" "123 335 300 25" "200";
 				}
 				onAction {
 					set "cmd" "play guisounds_menu_clickin";
