@@ -247,13 +247,4 @@
 				}
 			}
 		}
-
-		buttonDef Multiplayer_Warning {
-			rect			150, 335, 400, 60
-			textalign		1
-			textaligny		0
-			shadow			1
-			text			"WARNING! This feature is still under development and is unstable.\nIt will probably be part of the next major update!"
-			noevents		1
-		}
 	}
