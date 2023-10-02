@@ -1770,10 +1770,7 @@ void idMultiplayerGame::Run() {
 				NewState( COUNTDOWN );
 				nextState = GAMEON;
 				nextStateSwitch = gameLocal.time + 1000 * cvarSystem->GetCVarInteger( "g_countDown" );
-				//Lubos BEGIN
-				nextStateSwitch = gameLocal.time + 250;
-				gameLocal.GetLocalPlayer()->ServerSpectate(true);
-				//Lubos END
+				nextStateSwitch = gameLocal.time + 250; //Lubos
 			}
 			//HUMANHEAD rww - use proper lang string
 			//warmupText = "Warming up.. waiting for players to get ready";
@@ -2324,8 +2321,9 @@ bool idMultiplayerGame::Draw( int clientNum ) {
 
 	//Lubos BEGIN
 	if ( gameLocal.serverInfo.FindKey( "devmap" ) && (gameState == GAMEON) && gameLocal.isMultiplayer ) {
-		if (gameLocal.numClients < 2) gameLocal.GetLocalPlayer()->ServerSpectate(false);
-		while (gameLocal.numClients < 8) gameLocal.SpawnArtificialPlayer();
+		while (gameLocal.numClients < 8) {
+			gameLocal.SpawnArtificialPlayer();
+		}
 	}
 	//Lubos END
 
