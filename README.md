@@ -117,6 +117,5 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * Controling ingame UI using fingers
 * Glitch effect (unsupported by the renderer) 
 * Glow effect (unsupported by the renderer)
-* Multiprey (will eventually be added later)
 * Network communication (missing source code)
 * Shadows (cause performance issues)
