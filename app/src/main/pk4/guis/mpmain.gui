@@ -38,7 +38,7 @@ windowDef Desktop {
 	}
 
 	windowDef BoxParent {
-		rect		70, 110, 500, 315
+		rect		70, 110, 580, 315
 		backcolor	0, 0, 0, 0
 
 		windowDef ReadyStatus {
@@ -93,7 +93,7 @@ windowDef Desktop {
 		}
 
 		windowDef MainTabs {
-			rect			0, 30, 500, 250
+			rect			0, 30, 522, 250
 			backcolor		0, 0, 0, 0
 			sepcolor		0.74, 0.81, 0.88, 1
 			activetab		0
@@ -101,7 +101,7 @@ windowDef Desktop {
 			tabHeight		20
 			
 			windowDef Main_PlayerSettings {
-				rect			0, 20, 500, 230
+				rect			0, 20, 512, 230
 				background		"guis/assets/menu/fadebg.tga"
 				backcolor		0.5, 0.7, 0.9, 0.3
 				forecolor		TABTOP_FORECOLOR_COMMA
@@ -124,7 +124,7 @@ windowDef Desktop {
 				}
 
 				windowDef Multiplayer_Settings_PlayerModelBG {
-					rect		0, 0, 500, 230
+					rect		0, 0, 502, 230
 
 					windowDef Multiplayer_Settings_PlayerModelCaption {
 						rect		30, 10, 120, 16
@@ -155,7 +155,7 @@ windowDef Desktop {
 					}
 
 					windowDef Multiplayer_Settings_ModelList {
-						rect		180, 10, 270, 165
+						rect		180, 10, 330, 165
 						backcolor	0, 0, 0, 0.6
 						visible	1
 						
@@ -382,6 +382,52 @@ windowDef Desktop {
 							onAction {
 								set "cmd" "play guisounds_menu_clickin" ;
 								set "cmd" "click_modelList 14";
+							}
+						}
+						windowDef Multiplayer_Settings_Model15 {
+							rect			269, 5, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait15"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 15";
+							}
+						}
+						windowDef Multiplayer_Settings_Model16 {
+							rect			269, 58, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait16"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 16";
+							}
+						}
+						//Model17 is almost the same like Model15 and there is no more space.
+						windowDef Multiplayer_Settings_Model18 {
+							rect			269, 111, 50, 50
+							matcolor		MODELLIST_DARKCOLOR_COMMA
+							background		"gui::mp_modelportrait18"
+							onMouseEnter {
+								set "matcolor" MODELLIST_LIGHTCOLOR_STRING;
+							}
+							onMouseExit {
+								set "matcolor" MODELLIST_DARKCOLOR_STRING;
+							}
+							onAction {
+								set "cmd" "play guisounds_menu_clickin" ;
+								set "cmd" "click_modelList 18";
 							}
 						}
 					}
