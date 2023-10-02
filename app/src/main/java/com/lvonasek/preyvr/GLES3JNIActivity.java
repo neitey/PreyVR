@@ -262,6 +262,7 @@ import java.util.Vector;
 				if (!has_files(base, DATA_MODS)) {
 					unpack_data(DATA_MODS);
 				}
+				delete_files(base, DATA_DEMO);
 			} else if (!has_files(base, DATA_DEMO)) {
 				unpack_data(DATA_DEMO);
 			}
@@ -360,6 +361,12 @@ import java.util.Vector;
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	public void delete_files(File base, String[] files) {
+		for (String file : files) {
+			new File(base, file).delete();
+		}
 	}
 
 	public boolean has_files(File base, String[] files) {
