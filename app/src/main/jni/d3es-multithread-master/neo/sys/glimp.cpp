@@ -40,6 +40,9 @@ If you have questions concerning this license or the applicable additional terms
 #include <SDL_syswm.h>
 #endif
 
+
+bool USING_GLES3 = true;
+
 /*
 ===================
 GLimp_Init

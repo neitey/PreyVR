@@ -1217,6 +1217,8 @@ void		GLimp_Shutdown(void);
 // Destroys the rendering context, closes the window, resets the resolution,
 // and resets the gamma ramps.
 
+void        GLimp_SetupFrame( int );
+
 void		GLimp_SwapBuffers(void);
 // Calls the system specific swapbuffers routine, and may also perform
 // other system specific cvar checks that happen every frame.

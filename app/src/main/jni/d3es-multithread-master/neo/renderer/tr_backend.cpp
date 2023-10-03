@@ -662,6 +662,8 @@ static void	RB_SetBuffer(const void *data)
 	glDrawBuffer(cmd->buffer);
 #endif
 
+	GLimp_SetupFrame((int)cmd->buffer);
+
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
 	// that might leave unrendered portions of the screen
@@ -767,9 +769,7 @@ const void	RB_SwapBuffers(const void *data)
 	RB_LogComment("***************** RB_SwapBuffers *****************\n\n\n");
 
 	// don't flip if drawing to front buffer
-	if (!r_frontBuffer.GetBool()) {
-		GLimp_SwapBuffers();
-	}
+	GLimp_SwapBuffers();
 }
 
 /*
