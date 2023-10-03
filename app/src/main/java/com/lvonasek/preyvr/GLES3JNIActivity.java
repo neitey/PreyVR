@@ -51,7 +51,7 @@ import java.util.Vector;
 	}
 
 	private static final String APPLICATION = "Doom3Quest";
-	private static final int CFG_VERSION_CURRENT = 1;
+	private static final int CFG_VERSION_CURRENT = 2;
 	private static final String CFG_VERSION_KEY = "CFG_VERSION_KEY";
 
 	private static final String[] DATA_DEMO = {"demo00.pk4", "demo01.pk4", "demo02.pk4", "demo03.pk4", "demo04.pk4", "demo05.pk4", "demo06.pk4", "demo07.pk4"};
