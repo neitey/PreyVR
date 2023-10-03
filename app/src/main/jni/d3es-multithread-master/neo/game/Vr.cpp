@@ -180,6 +180,7 @@ idCVar vr_rumbleChainsaw( "vr_rumbleChainsaw", "1", CVAR_BOOL | CVAR_GAME | CVAR
 
 //Lubos BEGIN
 idCVar vr_haptics( "vr_haptics", "1", CVAR_INTEGER | CVAR_GAME, "Enable controller haptics" );
+idCVar vr_powerfulHMD( "vr_powerfulHMD", "0", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIVE, "Flag that the HMD is very powerful", 0, 1 );
 
 void ApplyVRWeaponTransform(idMat3 &axis, idVec3& origin)
 {
