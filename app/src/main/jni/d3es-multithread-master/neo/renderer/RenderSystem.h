@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __RENDERER_H__
 #define __RENDERER_H__
 
-#include "framework/Common.h"
-#include "renderer/Model.h"
-
 /*
 ===============================================================================
 
@@ -41,7 +38,6 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-
 // Contains variables specific to the OpenGL configuration being run right now.
 // These are constant once the OpenGL subsystem is initialized.
 typedef struct glconfig_s {
@@ -50,27 +46,48 @@ typedef struct glconfig_s {
 	const char			*version_string;
 	const char			*extensions_string;
 
+	float				glVersion;				// atof( version_string )
+
+
 	int					maxTextureSize;			// queried from GL
 	int					maxTextureUnits;
+	int					maxTextureCoords;
+	int					maxTextureImageUnits;
 	float				maxTextureAnisotropy;
 
 	int					colorBits, depthBits, stencilBits;
 
+	bool				multitextureAvailable;
+	bool				textureCompressionAvailable;
 	bool				anisotropicAvailable;
-
-	bool				npotAvailable;
-
-	bool				depthStencilAvailable;
+	bool				textureLODBiasAvailable;
+	bool				textureEnvAddAvailable;
+	bool				textureEnvCombineAvailable;
+	bool				cubeMapAvailable;
+	bool				envDot3Available;
+	bool				texture3DAvailable;
+	bool				sharedTexturePaletteAvailable;
+	bool				ARBVertexBufferObjectAvailable;
+	bool				ARBVertexProgramAvailable;
+	bool				ARBFragmentProgramAvailable;
+	bool				textureNonPowerOfTwoAvailable;
+	bool				depthBoundsTestAvailable;
+	bool				GLSLAvailable;
 
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
-
-	int					vidWidthReal, vidHeightReal; // The real resolution of the screen, uses framebuffer if not the same as vidWidth
 
 	int					displayFrequency;
 
 	bool				isFullscreen;
 
+	bool				allowARB2Path;
+	bool				allowGLSLPath;
+
 	bool				isInitialized;
+
+	bool framebufferObjectAvailable;
+	int maxRenderbufferSize;
+	int maxColorAttachments;
 } glconfig_t;
 
 
@@ -93,7 +110,7 @@ typedef struct {
 	float				t;				// y offset in image where glyph starts
 	float				s2;
 	float				t2;
-	const idMaterial *	glyph;			// shader with the glyph
+	const idMaterial 	*glyph;			// shader with the glyph
 	char				shaderName[32];
 } glyphInfo_t;
 
@@ -130,63 +147,75 @@ const int SCREEN_HEIGHT			= 480;
 
 class idRenderWorld;
 
+#ifdef _RAVEN
+// RAVEN BEGIN
+// rjohnson: new blur special effect
+typedef enum
+{
+	SPECIAL_EFFECT_NONE = 0,
+	SPECIAL_EFFECT_BLUR		= 0x00000001,
+	SPECIAL_EFFECT_AL		= 0x00000002,
+	SPECIAL_EFFECT_MAX,
+} ESpecialEffectType;
+#endif
 
-class idRenderSystem {
-public:
+class idRenderSystem
+{
+	public:
 
-	virtual					~idRenderSystem() {}
+		virtual					~idRenderSystem() {}
 
-	// set up cvars and basic data structures, but don't
-	// init OpenGL, so it can also be used for dedicated servers
-	virtual void			Init( void ) = 0;
+		// set up cvars and basic data structures, but don't
+		// init OpenGL, so it can also be used for dedicated servers
+		virtual void			Init(void) = 0;
 
-	// only called before quitting
-	virtual void			Shutdown( void ) = 0;
+		// only called before quitting
+		virtual void			Shutdown(void) = 0;
 
-	virtual void			InitOpenGL( void ) = 0;
+		virtual void			InitOpenGL(void) = 0;
 
-	virtual void			ShutdownOpenGL( void ) = 0;
+		virtual void			ShutdownOpenGL(void) = 0;
 
-	virtual bool			IsOpenGLRunning( void ) const = 0;
+		virtual bool			IsOpenGLRunning(void) const = 0;
 
-	virtual bool			IsFullScreen( void ) const = 0;
-	virtual int				GetScreenWidth( void ) const = 0;
-	virtual int				GetScreenHeight( void ) const = 0;
-	virtual float 			GetFOV(int axis) const = 0;
-	virtual int 			GetRefresh() const = 0;
+		virtual bool			IsFullScreen(void) const = 0;
+		virtual int				GetScreenWidth(void) const = 0;
+		virtual int				GetScreenHeight(void) const = 0;
+        virtual float           GetFOV(int axis) const = 0;
+        virtual int             GetRefresh() const = 0;
+
 
 	// allocate a renderWorld to be used for drawing
-	virtual idRenderWorld *	AllocRenderWorld( void ) = 0;
-	virtual	void			FreeRenderWorld( idRenderWorld * rw ) = 0;
+		virtual idRenderWorld 	*AllocRenderWorld(void) = 0;
+		virtual	void			FreeRenderWorld(idRenderWorld *rw) = 0;
 
-	// All data that will be used in a level should be
-	// registered before rendering any frames to prevent disk hits,
-	// but they can still be registered at a later time
-	// if necessary.
-	virtual void			BeginLevelLoad( void ) = 0;
-	virtual void			EndLevelLoad( void ) = 0;
+		// All data that will be used in a level should be
+		// registered before rendering any frames to prevent disk hits,
+		// but they can still be registered at a later time
+		// if necessary.
+		virtual void			BeginLevelLoad(void) = 0;
+		virtual void			EndLevelLoad(void) = 0;
 
-	// font support
-	virtual bool			RegisterFont( const char *fontName, fontInfoEx_t &font ) = 0;
+		// font support
+		virtual bool			RegisterFont(const char *fontName, fontInfoEx_t &font) = 0;
 
-	// GUI drawing just involves shader parameter setting and axial image subsections
-	virtual void			SetColor( const idVec4 &rgba ) = 0;
-	virtual void			SetColor4( float r, float g, float b, float a ) = 0;
-	virtual void			SetHudOpacity( float opacity ) = 0;
+		// GUI drawing just involves shader parameter setting and axial image subsections
+		virtual void			SetColor(const idVec4 &rgba) = 0;
+		virtual void			SetColor4(float r, float g, float b, float a) = 0;
 
-	virtual void			DrawStretchPic( const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *material,
-	                                        bool clip = true, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f ) = 0;
-	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material ) = 0;
+		virtual void			DrawStretchPic(const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *material,
+		                bool clip = true, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f) = 0;
+		virtual void			DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material) = 0;
 
-	virtual void			DrawStretchTri ( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material ) = 0;
-	virtual void			GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) = 0;
-	virtual void			GetGLSettings( int& width, int& height ) = 0;
-	virtual void			PrintMemInfo( MemInfo_t *mi ) = 0;
+		virtual void			DrawStretchTri(idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material) = 0;
+		virtual void			GlobalToNormalizedDeviceCoordinates(const idVec3 &global, idVec3 &ndc) = 0;
+		virtual void			GetGLSettings(int &width, int &height) = 0;
+		virtual void			PrintMemInfo(MemInfo_t *mi) = 0;
 
-	virtual void			DrawSmallChar( int x, int y, int ch, const idMaterial *material ) = 0;
-	virtual void			DrawSmallStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material ) = 0;
-	virtual void			DrawBigChar( int x, int y, int ch, const idMaterial *material ) = 0;
-	virtual void			DrawBigStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material ) = 0;
+		virtual void			DrawSmallChar(int x, int y, int ch, const idMaterial *material) = 0;
+		virtual void			DrawSmallStringExt(int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material) = 0;
+		virtual void			DrawBigChar(int x, int y, int ch, const idMaterial *material) = 0;
+		virtual void			DrawBigStringExt(int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material) = 0;
 
 #ifdef _HUMANHEAD
 	virtual void			SetEntireSceneMaterial(idMaterial* material) = 0; // HUMANHEAD CJR
@@ -196,74 +225,101 @@ public:
 	virtual void			SetShuttleView(bool view) = 0;// HUMANHEAD pdm
 	virtual bool			SupportsFragmentPrograms(void) = 0; // HUMANHEAD CJR
 	virtual int				VideoCardNumber(void) = 0; // HUMANHEAD CJR
-
+												
 #if _HH_RENDERDEMO_HACKS //HUMANHEAD rww
-	virtual void			LogViewRender(const struct renderView_s *view) {}
+	virtual void			LogViewRender(const struct renderView_s *view) = 0;
 #endif //HUMANHEAD END
 #endif
 
-	// dump all 2D drawing so far this frame to the demo file
-	virtual void			WriteDemoPics() = 0;
+		// dump all 2D drawing so far this frame to the demo file
+		virtual void			WriteDemoPics() = 0;
 
-	// draw the 2D pics that were saved out with the current demo frame
-	virtual void			DrawDemoPics() = 0;
+		// draw the 2D pics that were saved out with the current demo frame
+		virtual void			DrawDemoPics() = 0;
 
-	// FIXME: add an interface for arbitrary point/texcoord drawing
+		// FIXME: add an interface for arbitrary point/texcoord drawing
 
 
-	// a frame cam consist of 2D drawing and potentially multiple 3D scenes
-	// window sizes are needed to convert SCREEN_WIDTH / SCREEN_HEIGHT values
-	virtual void			BeginFrame( int windowWidth, int windowHeight ) = 0;
+		// a frame cam consist of 2D drawing and potentially multiple 3D scenes
+		// window sizes are needed to convert SCREEN_WIDTH / SCREEN_HEIGHT values
+		virtual void			BeginFrame(int windowWidth, int windowHeight) = 0;
 
-	// if the pointers are not NULL, timing info will be returned
-	virtual void			EndFrame( int *frontEndMsec, int *backEndMsec ) = 0;
+		// if the pointers are not NULL, timing info will be returned
+		virtual void			EndFrame(int *frontEndMsec, int *backEndMsec) = 0;
 
-	// Will automatically tile render large screen shots if necessary
-	// Samples is the number of jittered frames for anti-aliasing
-	// If ref == NULL, session->updateScreen will be used
-	// This will perform swapbuffers, so it is NOT an approppriate way to
-	// generate image files that happen during gameplay, as for savegame
-	// markers.  Use WriteRender() instead.
-	virtual void			TakeScreenshot( int width, int height, const char *fileName, int samples, struct renderView_s *ref ) = 0;
+		// aviDemo uses this.
+		// Will automatically tile render large screen shots if necessary
+		// Samples is the number of jittered frames for anti-aliasing
+		// If ref == NULL, session->updateScreen will be used
+		// This will perform swapbuffers, so it is NOT an approppriate way to
+		// generate image files that happen during gameplay, as for savegame
+		// markers.  Use WriteRender() instead.
+		virtual void			TakeScreenshot(int width, int height, const char *fileName, int samples, struct renderView_s *ref) = 0;
 
-	// the render output can be cropped down to a subset of the real screen, as
-	// for save-game reviews and split-screen multiplayer.  Users of the renderer
-	// will not know the actual pixel size of the area they are rendering to
+		// the render output can be cropped down to a subset of the real screen, as
+		// for save-game reviews and split-screen multiplayer.  Users of the renderer
+		// will not know the actual pixel size of the area they are rendering to
 
-	// the x,y,width,height values are in virtual SCREEN_WIDTH / SCREEN_HEIGHT coordinates
+		// the x,y,width,height values are in virtual SCREEN_WIDTH / SCREEN_HEIGHT coordinates
 
-	// to render to a texture, first set the crop size with makePowerOfTwo = true,
-	// then perform all desired rendering, then capture to an image
-	// if the specified physical dimensions are larger than the current cropped region, they will be cut down to fit
-	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false ) = 0;
-	virtual void			CaptureRenderToImage( const char *imageName ) = 0;
-	// fixAlpha will set all the alpha channel values to 0xff, which allows screen captures
-	// to use the default tga loading code without having dimmed down areas in many places
-	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha = false ) = 0;
-	virtual void			UnCrop() = 0;
+		// to render to a texture, first set the crop size with makePowerOfTwo = true,
+		// then perform all desired rendering, then capture to an image
+		// if the specified physical dimensions are larger than the current cropped region, they will be cut down to fit
+		virtual void			CropRenderSize(int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false) = 0;
+		virtual void			CaptureRenderToImage(const char *imageName) = 0;
+		// fixAlpha will set all the alpha channel values to 0xff, which allows screen captures
+		// to use the default tga loading code without having dimmed down areas in many places
+		virtual void			CaptureRenderToFile(const char *fileName, bool fixAlpha = false) = 0;
+		virtual void			UnCrop() = 0;
 
-	// the image has to be already loaded ( most straightforward way would be through a FindMaterial )
-	// texture filter / mipmapping / repeat won't be modified by the upload
-	// returns false if the image wasn't found
-	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height ) = 0;
+		// the image has to be already loaded ( most straightforward way would be through a FindMaterial )
+		// texture filter / mipmapping / repeat won't be modified by the upload
+		// returns false if the image wasn't found
+		virtual bool			UploadImage(const char *imageName, const byte *data, int width, int height) = 0;
 
-	virtual void 			DirectFrameBufferStart() = 0;
-	virtual void 			DirectFrameBufferEnd() = 0;
+#ifdef _RAVEN
+// jnewquist: Track texture usage during cinematics for streaming purposes
+#ifndef _CONSOLE
+	enum TextureTrackCommand {
+		TEXTURE_TRACK_BEGIN,
+		TEXTURE_TRACK_UPDATE,
+		TEXTURE_TRACK_END
+	};
+	virtual void			TrackTextureUsage( TextureTrackCommand command, int frametime = 0, const char *name=NULL ) = 0;
+#endif
+// RAVEN END
+
+// RAVEN BEGIN
+// rjohnson: new blur special effect
+	virtual void			SetSpecialEffect( ESpecialEffectType Which, bool Enabled ) = 0;
+	virtual void			SetSpecialEffectParm( ESpecialEffectType Which, int Parm, float Value ) = 0;
+	virtual void			ShutdownSpecialEffects( void ) = 0;
+// RAVEN END
+
+	// RAVEN BEGIN
+	// jnewquist: Deal with flipped back-buffer copies on Xenon
+		virtual void			DrawStretchCopy( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material ) = 0;
+	// RAVEN END
+	virtual void			DebugGraph( float cur, float min, float max, const idVec4 &color ) = 0;
+#endif
+#ifdef _MULTITHREAD
+		virtual void EndFrame(byte *data, int *frontEndMsec, int *backEndMsec) = 0;
+#endif
 };
 
-extern idRenderSystem *			renderSystem;
+extern idRenderSystem 			*renderSystem;
 
 //
 // functions mainly intended for editor and dmap integration
 //
 
 // returns the frustum planes in world space
-void R_RenderLightFrustum( const struct renderLight_s &renderLight, idPlane lightFrustum[6] );
+void R_RenderLightFrustum(const struct renderLight_s &renderLight, idPlane lightFrustum[6]);
 
 // for use by dmap to do the carving-on-light-boundaries and for the editor for display
-void R_LightProjectionMatrix( const idVec3 &origin, const idPlane &rearPlane, idVec4 mat[4] );
+void R_LightProjectionMatrix(const idVec3 &origin, const idPlane &rearPlane, idVec4 mat[4]);
 
 // used by the view shot taker
-void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName );
+void R_ScreenshotFilename(int &lastNumber, const char *base, idStr &fileName);
 
 #endif /* !__RENDERER_H__ */

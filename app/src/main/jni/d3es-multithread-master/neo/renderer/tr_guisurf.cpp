@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,12 +25,10 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "idlib/precompiled.h"
-#include "renderer/GuiModel.h"
-#include "ui/UserInterface.h"
-
-#include "renderer/tr_local.h"
+#include "tr_local.h"
 
 /*
 ==========================================================================================
@@ -48,7 +46,8 @@ Calculates two axis for the surface sutch that a point dotted against
 the axis will give a 0.0 to 1.0 range in S and T when inside the gui surface
 ================
 */
-void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 axis[3] ) {
+void R_SurfaceToTextureAxis(const srfTriangles_t *tri, idVec3 &origin, idVec3 axis[3])
+{
 	float		area, inva;
 	float		d0[5], d1[5];
 	idDrawVert	*a, *b, *c;
@@ -60,13 +59,16 @@ void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 a
 	// find the bounds of the texture
 	bounds[0][0] = bounds[0][1] = 999999;
 	bounds[1][0] = bounds[1][1] = -999999;
-	for ( i = 0 ; i < tri->numVerts ; i++ ) {
-		for ( j = 0 ; j < 2 ; j++ ) {
+
+	for (i = 0 ; i < tri->numVerts ; i++) {
+		for (j = 0 ; j < 2 ; j++) {
 			v = tri->verts[i].st[j];
-			if ( v < bounds[0][j] ) {
+
+			if (v < bounds[0][j]) {
 				bounds[0][j] = v;
 			}
-			if ( v > bounds[1][j] ) {
+
+			if (v > bounds[1][j]) {
 				bounds[1][j] = v;
 			}
 		}
@@ -75,8 +77,8 @@ void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 a
 	// use the floor of the midpoint as the origin of the
 	// surface, which will prevent a slight misalignment
 	// from throwing it an entire cycle off
-	boundsOrg[0] = floor( ( bounds[0][0] + bounds[1][0] ) * 0.5 );
-	boundsOrg[1] = floor( ( bounds[0][1] + bounds[1][1] ) * 0.5 );
+	boundsOrg[0] = floor((bounds[0][0] + bounds[1][0]) * 0.5);
+	boundsOrg[1] = floor((bounds[0][1] + bounds[1][1]) * 0.5);
 
 
 	// determine the world S and T vectors from the first drawSurf triangle
@@ -84,21 +86,22 @@ void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 a
 	b = tri->verts + tri->indexes[1];
 	c = tri->verts + tri->indexes[2];
 
-	VectorSubtract( b->xyz, a->xyz, d0 );
+	VectorSubtract(b->xyz, a->xyz, d0);
 	d0[3] = b->st[0] - a->st[0];
 	d0[4] = b->st[1] - a->st[1];
-	VectorSubtract( c->xyz, a->xyz, d1 );
+	VectorSubtract(c->xyz, a->xyz, d1);
 	d1[3] = c->st[0] - a->st[0];
 	d1[4] = c->st[1] - a->st[1];
 
 	area = d0[3] * d1[4] - d0[4] * d1[3];
-	if ( area == 0.0 ) {
-		origin.Zero();
+
+	if (area == 0.0) {
 		axis[0].Zero();
 		axis[1].Zero();
 		axis[2].Zero();
 		return;	// degenerate
 	}
+
 	inva = 1.0 / area;
 
 	axis[0][0] = (d0[0] * d1[4] - d0[4] * d1[0]) * inva;
@@ -110,14 +113,14 @@ void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 a
 	axis[1][2] = (d0[3] * d1[2] - d0[2] * d1[3]) * inva;
 
 	idPlane plane;
-	plane.FromPoints( a->xyz, b->xyz, c->xyz );
+	plane.FromPoints(a->xyz, b->xyz, c->xyz);
 	axis[2][0] = plane[0];
 	axis[2][1] = plane[1];
 	axis[2][2] = plane[2];
 
 	// take point 0 and project the vectors to the texture origin
-	VectorMA( a->xyz, boundsOrg[0] - a->st[0], axis[0], origin );
-	VectorMA( origin, boundsOrg[1] - a->st[1], axis[1], origin );
+	VectorMA(a->xyz, boundsOrg[0] - a->st[0], axis[0], origin);
+	VectorMA(origin, boundsOrg[1] - a->st[1], axis[1], origin);
 }
 
 /*
@@ -128,23 +131,24 @@ Create a texture space on the given surface and
 call the GUI generator to create quads for it.
 =================
 */
-void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) {
+void R_RenderGuiSurf(idUserInterface *gui, drawSurf_t *drawSurf)
+{
 	idVec3	origin, axis[3];
 
 	// for testing the performance hit
-	if ( r_skipGuiShaders.GetInteger() == 1 ) {
+	if (r_skipGuiShaders.GetInteger() == 1) {
 		return;
 	}
 
 	// don't allow an infinite recursion loop
-	if ( tr.guiRecursionLevel == 4 ) {
+	if (tr.guiRecursionLevel == 4) {
 		return;
 	}
 
 	tr.pc.c_guiSurfs++;
 
 	// create the new matrix to draw on this surface
-	R_SurfaceToTextureAxis( drawSurf->geoFrontEnd, origin, axis );
+	R_SurfaceToTextureAxis(drawSurf->geo, origin, axis);
 
 	float	guiModelMatrix[16];
 	float	modelMatrix[16];
@@ -169,15 +173,15 @@ void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) {
 	guiModelMatrix[11] = 0;
 	guiModelMatrix[15] = 1;
 
-	myGlMultMatrix( guiModelMatrix, drawSurf->space->modelMatrix,
-	                modelMatrix );
+	myGlMultMatrix(guiModelMatrix, drawSurf->space->modelMatrix,
+	               modelMatrix);
 
 	tr.guiRecursionLevel++;
 
 	// call the gui, which will call the 2D drawing functions
 	tr.guiModel->Clear();
-	gui->Redraw( tr.viewDef->renderView.time );
-	tr.guiModel->EmitToCurrentView( modelMatrix, drawSurf->space->weaponDepthHack );
+	gui->Redraw(tr.viewDef->renderView.time);
+	tr.guiModel->EmitToCurrentView(modelMatrix, drawSurf->space->weaponDepthHack);
 	tr.guiModel->Clear();
 
 	tr.guiRecursionLevel--;
@@ -197,18 +201,19 @@ if they are not out of date.
 Should we also reload the map models?
 ================
 */
-void R_ReloadGuis_f( const idCmdArgs &args ) {
+void R_ReloadGuis_f(const idCmdArgs &args)
+{
 	bool all;
 
-	if ( !idStr::Icmp( args.Argv(1), "all" ) ) {
+	if (!idStr::Icmp(args.Argv(1), "all")) {
 		all = true;
-		common->Printf( "Reloading all gui files...\n" );
+		common->Printf("Reloading all gui files...\n");
 	} else {
 		all = false;
-		common->Printf( "Checking for changed gui files...\n" );
+		common->Printf("Checking for changed gui files...\n");
 	}
 
-	uiManager->Reload( all );
+	uiManager->Reload(all);
 }
 
 /*
@@ -217,6 +222,7 @@ R_ListGuis_f
 
 ================
 */
-void R_ListGuis_f( const idCmdArgs &args ) {
+void R_ListGuis_f(const idCmdArgs &args)
+{
 	uiManager->ListGuis();
 }

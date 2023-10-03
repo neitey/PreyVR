@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,9 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifndef __MODEL_ASE_H__
 #define __MODEL_ASE_H__
-
-#include "idlib/containers/List.h"
-#include "idlib/math/Vector.h"
 
 /*
 ===============================================================================
@@ -62,10 +59,10 @@ typedef struct {
 
 	bool					colorsParsed;
 	bool					normalsParsed;
-	idVec3 *				vertexes;
-	idVec2 *				tvertexes;
-	idVec3 *				cvertexes;
-	aseFace_t *				faces;
+	idVec3 				*vertexes;
+	idVec2 				*tvertexes;
+	idVec3 				*cvertexes;
+	aseFace_t 				*faces;
 } aseMesh_t;
 
 typedef struct {
@@ -82,7 +79,7 @@ typedef struct {
 	aseMesh_t				mesh;
 
 	// frames are only present with animations
-	idList<aseMesh_t*>		frames;			// aseMesh_t
+	idList<aseMesh_t *>		frames;			// aseMesh_t
 } aseObject_t;
 
 typedef struct aseModel_s {
@@ -92,7 +89,7 @@ typedef struct aseModel_s {
 } aseModel_t;
 
 
-aseModel_t *ASE_Load( const char *fileName );
-void		ASE_Free( aseModel_t *ase );
+aseModel_t *ASE_Load(const char *fileName);
+void		ASE_Free(aseModel_t *ase);
 
 #endif /* !__MODEL_ASE_H__ */

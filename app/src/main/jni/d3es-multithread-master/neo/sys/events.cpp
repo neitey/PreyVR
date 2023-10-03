@@ -371,14 +371,6 @@ Sys_GrabMouseCursor
 ===============
 */
 void Sys_GrabMouseCursor(bool grabIt) {
-	int flags;
-
-	if (grabIt)
-		flags = GRAB_ENABLE | GRAB_HIDECURSOR | GRAB_SETSTATE;
-	else
-		flags = GRAB_SETSTATE;
-
-	GLimp_GrabInput(flags);
 }
 
 extern "C" void Sys_AddKeyEvent(int key, bool pressed)

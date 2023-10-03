@@ -46,7 +46,10 @@ typedef enum {
 #define TIME_GROUP1		0
 #define TIME_GROUP2		1
 
-class idPlayer; //Lubos
+//Lubos BEGIN
+class idAnimator;
+class idPlayer;
+//Lubos END
 
 class idGame {
 public:

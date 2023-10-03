@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,13 +26,15 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "renderer/tr_local.h"
+#include "tr_local.h"
 
-idRenderEntityLocal::idRenderEntityLocal() {
-	memset( &parms, 0, sizeof( parms ) );
-	memset( modelMatrix, 0, sizeof( modelMatrix ) );
+idRenderEntityLocal::idRenderEntityLocal()
+{
+	memset(&parms, 0, sizeof(parms));
+	memset(modelMatrix, 0, sizeof(modelMatrix));
 
 	world					= NULL;
 	index					= 0;
@@ -53,36 +55,44 @@ idRenderEntityLocal::idRenderEntityLocal() {
 	needsPortalSky			= false;
 }
 
-void idRenderEntityLocal::FreeRenderEntity() {
+void idRenderEntityLocal::FreeRenderEntity()
+{
 }
 
-void idRenderEntityLocal::UpdateRenderEntity( const renderEntity_t *re, bool forceUpdate ) {
+void idRenderEntityLocal::UpdateRenderEntity(const renderEntity_t *re, bool forceUpdate)
+{
 }
 
-void idRenderEntityLocal::GetRenderEntity( renderEntity_t *re ) {
+void idRenderEntityLocal::GetRenderEntity(renderEntity_t *re)
+{
 }
 
-void idRenderEntityLocal::ForceUpdate() {
+void idRenderEntityLocal::ForceUpdate()
+{
 }
 
-int idRenderEntityLocal::GetIndex() {
+int idRenderEntityLocal::GetIndex()
+{
 	return index;
 }
 
-void idRenderEntityLocal::ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial *material ) {
+void idRenderEntityLocal::ProjectOverlay(const idPlane localTextureAxis[2], const idMaterial *material)
+{
 }
-void idRenderEntityLocal::RemoveDecals() {
+void idRenderEntityLocal::RemoveDecals()
+{
 }
 
 //======================================================================
 
-idRenderLightLocal::idRenderLightLocal() {
-	memset( &parms, 0, sizeof( parms ) );
-	memset( modelMatrix, 0, sizeof( modelMatrix ) );
-	memset( shadowFrustums, 0, sizeof( shadowFrustums ) );
-	memset( lightProject, 0, sizeof( lightProject ) );
-	memset( frustum, 0, sizeof( frustum ) );
-	memset( frustumWindings, 0, sizeof( frustumWindings ) );
+idRenderLightLocal::idRenderLightLocal()
+{
+	memset(&parms, 0, sizeof(parms));
+	memset(modelMatrix, 0, sizeof(modelMatrix));
+	memset(shadowFrustums, 0, sizeof(shadowFrustums));
+	memset(lightProject, 0, sizeof(lightProject));
+	memset(frustum, 0, sizeof(frustum));
+	memset(frustumWindings, 0, sizeof(frustumWindings));
 
 	lightHasMoved			= false;
 	world					= NULL;
@@ -103,14 +113,19 @@ idRenderLightLocal::idRenderLightLocal() {
 	lastInteraction			= NULL;
 }
 
-void idRenderLightLocal::FreeRenderLight() {
+void idRenderLightLocal::FreeRenderLight()
+{
 }
-void idRenderLightLocal::UpdateRenderLight( const renderLight_t *re, bool forceUpdate ) {
+void idRenderLightLocal::UpdateRenderLight(const renderLight_t *re, bool forceUpdate)
+{
 }
-void idRenderLightLocal::GetRenderLight( renderLight_t *re ) {
+void idRenderLightLocal::GetRenderLight(renderLight_t *re)
+{
 }
-void idRenderLightLocal::ForceUpdate() {
+void idRenderLightLocal::ForceUpdate()
+{
 }
-int idRenderLightLocal::GetIndex() {
+int idRenderLightLocal::GetIndex()
+{
 	return index;
 }

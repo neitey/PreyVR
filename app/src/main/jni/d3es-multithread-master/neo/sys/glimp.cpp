@@ -115,10 +115,6 @@ bool GLimp_Init(glimpParms_t parms) {
 
 	glConfig.displayFrequency = 0;
 
-
-
-	GLimp_WindowActive(true);
-
 	return true;
 }
 
@@ -210,21 +206,6 @@ GLExtension_t GLimp_ExtensionPointer(const char *name) {
 	//common->Printf("GLimp_ExtensionPointer %s  %p\n",name,ret);
 	return ret;
 #endif
-}
-
-void GLimp_WindowActive(bool active)
-{
-	printf( "GLimp_WindowActive %d", active );
-
-	tr.windowActive = active;
-
-	if(!active)
-	{
-		tr.BackendThreadShutdown();
-	}
-}
-
-void GLimp_GrabInput(int flags) {
 }
 
 /*

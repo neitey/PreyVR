@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,14 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __MEGATEXTURE_H__
-#define __MEGATEXTURE_H__
-
-#include "renderer/Model.h"
-
-class idTextureTile {
-public:
-	int		x, y;
+class idTextureTile
+{
+	public:
+		int		x, y;
 };
 
 static const int TILE_PER_LEVEL = 4;
@@ -44,22 +40,23 @@ static const int TILE_SIZE = MAX_LEVEL_WIDTH / TILE_PER_LEVEL;
 
 class	idMegaTexture;
 
-class idTextureLevel {
-public:
-	idMegaTexture	*mega;
+class idTextureLevel
+{
+	public:
+		idMegaTexture	*mega;
 
-	int				tileOffset;
-	int				tilesWide;
-	int				tilesHigh;
+		int				tileOffset;
+		int				tilesWide;
+		int				tilesHigh;
 
-	idImage			*image;
-	idTextureTile	tileMap[TILE_PER_LEVEL][TILE_PER_LEVEL];
+		idImage			*image;
+		idTextureTile	tileMap[TILE_PER_LEVEL][TILE_PER_LEVEL];
 
-	float			parms[4];
+		float			parms[4];
 
-	void			UpdateForCenter( float center[2] );
-	void			UpdateTile( int localX, int localY, int globalX, int globalY );
-	void			Invalidate();
+		void			UpdateForCenter(float center[2]);
+		void			UpdateTile(int localX, int localY, int globalX, int globalY);
+		void			Invalidate();
 };
 
 typedef struct {
@@ -69,37 +66,37 @@ typedef struct {
 } megaTextureHeader_t;
 
 
-class idMegaTexture {
-public:
-	bool	InitFromMegaFile( const char *fileBase );
-	void	SetMappingForSurface( const srfTriangles_t *tri );	// analyzes xyz and st to create a mapping
-	void	BindForViewOrigin( const idVec3 origin );	// binds images and sets program parameters
-	void	Unbind();								// removes texture bindings
+class idMegaTexture
+{
+	public:
+		bool	InitFromMegaFile(const char *fileBase);
+		void	SetMappingForSurface(const srfTriangles_t *tri);	// analyzes xyz and st to create a mapping
+		void	BindForViewOrigin(const idVec3 origin);	// binds images and sets program parameters
+		void	Unbind();								// removes texture bindings
 
-	//static	void MakeMegaTexture_f( const idCmdArgs &args );
-private:
-	friend class idTextureLevel;
-	void	SetViewOrigin( const idVec3 origin );
-	static void	GenerateMegaMipMaps( megaTextureHeader_t *header, idFile *file );
-	static void	GenerateMegaPreview( const char *fileName );
+		static	void MakeMegaTexture_f(const idCmdArgs &args);
+	private:
+		friend class idTextureLevel;
+		void	SetViewOrigin(const idVec3 origin);
+		static void	GenerateMegaMipMaps(megaTextureHeader_t *header, idFile *file);
+		static void	GenerateMegaPreview(const char *fileName);
 
-	idFile			*fileHandle;
+		idFile			*fileHandle;
 
-	const srfTriangles_t *currentTriMapping;
+		const srfTriangles_t *currentTriMapping;
 
-	idVec3			currentViewOrigin;
+		idVec3			currentViewOrigin;
 
-	float			localViewToTextureCenter[2][4];
+		float			localViewToTextureCenter[2][4];
 
-	int				numLevels;
-	idTextureLevel	levels[MAX_LEVELS];				// 0 is the highest resolution
-	megaTextureHeader_t	header;
+		int				numLevels;
+		idTextureLevel	levels[MAX_LEVELS];				// 0 is the highest resolution
+		megaTextureHeader_t	header;
 
-	static idCVar	r_megaTextureLevel;
-	static idCVar	r_showMegaTexture;
-	static idCVar	r_showMegaTextureLabels;
-	static idCVar	r_skipMegaTexture;
-	static idCVar	r_terrainScale;
+		static idCVar	r_megaTextureLevel;
+		static idCVar	r_showMegaTexture;
+		static idCVar	r_showMegaTextureLabels;
+		static idCVar	r_skipMegaTexture;
+		static idCVar	r_terrainScale;
 };
 
-#endif

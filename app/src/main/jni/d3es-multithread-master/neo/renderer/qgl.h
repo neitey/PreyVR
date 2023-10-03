@@ -1,10 +1,11 @@
+
 /*
 ===========================================================================
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,8 +33,61 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __QGL_H__
 #define __QGL_H__
 
+#define GL_GLEXT_PROTOTYPES
+
+#ifdef ID_TARGET_OPENGL
+#include <GL/gl.h>
+#include <GL/glext.h>
+#include <GL/glx.h>
+#define GL_APIENTRY	GLAPIENTRY
+#else
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#ifdef _OPENGLES3
+#include <GLES3/gl3.h>
+#include <GLES3/gl3ext.h>
+#else
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#endif
+#endif
+
+#ifndef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
+#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
+#endif
+#ifndef GL_MAX_COLOR_ATTACHMENTS
+#define GL_MAX_COLOR_ATTACHMENTS GL_MAX_COLOR_ATTACHMENTS_EXT
+#endif
+#ifndef GL_STENCIL_INDEX8
+#define GL_STENCIL_INDEX8 GL_STENCIL_INDEX8_OES
+#endif
+#ifndef GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT   0x83F0
+#endif
+#ifndef GL_ETC1_RGB8_OES
+#define GL_ETC1_RGB8_OES                  0x8D64
+#endif
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT  0x83F1
+#endif
+#ifndef GL_DEPTH_COMPONENT24
+#define GL_DEPTH_COMPONENT24  GL_DEPTH_COMPONENT24_OES
+#endif
+
+#ifndef GL_DEPTH_COMPONENT
+#define GL_DEPTH_COMPONENT GL_DEPTH_COMPONENT24_OES
+#endif
+
+#if defined(GL_ES_VERSION_2_0)
+#define GL_RGB8	GL_RGB
+#define GL_RGBA8	GL_RGBA
+#define GL_ALPHA8 GL_ALPHA
+#define GL_RGB5	GL_RGB5_A1 // GL_RGBA
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83f2
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83f3
+#endif
+
+#include "esUtil.h"
 
 typedef void (*GLExtension_t)(void);
 
@@ -41,7 +95,7 @@ typedef void (*GLExtension_t)(void);
 extern "C" {
 #endif
 
-GLExtension_t GLimp_ExtensionPointer( const char *name );
+	GLExtension_t GLimp_ExtensionPointer(const char *name);
 
 #ifdef __cplusplus
 }
@@ -49,6 +103,6 @@ GLExtension_t GLimp_ExtensionPointer( const char *name );
 
 // declare qgl functions
 #define QGLPROC(name, rettype, args) extern rettype (GL_APIENTRYP q##name) args;
-#include "renderer/qgl_proc.h"
+#include "qgl_proc.h"
 
 #endif

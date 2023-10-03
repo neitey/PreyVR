@@ -18,7 +18,7 @@ $(SUPPORT_LIBS)/liboggvorbis/include
 
 LOCAL_CPPFLAGS := -DUSE_GLES2
 LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
-LOCAL_CPPFLAGS += -D_HUMANHEAD -DHUMANHEAD -D_PREY
+LOCAL_CPPFLAGS += -D_HUMANHEAD -DHUMANHEAD -D_PREY -D_SHADOW_MAPPING
 
 
 LOCAL_CPPFLAGS += -Wno-sign-compare \
@@ -72,7 +72,6 @@ src_renderer = \
 	renderer/RenderWorld_load.cpp \
 	renderer/RenderWorld_portals.cpp \
 	renderer/VertexCache.cpp \
-	renderer/draw_gles3_multiview.cpp \
 	renderer/draw_common.cpp \
 	renderer/tr_backend.cpp \
 	renderer/tr_deform.cpp \
@@ -91,7 +90,13 @@ src_renderer = \
 	renderer/tr_trisurf.cpp \
 	renderer/tr_turboshadow.cpp \
 	renderer/etc_android.cpp \
-	renderer/framebuffer.cpp
+    renderer/Model_dae.cpp \
+    renderer/Model_obj.cpp \
+    renderer/draw_glsl.cpp \
+    renderer/esTransform.c \
+    renderer/etc_rg_etc1.cpp \
+    renderer/tr_rendertools.cpp
+
 
 src_framework = \
 	framework/CVarSystem.cpp \
@@ -287,27 +292,6 @@ src_sys_base = \
 src_sys_core =\
 		sys/glimp.cpp \
 
-src_renderer_glsl = \
-    renderer/glsl/cubeMapShaderFP.cpp \
-    renderer/glsl/diffuseMapShaderVP.cpp \
-    renderer/glsl/diffuseCubeShaderVP.cpp \
-    renderer/glsl/diffuseMapShaderFP.cpp \
-    renderer/glsl/fogShaderFP.cpp \
-    renderer/glsl/fogShaderVP.cpp \
-    renderer/glsl/blendLightShaderVP.cpp \
-    renderer/glsl/interactionPhongShaderFP.cpp \
-    renderer/glsl/interactionPhongShaderVP.cpp \
-    renderer/glsl/interactionShaderFP.cpp \
-    renderer/glsl/interactionShaderVP.cpp \
-    renderer/glsl/reflectionCubeShaderVP.cpp \
-    renderer/glsl/skyboxCubeShaderVP.cpp \
-    renderer/glsl/stencilShadowShaderFP.cpp \
-    renderer/glsl/stencilShadowShaderVP.cpp \
-    renderer/glsl/zfillClipShaderFP.cpp \
-    renderer/glsl/zfillClipShaderVP.cpp \
-    renderer/glsl/zfillShaderFP.cpp \
-    renderer/glsl/zfillShaderVP.cpp \
-
 
 src_d3quest = \
    ../../Doom3Quest/Doom3Quest_SurfaceView.c \
@@ -333,7 +317,6 @@ src_core = \
         $(src_dmap) \
         $(src_renderbump) \
         $(src_roq) \
-        $(src_renderer_glsl) \
 	$(src_d3quest)
 
 
@@ -346,7 +329,7 @@ LOCAL_SRC_FILES = $(SRC_ANDROID) \
 
 
 LOCAL_SHARED_LIBRARIES := openal SDL2 libvorbis libogg
-LOCAL_STATIC_LIBRARIES := jpeg
+LOCAL_STATIC_LIBRARIES := jpeg irrxml
 
 LOCAL_LDLIBS :=  -llog -lm  -lEGL -landroid -lGLESv3 -lz $(TOP_DIR)/OpenXR/stub/arm64-v8a/libopenxr_loader.so
 

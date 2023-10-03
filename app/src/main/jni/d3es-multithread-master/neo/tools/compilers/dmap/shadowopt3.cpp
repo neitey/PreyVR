@@ -103,19 +103,6 @@ typedef struct {
 	int		planeNum;	// from original triangle, not calculated from the clipped verts
 } shadowTri_t;
 
-typedef struct {
-	idVec3	*verts;			// includes both front and back projections, caller should free
-	int		numVerts;
-	glIndex_t	*indexes;	// caller should free
-
-	// indexes must be sorted frontCap, rearCap, silPlanes so the caps can be removed
-	// when the viewer is in a position that they don't need to see them
-	int		numFrontCapIndexes;
-	int		numRearCapIndexes;
-	int		numSilPlaneIndexes;
-	int		totalIndexes;
-} optimizedShadow_t;
-
 static const int MAX_SHADOW_TRIS = 32768;
 
 static	shadowTri_t	outputTris[MAX_SHADOW_TRIS];

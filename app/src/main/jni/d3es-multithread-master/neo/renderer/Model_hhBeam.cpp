@@ -1,9 +1,10 @@
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
+#include "tr_local.h"
+#include "Model_local.h"
+
 // Simple beam model. different with idRenderModelBeam, the line's start point is not view origin.
-
-#include "idlib/precompiled.h"
-#include "renderer/tr_local.h"
-
-#include "renderer/Model_local.h"
 
 static idCVar harm_r_skipHHBeam("harm_r_skipHHBeam",                                        "0", CVAR_RENDERER | CVAR_BOOL, "[Harmattan]: Skip beam model render");
 static const struct viewDef_s *current_view; // temp, should as a parameter
@@ -184,7 +185,7 @@ idRenderModel* hhRenderModelBeam::InstantiateDynamicModel( const struct renderEn
 	int id = 0;
 	for(int i = 0; i < declBeam->numBeams; i++)
 	{
-		UpdateSurface(renderEntity, i, renderEntity->beamNodes, const_cast<modelSurface_t *>(staticModel->Surface(i)));
+		UpdateSurface(renderEntity, i, renderEntity->beamNodes, (modelSurface_t *)staticModel->Surface(i));
 		id++;
 	}
 	for(int i = 0; i < declBeam->numBeams; i++)
@@ -193,7 +194,7 @@ idRenderModel* hhRenderModelBeam::InstantiateDynamicModel( const struct renderEn
 		{
 			if(!declBeam->quadShader[i][m])
 				continue;
-			UpdateQuadSurface(renderEntity, i, m, renderEntity->beamNodes, const_cast<modelSurface_t *>(staticModel->Surface(id++)));
+			UpdateQuadSurface(renderEntity, i, m, renderEntity->beamNodes, (modelSurface_t *)staticModel->Surface(id++));
 		}
 	}
 
@@ -229,59 +230,25 @@ idBounds hhRenderModelBeam::Bounds( const struct renderEntity_s *renderEntity ) 
 	return b;
 }
 
-//Lubos BEGIN
-idVec3 hhRenderModelBeam::CalculateMinorVector( const struct renderEntity_s *renderEntity, idVec3 &up, idVec3 &right, const idVec3 &pos )
-{
-	// Get world position of the vertex
-	idVec3 worldpos;
-	renderEntity->axis.ProjectVector(pos, worldpos);
-	worldpos += renderEntity->origin;
-
-	// Convert world -> camera
-	idVec3 view = ( worldpos - current_view->renderView.vieworg ) * current_view->renderView.viewaxis.Inverse();
-	idVec3 cam(-view[1], view[2], view[0]);
-	if (cam.z <= 0) return up;
-	float x = cam.x / tan( current_view->renderView.fov_x * 0.5f * idMath::M_DEG2RAD ) / cam.z;
-	float y = cam.y / tan( current_view->renderView.fov_y * 0.5f * idMath::M_DEG2RAD ) / cam.z;
-
-	// Interpolate the minor vector
-	idVec3 output(0);
-	float length = fabs(x) + fabs(y);
-	output += -right * fmax(-y, 0.0f) / length;
-	output += right * fmax(y, 0.0f) / length;
-	output += -up * fmax(-x, 0.0f) / length;
-	output += up * fmax(x, 0.0f) / length;
-	return output;
-}
-//Lubos END
-
 void hhRenderModelBeam::UpdateSurface( const struct renderEntity_s *renderEntity, const int index, const hhBeamNodes_t *beam, modelSurface_t *surf )
 {
 	srfTriangles_t *tri = surf->geometry;
 	idVec3 up;
-	idVec3 right;
 	renderEntity->axis.ProjectVector(current_view->renderView.viewaxis[2], up);
-	renderEntity->axis.ProjectVector(current_view->renderView.viewaxis[1], right);
 
-	//Lubos BEGIN
-	idVec3 minor = up;
 	int numLines = declBeam->numNodes - 1;
-	if (numLines > 0)
-		minor = CalculateMinorVector(renderEntity, up, right, beam->nodes[numLines / 2]);
-	minor *= declBeam->thickness[index] * 0.5f;
-	//Lubos END
-
 	for(int i = 0; i < numLines; i++)
 	{
 		const idVec3	&start = beam->nodes[i];
 		const idVec3	&target = beam->nodes[i + 1];
+
+		idVec3 minor = up * declBeam->thickness[index] * 0.5f;
 
 		tri->verts[4 * i + 0].xyz = start - minor;
 		tri->verts[4 * i + 1].xyz = start + minor;
 		tri->verts[4 * i + 2].xyz = target - minor;
 		tri->verts[4 * i + 3].xyz = target + minor;
 	}
-	tri->bounds = Bounds(renderEntity);//Lubos
 }
 
 void hhRenderModelBeam::UpdateQuadSurface( const struct renderEntity_s *renderEntity, const int index, int quadIndex, const hhBeamNodes_t *beam, modelSurface_t *surf )
@@ -300,5 +267,6 @@ void hhRenderModelBeam::UpdateQuadSurface( const struct renderEntity_s *renderEn
 	tri->verts[1].xyz = target - rightw + upw;
 	tri->verts[2].xyz = target + rightw - upw;
 	tri->verts[3].xyz = target + rightw + upw;
-	tri->bounds = Bounds(renderEntity);//Lubos
 }
+
+

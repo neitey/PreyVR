@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,10 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "../idlib/precompiled.h"
+#pragma hdrstop
 
-#include "renderer/tr_local.h"
-#include "renderer/Model_local.h"
+#include "tr_local.h"
+#include "Model_local.h"
+
 
 /*
 
@@ -44,7 +46,8 @@ static const char *sprite_SnapshotName = "_sprite_Snapshot_";
 idRenderModelBeam::IsDynamicModel
 ===============
 */
-dynamicModel_t idRenderModelSprite::IsDynamicModel() const {
+dynamicModel_t idRenderModelSprite::IsDynamicModel() const
+{
 	return DM_CONTINUOUS;
 }
 
@@ -53,7 +56,8 @@ dynamicModel_t idRenderModelSprite::IsDynamicModel() const {
 idRenderModelBeam::IsLoaded
 ===============
 */
-bool idRenderModelSprite::IsLoaded() const {
+bool idRenderModelSprite::IsLoaded() const
+{
 	return true;
 }
 
@@ -62,64 +66,65 @@ bool idRenderModelSprite::IsLoaded() const {
 idRenderModelSprite::InstantiateDynamicModel
 ===============
 */
-idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct renderEntity_s *renderEntity, const struct viewDef_s *viewDef, idRenderModel *cachedModel ) {
+idRenderModel 	*idRenderModelSprite::InstantiateDynamicModel(const struct renderEntity_s *renderEntity, const struct viewDef_s *viewDef, idRenderModel *cachedModel)
+{
 	idRenderModelStatic *staticModel;
 	srfTriangles_t *tri;
 	modelSurface_t surf;
 
-	if ( cachedModel && !r_useCachedDynamicModels.GetBool() ) {
+	if (cachedModel && !r_useCachedDynamicModels.GetBool()) {
 		delete cachedModel;
 		cachedModel = NULL;
 	}
 
-	if ( renderEntity == NULL || viewDef == NULL ) {
+	if (renderEntity == NULL || viewDef == NULL) {
 		delete cachedModel;
 		return NULL;
 	}
 
-	if ( cachedModel != NULL ) {
+	if (cachedModel != NULL) {
 
-		assert( dynamic_cast<idRenderModelStatic *>( cachedModel ) != NULL );
-		assert( idStr::Icmp( cachedModel->Name(), sprite_SnapshotName ) == 0 );
+		assert(dynamic_cast<idRenderModelStatic *>(cachedModel) != NULL);
+		assert(idStr::Icmp(cachedModel->Name(), sprite_SnapshotName) == 0);
 
-		staticModel = static_cast<idRenderModelStatic *>( cachedModel );
-		surf = *staticModel->Surface( 0 );
+		staticModel = static_cast<idRenderModelStatic *>(cachedModel);
+		surf = *staticModel->Surface(0);
 		tri = surf.geometry;
 
 	} else {
 
 		staticModel = new idRenderModelStatic;
-		staticModel->InitEmpty( sprite_SnapshotName );
+		staticModel->InitEmpty(sprite_SnapshotName);
 
 		tri = R_AllocStaticTriSurf();
-		R_AllocStaticTriSurfVerts( tri, 4 );
-		R_AllocStaticTriSurfIndexes( tri, 6 );
+		R_AllocStaticTriSurfVerts(tri, 4);
+		R_AllocStaticTriSurfIndexes(tri, 6);
 
 		tri->verts[ 0 ].Clear();
-		tri->verts[ 0 ].normal.Set( 1.0f, 0.0f, 0.0f );
-		tri->verts[ 0 ].tangents[0].Set( 0.0f, 1.0f, 0.0f );
-		tri->verts[ 0 ].tangents[1].Set( 0.0f, 0.0f, 1.0f );
+		tri->verts[ 0 ].normal.Set(1.0f, 0.0f, 0.0f);
+		tri->verts[ 0 ].tangents[0].Set(0.0f, 1.0f, 0.0f);
+		tri->verts[ 0 ].tangents[1].Set(0.0f, 0.0f, 1.0f);
 		tri->verts[ 0 ].st[ 0 ] = 0.0f;
 		tri->verts[ 0 ].st[ 1 ] = 0.0f;
 
 		tri->verts[ 1 ].Clear();
-		tri->verts[ 1 ].normal.Set( 1.0f, 0.0f, 0.0f );
-		tri->verts[ 1 ].tangents[0].Set( 0.0f, 1.0f, 0.0f );
-		tri->verts[ 1 ].tangents[1].Set( 0.0f, 0.0f, 1.0f );
+		tri->verts[ 1 ].normal.Set(1.0f, 0.0f, 0.0f);
+		tri->verts[ 1 ].tangents[0].Set(0.0f, 1.0f, 0.0f);
+		tri->verts[ 1 ].tangents[1].Set(0.0f, 0.0f, 1.0f);
 		tri->verts[ 1 ].st[ 0 ] = 1.0f;
 		tri->verts[ 1 ].st[ 1 ] = 0.0f;
 
 		tri->verts[ 2 ].Clear();
-		tri->verts[ 2 ].normal.Set( 1.0f, 0.0f, 0.0f );
-		tri->verts[ 2 ].tangents[0].Set( 0.0f, 1.0f, 0.0f );
-		tri->verts[ 2 ].tangents[1].Set( 0.0f, 0.0f, 1.0f );
+		tri->verts[ 2 ].normal.Set(1.0f, 0.0f, 0.0f);
+		tri->verts[ 2 ].tangents[0].Set(0.0f, 1.0f, 0.0f);
+		tri->verts[ 2 ].tangents[1].Set(0.0f, 0.0f, 1.0f);
 		tri->verts[ 2 ].st[ 0 ] = 1.0f;
 		tri->verts[ 2 ].st[ 1 ] = 1.0f;
 
 		tri->verts[ 3 ].Clear();
-		tri->verts[ 3 ].normal.Set( 1.0f, 0.0f, 0.0f );
-		tri->verts[ 3 ].tangents[0].Set( 0.0f, 1.0f, 0.0f );
-		tri->verts[ 3 ].tangents[1].Set( 0.0f, 0.0f, 1.0f );
+		tri->verts[ 3 ].normal.Set(1.0f, 0.0f, 0.0f);
+		tri->verts[ 3 ].tangents[0].Set(0.0f, 1.0f, 0.0f);
+		tri->verts[ 3 ].tangents[1].Set(0.0f, 0.0f, 1.0f);
 		tri->verts[ 3 ].st[ 0 ] = 0.0f;
 		tri->verts[ 3 ].st[ 1 ] = 1.0f;
 
@@ -136,16 +141,16 @@ idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct rende
 		surf.geometry = tri;
 		surf.id = 0;
 		surf.shader = tr.defaultMaterial;
-		staticModel->AddSurface( surf );
+		staticModel->AddSurface(surf);
 	}
 
-	int	red			= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_RED ] * 255.0f );
-	int green		= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_GREEN ] * 255.0f );
-	int	blue		= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_BLUE ] * 255.0f );
-	int	alpha		= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_ALPHA ] * 255.0f );
+	int	red			= idMath::FtoiFast(renderEntity->shaderParms[ SHADERPARM_RED ] * 255.0f);
+	int green		= idMath::FtoiFast(renderEntity->shaderParms[ SHADERPARM_GREEN ] * 255.0f);
+	int	blue		= idMath::FtoiFast(renderEntity->shaderParms[ SHADERPARM_BLUE ] * 255.0f);
+	int	alpha		= idMath::FtoiFast(renderEntity->shaderParms[ SHADERPARM_ALPHA ] * 255.0f);
 
-	idVec3 right	= idVec3( 0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ] * 0.5f, 0.0f );
-	idVec3 up		= idVec3( 0.0f, 0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] * 0.5f );
+	idVec3 right	= idVec3(0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ] * 0.5f, 0.0f);
+	idVec3 up		= idVec3(0.0f, 0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] * 0.5f);
 
 	tri->verts[ 0 ].xyz = up + right;
 	tri->verts[ 0 ].color[ 0 ] = red;
@@ -171,7 +176,7 @@ idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct rende
 	tri->verts[ 3 ].color[ 2 ] = blue;
 	tri->verts[ 3 ].color[ 3 ] = alpha;
 
-	R_BoundTriSurf( tri );
+	R_BoundTriSurf(tri);
 
 	staticModel->bounds = tri->bounds;
 
@@ -183,14 +188,17 @@ idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct rende
 idRenderModelSprite::Bounds
 ===============
 */
-idBounds idRenderModelSprite::Bounds( const struct renderEntity_s *renderEntity ) const {
+idBounds idRenderModelSprite::Bounds(const struct renderEntity_s *renderEntity) const
+{
 	idBounds b;
 
 	b.Zero();
-	if ( renderEntity == NULL ) {
-		b.ExpandSelf( 8.0f );
+
+	if (renderEntity == NULL) {
+		b.ExpandSelf(8.0f);
 	} else {
-		b.ExpandSelf( Max( renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ], renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] ) * 0.5f );
+		b.ExpandSelf(Max(renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ], renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ]) * 0.5f);
 	}
+
 	return b;
 }

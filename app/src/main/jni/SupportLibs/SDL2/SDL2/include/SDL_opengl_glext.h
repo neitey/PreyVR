@@ -6074,6 +6074,8 @@ GLAPI void APIENTRY glPopGroupMarkerEXT (void);
 #endif
 #endif /* GL_EXT_debug_marker */
 
+#define GLclampd GLclampf
+
 #ifndef GL_EXT_depth_bounds_test
 #define GL_EXT_depth_bounds_test 1
 #define GL_DEPTH_BOUNDS_TEST_EXT          0x8890
