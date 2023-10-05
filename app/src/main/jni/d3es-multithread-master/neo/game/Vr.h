@@ -13,7 +13,6 @@
 extern idCVar vr_shakeAmplitude;
 extern idCVar vr_hudType;
 extern idCVar vr_haptics;
-extern idCVar vr_powerfulHMD;
 
 #include <android/log.h>
 

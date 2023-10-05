@@ -5050,13 +5050,13 @@ void hhPlayer::Think( void ) {
 			pVRClientInfo->weaponZoom = false;
 		}
 
-		pVRClientInfo->weaponGun = false;
+		pVRClientInfo->weaponGun = bSpiritWalk;
 		pVRClientInfo->weaponTwoHand = false;
 		pVRClientInfo->weaponOffset[0] = 0; //forward
 		pVRClientInfo->weaponOffset[1] = 0; //left
 		pVRClientInfo->weaponOffset[2] = 0; //up
 		if (bSpiritWalk) {
-			pVRClientInfo->weaponOffset[0] = -15; pVRClientInfo->weaponOffset[1] = 0; pVRClientInfo->weaponOffset[2] = 1; //bow
+			pVRClientInfo->weaponOffset[0] = -15; pVRClientInfo->weaponOffset[1] = 0; pVRClientInfo->weaponOffset[2] = 5; //bow
 		} else {
 			switch (currentWeapon) {
 				case 1: pVRClientInfo->weaponOffset[0] = -16; pVRClientInfo->weaponOffset[1] = 9; pVRClientInfo->weaponOffset[2] = 16; break; //wrench
