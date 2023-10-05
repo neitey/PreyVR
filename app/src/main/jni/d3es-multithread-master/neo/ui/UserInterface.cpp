@@ -36,6 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 
 extern idCVar r_skipGuiShaders;		// 1 = don't render any gui elements on surfaces
 extern idCVar r_scaleMenusTo43; // DG: for the "scale menus to 4:3" hack
+idCVar vr_powerfulHMD( "vr_powerfulHMD", "0", CVAR_INTEGER | CVAR_GAME | CVAR_ARCHIVE, "Flag that the HMD is very powerful" );//Lubos
 
 idUserInterfaceManagerLocal	uiManagerLocal;
 idUserInterfaceManager 	*uiManager = &uiManagerLocal;
@@ -321,6 +322,7 @@ bool idUserInterfaceLocal::IsInteractive() const
 
 bool idUserInterfaceLocal::InitFromFile(const char *qpath, bool rebuild, bool cache)
 {
+	SetStateInt( "powerfulHMD", vr_powerfulHMD.GetInteger() );//Lubos
 
 	if (!(qpath && *qpath)) {
 		// FIXME: Memory leak!!
