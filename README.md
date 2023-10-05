@@ -72,7 +72,6 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * EAX reverb in dreamworld levels (this doesn't work well when invaded)
 * Footsteps for 6DoF movements (it didn't apply to real steps)
 * Knockback of leech gun (doesn't work correctly on higher framerate)
-* Shadows rendering (causes performance issues)
 * Stereo rendering for skyboxes (had wrong stereo effect)
 * View bobbing (feels weird in VR)
 
@@ -118,4 +117,4 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * Glitch effect (unsupported by the renderer) 
 * Glow effect (unsupported by the renderer)
 * Network communication (missing source code)
-* Shadows (cause performance issues)
+* Soft shadows (unsupported by the renderer) 

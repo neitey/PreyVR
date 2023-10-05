@@ -731,6 +731,36 @@
 								choiceType	0
 							}
 						}
+
+						buttonDef OVA_Shadows {
+							rect			10, 190, 400, 25
+							leftMat			"guis/assets/menu/textbar_corner.tga"
+							middleMat		"guis/assets/menu/textbarstrip.tga"
+							rightMat		"guis/assets/menu/textbar_invcorner.tga"
+							visible			("gui::powerfulHMD" != 0)
+
+							windowDef OVA_Title_Shadows {
+								rect		0, 0, 200, 25
+								forecolor	STATIC_FORECOLOR_COMMA
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								text		"Shadows"
+							}
+							choiceDef OVA_Choice_Shadows {
+								rect		200, 0, 200, 25
+								forecolor	EDITABLE_FORECOLOR_COMMA
+								hovercolor	EDITABLE_HOVERCOLOR_COMMA
+								textalign	1
+								textaligny	0
+								textscale	0.33
+								shadow		1
+								choices		"No;Yes"
+								cvar		"r_shadows"
+								choiceType	0
+							}
+						}
 					}
 				}
 			}
