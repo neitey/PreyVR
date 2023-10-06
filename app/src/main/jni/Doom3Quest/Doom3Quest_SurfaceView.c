@@ -580,7 +580,7 @@ static bool ovrFramebuffer_Create(
 			// Create the depth buffer texture.
 			GL(glGenTextures(1, &frameBuffer->DepthBuffers[i]));
 			GL(glBindTexture(GL_TEXTURE_2D_ARRAY, frameBuffer->DepthBuffers[i]));
-			GL(glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, 2));
+			GL(glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH24_STENCIL8, width, height, 2));
 			GL(glBindTexture(GL_TEXTURE_2D_ARRAY, 0));
 
 			// Create the frame buffer.
@@ -590,6 +590,14 @@ static bool ovrFramebuffer_Create(
 				GL(glFramebufferTextureMultisampleMultiviewOVR(
 						GL_DRAW_FRAMEBUFFER,
 						GL_DEPTH_ATTACHMENT,
+						frameBuffer->DepthBuffers[i],
+						0 /* level */,
+						multisamples /* samples */,
+						0 /* baseViewIndex */,
+						2 /* numViews */));
+				GL(glFramebufferTextureMultisampleMultiviewOVR(
+						GL_DRAW_FRAMEBUFFER,
+						GL_STENCIL_ATTACHMENT,
 						frameBuffer->DepthBuffers[i],
 						0 /* level */,
 						multisamples /* samples */,
@@ -607,6 +615,13 @@ static bool ovrFramebuffer_Create(
 				GL(glFramebufferTextureMultiviewOVR(
 						GL_DRAW_FRAMEBUFFER,
 						GL_DEPTH_ATTACHMENT,
+						frameBuffer->DepthBuffers[i],
+						0 /* level */,
+						0 /* baseViewIndex */,
+						2 /* numViews */));
+				GL(glFramebufferTextureMultiviewOVR(
+						GL_DRAW_FRAMEBUFFER,
+						GL_STENCIL_ATTACHMENT,
 						frameBuffer->DepthBuffers[i],
 						0 /* level */,
 						0 /* baseViewIndex */,
@@ -635,7 +650,7 @@ static bool ovrFramebuffer_Create(
 				GL(glGenRenderbuffers(1, &frameBuffer->DepthBuffers[i]));
 				GL(glBindRenderbuffer(GL_RENDERBUFFER, frameBuffer->DepthBuffers[i]));
 				GL(glRenderbufferStorageMultisampleEXT(
-						GL_RENDERBUFFER, multisamples, GL_DEPTH_COMPONENT24, width, height));
+						GL_RENDERBUFFER, multisamples, GL_DEPTH24_STENCIL8, width, height));
 				GL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 
 				// Create the frame buffer.
@@ -652,6 +667,11 @@ static bool ovrFramebuffer_Create(
 				GL(glFramebufferRenderbuffer(
 						GL_FRAMEBUFFER,
 						GL_DEPTH_ATTACHMENT,
+						GL_RENDERBUFFER,
+						frameBuffer->DepthBuffers[i]));
+				GL(glFramebufferRenderbuffer(
+						GL_FRAMEBUFFER,
+						GL_STENCIL_ATTACHMENT,
 						GL_RENDERBUFFER,
 						frameBuffer->DepthBuffers[i]));
 				GL(GLenum renderFramebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER));
@@ -675,6 +695,11 @@ static bool ovrFramebuffer_Create(
 				GL(glFramebufferRenderbuffer(
 						GL_DRAW_FRAMEBUFFER,
 						GL_DEPTH_ATTACHMENT,
+						GL_RENDERBUFFER,
+						frameBuffer->DepthBuffers[i]));
+				GL(glFramebufferRenderbuffer(
+						GL_DRAW_FRAMEBUFFER,
+						GL_STENCIL_ATTACHMENT,
 						GL_RENDERBUFFER,
 						frameBuffer->DepthBuffers[i]));
 				GL(glFramebufferTexture2D(
@@ -722,8 +747,8 @@ void ovrFramebuffer_SetNone()
 void ovrFramebuffer_Resolve( ovrFramebuffer * frameBuffer )
 {
 	// Discard the depth buffer, so the tiler won't need to write it back out to memory.
-	const GLenum depthAttachment[1] = { GL_DEPTH_ATTACHMENT };
-	glInvalidateFramebuffer( GL_DRAW_FRAMEBUFFER, 1, depthAttachment );
+	const GLenum depthAttachment[2] = { GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT };
+	glInvalidateFramebuffer( GL_DRAW_FRAMEBUFFER, 2, depthAttachment );
 }
 
 void ovrFramebuffer_Advance( ovrFramebuffer * frameBuffer )
