@@ -19,9 +19,6 @@ $RECYCLE.BIN/
 *.o
 *.d
 
-#binaries
-*.so
-
 #libs
 *.a
 
