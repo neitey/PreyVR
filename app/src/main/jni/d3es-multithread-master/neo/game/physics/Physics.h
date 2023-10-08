@@ -64,9 +64,6 @@ If you have questions concerning this license or the applicable additional terms
 #define CONTACT_EPSILON			0.25f				// maximum contact seperation distance
 
 class idEntity;
-#ifdef _WATER_PHYSICS // un noted changes from original sdk
-class idPhysics_Liquid;
-#endif
 
 typedef struct impactInfo_s {
 	float						invMass;			// inverse mass
@@ -181,16 +178,6 @@ public:	// common physics interface
 								// networking
 	virtual void				WriteToSnapshot( idBitMsgDelta &msg ) const = 0;
 	virtual void				ReadFromSnapshot( const idBitMsgDelta &msg ) = 0;
-
-#ifdef _WATER_PHYSICS // un noted changes from original sdk
-								// gets/sets the water
-								// these should be pure virtual but I would've had to change 10 or so other classes
-								// so this was a better solution
-	virtual idPhysics_Liquid	*GetWater() { return NULL; }
-	virtual void				SetWater( idPhysics_Liquid *e ) {}
-
-#endif
-
 };
 
 #endif /* !__PHYSICS_H__ */

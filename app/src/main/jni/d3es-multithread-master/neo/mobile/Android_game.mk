@@ -12,7 +12,7 @@ $(D3QUEST_TOP_PATH)/neo/game \
 $(SDL_INCLUDE_PATHS)
 
 
-LOCAL_CPPFLAGS := -DGAME_DLL -fPIC -D_K_CLANG -D_HARDCORPS -D_DENTONMOD -D_PORTALSKY -D_WATER_PHYSICS
+LOCAL_CPPFLAGS := -DGAME_DLL -fPIC -D_K_CLANG -D_RIVENSIN -D_DENTONMOD -D_PORTALSKY
 LOCAL_CPPFLAGS += -std=c++11 -D__DOOM_DLL__ -frtti -fexceptions  -Wno-error=format-security
 
 
@@ -150,11 +150,12 @@ src_game = \
 	game/physics/Physics_Static.cpp \
 	game/physics/Physics_StaticMulti.cpp \
 	game/physics/Push.cpp \
-    game/Liquid.cpp \
     game/TrailGenerator.cpp \
     game/ai/AI_bot.cpp \
-    game/physics/Physics_Liquid.cpp \
     game/tracer.cpp \
+    game/Grabber.cpp \
+    game/PlayerCursor.cpp \
+    game/physics/Force_Grab.cpp \
 
 LOCAL_SRC_FILES = $(src_idlib) $(src_game)
 

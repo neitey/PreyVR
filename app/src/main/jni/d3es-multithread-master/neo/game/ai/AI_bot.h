@@ -7,12 +7,10 @@
 /*
 ===============================================================================
 
-	idAI_Bot and idBotWeapon
+	idAI_Bot
 
 ===============================================================================
 */
-
-#include "AI.h"
 
 //
 // events
@@ -20,36 +18,9 @@
 extern const idEventDef AI_Bot_FireWeapon;
 
 // time before a weapon dropped to the floor disappears
-const int AI_BOT_WEAPON_DROP_TIME = -1; //never //was:20 * 1000;
+const int AI_WEAPON_DROP_TIME = 20 * 1000;
 
-//class idBotNode;
-class idBotSquad;
-
-//talk flags - must match .script values
-enum {
-	AI_BOT_SAY_GENERIC = 0,
-	AI_BOT_SAY_WATCHOUT,
-	AI_BOT_SAY_SIGHT,
-	AI_BOT_SAY_BACKTOIDLE,
-	AI_BOT_SAY_SUSPICIOUS,
-	AI_BOT_SAY_STARTMOVE,
-	AI_BOT_SAY_LOST,
-	AI_BOT_SAY_AFTERLOST,
-	AI_BOT_SAY_DAMAGED,
-	AI_BOT_SAY_FIRE,
-	AI_BOT_SAY_MATEDOWN,
-	AI_BOT_SAY_CHATTER,
-	AI_BOT_SAY_MAXVALUE //always the last one!
-};
-
-
-typedef enum {
-	AI_SQUAD_MEMBER_REMOVED,
-	AI_SQUAD_MEMBER_ADDED 
-}squadMsg_t;
-
-
-//will not be saved/restored!
+class idBotNode;
 
 class idBotWeapon {
 public:
@@ -78,12 +49,6 @@ public:
 	float					attack_accuracy;
 	float					projectile_spread;
 	int						num_projectiles;
-	int						fireMode;
-
-	//balancing info
-	int						attackCounter;	//current attack counter
-	int						balancing_multiplier; //multiplier value
-	bool					requestedForBalancing;
 
 	//clip
 	int						clipSize;
@@ -101,8 +66,7 @@ public:
 class idAI_Bot : public idAI {
 public:
 	idScriptBool			AI_LEAVE_NODE_TO_FIGHT;
-	//idScriptBool			AI_SAY_DAMAGED;
-	idScriptFloat			AI_SAY_HINT;
+	idScriptBool			AI_SAY_DAMAGED;
 
 public:
 	CLASS_PROTOTYPE( idAI_Bot );
@@ -110,15 +74,11 @@ public:
 	virtual					~idAI_Bot();
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
-	void					SetSquad( idBotSquad* newsquad );
-	void					ClearSquad( void );
-	void					HandleSquadMsg( squadMsg_t type, int parm );
 	void					Spawn( void );
 	virtual bool			GetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, const idEntity *ignore, idVec3 &aimDir ) const;
 	int						GetHealth( void );
 
 protected:
-	bool					canSpeak;
 	idList<idBotWeapon>		weapons;
 	int						currentWeapon;
 	int						lastVisibleEnemyTime;
@@ -129,14 +89,8 @@ protected:
 	int						lastWeaponChangedTime;
 	idScriptBool			AI_WEAPON_CHANGED;
 	idScriptBool			AI_WEAPON_NEED_RELOAD;
-	//idEntityPtr<idBotNode>	currentNode;
-	idEntityPtr<idBotSquad>	squad;
-	//float					attackNodesMaxDist;
-
-	static int say_times[ AI_BOT_SAY_MAXVALUE ];
-	static const int say_delays[ AI_BOT_SAY_MAXVALUE ];
-	static const char * say_names_default[ AI_BOT_SAY_MAXVALUE ];
-	static const char * say_names_squad[ AI_BOT_SAY_MAXVALUE ];
+	idEntityPtr<idBotNode>	currentNode;
+	
 
 	void					LinkScriptVariables( void ); //called in spawn method
 
@@ -168,21 +122,14 @@ protected:
 	//utilities
 	virtual void			CalculateAttackOffsets( void );
 	virtual void			Show( void );
-	void					SetDefaultSayTimes( float mult );
-	virtual void			SetChatSound( void );
-	virtual	void			PlayChatter( void );
 
 	// damage
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
+
 	//events
 	void					Event_SelectWeapon( int weaponNum );
-	void					Event_IsWeaponEnabled( int weaponNum );
-	void					Event_AddWeaponInBalancing( int weaponNum );
-	void					Event_GetBalancedWeapon();
-	void					Event_RegisterAttackForBalancing( int weaponNum );
 	void					Event_SelectAnotherWeapon( int idealLevel, int minLevel );
-	//void					Event_SelectAnotherWeaponByNode( idEntity *node );
 	void					Event_GetCurrentWeapon( void );
 	void					Event_GetWeaponNumByName( const char *weaponName );
 	void					Event_CreateMissile( const char *jointname );
@@ -203,12 +150,10 @@ protected:
 	void					Event_LostTimeMoreThan( int time );
 	void					Event_WeaponChangedMoreThan( int time ); 
 	void					Event_PlayAnimOnWeapon( const char *animname ); 
-	//void					Event_TryLockNode( idEntity *node );
-	//void					Event_ReleaseNode( void );
+	void					Event_TryLockNode( idEntity *node );
+	void					Event_ReleaseNode( void );
 	void					Event_FindEnemyAIorPL( int useFOV );
-	//void					Event_FindClosestBotNode( idEntity *ignoreNode );
-	void					Event_GetNextSquadMate( idEntity *lastMatch );
-	void					Event_CanSpeak( float can );
+	void					Event_Burn( void );
 };
 
 ID_INLINE int idAI_Bot::GetHealth( void ) {
@@ -216,23 +161,14 @@ ID_INLINE int idAI_Bot::GetHealth( void ) {
 }
 
 //from bad to good 
-enum {
-	DISTANCE_COND_TOOFAR		= -4,
-	DISTANCE_COND_FIGHT_FAILED	= -3,
-	DISTANCE_COND_MIN_FAILED	= -2,
-	DISTANCE_COND_MAX_FAILED	= -1,
-	DISTANCE_COND_NOENEMY		= 0,
-	DISTANCE_COND_OK			= 1
-};
+#define DISTANCE_COND_TOOFAR		-4
+#define DISTANCE_COND_FIGHT_FAILED	-3
+#define DISTANCE_COND_MIN_FAILED	-2
+#define DISTANCE_COND_MAX_FAILED	-1
+#define DISTANCE_COND_NOENEMY		0
+#define DISTANCE_COND_OK			1
 
-/*
-===============================================================================
 
-	idBotNode
-
-===============================================================================
-*/
-/*
 class idBotNode : public idEntity {
 public:
 	CLASS_PROTOTYPE( idBotNode );
@@ -281,43 +217,6 @@ ID_INLINE bool idBotNode::IsDisabled( void ) const {
 
 ID_INLINE bool idBotNode::IsInUse( void ) const {
 	return inuse;
-}
-*/
-
-/*
-===============================================================================
-
-	idBotSquad
-
-===============================================================================
-*/
-
-class idBotSquad : public idEntity {
-public:
-	CLASS_PROTOTYPE( idBotSquad );
-						idBotSquad();
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-	void				Spawn( void );
-
-	void				RemoveMember( idAI_Bot *bot );
-	idAI_Bot*			GetNextMember( idAI_Bot *lastMatch, idAI_Bot *ignore );
-
-	int					GetNumMembers( void ) const;
-	//void				SendMsg( int type ) const; 
-	
-private:
-	idList< idEntityPtr<idAI_Bot> >	members;
-
-	void				Event_FindMembers( void );
-	void				Event_Activate( idEntity *activator );
-	void				FindMembers( void );
-};
-
-ID_INLINE int idBotSquad::GetNumMembers( void ) const{
-	return members.Num();
 }
 
 #endif /* !__GAME_BOT_H__ */

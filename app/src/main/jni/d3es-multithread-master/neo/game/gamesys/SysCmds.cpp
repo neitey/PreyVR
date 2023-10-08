@@ -291,37 +291,20 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		give_all = false;
 	}
 
-	
 	if ( give_all || ( idStr::Cmpn( name, "weapon", 6 ) == 0 ) ) {
 		if ( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) ) {
 			gameLocal.world->spawnArgs.SetBool( "no_Weapons", false );
 			for( i = 0; i < gameLocal.numClients; i++ ) {
-				if ( gameLocal.entities[ i ] ) {			
-					gameLocal.entities[ i ]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[ i ]->spawnArgs.GetString( "def_weapon0" ) ); //ivan - was: def_weapon1 - 0 is chainsaw
+				if ( gameLocal.entities[ i ] ) {
+					gameLocal.entities[ i ]->PostEventSec( &EV_Player_SelectWeapon, 0.5f, gameLocal.entities[ i ]->spawnArgs.GetString( "def_weapon0" ) ); //ivan TODO - was: def_weapon1 - ? is chainsaw
 				}
 			}
 		}
 	}
-
-	//ivan start - spawn instead of give
-	/*
-	//was 
-	if ( ( idStr::Cmpn( name, "weapon_", 7 ) == 0 ) ||  ( idStr::Cmpn( name, "item_", 5 ) == 0 ) || ( idStr::Cmpn( name, "ammo_", 5 ) == 0 ) ) {
+	if ( /*( idStr::Cmpn( name, "weapon_", 7 ) == 0 ) || */ ( idStr::Cmpn( name, "item_", 5 ) == 0 ) || ( idStr::Cmpn( name, "ammo_", 5 ) == 0 ) ) { //ivan - weapon commented out
 		player->GiveItem( name );
 		return;
 	}
-	*/
-
-	if ( ( idStr::Cmpn( name, "weapon_", 7 ) == 0 ) || ( idStr::Cmpn( name, "item_", 5 ) == 0 ) ) {
-		player->SpawnInsteadOfGiving( name ); //new!
-		return;
-	}
-
-	if ( idStr::Cmpn( name, "ammo_", 5 ) == 0 ) {
-		player->GiveItem( name );
-		return;		
-	}
-	//ivan end
 
 	if ( give_all || idStr::Icmp( name, "health" ) == 0 )	{
 		player->health = player->inventory.maxHealth;
@@ -330,24 +313,15 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		}
 	}
 
-	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {		
+	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {
 		
-		//ivan start
 		/*
-		//commented out
+		//ivan - commented out
 		player->inventory.weapons = BIT( MAX_WEAPONS ) - 1; 
 		player->CacheWeapons();
 		*/
-		
-		//spawning weapons every time player uses 'give all' could be a bad idea.
-		if( give_all ){
-			gameLocal.Printf("Health, armor and ammo given.\nUse 'give weapons' to spawn the weapons.\n");
-		}else{
-			player->SpawnAllWeapons(); 
-		}
+		gameLocal.Printf("Use 'spawn weapon_weaponName' to spawn weapons.\n"); //ivan
 
-		//ivan end
-		
 		if ( !give_all ) {
 			return;
 		}
@@ -2410,6 +2384,10 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "saveParticles",			Cmd_SaveParticles_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"saves all lights to the .map file" );
 	cmdSystem->AddCommand( "clearLights",			Cmd_ClearLights_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"clears all lights" );
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"causes a game error" );
+
+#ifdef _DENTONMOD
+	cmdSystem->AddCommand( "updateCookedMathData",	Cmd_UpdateCookedMathData_f,	CMD_FL_GAME,	"Forcefully updates cooked math data." );
+#endif
 
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
 	cmdSystem->AddCommand( "recordViewNotes",		Cmd_RecordViewNotes_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"record the current view position with notes" );

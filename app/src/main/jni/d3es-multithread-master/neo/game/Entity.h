@@ -53,8 +53,6 @@ extern const idEventDef EV_Activate;
 extern const idEventDef EV_ActivateTargets;
 extern const idEventDef EV_Hide;
 extern const idEventDef EV_Show;
-extern const idEventDef EV_PlatformUnder;	//rev 2020
-extern const idEventDef EV_PlatformOver;	//rev 2020
 extern const idEventDef EV_GetShaderParm;
 extern const idEventDef EV_SetShaderParm;
 extern const idEventDef EV_SetOwner;
@@ -67,13 +65,9 @@ extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
 //ivan start
-extern const idEventDef EV_Interact;
+extern const idEventDef EV_RemoveBinds; 
+extern const idEventDef EV_Interact; 
 //ivan end
-
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-extern const idEventDef EV_GetMass;
-extern const idEventDef EV_IsInLiquid;
-#endif
 
 // Think flags
 enum {
@@ -96,12 +90,10 @@ enum {
 // Interact flags
 enum {
 	INTERACT_NONE		= 0,
-	INTERACT_IMPULSE	= 1,	//used for reload impulse
-	INTERACT_UP			= 2,	
-	INTERACT_DOWN		= 4	
+	INTERACT_IMPULSE	= 1	//used for reload impulse
+	//INTERACT_UP			= 2,	
+	//INTERACT_DOWN		= 4	
 };
-
-//static const int MIN_RENDER_TIME = 50; //ms
 //ivan end
 
 //
@@ -156,6 +148,11 @@ typedef struct entDamageEffect_s {
 
 #endif
 
+//ivan start
+class idProjectile; 
+//class idDamagingFx; 
+//ivan end
+
 class idEntity : public idClass {
 public:
 	static const int		MAX_PVS_AREAS = 4;
@@ -181,7 +178,11 @@ public:
 	renderView_t *			renderView;				// for camera views from this entity
 	idEntity *				cameraTarget;			// any remoteRenderMap shaders will use this
 
-	idList< idEntityPtr<idEntity> >	targets;		// when this entity is activated these entities entity are activated
+	idList< idEntityPtr<idEntity> >	targets;		// when this entity is activated these entities are activated
+
+	//ivan start
+	//idList< idEntityPtr<idDamagingFx> >	dmgFxEntities;
+	//ivan end
 
 	int						health;					// FIXME: do all objects really need health?
 
@@ -198,8 +199,16 @@ public:
 		bool				isDormant			:1;	// if true the entity is dormant
 		bool				hasAwakened			:1;	// before a monster has been awakened the first time, use full PVS for dormant instead of area-connected
 		bool				networkSync			:1; // if true the entity is synchronized over the network
+//rev grab
+		bool				grabbed				:1;	// if true object is currently being grabbed
+//rev grab
 	} fl;
-
+	
+//rev grab
+	bool					noGrab;
+	void					SetGrabbedState( bool grabbed );
+	bool					IsGrabbed();
+//rev grab
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
@@ -233,6 +242,13 @@ public:
 	void					UpdateParticles	( void ); // damage particle effects - By Clone JCD 
 #endif
 
+	//ivan start
+	//void					StartDamageFx( int type );
+	//void					CheckDamageFx( const idDict *damageDef );
+	void					CommonGetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, idVec3 &aimDir ); 
+	idProjectile*			CommonFireProjectile( const char *projDefName, const idVec3 &firePos, const idVec3 &dir ); 
+	//ivan end
+
 	// visuals
 	virtual void			Present( void );
 	virtual renderEntity_t *GetRenderEntity( void );
@@ -250,8 +266,6 @@ public:
 	virtual void			FreeLightDef( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
-	virtual void			PlatformUnder( void );	//rev 2020
-	virtual void			PlatformOver( void );	//rev 2020
 	bool					IsHidden( void ) const;
 	void					UpdateVisuals( void );
 	void					UpdateModel( void );
@@ -290,6 +304,7 @@ public:
 	void					BindToJoint( idEntity *master, const char *jointname, bool orientated );
 	void					BindToJoint( idEntity *master, jointHandle_t jointnum, bool orientated );
 	void					BindToBody( idEntity *master, int bodyId, bool orientated );
+	//void					UnbindBinds( void );				// ivan - unbind any entities bound to this object
 	void					Unbind( void );
 	bool					IsBound( void ) const;
 	bool					IsBoundTo( idEntity *master ) const;
@@ -394,7 +409,6 @@ public:
 	virtual bool			CanInteract( int flags ) const;
 	bool					InteractTouchingTriggers( int flags ) const;
 	idEntity *				GetFirstValidTarget( void ) const;
-	idEntity*				GetRandomTarget( const char *ignore );
 	//ivan end
 
 	idCurve_Spline<idVec3> *GetSpline( void ) const;
@@ -425,20 +439,10 @@ public:
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
 	int						modelDefHandle;						// handle to static renderer model
-#ifdef _WATER_PHYSICS
-    int                     modelDefHandlePost;					// new 6th venom
-    const idMaterial        *shaderPost;						// new
-#endif
 	refSound_t				refSound;							// used to present sound to the audio engine
 #ifdef _DENTONMOD_ENTITY_CPP
 	entDamageEffect_t *		entDamageEffects;			// We are going to add damage effect to every entity.
 #endif 
-	/*
-	//ivan start - test
-	bool					updLastRenderTime; //not saved
-	int						lastRenderTime;
-	//ivan end
-	*/
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object
@@ -500,8 +504,6 @@ private:
 	void					Event_IsHidden( void );
 	void					Event_Hide( void );
 	void					Event_Show( void );
-	void					Event_PlatformUnder( void ); 	//rev 2020
-	void					Event_PlatformOver( void );		//rev 2020
 	void					Event_CacheSoundShader( const char *soundName );
 	void					Event_StartSoundShader( const char *soundName, int channel );
 	void					Event_StopSound( int channel, int netSync );
@@ -542,21 +544,17 @@ private:
 	void					Event_CallFunction( const char *name );
 	void					Event_SetNeverDormant( int enable );
 
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	void					Event_GetMass( int body );
-	void					Event_IsInLiquid( void );
-#endif
-
-	//smart AI start
+    //Ivan start
+	void					Event_GetGuiParm(int guiNum, const char *key);
+	void					Event_GetGuiParmFloat(int guiNum, const char *key);
+	void					Event_GuiNamedEvent(int guiNum, const char *event); 
+    void					Event_GetEntityHealth( void );
+    void					Event_SetEntityHealth( float newHealth );
 	void					Event_GetRandomTargetTypePrefix( const char *typePrefix, const char *ignoreType );
 	void					Event_GetClosestTargetTypePrefix( const char *typePrefix, const char *ignoreType );
-	void					Event_GuiNamedEvent(int guiNum, const char *event);
-	void					Event_StartRandomSound( const char *soundBaseName, int channel, int netSync );
-	void					Event_AddSoundSkin( const char *soundSkinName );
-
-	void					AddSoundSkin( const char *soundSkinName );
-	void					SetDefaultSoundSkin( void );
-	//smart AI end
+    void					Event_FireProjectile( const char* projDefName , const idVec3 &firePos, const idAngles &fireAng ); //ff 1.1
+	void					Event_FireProjAtTarget( const char* projDefName , const idVec3 &firePos, idEntity* aimAtEnt ); //ff 1.1
+	//Ivan end
 };
 
 /*
@@ -616,13 +614,20 @@ public:
 		EVENT_MAXEVENTS
 	};
 
+	/*
+	//ivan test
+	bool						UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const;
+	static bool					ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
+	//ivan test end
+	*/
+
 protected:
 	idAnimator				animator;
 
 	damageEffect_t *		damageEffects;
 
 private:
-	int						nextBloodPoolTime; //un noted change from original sdk
+	int						nextBloodPoolTime;
 
 	void					Event_GetJointHandle( const char *jointname );
 	void					Event_ClearAllJoints( void );
@@ -631,6 +636,10 @@ private:
 	void					Event_SetJointAngle( jointHandle_t jointnum, jointModTransform_t transform_type, const idAngles &angles );
 	void					Event_GetJointPos( jointHandle_t jointnum );
 	void					Event_GetJointAngle( jointHandle_t jointnum );
+	//Ivan start
+	void					Event_FireProjectileFromJoint( const char *projDefName, jointHandle_t jointnum, const idAngles &fireAng );
+	void					Event_FireProjAtTargetFromJoint( const char *projDefName, jointHandle_t jointnum, idEntity *aimAtEnt );
+	//Ivan end
 };
 
 #endif /* !__GAME_ENTITY_H__ */

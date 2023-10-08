@@ -179,7 +179,7 @@ void idForce_Field::SetDistanceBounds( float offset, float radius ) {
 idForce_Field::GetDistancePct
 ================
 */
-float idForce_Field::GetDistancePct( float distance, bool inverse ) { //inverse means 1 inside and 0 outside the sphere
+float idForce_Field::GetDistancePct( float distance, bool inverse ) { //inverse means 1 inside and 0 outside the hypersphere
 	float resultPct;
 
 	//distance = idMath::Sqrt( distance );  //use sqrt distance
@@ -217,7 +217,6 @@ void idForce_Field::Evaluate( int time ) {
 	//ivan start
 	idVec3 distanceVec; 
 	float realMagnitude;
-	idVec3 oldVelocity;
 	//ivan end
 
 	assert( clipModel );
@@ -252,8 +251,9 @@ void idForce_Field::Evaluate( int time ) {
 			}
 		}
 
-		if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1, clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) {
-			continue; // un noted changes from original sdk
+		if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1,
+									clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) {
+			continue;
 		}
 
 		//ivan start
@@ -266,13 +266,13 @@ void idForce_Field::Evaluate( int time ) {
 				break;
 			}
 			case FORCEFIELD_EXPLOSION: {
-				//ivan - was: force = cm->GetOrigin() - clipModel->GetOrigin();
+				//force = cm->GetOrigin() - clipModel->GetOrigin();
 				force = distanceVec;
 				force.Normalize();
 				break;
 			}
 			case FORCEFIELD_IMPLOSION: {
-				//ivan - was: force = clipModel->GetOrigin() - cm->GetOrigin();
+				//force = clipModel->GetOrigin() - cm->GetOrigin();
 				force = -distanceVec;
 				force.Normalize();
 				break;
@@ -308,17 +308,8 @@ void idForce_Field::Evaluate( int time ) {
 			}
 			default: {
 				gameLocal.Error( "idForce_Field: invalid magnitude type" );
+				realMagnitude = 0.0f; // shut up about uninit variable, compiler, this code isn't reachable anyway
 				break;
-			}
-		}
-		
-		//test - todo: bool key
-		if ( physics->IsType( idPhysics_Player::Type ) ) {
-			int playerHint = static_cast<idPhysics_Player *>( physics )->GetHintForForceFields();
-			if( playerHint > 0 ){
-				realMagnitude += realMagnitude * ( force.z > 0.0f ? 0.1f : -0.1f );  //increase upward forces, decrease downward ones
-			}else if( playerHint < 0 ){
-				realMagnitude += realMagnitude * ( force.z > 0.0f ? -0.1f : 0.1f );  //decrease upward forces, increase downward ones
 			}
 		}
 		//ivan end		
@@ -326,16 +317,16 @@ void idForce_Field::Evaluate( int time ) {
 		switch( applyType ) {
 			case FORCEFIELD_APPLY_FORCE: {
 				if ( randomTorque != 0.0f ) {
-					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * realMagnitude ); // un noted changes from original sdk
+					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * realMagnitude );
 				}
 				else {
-					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * realMagnitude ); // un noted changes from original sdk
+					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * realMagnitude );
 				}
 				break;
 			}
 			case FORCEFIELD_APPLY_VELOCITY: {
 				//ivan start
-
+				idVec3 oldVelocity;
 				if( oldVelocityPct > 0 ){
 					oldVelocity = oldVelocityPct * physics->GetLinearVelocity();
 				}else{
@@ -353,10 +344,10 @@ void idForce_Field::Evaluate( int time ) {
 			}
 			case FORCEFIELD_APPLY_IMPULSE: {
 				if ( randomTorque != 0.0f ) {
-					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * realMagnitude ); // un noted changes from original sdk
+					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * realMagnitude );
 				}
 				else {
-					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * realMagnitude ); // un noted changes from original sdk
+					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * realMagnitude );
 				}
 				break;
 			}

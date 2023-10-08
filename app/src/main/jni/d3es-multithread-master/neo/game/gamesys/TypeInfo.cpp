@@ -41,8 +41,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "NoGameTypeInfo.h"
 #endif
 
-#include "TypeInfo.h"
-
 // disabled because it's adds about 64MB to state dumps and takes a really long time
 //#define DUMP_GAMELOCAL
 
@@ -570,8 +568,8 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 #else
 #define D3_SIZEOFPTR 4
 #endif
-
 #endif
+
 #if D3_SIZEOFPTR == 4
 	const uintptr_t uninitPtr = (uintptr_t)0xcdcdcdcdUL;
 #elif D3_SIZEOFPTR == 8

@@ -152,8 +152,8 @@ class idDamagable : public idEntity {
 public:
 	CLASS_PROTOTYPE( idDamagable );
 
-						idDamagable(); //un noted change from original sdk
-						~idDamagable(); //un noted change from original sdk
+						idDamagable();
+						~idDamagable();
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
@@ -193,7 +193,6 @@ private:
 	void				Event_RestoreDamagable( void );
 };
 
-
 /*
 ===============================================================================
 
@@ -225,11 +224,7 @@ class idSpring : public idEntity {
 public:
 	CLASS_PROTOTYPE( idSpring );
 
-						idSpring(); //ivan
 	void				Spawn( void );
-
-	void				Save( idSaveGame *savefile ) const; //ivan
-	void				Restore( idRestoreGame *savefile ); //ivan
 
 	virtual void		Think( void );
 
@@ -573,7 +568,7 @@ private:
 ===============================================================================
 */
 
-extern const idEventDef EV_FadeBeamColor; //ivan //rev 2019
+extern const idEventDef EV_FadeBeamColor; //ivan
 
 class idBeam : public idEntity {
 public:
@@ -590,10 +585,10 @@ public:
 
 	void				SetMaster( idBeam *masterbeam );
 	void				SetBeamTarget( const idVec3 &origin );
-	idBeam*				AddChainNodeAtPos( const idVec3 &pos ); //ivan //rev 2019
+	idBeam*				AddChainNodeAtPos( const idVec3 &pos ); //ivan
 
 	virtual void		Show( void );
-	void				FadeColor( void ); //ivan //rev 2019
+	void				FadeColor( void ); //ivan
 
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
@@ -601,18 +596,18 @@ public:
 private:
 	void				Event_MatchTarget( void );
 	void				Event_Activate( idEntity *activator );
-	void				Event_FadeColor( void ); //ivan //rev 2019
+	void				Event_FadeColor( void ); //ivan
 
 	idEntityPtr<idBeam>	target;
 	idEntityPtr<idBeam>	master;
 
-	//ivan start //rev 2019
+	//ivan start
 	idVec4				fadeOutIntervals;
 	int					fadeTime;
-	//ivan end //rev 2019
+	//ivan end
 };
 
-//ivan start  //rev 2019
+//ivan start
 /*
 ===============================================================================
 
@@ -641,12 +636,12 @@ private:
 	idEntityPtr<idBeam>	target;
 	idEntityPtr<idBeam>	master;
 };
-//ivan end //rev 2019
+//ivan end
 
 
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-//idLiquid has been removed
-#else
+
+
+
 /*
 ===============================================================================
 
@@ -672,7 +667,7 @@ private:
 
 	idRenderModelLiquid *model;
 };
-#endif
+
 
 /*
 ===============================================================================
@@ -879,6 +874,8 @@ private:
 };
 
 //ivan start
+
+#ifdef IVAN_TODO
 /*
 ===============================================================================
 
@@ -902,77 +899,14 @@ public:
 private:
 	idVec3				GetAimDir( idEntity *aimAtEnt ); 
 	idProjectile*		FireProjectile( idVec3 &dir ); 
-	//idProjectile*		FireProjAtTarget( idEntity* aimAtEnt );
 
 	void				Event_Activate( idEntity *activator );
 	void				Event_FireProjectile( idAngles &fireAng ); 
 	void				Event_FireProjAtTarget( idEntity* aimAtEnt );
 	
 	const idDict *		projectileDef;
-	idStr				projectileName;
 };
-
-/*
-===============================================================================
-
-  idRandomSpawner
-
-===============================================================================
-*/
-
-class idRandomSpawner : public idEntity {
-public:
-	CLASS_PROTOTYPE( idRandomSpawner );
-
-						idRandomSpawner();
-
-	void				Spawn( void );
-	int					GetRndListLenght( void ){ return rndListLenght; };
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-private:
-	idDict				commonSpawnArgs;				// key/value pairs used to spawn the other entities
-	int					rndListLenght;
-
-	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
-  idRandomSpawnerSelector
-
-===============================================================================
-*/
-
-class idRandomSpawnerSelector : public idEntity {
-public:
-	CLASS_PROTOTYPE( idRandomSpawnerSelector );
-
-						idRandomSpawnerSelector();
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-  idRandomTargetSelector
-
-===============================================================================
-*/
-
-class idRandomTargetSelector : public idEntity {
-public:
-	CLASS_PROTOTYPE( idRandomTargetSelector );
-
-						idRandomTargetSelector();
-private:
-	void				Event_Activate( idEntity *activator );
-};
+#endif 
 //ivan end
 
 
@@ -993,7 +927,7 @@ public:
 	~idPortalSky();
 
 	void				Spawn( void );
-	void				Event_PostSpawn( void );
+	void				Event_PostSpawn();
 	void				Event_Activate( idEntity *activator );
 };
 

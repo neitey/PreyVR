@@ -34,10 +34,6 @@ extern const idEventDef EV_PartBlocked;
 extern const idEventDef EV_ReachedPos;
 extern const idEventDef EV_ReachedAng;
 
-//ivan start
-extern const idEventDef EV_GoToBinaryPos;
-//ivan end
-
 /*
 ===============================================================================
 
@@ -211,24 +207,17 @@ private:
 	void					Event_IsRotating( void );
 };
 
-#define TEAM_TEST
 //ivan start
 class idPathMover : public idMover {
 public:
 	CLASS_PROTOTYPE( idPathMover );
 
-						idPathMover( void );
+							idPathMover( void );
 
 	void					Spawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
-
-#ifdef TEAM_TEST
-	//idPathMover *			GetMoveMaster( void ) const { return moveMaster; };
-	//void					SetBlocked( bool b );
-	//bool					IsBlocked( void );
-#endif
 
 protected:
 	virtual void			DoneMoving( void );
@@ -236,27 +225,16 @@ protected:
 private:
 	idEntityPtr<idEntity>	currentTarget;
 	bool					restoreSettings;
-	bool					toggleOnTrigger;
-	bool					startOnTrigger;
-	bool					nextOnTrigger;
-	bool					allowRestart;
-	bool					resetOnRestart;
+	bool					toggleEachTrigger;
+	bool					startOnNextTrigger;
 	//int						nextTriggerTime;
-#ifdef TEAM_TEST
-	//idPathMover *			moveMaster;
-	idStr					team;
-	//void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
-#endif
 
 	void					StartPath( void ); 
 	void					SuspendPath( void ); 
-	void					ContinuePath( void );
-  	bool					SetNextTarget( void );
-	void					PerformTriggerEnt( void );	
+	void					MoveToTarget( idEntity *ent );
 
 	void					Event_PostSpawn( void );
 	void					Event_Trigger( idEntity *activator );
-	void					Event_StartNextMov( void );
 };
 
 //ivan end
@@ -433,10 +411,6 @@ protected:
 	void					Event_FindGuiTargets( void );
 	void					Event_InitGuiTargets( void );
 
-	//ivan start
-	void					Event_GoToPos( int dest );
-	//ivan end
-
 	static void				GetMovedir( float dir, idVec3 &movedir );
 };
 
@@ -507,14 +481,6 @@ private:
 	void					Event_ClosePortal( void );
 };
 
-//ivan start - must match .def values!
-typedef enum {
-	PLAT_MODE_DEFAULT			= 0,
-	PLAT_MODE_AUTOREVERT		= 1,
-	PLAT_MODE_BINARY_ELEVATOR	= 2
-} platMode_t;
-//ivan end
-
 class idPlat : public idMover_Binary {
 public:
 	CLASS_PROTOTYPE( idPlat );
@@ -531,27 +497,23 @@ public:
 	virtual void			PreBind( void );
 	virtual void			PostBind( void );
 
-private: //ivan - was: private
+protected: //ivan - was: private
 	idClipModel *			trigger;
-	idClipModel *			trigger_dest; //ivan
 	idVec3					localTriggerOrigin;
 	idMat3					localTriggerAxis;
-	platMode_t				mode; //ivan
 
 	void					GetLocalTriggerPosition( const idClipModel *trigger );
-	void					SpawnPlatTrigger( bool top ); //ivan - was idVec3 &pos
+	void					SpawnPlatTrigger( idVec3 &pos );
 	//ivan start
-	void					Setup( void );
 	bool					GetTargetPos( idVec3 &pos ); 
 	void					Event_PostSpawn( void );
-	void 					Event_GoToBinaryPos( int dest );
+	void					Setup( void );
 	//ivan end
 	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
 	void					Event_PartBlocked( idEntity *blockingEntity );
 	void					Event_Touch( idEntity *other, trace_t *trace );
 };
 
-#if 0
 //ivan start
 class idPlatAutoRevert : public idPlat {
 public:
@@ -562,7 +524,7 @@ private:
 	void					Event_Touch( idEntity *other, trace_t *trace );
 };
 //ivan end
-#endif
+
 
 /*
 ===============================================================================

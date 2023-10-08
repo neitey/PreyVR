@@ -79,15 +79,13 @@ class idCamera;
 class idWorldspawn;
 class idTestModel;
 class idSmokeParticles;
-class idTrailManager; //ivan //rev 2019
+class idTrailManager; //ivan
 class idEntityFx;
 class idTypeInfo;
 class idThread;
 class idEditEntities;
 class idLocationEntity;
-class idMusic; //ff1.3
 
-//============================================================================
 extern const int NUM_RENDER_PORTAL_BITS;
 
 void gameError( const char *fmt, ... );
@@ -268,7 +266,7 @@ public:
 
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
-	idTrailManager *		trailsManager;			// global trails //rev 2019
+	idTrailManager *		trailsManager;			// global trails
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
@@ -309,17 +307,6 @@ public:
 	void					SetPortalSkyEnt( idEntity *ent );
 	bool					IsPortalSkyAcive();
 #endif
-
-	//ivan start
-	int						secrets_spawned_counter;
-	int						secrets_found_counter;
-	int						enemies_spawned_counter;
-	int						enemies_killed_counter;
-
-	//max distance values for projectiles 
-	float					projSeeDistance;
-	//ivan end
-
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
@@ -327,7 +314,6 @@ public:
 	virtual void			Init( void );
 	virtual void			Shutdown( void );
 	virtual void			SetLocalClient( int clientNum );
-	virtual void 			SetVRClientInfo(vrClientInfo *pVRClientInfo);//Lubos
 	virtual void			ThrottleUserInfo( void );
 	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify );
 	virtual const idDict *	GetUserInfo( int clientNum );
@@ -397,14 +383,7 @@ public:
 	void					SetSkill( int value );
 	gameState_t				GameState( void ) const;
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
-	
-	//ivan start
-	bool					SpawnEntityDef_old( const idDict &customArgs, idEntity **ent, bool setDefaults, const idDeclEntityDef *def, const char	*classname ); //this was the old SpawnEntityDef!
-	bool		 			SpawnEntityDef_random( const idDict &customArgs, idEntity **ent, bool setDefaults, const idDeclEntityDef *def, const char	*classname );
-	void					RemoveBadKeysForRandom( idDict &args );
-	//ivan end
-
-	bool		 			SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
+	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
 	int						GetSpawnId( const idEntity *ent ) const;
 
 	const idDeclEntityDef *	FindEntityDef( const char *name, bool makeDefault = true ) const;
@@ -443,7 +422,6 @@ public:
 	idEntity *				FindEntityUsingDef( idEntity *from, const char *match ) const;
 	int						EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const;
 
-	void					HurtBox( idEntity *ent );	//rev 2020 hurt the player when on top of enemies
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
@@ -486,20 +464,10 @@ public:
 	int						GetGibTime() { return nextGibTime; };
 
 	bool					NeedRestart();
-	
-	//ivan start
-	void					UpdateSeeDistances( float distance );
-
-	void					SetMusicEntity( idMusic *newMusicEnt );
-	void					StopMusic( void );
-	//ivan end
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
-	
-//rev 2021 dhewm 3 1.5.1 updates
 	const static int		INTERNAL_SAVEGAME_VERSION = 1; // DG: added this for >= 1305 savegames
-//rev 2021 dhewm 3 1.5.1 updates end	
 
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile *				mapFile;				// will be NULL during the game unless in-game editing is used
@@ -549,10 +517,6 @@ private:
 	idStrList				shakeSounds;
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
-
-	//ivan start
-	idEntityPtr<idMusic>	musicEntity;
-	//ivan end
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
@@ -606,10 +570,6 @@ private:
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
 
 	virtual void			GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
-
-	//ivan start
-	void					UpdateMusicVolume( void );
-	//ivan end
 };
 
 //============================================================================
@@ -713,19 +673,6 @@ extern const float	DEFAULT_GRAVITY;
 extern const idVec3	DEFAULT_GRAVITY_VEC3;
 extern const int	CINEMATIC_SKIP_DELAY;
 
-/* DG: having includes here seems to confuse the compiler
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-#include "physics/Physics_Liquid.h"
-#include "Liquid.h"
-#endif
-
-#ifdef _DENTONMOD
-#include "tracer.h"
-#endif
-
-#include "ai/AI_bot.h" //ivan
-*/
-
 #include "physics/Force.h"
 #include "physics/Force_Constant.h"
 #include "physics/Force_Drag.h"
@@ -741,7 +688,7 @@ extern const int	CINEMATIC_SKIP_DELAY;
 #include "physics/Physics_Parametric.h"
 #include "physics/Physics_RigidBody.h"
 #include "physics/Physics_AF.h"
-#include "physics/Physics_Liquid.h"
+#include "physics/Force_Grab.h"
 
 #include "SmokeParticles.h"
 
@@ -760,6 +707,7 @@ extern const int	CINEMATIC_SKIP_DELAY;
 #endif
 #endif
 #include "Projectile.h"
+#include "Grabber.h"
 #include "Weapon.h"
 #include "Light.h"
 #include "WorldSpawn.h"
@@ -776,7 +724,7 @@ extern const int	CINEMATIC_SKIP_DELAY;
 #include "Fx.h"
 #include "SecurityCamera.h"
 #include "BrittleFracture.h"
-#include "Liquid.h"
+#include "PlayerCursor.h"
 
 #include "ai/AI.h"
 #include "ai/AI_bot.h"

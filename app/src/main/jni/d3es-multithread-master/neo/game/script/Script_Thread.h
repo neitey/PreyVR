@@ -147,6 +147,8 @@ private:
 	void						Event_VecCrossProduct( idVec3 &vec1, idVec3 &vec2 );
 	void						Event_VecToAngles( idVec3 &vec );
 	void						Event_OnSignal( int signal, idEntity *ent, const char *func );
+	void						Event_RotateVector( idVec3 &vec, idVec3 &ang ); //ivan
+	void						Event_VecToOrthoBasisAngles( idVec3 &vec ); //ivan
 	void						Event_ClearSignalThread( int signal, idEntity *ent );
 	void						Event_SetCamera( idEntity *ent );
 	void						Event_FirstPerson( void );
@@ -183,10 +185,9 @@ private:
 	void						Event_DebugBounds( const idVec3 &color, const idVec3 &mins, const idVec3 &maxs, const float lifetime );
 	void						Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime );
 	void						Event_InfluenceActive( void );
-	
-	//ivan start
-	void						Event_StopCurrentMusic( void );
-	//ivan end
+	//Ivan start
+	void                        Event_GetShaderVolume( const char *sound );
+	//Ivan end
 
 public:
 								CLASS_PROTOTYPE( idThread );

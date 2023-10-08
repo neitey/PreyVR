@@ -537,7 +537,7 @@ void idEntityFx::Run( int time ) {
 		//
 		// each event can have it's own delay and restart
 		//
-		//was: int actualStart = laction.delay ? laction.start + (int)( laction.delay * 1000 ) : laction.start; //un noted change from original sdk
+		//was: int actualStart = laction.delay ? laction.start + (int)( laction.delay * 1000 ) : laction.start;
 		int actualStart = ( laction.delay > 0 )? laction.start + (int)( laction.delay * 1000 ) : laction.start;
 		if( fxaction.duration > 0 ){ //ivan - if added: duration 0 means endless
 			float pct = (float)( time - actualStart ) / (1000 * fxaction.duration );
@@ -578,7 +578,7 @@ void idEntityFx::Run( int time ) {
 			case FX_LIGHT: {
 				if ( useAction->lightDefHandle == -1 ) {
 					if ( fxaction.type == FX_LIGHT ) {
-						//gameLocal.Printf("new light\n"); //un noted change from original sdk
+						//gameLocal.Printf("new light\n");
 						memset( &useAction->renderLight, 0, sizeof( renderLight_t ) );
 						useAction->renderLight.origin = GetPhysics()->GetOrigin() + fxaction.offset;
 						useAction->renderLight.axis = GetPhysics()->GetAxis();
@@ -628,13 +628,13 @@ void idEntityFx::Run( int time ) {
 			case FX_SOUND: {
 				if ( !useAction->soundStarted ) {
 					useAction->soundStarted = true;
-					//gameLocal.Printf("FX_SOUND StartSoundShader\n"); //un noted change from original sdk
+					//gameLocal.Printf("FX_SOUND StartSoundShader\n");
 					const idSoundShader *shader = declManager->FindSound(fxaction.data);
 					StartSoundShader( shader, SND_CHANNEL_ANY, 0, false, NULL );
 					for( j = 0; j < fxEffect->events.Num(); j++ ) {
 						idFXLocalAction& laction2 = actions[j];
 						if ( laction2.lightDefHandle != -1 ) {
-							//gameLocal.Printf("FX_SOUND UpdateLightDef\n"); //un noted change from original sdk
+							//gameLocal.Printf("FX_SOUND UpdateLightDef\n");
 							laction2.renderLight.referenceSound = refSound.referenceSound;
 							gameRenderWorld->UpdateLightDef( laction2.lightDefHandle, &laction2.renderLight );
 						}
@@ -854,7 +854,7 @@ void idEntityFx::Think( void ) {
 		return;
 	}
 
-	//gameLocal.Printf( "idEntityFx::Think of '%s'\n", GetName() ); //un noted change from original sdk
+	//gameLocal.Printf( "idEntityFx::Think of '%s'\n", GetName() );
 
 	if ( thinkFlags & TH_THINK ) {
 		Run( gameLocal.time );
@@ -1150,39 +1150,8 @@ idTeleporter::Event_DoAction
 ================
 */
 void idTeleporter::Event_DoAction( idEntity *activator ) {
-	float angle;
-	bool forceChangeXpos; //ivan
-
-	angle = spawnArgs.GetFloat( "angle" );
-	idAngles a( 0, angle, 0 );
-	
-	//ivan start
-	//was: activator->Teleport( GetPhysics()->GetOrigin(), a, NULL );
-	//note: now I pass to the player the reference to this Teleporter because he checks the new keys! 
-
-	forceChangeXpos = spawnArgs.GetBool( "forceChangeXpos", "0" );
-
-	if ( forceChangeXpos && activator->IsType( idPlayer::Type ) ) {
-		idPlayer *player = static_cast<idPlayer*>( activator );
-		idEntity *validtarget = NULL;
-
-		RemoveNullTargets(); //make sure there are only valid targets in the list
-
-		if ( targets.Num() ) {
-			validtarget = targets[ 0 ].GetEntity(); //first one
-		}
-		if( validtarget ){
-			player->StopForcedMov(); //make sure ForcedMov is off - this could set a new lockedXpos  
-			player->Teleport( GetPhysics()->GetOrigin(), a, this ); //this will set a new lockedXpos 
-			player->StartForcedMov( validtarget, 300, false, spawnArgs.GetBool( "totalForce", "0" ) ); //wait 0.3s, no abort, totalForce?
-		}else{
-			gameLocal.Warning("idTeleporter with forceChangeXpos = 1 but no targets!");
-			activator->Teleport( GetPhysics()->GetOrigin(), a, this );
-		}
-	}else{ //simple teleport
-		activator->Teleport( GetPhysics()->GetOrigin(), a, this );
-	}
-	//ivan end
+	idAngles a( 0, spawnArgs.GetFloat( "angle" ), 0 );
+	activator->Teleport( GetPhysics()->GetOrigin(), a, NULL );
 }
 
 //ivan start
@@ -1392,7 +1361,7 @@ void idDamagingFx::Save( idSaveGame *savefile ) const {
 
 /*
 ================
-idDamagingFx::Restore 
+idDamagingFx::Restore
 ================
 */
 void idDamagingFx::Restore( idRestoreGame *savefile ) {

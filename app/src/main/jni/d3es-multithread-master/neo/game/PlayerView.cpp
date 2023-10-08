@@ -13,7 +13,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 Doom 3 Source Code is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -583,12 +583,6 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 			common->Printf( "Material not found.\n" );
 			g_testPostProcess.SetString( "" );
 		} else {
-
-//#ifdef _WATER_PHYSICS //un noted code change from original sdk
-	//insert this line of code to enable shading of GUI features 6th venom
-            renderSystem->CaptureRenderToImage( "_currentRender" );
-	//insert end
-//#endif
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr );
 		}
@@ -602,7 +596,7 @@ idPlayerView::DoubleVision
 */
 void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view, int offset ) {
 
-	if ( !g_doubleVision.GetBool() || game->isVR ) {
+	if ( !g_doubleVision.GetBool() ) {
 		SingleView( hud, view );
 		return;
 	}
@@ -848,7 +842,7 @@ idPlayerView::dnPostProcessManager::dnPostProcessManager():
 	this->Initialize();
 
 //k: Only Dhewm3 support idCommon::SetCallback(), but this is original DOOM3
-#ifndef __ANDROID__
+#if !defined(__ANDROID__)
 	if(!common->SetCallback(idCommon::CB_ReloadImages, (idCommon::FunctionPointer)ReloadImagesCallback, this))
 	{
 		gameLocal.Warning("Couldn't set ReloadImages Callback from Ruiner game DLL! This could lead to errors on vid_restart and similar!\n");
@@ -862,7 +856,7 @@ idPlayerView::dnPostProcessManager::~dnPostProcessManager()
 {
 	// remove callback because this object is destroyed (and this was passed as userArg)
 //k: Only Dhewm3 support idCommon::SetCallback(), but this is original DOOM3
-#ifndef __ANDROID__
+#if !defined(__ANDROID__)
 	common->SetCallback(idCommon::CB_ReloadImages, NULL, NULL);
 #else
 #warning "Only Dhewm3 support idCommon::SetCallback(), but this is original DOOM3"
@@ -986,7 +980,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
  		r_HDR_enable.ClearModified();
  	}
 
-	if ( r_HDR_postProcess.GetBool() )
+	if ( r_HDR_postProcess.GetBool() ) 
 	{
 		this->UpdateBackBufferParameters();
 

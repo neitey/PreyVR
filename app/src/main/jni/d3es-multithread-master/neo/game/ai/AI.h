@@ -45,19 +45,6 @@ const float	AI_FLY_DAMPENING			= 0.15f;
 const float	AI_HEARING_RANGE			= 2048.0f;
 const int	DEFAULT_FLY_OFFSET			= 68;
 
-//ivan start
-const float	AI_X_DELTA_LOCK_MIN			= 20.0f;
-#define AI_X_DELTA_CANSEE_MAX AI_X_DELTA_LOCK_MIN
-
-//values must match the ones in the defs!
-enum {
-	AI_FIREMODE_DEFAULT				= 0,	//default: 3D spread
-	AI_FIREMODE_2D_STEP_SPREAD		= 1,	//turrican style spread
-	AI_FIREMODE_2D_PARALLEL_SPREAD	= 2,	//parallel projs. Spread is the offset
-	AI_FIREMODE_2D_RANDOM_SPREAD	= 3		//similar to default, but spread is 2D
-};
-//ivan end
-
 #define ATTACK_IGNORE			0
 #define ATTACK_ON_DAMAGE		1
 #define ATTACK_ON_ACTIVATE		2
@@ -157,6 +144,9 @@ extern const idEventDef AI_MuzzleFlash;
 extern const idEventDef AI_CreateMissile;
 extern const idEventDef AI_AttackMissile;
 extern const idEventDef AI_FireMissileAtTarget;
+//ivan start
+extern const idEventDef AI_LaunchProjectile;
+//ivan end
 extern const idEventDef AI_AttackMelee;
 extern const idEventDef AI_DirectDamage;
 extern const idEventDef AI_JumpFrame;
@@ -166,13 +156,11 @@ extern const idEventDef AI_EnableGravity;
 extern const idEventDef AI_DisableGravity;
 extern const idEventDef AI_TriggerParticles;
 extern const idEventDef AI_RandomPath;
-
-//ivan start - added so that idAI_bot can redefine them
+//ivan - added so that idAI_bot can redefine them
 extern const idEventDef AI_CanHitEnemyFromAnim;
 extern const idEventDef AI_LaunchMissile;
 extern const idEventDef AI_CanHitEnemyFromJoint;
-//ivan end
-
+extern const idEventDef AI_Burn;
 
 class idPathCorner;
 
@@ -259,7 +247,6 @@ private:
 };
 
 class idAI : public idActor {
-
 public:
 	CLASS_PROTOTYPE( idAI );
 
@@ -294,39 +281,6 @@ public:
 	static bool				PredictTrajectory( const idVec3 &firePos, const idVec3 &target, float projectileSpeed, const idVec3 &projGravity, const idClipModel *clip, int clipmask, float max_height, const idEntity *ignore, const idEntity *targetEntity, int drawtime, idVec3 &aimDir );
 
 protected:
-
-	
-	//ivan start
-	/*
-	bool					isXlocked;
-	bool					updXlock;
-	float					lockedXpos;
-	*/
-
-	int						fireMode;
-	bool					noPush;
-	
-	bool					disableMoving;		//rev 2020 disable the enemy from moving
-
-	//TODO: use an idVec3 instead
-	float					deltaXfromEnemy;
-	//float					deltaYfromEnemy;
-	//float					deltaZfromEnemy;
-
-	//bool					modelCallBackDone; //not saved
-
-	void					UpdateXlock( idActor *enemyEnt );
-	void					UpdateInhibitAttack( idActor *enemyEnt );
-	//bool					AllowSeeEnemy( idActor *enemyEnt );
-	bool					AllowSeeActor( idActor *actor );
-	/*
-	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView );
-	static bool				ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
-*/
-
-	//ivan end
-	
-
 	// navigation
 	idAAS *					aas;
 	int						travelFlags;
@@ -447,6 +401,7 @@ protected:
 	idVec3					lastVisibleReachableEnemyPos;
 	idVec3					lastReachableEnemyPos;
 	bool					wakeOnFlashlight;
+	bool					highPainAlreadyChosen; //ivan
 
 	// script variables
 	idScriptBool			AI_TALK;
@@ -468,10 +423,9 @@ protected:
 	idScriptBool			AI_DEST_UNREACHABLE;
 	idScriptBool			AI_HIT_ENEMY;
 	idScriptBool			AI_PUSHED;
-	//ivan start
-	idScriptBool			AI_INHIBIT_ATTACK; 
-	idScriptBool			AI_INHIBIT_MOVE; 
-	//ivan end
+	idScriptBool			AI_MELEEPAIN; //ivan
+	idScriptBool			AI_COMBOPAIN; //ivan
+	idScriptBool			AI_HIGHPAIN; //ivan
 
 	//
 	// ai/ai.cpp
@@ -485,8 +439,8 @@ protected:
 	bool					CheckForEnemy( void );
 	void					EnemyDead( void );
 	virtual bool			CanPlayChatterSounds( void ) const;
-	virtual void			SetChatSound( void ); //ivan - virtual added 
-	virtual	void			PlayChatter( void ); //ivan - virtual added
+	void					SetChatSound( void );
+	void					PlayChatter( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
 	idVec3					FirstVisiblePointOnPath( const idVec3 origin, const idVec3 &target, int travelFlags ) const;
@@ -510,7 +464,7 @@ protected:
 	void					StaticMove( void );
 
 	// damage
-	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, bool useHighPain, bool fromMelee);
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
 	// navigation
@@ -559,8 +513,6 @@ protected:
 	virtual void			SetEnemyPosition( void ); //ivan - virtual added
 	void					UpdateEnemyPosition( void );
 	void					SetEnemy( idActor *newEnemy );
-	void					UpdateIsOnScreen( void );  // un noted changes from original sdk
-	void					RunPhysicsWrapper( void ); // un noted changes from original sdk
 
 	// attacks
 	virtual void			CreateProjectileClipModel( void ) const; //ivan - virtual added
@@ -605,6 +557,7 @@ protected:
 	void					Event_AttackMissile( const char *jointname );
 	void					Event_FireMissileAtTarget( const char *jointname, const char *targetname );
 	void					Event_LaunchMissile( const idVec3 &muzzle, const idAngles &ang );
+	void					Event_LaunchProjectile( const char *entityDefName ); //ivan
 	void					Event_AttackMelee( const char *meleeDefName );
 	void					Event_DirectDamage( idEntity *damageTarget, const char *damageDefName );
 	void					Event_RadiusDamageFromJoint( const char *jointname, const char *damageDefName );
@@ -719,9 +672,9 @@ protected:
 	void					Event_CanReachEntity( idEntity *ent );
 	void					Event_CanReachEnemy( void );
 	void					Event_GetReachableEntityPosition( idEntity *ent );
-
-	//ivan start - from ROE
+	//ivan start - from d3xp
 	void					Event_MoveToPositionDirect( const idVec3 &pos );
+	void					Event_AvoidObstacles( int ignore);
 	//ivan end
 };
 

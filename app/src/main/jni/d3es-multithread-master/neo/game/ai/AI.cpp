@@ -381,22 +381,7 @@ idAI::idAI() {
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
 
-	//ivan start
-	isXlocked			= false; 
-	fastXpos			= 0.0f;
-	updXlock			= false; 
-	deltaXfromEnemy		= 0.0f;
-	//deltaYfromEnemy		= 0.0f;
-	//deltaZfromEnemy		= 0.0f;
-	fireMode			= 0;
-	noPush				= false;
-
-	disableMoving		= false;	//rev 2020  disable the actor from moving via a key in spawn arguments
-	/*
-	modelCallBackDone	= false; 
-	renderEntity.callback = idAI::ModelCallback;
-	*/
-	//ivan end
+	highPainAlreadyChosen = false; //ivan
 }
 
 /*
@@ -527,6 +512,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( lastReachableEnemyPos );
 	savefile->WriteBool( wakeOnFlashlight );
 
+	savefile->WriteBool( highPainAlreadyChosen ); 
+
 	savefile->WriteAngles( eyeMin );
 	savefile->WriteAngles( eyeMax );
 
@@ -544,20 +531,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteJoint( flyTiltJoint );
 
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
-
-	//ivan start
-	/* 
-	//moved to idActor
-	savefile->WriteBool( isXlocked ); 
-	savefile->WriteBool( updXlock ); 
-	savefile->WriteFloat( lockedXpos );
-	*/
-	savefile->WriteFloat( deltaXfromEnemy );
-	//savefile->WriteFloat( deltaYfromEnemy ); 
-	//savefile->WriteFloat( deltaZfromEnemy ); 
-	savefile->WriteInt( fireMode ); 
-	savefile->WriteBool( noPush ); 
-	//ivan end
 }
 
 /*
@@ -686,9 +659,10 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( lastVisibleEnemyEyeOffset );
 	savefile->ReadVec3( lastVisibleReachableEnemyPos );
 	savefile->ReadVec3( lastReachableEnemyPos );
-
 	savefile->ReadBool( wakeOnFlashlight );
 
+	savefile->ReadBool( highPainAlreadyChosen );
+	
 	savefile->ReadAngles( eyeMin );
 	savefile->ReadAngles( eyeMax );
 
@@ -706,21 +680,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadJoint( flyTiltJoint );
 
 	savefile->ReadBool( restorePhysics );
-
-	//ivan start
-	/*
-	//moved to idActor
-	savefile->ReadBool( isXlocked ); 
-	savefile->ReadBool( updXlock ); 
-	savefile->ReadFloat( lockedXpos );
-	*/
-	savefile->ReadFloat( deltaXfromEnemy ); 
-	//savefile->ReadFloat( deltaYfromEnemy ); 
-	//savefile->ReadFloat( deltaZfromEnemy ); 
-	savefile->ReadInt( fireMode ); 
-	savefile->ReadBool( noPush ); 
-	//ivan end
-
 
 	// Set the AAS if the character has the correct gravity vector
 	idVec3 gravity = spawnArgs.GetVector( "gravityDir", "0 0 -1" );
@@ -755,7 +714,6 @@ void idAI::Spawn( void ) {
 	jointHandle_t		joint;
 	idVec3				local_dir;
 	bool				talks;
-	int					noMove; //ivan
 
 	if ( !g_monsters.GetBool() ) {
 		PostEventMS( &EV_Remove, 0 );
@@ -794,10 +752,10 @@ void idAI::Spawn( void ) {
 	spawnArgs.GetBool( "animate_z",				"0",		disableGravity );
 	spawnArgs.GetBool( "af_push_moveables",		"0",		af_push_moveables );
 	spawnArgs.GetFloat( "kick_force",			"4096",		kickForce );
-	spawnArgs.GetBool( "ignore_obstacles",		"1",		ignore_obstacles ); //ivan: set default to 1
+	spawnArgs.GetBool( "ignore_obstacles",		"0",		ignore_obstacles );
 	spawnArgs.GetFloat( "blockedRadius",		"-1",		blockedRadius );
 	spawnArgs.GetInt( "blockedMoveTime",		"750",		blockedMoveTime );
-	spawnArgs.GetInt( "blockedAttackTime",		"450",		blockedAttackTime );
+	spawnArgs.GetInt( "blockedAttackTime",		"750",		blockedAttackTime );
 
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
 	current_cinematic = 0;
@@ -811,8 +769,6 @@ void idAI::Spawn( void ) {
 
 	animator.RemoveOriginOffset( true );
 
-	disableMoving  = spawnArgs.GetBool( "disable_moving" );		//rev 2020 used to disable the enemy from moving
-	
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
 
@@ -897,31 +853,20 @@ void idAI::Spawn( void ) {
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 	physicsObj.SetMass( spawnArgs.GetFloat( "mass", "100" ) );
 
-	if ( spawnArgs.GetBool( "big_monster" ) ) {		
+	if ( spawnArgs.GetBool( "big_monster" ) ) {
 		physicsObj.SetContents( 0 );
 		physicsObj.SetClipMask( MASK_MONSTERSOLID & ~CONTENTS_BODY );
 	} else {
 		if ( use_combat_bbox ) {
 			physicsObj.SetContents( CONTENTS_BODY|CONTENTS_SOLID );
 		} else {
-//Rev 2020 allow enemies to pass through each other if team_non_solid is true			
-			//physicsObj.SetContents( CONTENTS_BODY );
-			if( ( spawnArgs.GetInt( "team", "1") ) && spawnArgs.GetBool( "team_non_solid", "1") ){
-				physicsObj.SetContents( CONTENTS_CORPSE );	//the monster can pass through other monsters but player still detects touch of death
-				//gameLocal.Printf( "corpse" );
-			} else {
-				physicsObj.SetContents( CONTENTS_BODY );
-				//gameLocal.Printf( "body" );
-			}
-//Rev 2020 End
+			physicsObj.SetContents( CONTENTS_BODY );
 		}
 		physicsObj.SetClipMask( MASK_MONSTERSOLID );
 	}
 
 	// move up to make sure the monster is at least an epsilon above the floor
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + idVec3( 0, 0, CM_CLIP_EPSILON ) );
-
-	//lockedXpos = GetPhysics()->GetOrigin().x; //ivan - remember initial pos.
 
 	if ( num_cinematics ) {
 		physicsObj.SetGravity( vec3_origin );
@@ -988,27 +933,6 @@ void idAI::Spawn( void ) {
 
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
-
-	//ivan start
-	//if ( gameLocal.GameState() == GAMESTATE_STARTUP ) { //count them only at map start
-	if( !spawnArgs.GetBool( "noStats", "0" ) && ( spawnArgs.GetInt( "team", "1") != 0 ) && !spawnArgs.GetBool( "spawner", "0") ){
-		gameLocal.enemies_spawned_counter++;
-
-		//gameLocal.Printf( "Enemies counter increased: %d ( %s )\n", gameLocal.enemies_spawned_counter, name.c_str() );
-	}
-	//isXlocked	= spawnArgs.GetBool( "isXlocked", "1" ); //ivan - moved to idActor
-	//updXlock = spawnArgs.GetBool( "updXlock", "1" ); //ivan - moved to idActor
-
-	fireMode = spawnArgs.GetInt( "fireMode", "0" );
-
-	spawnArgs.GetInt( "noMove", "0", noMove );
-	if( noMove > 0 ){
-		AI_INHIBIT_MOVE = true;
-		if( noMove > 1 ){
-			noPush = true;
-		}
-	}
-	//ivan end
 }
 
 /*
@@ -1128,18 +1052,19 @@ idAI::Think
 void idAI::Think( void ) {
 	// if we are completely closed off from the player, don't do anything at all
 	if ( CheckDormant() ) {
-		//isOnScreen = false; //ivan - fix needed?
 		return;
 	}
 
 	if ( thinkFlags & TH_THINK ) {
 		// clear out the enemy when he dies or is hidden
 		idActor *enemyEnt = enemy.GetEntity();
-		if ( enemyEnt ) {			
+		if ( enemyEnt ) {
 			if ( enemyEnt->health <= 0 ) {
 				EnemyDead();
 			}
 		}
+
+		updateCurrentDamageForLocations(); //ivan - lower current damage value per location as time goes by...
 
 		current_yaw += deltaViewAngles.yaw;
 		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
@@ -1150,7 +1075,7 @@ void idAI::Think( void ) {
 			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
 				PlayCinematic();
 			}
-			RunPhysicsWrapper(); //ivan - was: RunPhysics();
+			RunPhysics();
 		} else if ( !allowHiddenMovement && IsHidden() ) {
 			// hidden monsters
 			UpdateAIScript();
@@ -1207,8 +1132,9 @@ void idAI::Think( void ) {
 		AI_PAIN = false;
 		AI_SPECIAL_DAMAGE = 0;
 		AI_PUSHED = false;
+		highPainAlreadyChosen = 0; //ivan - reset this every tick
 	} else if ( thinkFlags & TH_PHYSICS ) {
-		RunPhysicsWrapper(); //ivan - was: RunPhysics();
+		RunPhysics();
 	}
 
 	if ( af_push_moveables ) {
@@ -1225,26 +1151,12 @@ void idAI::Think( void ) {
 	}
 */
 
-	//ivan start
-	//upd is on screen
-	UpdateIsOnScreen(); //NOTE: my "isOnScreen" value is useful also to other entities.
-	//ivan end
-
-//rev 2020 hurt the player when overlapping enemies. Updated: make sure the enemy isn't hidden or else the box will still spawn.
-	if( !IsHidden() && spawnArgs.GetInt( "touchofdeath", "1") ){
-		gameLocal.HurtBox( this );		
-	}
-	
 	UpdateMuzzleFlash();
 	UpdateAnimation();
 	UpdateParticles();
 	Present();
 	UpdateDamageEffects();
 	LinkCombat();
-
-	//ivan start
-	//modelCallBackNotDone = true; //reset to true every frame. Next time ::think will be called it will be already updated. 
-	//ivan end
 }
 
 /***********************************************************************
@@ -1277,10 +1189,9 @@ void idAI::LinkScriptVariables( void ) {
 	AI_HIT_ENEMY.LinkTo(		scriptObject, "AI_HIT_ENEMY" );
 	AI_OBSTACLE_IN_PATH.LinkTo(	scriptObject, "AI_OBSTACLE_IN_PATH" );
 	AI_PUSHED.LinkTo(			scriptObject, "AI_PUSHED" );
-	//ivan start
-	AI_INHIBIT_ATTACK.LinkTo(	scriptObject, "AI_INHIBIT_ATTACK" ); 
-	AI_INHIBIT_MOVE.LinkTo(		scriptObject, "AI_INHIBIT_MOVE" ); 
-	//ivan end
+	AI_MELEEPAIN.LinkTo(		scriptObject, "AI_MELEEPAIN" );
+	AI_COMBOPAIN.LinkTo(		scriptObject, "AI_COMBOPAIN" );
+	AI_HIGHPAIN.LinkTo(		scriptObject, "AI_HIGHPAIN" );
 }
 
 /*
@@ -1509,58 +1420,11 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 		return false;
 	}
 
-	//ivan start 
-
-	/*
-      se io sono/vado su ALTRO piano E c'è strada che collega:
-      - isXlocked 0 updXlock 0 --> mai lockato,    riesce a fare strada,
-      - isXlocked 0 updXlock 1 --> si slocca,      riesce a fare strada,
-      - isXlocked 1 updXlock 1 --> si slocca,      riesce a fare strada,
-      - isXlocked 1 updXlock 0 --> è lockato,      impazzisce cercando di fare strada,
-
-      Soluz: se lockato e no updXlock, non deve provare a raggiungermi se X diversa.
-	*/
-	if( isXlocked && !updXlock ){
-		if( goal.x != fastXpos ){
-			//gameLocal.Printf("fix 1\n");
-			return false;
-		}
-	}
-
-	/*se io sono/vado su STESSO piano E c'è strada alternativa su altro piano:
-      - isXlocked 0 updXlock 0 --> mai lockato,    riesce a fare strada alternativa,
-      - isXlocked 0 updXlock 1 --> se già lockato, impazzisce cercando di fare strada alternativa, (quindi ora var isXlocked = 1)
-      - isXlocked 1 updXlock 1 --> è lockato,      impazzisce cercando di fare strada alternativa,
-      - isXlocked 1 updXlock 0 --> è lockato,      impazzisce cercando di fare strada alternativa,
-      
-      Soluz: se lockato, non deve vedere la strada. 
-      Miglioramento: se updXlock 1 può cmq vederla, ma se deve anche sloccare...
-    */
-
-	/*was:
 	if ( move.moveType == MOVETYPE_FLY ) {
 		return aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
 	} else {
 		return aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
 	}
-	*/
-
-	bool result;
-	if ( move.moveType == MOVETYPE_FLY ) {
-		result = aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
-	} else {
-		result = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
-	}
-
-	if( isXlocked && result ){
-		if( path.moveGoal.x != fastXpos ){
-			//gameLocal.Printf("fix 2\n");
-			result = false;
-		}
-	}
-
-	return result;
-	//ivan end
 }
 
 /*
@@ -1729,21 +1593,9 @@ bool idAI::DirectMoveToPosition( const idVec3 &pos ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
-
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_DEST_UNREACHABLE = false;
-	//AI_FORWARD			= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= false;		
-	} else {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_FORWARD			= true;
 
 	if ( move.moveType == MOVETYPE_FLY ) {
 		idVec3 dir = pos - physicsObj.GetOrigin();
@@ -1846,20 +1698,9 @@ bool idAI::MoveToEnemy( void ) {
 	move.goalEntity		= enemyEnt;
 	move.speed			= fly_speed;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_DEST_UNREACHABLE = false;
-	//AI_FORWARD			= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= false;		
-	} else {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_FORWARD			= true;
 
 	return true;
 }
@@ -1928,20 +1769,9 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	move.goalEntityOrigin	= ent->GetPhysics()->GetOrigin();
 	move.moveStatus			= MOVE_STATUS_MOVING;
 	move.speed				= fly_speed;
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_DEST_UNREACHABLE = false;
-	//AI_FORWARD			= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= false;		
-	} else {
-	AI_MOVE_DONE		= false;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_MOVE_DONE			= false;
+	AI_DEST_UNREACHABLE		= false;
+	AI_FORWARD				= true;
 
 	return true;
 }
@@ -1996,20 +1826,9 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	move.range			= range;
 	move.speed			= fly_speed;
 	move.startTime		= gameLocal.time;
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_DEST_UNREACHABLE = false;
-	//AI_FORWARD			= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= false;		
-	} else {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_FORWARD			= true;
 
 	return true;
 }
@@ -2059,20 +1878,9 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 	move.speed			= fly_speed;
 	move.startTime		= gameLocal.time;
 	move.anim			= attack_anim;
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_DEST_UNREACHABLE = false;
-	//AI_FORWARD			= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= false;		
-	} else {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_FORWARD			= true;
 
 	return true;
 }
@@ -2118,20 +1926,9 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_DEST_UNREACHABLE = false;
-	//AI_FORWARD			= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= false;		
-	} else {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_FORWARD			= true;
 
 	return true;
 }
@@ -2178,20 +1975,9 @@ bool idAI::MoveToCover( idEntity *entity, const idVec3 &hideFromPos ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_DEST_UNREACHABLE = false;
-	//AI_FORWARD			= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= false;		
-	} else {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_FORWARD			= true;
 
 	return true;
 }
@@ -2234,13 +2020,6 @@ bool idAI::WanderAround( void ) {
 	StopMove( MOVE_STATUS_DONE );
 
 	move.moveDest = physicsObj.GetOrigin() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
-
-	//ivan start - lock the X position - don't try to wander around
-	if( isXlocked ){
-		move.moveDest.x = fastXpos;
-	}
-	//ivan end
-
 	if ( !NewWanderDir( move.moveDest ) ) {
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
@@ -2251,17 +2030,8 @@ bool idAI::WanderAround( void ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
-//rev 2020 disable moving
-	//AI_MOVE_DONE		= false;
-	//AI_FORWARD		= true;		
-	if (disableMoving){
-	AI_MOVE_DONE		= true;
-	AI_FORWARD			= false;		
-	} else {
 	AI_MOVE_DONE		= false;
-	AI_FORWARD			= true;		
-	}
-//rev 2020 end
+	AI_FORWARD			= true;
 
 	return true;
 }
@@ -2343,98 +2113,83 @@ idAI::NewWanderDir
 ================
 */
 bool idAI::NewWanderDir( const idVec3 &dest ) {
-
 	float	deltax, deltay;
 	float	d[ 3 ];
 	float	tdir, olddir, turnaround;
-	
-	//ivan start
-	if( isXlocked ){
-		//gameLocal.Printf("idAI::NewWanderDir : current_yaw %f \n", current_yaw);
-		if(current_yaw > 0 && current_yaw < 180){ //case about 90 --> turn to -90
-			turnaround = idMath::AngleNormalize360( -90 );
-		}else{ //case about -90 --> turn to 90
-			turnaround = idMath::AngleNormalize360( 90 );
-		}
-	}else{
-	//ivan end
-		move.nextWanderTime = gameLocal.time + ( gameLocal.random.RandomFloat() * 500 + 500 );
 
-		olddir = idMath::AngleNormalize360( ( int )( current_yaw / 45 ) * 45 );
-	 
-		turnaround = idMath::AngleNormalize360( olddir - 180 );
+	move.nextWanderTime = gameLocal.time + ( gameLocal.random.RandomFloat() * 500 + 500 );
 
-		idVec3 org = physicsObj.GetOrigin();
-		deltax = dest.x - org.x;
-		deltay = dest.y - org.y;
-		
-		if ( deltax > 10 ) {
-			d[ 1 ]= 0;
-		} else if ( deltax < -10 ) {
-			d[ 1 ] = 180;
+	olddir = idMath::AngleNormalize360( ( int )( current_yaw / 45 ) * 45 );
+	turnaround = idMath::AngleNormalize360( olddir - 180 );
+
+	idVec3 org = physicsObj.GetOrigin();
+	deltax = dest.x - org.x;
+	deltay = dest.y - org.y;
+	if ( deltax > 10 ) {
+		d[ 1 ]= 0;
+	} else if ( deltax < -10 ) {
+		d[ 1 ] = 180;
+	} else {
+		d[ 1 ] = DI_NODIR;
+	}
+
+	if ( deltay < -10 ) {
+		d[ 2 ] = 270;
+	} else if ( deltay > 10 ) {
+		d[ 2 ] = 90;
+	} else {
+		d[ 2 ] = DI_NODIR;
+	}
+
+	// try direct route
+	if ( d[ 1 ] != DI_NODIR && d[ 2 ] != DI_NODIR ) {
+		if ( d[ 1 ] == 0 ) {
+			tdir = d[ 2 ] == 90 ? 45 : 315;
 		} else {
-			d[ 1 ] = DI_NODIR;
-		}
-		
-
-		if ( deltay < -10 ) {
-			d[ 2 ] = 270;
-		} else if ( deltay > 10 ) {
-			d[ 2 ] = 90;
-		} else {
-			d[ 2 ] = DI_NODIR;
+			tdir = d[ 2 ] == 90 ? 135 : 215;
 		}
 
-		// try direct route
-		if ( d[ 1 ] != DI_NODIR && d[ 2 ] != DI_NODIR ) {
-			if ( d[ 1 ] == 0 ) {
-				tdir = d[ 2 ] == 90 ? 45 : 315;
-			} else {
-				tdir = d[ 2 ] == 90 ? 135 : 215;
-			}
+		if ( tdir != turnaround && StepDirection( tdir ) ) {
+			return true;
+		}
+	}
 
+	// try other directions
+	if ( ( gameLocal.random.RandomInt() & 1 ) || idMath::Fabs( deltay ) > idMath::Fabs( deltax ) ) {
+		tdir = d[ 1 ];
+		d[ 1 ] = d[ 2 ];
+		d[ 2 ] = tdir;
+	}
+
+	if ( d[ 1 ] != DI_NODIR && d[ 1 ] != turnaround && StepDirection( d[1] ) ) {
+		return true;
+	}
+
+	if ( d[ 2 ] != DI_NODIR && d[ 2 ] != turnaround	&& StepDirection( d[ 2 ] ) ) {
+		return true;
+	}
+
+	// there is no direct path to the player, so pick another direction
+	if ( olddir != DI_NODIR && StepDirection( olddir ) ) {
+		return true;
+	}
+
+	 // randomly determine direction of search
+	if ( gameLocal.random.RandomInt() & 1 ) {
+		for( tdir = 0; tdir <= 315; tdir += 45 ) {
 			if ( tdir != turnaround && StepDirection( tdir ) ) {
 				return true;
 			}
 		}
-
-		// try other directions
-		if ( ( gameLocal.random.RandomInt() & 1 ) || idMath::Fabs( deltay ) > idMath::Fabs( deltax ) ) {
-			tdir = d[ 1 ];
-			d[ 1 ] = d[ 2 ];
-			d[ 2 ] = tdir;
-		}
-
-		if ( d[ 1 ] != DI_NODIR && d[ 1 ] != turnaround && StepDirection( d[1] ) ) {
-			return true;
-		}
-
-		if ( d[ 2 ] != DI_NODIR && d[ 2 ] != turnaround	&& StepDirection( d[ 2 ] ) ) {
-			return true;
-		}
-
-		// there is no direct path to the player, so pick another direction
-		if ( olddir != DI_NODIR && StepDirection( olddir ) ) {
-			return true;
-		}
-
-		 // randomly determine direction of search
-		if ( gameLocal.random.RandomInt() & 1 ) {
-			for( tdir = 0; tdir <= 315; tdir += 45 ) {
-				if ( tdir != turnaround && StepDirection( tdir ) ) {
-					return true;
-				}
-			}
-		} else {
-			for ( tdir = 315; tdir >= 0; tdir -= 45 ) {
-				if ( tdir != turnaround && StepDirection( tdir ) ) {
-					return true;
-				}
+	} else {
+		for ( tdir = 315; tdir >= 0; tdir -= 45 ) {
+			if ( tdir != turnaround && StepDirection( tdir ) ) {
+				return true;
 			}
 		}
-	} //ivan
+	}
 
-	if ( turnaround != DI_NODIR && StepDirection( turnaround ) ) { //just try turnaround
+	if ( turnaround != DI_NODIR && StepDirection( turnaround ) ) {
 		return true;
 	}
 
@@ -2536,10 +2291,6 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 
 	if ( result && ( ai_debugMove.GetBool() ) ) {
 		gameRenderWorld->DebugLine( colorCyan, physicsObj.GetOrigin(), seekPos );
-	}
-
-	if( isXlocked ){
-		seekPos.x = fastXpos; //ivan - make sure goalPos.x = fastXpos just in case result == true.
 	}
 
 	return result;
@@ -2760,12 +2511,24 @@ void idAI::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec
 	// and we don't want him taking physics impulses as it can knock him off the path
 
 	//ivan start
-	if( noPush ) return;
+	if( nextImpulse > gameLocal.time ){
+		//gameLocal.Printf("idAI::ApplyImpulse - ignored\n");
+		return;
+	}
+	/*
+	else{
+		gameLocal.Printf("idAI::ApplyImpulse - ok\n");
+		nextImpulse = gameLocal.time + 10;
+	}
+	*/
 	//ivan end
 
 	if ( move.moveType != MOVETYPE_STATIC && move.moveType != MOVETYPE_SLIDE ) {
 		idActor::ApplyImpulse( ent, id, point, impulse );
 	}
+
+	
+	
 }
 
 /*
@@ -2894,7 +2657,7 @@ void idAI::DeadMove( void ) {
 	GetMoveDelta( viewAxis, viewAxis, delta );
 	physicsObj.SetDelta( delta );
 
-	RunPhysicsWrapper(); //ivan - was: RunPhysics();
+	RunPhysics();
 
 	AI_ONGROUND = physicsObj.OnGround();
 }
@@ -2939,11 +2702,6 @@ void idAI::AnimMove( void ) {
 
 	Turn();
 
-	//ivan start
-	if( AI_INHIBIT_MOVE ){
-		delta.Zero();
-	}else
-	//ivan end
 	if ( move.moveCommand == MOVE_SLIDE_TO_POSITION ) {
 		if ( gameLocal.time < move.startTime + move.duration ) {
 			goalPos = move.moveDest - move.moveDir * MS2SEC( move.startTime + move.duration - gameLocal.time );
@@ -2968,12 +2726,10 @@ void idAI::AnimMove( void ) {
 		}
 	}
 
-	physicsObj.UseFlyMove( false ); //ivan - from D3XP
-
 	physicsObj.SetDelta( delta );
 	physicsObj.ForceDeltaMove( disableGravity );
 
-	RunPhysicsWrapper(); //ivan - was: RunPhysics();
+	RunPhysics();
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
@@ -3088,8 +2844,7 @@ void idAI::SlideMove( void ) {
 	vel.z = z;
 	physicsObj.SetLinearVelocity( vel );
 	physicsObj.UseVelocityMove( true );
-
-	RunPhysicsWrapper(); //ivan - was: RunPhysics();
+	RunPhysics();
 
 	if ( ( move.moveCommand == MOVE_FACE_ENEMY ) && enemy.GetEntity() ) {
 		TurnToward( lastVisibleEnemyPos );
@@ -3351,7 +3106,7 @@ void idAI::FlyMove( void ) {
 	physicsObj.UseVelocityMove( false );
 	physicsObj.SetDelta( vec3_zero );
 	physicsObj.ForceDeltaMove( disableGravity );
-	RunPhysicsWrapper(); //ivan - was: RunPhysics();
+	RunPhysics();
 
 	monsterMoveResult_t	moveResult = physicsObj.GetMoveResult();
 	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
@@ -3404,7 +3159,7 @@ void idAI::StaticMove( void ) {
 	Turn();
 
 	physicsObj.ForceDeltaMove( true ); // disable gravity
-	RunPhysicsWrapper(); //ivan - was: RunPhysics();
+	RunPhysics();
 
 	AI_ONGROUND = false;
 
@@ -3472,11 +3227,46 @@ int idAI::ReactionTo( const idEntity *ent ) {
 idAI::Pain
 =====================
 */
-bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, bool useHighPain, bool fromMelee ) { //ivan - forceHighPain and fromMelee added
 	idActor	*actor;
 
-	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location );
+	//ivan start - once AI_PAIN is true, idActor::Pain will be not called again this tick 
+	if(!AI_PAIN){ //if not yet successfully evaluated once this tick...
+		AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location, useHighPain, fromMelee );
+		if(useHighPain){
+			AI_HIGHPAIN = (AI_PAIN != 0); //if ok...
+			highPainAlreadyChosen = (AI_PAIN != 0); //if ok...
+		}else{
+			AI_HIGHPAIN = false;
+		}
+	} 
+	else if(!highPainAlreadyChosen && useHighPain){ //AI_PAIN is already true, but we have to choose a better anim (highpain)!
+		idActor::ChoosePainAnim(location, useHighPain);
+		AI_HIGHPAIN = true; //this will not be reset
+		highPainAlreadyChosen = true; //this will be reset every tick
+	}
+	//ivan end 
+
 	AI_DAMAGE = true;
+
+	//ivan start - check if we were hit by a combo or melee.
+	if(AI_PAIN){
+		AI_MELEEPAIN = fromMelee;
+		
+		AI_COMBOPAIN = false;
+		if ( attacker->IsType( idPlayer::Type ) ) {
+			idPlayer * thePlayer = static_cast<idPlayer *>(attacker); 
+			if ( thePlayer->IsComboActive() ) { //that is, we are performing a combo
+				AI_COMBOPAIN = true;
+			}
+		}
+
+	}else{  //false if no pain is performed
+		AI_MELEEPAIN = false;
+		AI_COMBOPAIN = false; 
+		AI_HIGHPAIN = false;
+	}
+	//ivan end
 
 	// force a blink
 	blink_time = 0;
@@ -3605,7 +3395,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 
 	disableGravity = false;
-	move.moveType = MOVETYPE_DEAD;
+	//move.moveType = MOVETYPE_DEAD;
 	af_push_moveables = false;
 
 	physicsObj.UseFlyMove( false );
@@ -3617,9 +3407,13 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	if ( attacker && attacker->IsType( idActor::Type ) ) {
 		gameLocal.AlertAI( ( idActor * )attacker );
 	}
-
-	// activate targets
-	ActivateTargets( attacker );
+     
+	//Ivan start - activate targets only if not already turned into friend
+	//was: ActivateTargets( attacker );
+	if ( !spawnArgs.GetBool( "eviled", "0" ) ) {
+        	ActivateTargets( attacker );
+    }
+	//Ivan end
 
 	RemoveAttachments();
 	RemoveProjectile();
@@ -3628,18 +3422,21 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	ClearEnemy();
 	AI_DEAD	= true;
 
-	// make monster nonsolid
-	physicsObj.SetContents( 0 );
-	physicsObj.GetClipModel()->Unlink();
-	
-//rev 2021 bullets pass through corpses because it causes a bottleneck in 2d gameplay. dead bodies block bullets!
-	combatModel->SetContents( 0 );
-	
-	Unbind();
+	if ( !spawnArgs.GetBool( "staticDeath", "0" ) ) { //ivan 
+			move.moveType = MOVETYPE_DEAD; //ivan 	
 
-	if ( StartRagdoll() ) {
-		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+			// make monster nonsolid
+			physicsObj.SetContents( 0 );
+			physicsObj.GetClipModel()->Unlink();
+
+			Unbind();
+
+			if ( StartRagdoll() ) {
+				StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+			}
 	}
+
+	//physicsObj.SetLinearVelocity( vec3_zero ); //ivan - test only
 
 	if ( spawnArgs.GetString( "model_death", "", &modelDeath ) ) {
 		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
@@ -3667,21 +3464,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		kv = spawnArgs.MatchPrefix( "def_drops", kv );
 	}
 
-	if ( attacker && attacker->IsType( idPlayer::Type ) ) {
-		idPlayer *player = static_cast< idPlayer* >( attacker );
-		if( inflictor && !inflictor->IsType( idSoulCubeMissile::Type ) ){
-			player->AddAIKill();
-		}
-		//ivan start - add score only if player is the killer
-		player->AddScore( spawnArgs.GetInt( "score", "0" ) ); 
-		//ivan end
+	if ( ( attacker && attacker->IsType( idPlayer::Type ) ) && ( inflictor && !inflictor->IsType( idSoulCubeMissile::Type ) ) ) {
+		static_cast< idPlayer* >( attacker )->AddAIKill();
 	}
-
-	//ivan start - upd the global counter regardless who is the killer
-	if( !spawnArgs.GetBool( "noStats", "0" ) && ( spawnArgs.GetInt( "team", "1") != 0 ) ){
-		gameLocal.enemies_killed_counter++;
-	}
-	//ivan end
 }
 
 /***********************************************************************
@@ -3953,7 +3738,6 @@ void idAI::SetEnemyPosition( void ) {
 	lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 	lastVisibleEnemyEyeOffset = enemyEnt->EyeOffset();
 	lastVisibleEnemyPos = enemyEnt->GetPhysics()->GetOrigin();
-
 	if ( move.moveType == MOVETYPE_FLY ) {
 		pos = lastVisibleEnemyPos;
 		onGround = true;
@@ -4027,237 +3811,6 @@ void idAI::SetEnemyPosition( void ) {
 	}
 }
 
-//ivan start
-
-
-/*
-================
-idEntity::UpdateRenderEntity
-================
-
-bool idAI::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) {
-	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
-		return false;
-	}
-
-	//ivan start
-	modelCallBackDone = true;
-	//ivan end
-
-	idAnimator *animator = GetAnimator();
-	if ( animator ) {
-		return animator->CreateFrame( gameLocal.time, false );
-	}
-
-	return false;
-}
-*/
-
-/*
-================
-idAI::ModelCallback
-
-NOTE: overrides idEntity::ModelCallback just to know if we are visible!
-NOTE: this is indirectly called by UpdateEntityDef in Present, that is called by Think.
-================
-
-bool idAI::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView ) {
-	idAI *ent;
-
-	ent = static_cast<idAI *>(gameLocal.entities[ renderEntity->entityNum ]);
-	if ( !ent ) {
-		gameLocal.Error( "idAI::ModelCallback: callback with NULL game entity" );
-	}
-
-	return ent->UpdateRenderEntity( renderEntity, renderView );
-}
-*/
-
-//not used
-/*
-bool idAI::AllowSeeEnemy( idActor *enemyEnt ) { //called after UpdateInhibitAttack
-	
-	// let it see on Z axis?
-	//if( deltaZfromEnemy > AI_Z_DELTA_CANSEE_MAX ){
-	//	return false;
-	//}
-
-	//was:
-	//test
-	if( isXlocked && enemyEnt->isXlocked && (enemyEnt->lockedXpos != lockedXpos ) ){ //both locked on different planes!
-		return true; 
-	}
-
-	if( !isXlocked || updXlock ){ //if he can (or soon it will able to) follow the enemy --> don't check X delta
-		return ( deltaYfromEnemy < gameLocal.aiSeeDistanceY );
-	}else{ //isXlocked && !updXlock //cannot follow the enemy --> see enemy only when can attack
-		return ( !AI_INHIBIT_ATTACK ); //if attack is not inhibited, we can see
-	}
-}
-*/
-
-
-/*
-=====================
-idAI::RunPhysicsWrapper
-=====================
-*/
-void idAI::RunPhysicsWrapper( void ){
-	RunPhysics();
-
-	//lock the X position 
-	if( isXlocked ){
-		physicsObj.SetOrigin( idVec3( fastXpos, physicsObj.GetOrigin().y, physicsObj.GetOrigin().z ) ); 
-	}else{ 
-		fastXpos = physicsObj.GetOrigin().x; //always upd so others can easily know our X pos
-	}
-
-	//upd is on screen
-	//UpdateIsOnScreen(); //NOTE: my "isOnScreen" value is useful also to other entities.
-}
-
-bool idAI::AllowSeeActor( idActor *actor ) {
-	
-	float deltaXfromEntity;
-
-	//one of us is out of screen
-	if( !isOnScreen || !actor->isOnScreen ){
-		return false;
-	}
-
-	deltaXfromEntity = idMath::Fabs( fastXpos - actor->fastXpos );
-
-	//too far on X-axis. NOTE: if locked but cannot change, then he can see regardless X pos
-	if ( (!isXlocked || updXlock ) && ( deltaXfromEntity > AI_X_DELTA_CANSEE_MAX ) ){
-		return false;
-	}
-
-	return true;
-}
-
-void idAI::UpdateInhibitAttack( idActor *enemyEnt ) {	
-
-	//upd this also for other functions
-	deltaXfromEnemy = idMath::Fabs( fastXpos - enemyEnt->fastXpos );
-
-	//one of us is out of screen
-	if( !isOnScreen || !enemyEnt->isOnScreen ){
-		AI_INHIBIT_ATTACK = true;
-		//gameLocal.Warning("%s AI_INHIBIT_ATTACK 0", GetName() );
-		return;
-	}
-	
-	//too far on X-axis. NOTE: if locked but cannot change, then he can fire regardless X pos
-	if ( (!isXlocked || updXlock ) && ( deltaXfromEnemy > AI_X_DELTA_CANSEE_MAX ) ){
-		AI_INHIBIT_ATTACK = true;
-		//gameLocal.Warning("%s AI_INHIBIT_ATTACK 1", GetName() );
-		return;
-	}
-	
-	AI_INHIBIT_ATTACK = false;
-	//gameLocal.Warning("%s AI_INHIBIT_ATTACK NO", GetName() );
-}
-
-void idAI::UpdateXlock( idActor *enemyEnt ) {	
-	/*
-	if( deltaYfromEnemy > gameLocal.aiSeeDistanceY ){
-		//we can unlock if too far!
-		isXlocked = false;
-		return; //don't upd if too far (outside of the screen)
-	}
-	*/
-	if( updXlock ){ //Xlocked position can be updated
-		if( !enemyEnt->updXlock ){ //never lock with someone who is not locked
-			isXlocked = false;
-		} else if( deltaXfromEnemy > AI_X_DELTA_LOCK_MIN ){ //too far --> unlock
-			isXlocked = false;
-		} else if ( !isXlocked ){
-			//gameLocal.Printf("%s is now locked\n", GetName() );
-			isXlocked = true;
-			fastXpos = enemyEnt->fastXpos; //we'll be pushed in place.
-		}
-	}else if( isXlocked ){ //locked and never update --> clear enemies if cannot fight
-		if( AI_INHIBIT_ATTACK ){ //if attack is inhibited, we cannot fight this enemy
-			ClearEnemy();
-		}
-	}
-}
-
-/*
-=====================
-idAI::UpdateIsOnScreen
-=====================
-*/
-
-void idAI::UpdateIsOnScreen( void ) {
-	if( IsHidden() ){
-		isOnScreen = false;
-		return;
-	}
-	idPlayer *player = gameLocal.GetLocalPlayer();
-
-//Rev 2020 save game crash fix from DG.  check needed to stop crash.
-	// WAS: if ( !player ) {
-	if( player == NULL || player->GetRenderView() == NULL ) {		
-		isOnScreen = false; //no player, no camera
-		return;
-	}
-//Rev 2020 End
-	const idVec3 &myPos = physicsObj.GetOrigin();
-	const idVec3 &cameraPos = player->GetRenderView()->vieworg;
-	idVec3 delta;
-
-	//ivan start - upd deltas stuff
-	delta = cameraPos - myPos;
-	/*
-	delta.x = cameraPos.x - myPos.x; //how far we are from the camera.
-	delta.y = idMath::Fabs( cameraPos.y - myPos.y ); //horizontal distance
-	delta.z = idMath::Fabs( cameraPos.z - myPos.z ); //vertical distance
-
-	*/
-	
-	
-	//X axis - how far we are from the camera
-	if( delta.x > 0 ){
-		//gameLocal.Printf("left\n");
-		isOnScreen = false;
-		return;
-	}else{
-		delta.x = -delta.x; //use the positive value next
-	}
-
-	//Y axis - horizontal distance
-	if( idMath::Fabs( delta.y ) > delta.x + 120 ){ //if horizontal dist is greater than camera dist, than we are out of view (Horizontal FOV 90 --> 90 45 45 triangle)
-		//Rev 2018 increased range by 120.  this allows enemies to attack as soon as they are fully on screen.
-		isOnScreen = false;
-		return;
-	}
-	
-	//Z axis - vertical distance
-	if( delta.z > EyeHeight() ){  //positive value --> camera is higher than me --> remove the eye offset
-		delta.z -= EyeHeight(); //like being closer
-	}
-	if( idMath::Fabs( delta.z ) > delta.x * 0.75f ){ //if vertical dist is greater than camera dist*0.75, than we are out of view (Vertical FOV < 90 --> NOT 90 45 45 triangle! Use 4:3 ratio).
-		isOnScreen = false;
-	}else{
-		isOnScreen = true;
-	}
-
-	//Assuming FOV = 90, delta.x is also the horizontal max distance 
-	//isOnScreen = ( (delta.y < delta.x) && (delta.z < delta.x * 0.75f) ); 
-	
-	/*
-	if( isOnScreen ){
-		gameLocal.Warning("%s isOnScreen", GetName() );
-	}else{
-		gameLocal.Warning("%s not isOnScreen", GetName() );
-	}
-	*/
-}
-
-//ivan end
-
-
 /*
 =====================
 idAI::UpdateEnemyPosition
@@ -4272,7 +3825,6 @@ void idAI::UpdateEnemyPosition( void ) {
 	bool			onGround;
 
 	if ( !enemyEnt ) {
-		AI_INHIBIT_ATTACK = true;
 		return;
 	}
 
@@ -4287,16 +3839,6 @@ void idAI::UpdateEnemyPosition( void ) {
 			onGround = false;
 		}
 	}
-
-	//ivan start - upd deltas stuff
-	UpdateInhibitAttack( enemyEnt ); //Inhibit Attacks based on deltas
-	UpdateXlock( enemyEnt );
-	if( !enemy.GetEntity() ){ //UpdateXlock could have cleared the enemy 	
-		AI_ENEMY_IN_FOV		= false;
-		AI_ENEMY_VISIBLE	= false;
-		return; 
-	}
-	//ivan end
 
 	if ( onGround ) {
 		// when we don't have an AAS, we can't tell if an enemy is reachable or not,
@@ -4318,7 +3860,7 @@ void idAI::UpdateEnemyPosition( void ) {
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
 
-	if ( CanSee( enemyEnt, false ) ) { //ivan - AllowSeeEnemy( enemyEnt ) && 
+	if ( CanSee( enemyEnt, false ) ) {
 		AI_ENEMY_VISIBLE = true;
 		if ( CheckFOV( enemyEnt->GetPhysics()->GetOrigin() ) ) {
 			AI_ENEMY_IN_FOV = true;
@@ -4347,7 +3889,7 @@ idAI::SetEnemy
 =====================
 */
 void idAI::SetEnemy( idActor *newEnemy ) {
-	int enemyAreaNum;	
+	int enemyAreaNum;
 
 	if ( AI_DEAD ) {
 		ClearEnemy();
@@ -4359,21 +3901,11 @@ void idAI::SetEnemy( idActor *newEnemy ) {
 		ClearEnemy();
 	} else if ( enemy.GetEntity() != newEnemy ) {
 		enemy = newEnemy;
-		
-		
-		//ivan start - upd deltas stuff
-		UpdateInhibitAttack( newEnemy ); //Inhibit Attacks based on deltas
-		UpdateXlock( newEnemy );
-		if( !enemy.GetEntity() ) return; //UpdateXlock could have cleared the enemy 
-		//ivan end
-		
-		
 		enemyNode.AddToEnd( newEnemy->enemyList );
 		if ( newEnemy->health <= 0 ) {
 			EnemyDead();
 			return;
 		}
-
 		// let the monster know where the enemy is
 		newEnemy->GetAASLocation( aas, lastReachableEnemyPos, enemyAreaNum );
 		SetEnemyPosition();
@@ -4624,7 +4156,7 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	float				attack_cone;
 	float				projectile_spread;
 	float				diff;
-	float				angle = 0.0f;
+	float				angle;
 	float				spin;
 	idAngles			ang;
 	int					num_projectiles;
@@ -4632,8 +4164,7 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	idMat3				axis;
 	idVec3				tmp;
 	idProjectile		*lastProjectile;
-	int 				noAim; //rev 2019
-	
+
 	if ( !projectileDef ) {
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
 		return NULL;
@@ -4652,8 +4183,6 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 
 	lastProjectile = projectile.GetEntity();
 
-//rev 2019 start.  make the ai shoot only shoot straight ahead when the noaim key is set to 1 in their def file	
-/*
 	if ( target != NULL ) {
 		tmp = target->GetPhysics()->GetAbsBounds().GetCenter() - muzzle;
 		tmp.Normalize();
@@ -4661,27 +4190,6 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	} else {
 		axis = viewAxis;
 	}
-*/
-	noAim  = spawnArgs.GetInt( "noaim" );	
-	if ( noAim > 0 ) {
-		if ( target = NULL ) { // FIXME: DG: this is not good
-			tmp = target->GetPhysics()->GetAbsBounds().GetCenter() - muzzle;
-			tmp.Normalize();
-			axis = tmp.ToMat3();
-		} else {
-			axis = viewAxis;
-			}
-		}	
-	if ( noAim < 1 ) {
-		if ( target != NULL ) {
-			tmp = target->GetPhysics()->GetAbsBounds().GetCenter() - muzzle;
-			tmp.Normalize();
-			axis = tmp.ToMat3();
-		} else {
-			axis = viewAxis;
-			}
-		}		
-//rev 2019 noaim end
 
 	// rotate it because the cone points up by default
 	tmp = axis[2];
@@ -4732,56 +4240,12 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 
 	axis = ang.ToMat3();
 
-	//ivan start - fire modes - setup
-	int firemodeCounter = 0;
-	int firemodeCounterPos = 0;
-	idVec3 updown_offset;
-	updown_offset.Zero();
-
-	if( fireMode == AI_FIREMODE_2D_STEP_SPREAD){ 
-		if(num_projectiles > 1){								//Example: spread = 90, num projs = 5
-			angle = 2*projectile_spread/(num_projectiles-1);	//Spread step: 2* 90 /(5-1) = 45 degrees
-			angle = angle/180.0f;								//normalized from 0 to 1: 45/180 = 0.5 --> % of 180 degrees to use: 0, 0.25, -0.25, 0.5, -0.5
-		}
-	} 
-	//ivan end
-
 	float spreadRad = DEG2RAD( projectile_spread );
 	for( i = 0; i < num_projectiles; i++ ) {
-		//ivan start - fire modes - direction
-		if( fireMode == AI_FIREMODE_DEFAULT){
-			// spread the projectiles out
-			angle = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
-			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) ) - axis[ 1 ] * ( angle * idMath::Cos( spin ) );
-		}else if( fireMode == AI_FIREMODE_2D_STEP_SPREAD){
-			// FIXME: DG: if num_projectiles == 1, angle is not properly initialized
-			//            (I initialized it to 0 above, but not sure that's the appropriate value)
-			dir = (axis[ 0 ] * (1-angle*firemodeCounterPos) ) + ( axis[ 2 ] * angle*firemodeCounter );
-			//upd counter
-			if(firemodeCounter >= 0){
-				firemodeCounter++;
-				firemodeCounterPos = firemodeCounter;
-			}
-			firemodeCounter = - firemodeCounter;
-		}else if( fireMode == AI_FIREMODE_2D_PARALLEL_SPREAD){ 
-			dir = axis[ 0 ];
-			updown_offset = axis[ 2 ]*projectile_spread*firemodeCounter; 
-			//upd counter
-			if(firemodeCounter >= 0){
-				firemodeCounter++;
-			}
-			firemodeCounter = - firemodeCounter;
-		}else if( fireMode == AI_FIREMODE_2D_RANDOM_SPREAD){
-			// spread the projectiles out
-			angle = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
-			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) );
-		}else{
-			gameLocal.Error("Unknown AI fire mode: %d", fireMode );
-		}
-		//ivan end
-
+		// spread the projectiles out
+		angle = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
+		spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
+		dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) ) - axis[ 1 ] * ( angle * idMath::Cos( spin ) );
 		dir.Normalize();
 
 		// launch the projectile
@@ -4789,13 +4253,7 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 			CreateProjectile( muzzle, dir );
 		}
 		lastProjectile = projectile.GetEntity();
-		
-
-		//ivan start - fire modes - postion offset
-		//lastProjectile->Launch( muzzle, dir, vec3_origin );
-		lastProjectile->Launch( muzzle + updown_offset, dir, vec3_origin );
-		//ivan test end
-
+		lastProjectile->Launch( muzzle, dir, vec3_origin );
 		projectile = NULL;
 	}
 
@@ -5002,7 +4460,7 @@ bool idAI::AttackMelee( const char *meleeDefName ) {
 	idVec3	globalKickDir;
 	globalKickDir = ( viewAxis * physicsObj.GetGravityAxis() ) * kickDir;
 
-	enemyEnt->Damage( this, this, globalKickDir, meleeDefName, 1.0f, INVALID_JOINT );
+	enemyEnt->Damage( this, this, globalKickDir, meleeDefName, 1.0f, INVALID_JOINT); 
 
 	lastAttackTime = gameLocal.time;
 
@@ -5162,14 +4620,7 @@ void idAI::Show( void ) {
 		physicsObj.SetContents( 0 );
 	} else if ( use_combat_bbox ) {
 		physicsObj.SetContents( CONTENTS_BODY|CONTENTS_SOLID );
-	} 
-//rev 2020
-	if( ( spawnArgs.GetInt( "team", "1") ) && spawnArgs.GetBool( "team_non_solid", "1") ){
-		physicsObj.SetContents( CONTENTS_CORPSE );	//the monster can pass through other monsters but player still detects touch of death
-		//gameLocal.Printf( "corpse" );
-	}
-//rev 2020 end	
-	else {
+	} else {
 		physicsObj.SetContents( CONTENTS_BODY );
 	}
 	physicsObj.GetClipModel()->Link( gameLocal.clip );
@@ -5309,6 +4760,8 @@ void idAI::TriggerParticles( const char *jointName ) {
 		}
 	}
 }
+
+
 
 
 /***********************************************************************
@@ -5577,7 +5030,7 @@ void idCombatNode::Spawn( void ) {
 	min_dist = spawnArgs.GetFloat( "min" );
 	max_dist = spawnArgs.GetFloat( "max" );
 	height = spawnArgs.GetFloat( "height" );
-	fov = spawnArgs.GetFloat( "fov", "120" );		//was 60 rev 2018
+	fov = spawnArgs.GetFloat( "fov", "60" );
 	offset = spawnArgs.GetVector( "offset" );
 
 	const idVec3 &org = GetPhysics()->GetOrigin() + offset;
@@ -5715,5 +5168,3 @@ void idCombatNode::Event_MarkUsed( void ) {
 		disabled = true;
 	}
 }
-
-

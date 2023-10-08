@@ -44,12 +44,6 @@ public:
 
 						idForce_Spring( void );
 	virtual				~idForce_Spring( void );
-
-	//ivan start
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-	//ivan end
-
 						// initialize the spring
 	void				InitSpring( float Kstretch, float Kcompress, float damping, float restLength );
 						// set the entities and positions on these entities the spring is attached to

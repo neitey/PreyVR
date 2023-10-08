@@ -60,13 +60,6 @@ idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL|CVAR_SYSTEM,
 
 #endif // GAME_DLL
 
-//ivan start
-const float MIN_MUSIC_VOLUME			= -10.0f; //must match the min malue in mainmenu.gui
-const float DISABLED_MUSIC_VOLUME		= -60.0f;
-const float MUSIC_FADEOUT_SECONDS		= 20.0f;
-const int MUSIC_SOUND_CLASS				= 2; //0 = default, 1 = teleport snd
-//ivan end
-
 idRenderWorld *				gameRenderWorld = NULL;		// all drawing is done to this world
 idSoundWorld *				gameSoundWorld = NULL;		// all audio goes to this world
 
@@ -199,7 +192,7 @@ void idGameLocal::Clear( void ) {
 	sessionCommand.Clear();
 	locationEntities = NULL;
 	smokeParticles = NULL;
-	trailsManager = NULL; //ivan rev 2019
+	trailsManager = NULL; //ivan
 	editEntities = NULL;
 	entityHash.Clear( 1024, MAX_GENTITIES );
 	inCinematic = false;
@@ -241,15 +234,6 @@ void idGameLocal::Clear( void ) {
 	newInfo.Clear();
 	lastGUIEnt = NULL;
 	lastGUI = 0;
-
-	//ivan start
-	secrets_found_counter	= 0;
-	secrets_spawned_counter = 0;
-	enemies_killed_counter	= 0;
-	enemies_spawned_counter = 0;
-	projSeeDistance = 0.0f;
-	musicEntity = NULL;
-	//ivan end
 
 	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
 	memset( clientPVS, 0, sizeof( clientPVS ) );
@@ -319,19 +303,19 @@ void idGameLocal::Init( void ) {
 
 	InitConsoleCommands();
 
-	//Ivan start - execute the default.cfg Hard Corps config file only the first time
-    if(!hardcorps_bind_run_once.GetBool()) {
+	//Ivan start - execute the default.cfg Ruiner config file only the first time
+    if(!ruiner_bind_run_once.GetBool()) {
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec default.cfg\n" );
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "seta hardcorps_bind_run_once 1\n" );
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "seta ruiner_bind_run_once 1\n" );
 		cmdSystem->ExecuteCommandBuffer();
 	}
-	//Ivan end		
-	
+	//Ivan end
+
 	// load default scripts
 	program.Startup( SCRIPT_DEFAULT );
 
 	smokeParticles = new idSmokeParticles;
-	trailsManager = new idTrailManager; //ivan rev 2019
+	trailsManager = new idTrailManager; //ivan
 
 	// set up the aas
 	dict = FindEntityDefDict( "aas_types" );
@@ -388,10 +372,10 @@ void idGameLocal::Shutdown( void ) {
 	delete smokeParticles;
 	smokeParticles = NULL;
 
-	//ivan start //rev 2019
+	//ivan start
 	delete trailsManager;
 	trailsManager = NULL;
-	//ivan end //rev 2019
+	//ivan end
 
 	idClass::Shutdown();
 
@@ -454,8 +438,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBuildNumber( BUILD_NUMBER );
 
 	//k not in original DOOM3
-#ifndef __ANDROID__
-//rev 2021 dhewm 1.5.1 build updates.  Found this comment in the commits.	
+#if !defined(__ANDROID__)
 	// DG: add some more information to savegame to make future quirks easier
 	savegame.WriteInt( INTERNAL_SAVEGAME_VERSION ); // to be independent of BUILD_NUMBER
 	savegame.WriteString( D3_OSTYPE ); // operating system - from CMake
@@ -464,7 +447,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteShort( (short)sizeof(void*) ); // tells us if it's from a 32bit (4) or 64bit system (8)
 	savegame.WriteShort( SDL_BYTEORDER ) ; // SDL_LIL_ENDIAN or SDL_BIG_ENDIAN
 	// DG end
-//rev 2021 dhewm 1.5.1 build updates End
 #endif
 
 	// go through all entities and threads and add them to the object list
@@ -504,7 +486,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteDict( &persistentPlayerInfo[ i ] );
 	}
 
-	//ivan - save/reload trails BEFORE other entities //rev 2019
+	//ivan - save/reload trails BEFORE other entities
 	trailsManager->Save( &savegame );
 
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
@@ -616,15 +598,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteBool( influenceActive );
 	savegame.WriteInt( nextGibTime );
-
-	//ivan start
-	savegame.WriteInt( secrets_spawned_counter );
-	savegame.WriteInt( secrets_found_counter );
-	savegame.WriteInt( enemies_spawned_counter );
-	savegame.WriteInt( enemies_killed_counter );
-	savegame.WriteFloat( projSeeDistance );
-	musicEntity.Save( &savegame );
-	//ivan end
 
 	// spawnSpots
 	// initialSpots
@@ -946,8 +919,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	firstFreeIndex	= MAX_CLIENTS;
 
 	// reset the random number generator.
-	//ivan -was: random.SetSeed( isMultiplayer ? randseed : 0 );
-	random.SetSeed( randseed );
+	random.SetSeed( isMultiplayer ? randseed : 0 );
 
 	camera			= NULL;
 	world			= NULL;
@@ -962,15 +934,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	framenum		= 0;
 	sessionCommand = "";
 	nextGibTime		= 0;
-
-	//ivan start
-	secrets_found_counter	= 0;
-	secrets_spawned_counter = 0;
-	enemies_killed_counter	= 0;
-	enemies_spawned_counter = 0;
-	projSeeDistance = 0.0f;
-	musicEntity = NULL;
-	//ivan end
 
 #ifdef  _PORTALSKY
 	portalSkyEnt			= NULL;
@@ -1006,8 +969,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// clear the smoke particle free list
 	smokeParticles->Init();
 
-	// cache miscellanious media references
-	trailsManager->Init(); //rev 2019
+	// ivan
+	trailsManager->Init();
 
 	// cache miscellanious media references
 	FindEntityDef( "preCacheExtras", false );
@@ -1043,8 +1006,8 @@ void idGameLocal::LocalMapRestart( ) {
 	// clear the smoke particle free list
 	smokeParticles->Init();
 
-	// clear the sound system
-	trailsManager->Init(); //rev 2019
+	//ivan
+	trailsManager->Init();
 
 	// clear the sound system
 	if ( gameSoundWorld ) {
@@ -1298,8 +1261,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBuildNumber();
 
 	//k not in original DOOM3
-#ifndef __ANDROID__
-//rev 2021 dhewm 3 1.5.1 updates.
+#if !defined(__ANDROID__)
 	// DG: I enhanced the information in savegames a bit for dhewm3 1.5.1
 	//     for which I bumped th BUILD_NUMBER to 1305
 	if( savegame.GetBuildNumber() >= 1305 )
@@ -1328,8 +1290,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		// right now I have no further use for this information, but in the future
 		// it can be used for quirks for (then-) old savegames
 	}
-	// DG end	
-//rev 2021 dhewm 3 1.5.1 updates END.
+	// DG end
 #endif
 
 	// Create the list of all objects in the game
@@ -1354,7 +1315,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// precache the player
 	FindEntityDef( "player_doommarine", false );
-	FindEntityDef( "player_scarlet", false );	//rev 2019
 
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
@@ -1379,7 +1339,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		savegame.ReadDict( &persistentPlayerInfo[ i ] );
 	}
 
-	//ivan - save/reload trails BEFORE other entities //rev 2019
+	//ivan - save/reload trails BEFORE other entities
 	trailsManager->Restore( &savegame );
 
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
@@ -1510,15 +1470,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( influenceActive );
 	savegame.ReadInt( nextGibTime );
 
-	//ivan start
-	savegame.ReadInt( secrets_spawned_counter );
-	savegame.ReadInt( secrets_found_counter );
-	savegame.ReadInt( enemies_spawned_counter );
-	savegame.ReadInt( enemies_killed_counter );
-	savegame.ReadFloat( projSeeDistance );
-	musicEntity.Restore( &savegame );
-	//ivan end
-
 	// spawnSpots
 	// initialSpots
 	// currentInitialSpot
@@ -1614,9 +1565,9 @@ void idGameLocal::MapShutdown( void ) {
 		smokeParticles->Shutdown();
 	}
 
-	if ( trailsManager ) { //rev 2019
-		trailsManager->Shutdown(); //rev 2019
-	} //rev 2019
+	if ( trailsManager ) {
+		trailsManager->Shutdown();
+	}
 	
 	pvs.Shutdown();
 
@@ -1964,16 +1915,7 @@ void idGameLocal::SpawnPlayer( int clientNum ) {
 
 	args.SetInt( "spawn_entnum", clientNum );
 	args.Set( "name", va( "player%d", clientNum + 1 ) );
-	
-//rev 2019 start character select via cvar
-	if ( cvarSystem->GetCVarBool( "pm_character") ) {
-	args.Set( "classname", isMultiplayer ? "player_doommarine_mp" : "player_scarlet" );
-	}else{
 	args.Set( "classname", isMultiplayer ? "player_doommarine_mp" : "player_doommarine" );
-	}
-	//args.Set( "classname", isMultiplayer ? "player_doommarine_mp" : "player_doommarine" );	
-//rev 2019 character select end	
-
 	if ( !SpawnEntityDef( args, &ent ) || !entities[ clientNum ] ) {
 		Error( "Failed to spawn player as '%s'", args.GetString( "classname" ) );
 	}
@@ -2367,20 +2309,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			if ( view ) {
 				gameRenderWorld->SetRenderView( view );
 			}
-
-			/*
-			//ivan start - update AI seeing distance and start camera blending.
-
-			if ( pm_thirdPersonRange.IsModified() ){
-				this->Printf("pm_thirdPersonRange.IsModified()\n");
-				UpdateAIseeDistance();
-				player->UpdateCameraDistance();
-
-				//remove the modified flag
-				//pm_thirdPersonRange.ClearModified();
-			}
-			//ivan end
-			*/
 		}
 
 		// clear any debug lines from a previous frame
@@ -2395,17 +2323,14 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// free old smoke particles
 		smokeParticles->FreeSmokes();
 
-		// process events on the server
-		trailsManager->Think(); //rev 2019
+		// upd trails every tic
+		trailsManager->Think();
 
 		// process events on the server
 		ServerProcessEntityNetworkEventQueue();
 
 		// update our gravity vector if needed.
 		UpdateGravity();
-
-		//ivan - music volume
-		UpdateMusicVolume();
 
 		// create a merged pvs for all players
 		SetupPlayerPVS();
@@ -3187,7 +3112,6 @@ idEntity *idGameLocal::SpawnEntityType( const idTypeInfo &classdef, const idDict
 	return static_cast<idEntity *>(obj);
 }
 
-//ivan start
 /*
 ===================
 idGameLocal::SpawnEntityDef
@@ -3198,183 +3122,6 @@ returning false if not found
 */
 bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDefaults ) {
 	const char	*classname;
-	
-	if ( ent ) {
-		*ent = NULL;
-	}
-
-	//get classname and check if there is a matching def
-	args.GetString( "classname", NULL, &classname );
-	const idDeclEntityDef *def = FindEntityDef( classname, false );
-	if ( !def ) {
-		Warning( "Unknown classname '%s'%s.", classname, args.GetString( "name" ) );
-		return false;
-	} //here def and classname are valid
-
-	//note: this checks the "random_class" key in the def
-	if( def->dict.GetBool( "random_class", "0" ) || args.GetBool( "random_class", "0" ) ){ //|| args.GetBool( "random_class", "0" )
-		return SpawnEntityDef_random( args, ent, setDefaults, def, classname );
-	}else{
-		return SpawnEntityDef_old( args, ent, setDefaults, def, classname );
-	}
-}
-
-/*
-================
-idGameLocal::SpawnEntityDef_random
-================
-*/
-void idGameLocal::RemoveBadKeysForRandom( idDict &args ){ //also called by idRandomSpawner
-	args.Delete( "model" );			//only use default
-	args.Delete( "anim" );			//only use default
-	args.Delete( "size" );			//only use default
-	args.Delete( "spawnclass" );	//only use default
-	args.Delete( "scriptobject" );	//only use default
-	//NOTE: "name" is always kept!
-}
-
-/*
-================
-idGameLocal::SpawnEntityDef_random
-================
-*/
-bool idGameLocal::SpawnEntityDef_random( const idDict &customArgs, idEntity **ent, bool setDefaults, const idDeclEntityDef *def, const char	*classname ) {
-	const idDict &defArgs = def->dict; //args from the temporary def
-	idDict newArgs; //args to populate for the new entity
-
-	Printf( "*** idGameLocal::RandomEntityClass *** \n" );
-
-	//get the def containing the list
-	const idDict *	rndListArgs = FindEntityDefDict( defArgs.GetString( "def_rndlist" ), false ); 
-	if ( !rndListArgs ) {
-		Warning( "No def_rndlist found on %s.", customArgs.GetString( "name" ) );
-		return false;
-	}
-
-	//get new classname
-	const char	*classname_new = rndListArgs->RandomPrefix( "def", random );
-	if ( *classname_new == '\0' ) {
-		Printf( "No new classname found for %s!\n", customArgs.GetString( "name" ) );
-		return false; //cannot spawn
-	}
-
-	Printf( "New classname is '%s'!\n", classname_new );
-
-	//check if there is a matching def
-	const idDeclEntityDef *def_new = FindEntityDef( classname_new, false );
-	if ( !def_new ) {
-		Warning( "Unknown classname '%s' for %s.", classname_new, customArgs.GetString( "name" ) );
-		return false;
-	}
-
-	//add key/value pairs set in the editor or whatever (origin, ...)
-	newArgs.Copy( customArgs ); 
-
-	//upd calssname
-	newArgs.Set( "classname", classname_new );
-
-	//delete keys that should never overwrite def's ones
-	RemoveBadKeysForRandom( newArgs );
-
-	//make sure this is not set even if someone add it in the editor
-	//NOTE: otherwise, when spawner is set, it would TRY to be random, but ALL the spawnargs would overwrite everything.
-	newArgs.Delete( "random_class" );
-
-	//debug
-	newArgs.Print();
-
-	return SpawnEntityDef_old( newArgs, ent, setDefaults, def_new, classname_new ); 
-}
-
-
-/*
-===================
-idGameLocal::SpawnEntityDef
-
-Finds the spawn function for the entity and calls it,
-returning false if not found
-===================
-*/
-
-bool idGameLocal::SpawnEntityDef_old( const idDict &args, idEntity **ent, bool setDefaults, const idDeclEntityDef *def, const char	*classname ) { 
-	//const char	*classname;
-	const char	*spawn;
-	idTypeInfo	*cls;
-	idClass		*obj;
-	idStr		error;
-	const char  *name;
-
-	/* //un noted change from original sdk
-	if ( ent ) {
-		*ent = NULL;
-	}
-	*/
-	
-	spawnArgs = args;
-
-	if ( spawnArgs.GetString( "name", "", &name ) ) {
-		sprintf( error, " on '%s'", name);
-	}
-
-	/* //un noted change from original sdk
-	spawnArgs.GetString( "classname", NULL, &classname );
-
-	const idDeclEntityDef *def = FindEntityDef( classname, false );
-
-	if ( !def ) {
-		Warning( "Unknown classname '%s'%s.", classname, error.c_str() );
-		return false;
-	}
-	*/
-
-	spawnArgs.SetDefaults( &def->dict );
-
-	// check if we should spawn a class object
-	spawnArgs.GetString( "spawnclass", NULL, &spawn );
-	if ( spawn ) {
-
-		cls = idClass::GetClass( spawn );
-		if ( !cls ) {
-			Warning( "Could not spawn '%s'.  Class '%s' not found%s.", classname, spawn, error.c_str() );
-			return false;
-		}
-
-		obj = cls->CreateInstance();
-		if ( !obj ) {
-			Warning( "Could not spawn '%s'. Instance could not be created%s.", classname, error.c_str() );
-			return false;
-		}
-
-		obj->CallSpawn();
-
-		if ( ent && obj->IsType( idEntity::Type ) ) {
-			*ent = static_cast<idEntity *>(obj);
-		}
-
-		return true;
-	}
-
-	// check if we should call a script function to spawn
-	spawnArgs.GetString( "spawnfunc", NULL, &spawn );
-	if ( spawn ) {
-		const function_t *func = program.FindFunction( spawn );
-		if ( !func ) {
-			Warning( "Could not spawn '%s'.  Script function '%s' not found%s.", classname, spawn, error.c_str() );
-			return false;
-		}
-		idThread *thread = new idThread( func );
-		thread->DelayedStart( 0 );
-		return true;
-	}
-
-	Warning( "%s doesn't include a spawnfunc or spawnclass%s.", classname, error.c_str() );
-	return false;
-}
-	
-/*
-//was: //un noted change from original sdk
-bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDefaults ) {	
-	const char	*classname;
 	const char	*spawn;
 	idTypeInfo	*cls;
 	idClass		*obj;
@@ -3384,7 +3131,6 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 	if ( ent ) {
 		*ent = NULL;
 	}
-	
 
 	spawnArgs = args;
 
@@ -3444,9 +3190,6 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 	Warning( "%s doesn't include a spawnfunc or spawnclass%s.", classname, error.c_str() );
 	return false;
 }
-*/
-
-//ivan end
 
 /*
 ================
@@ -3491,7 +3234,7 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 		spawnArgs.GetBool( "not_medium", "0", result );
 	} else {
 		spawnArgs.GetBool( "not_hard", "0", result );
-	} 
+	}
 
 	const char *name;
 	if ( g_skill.GetInteger() == 3 ) {
@@ -3506,7 +3249,7 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 		if ( idStr::Icmp( name, "weapon_bfg" ) == 0 || idStr::Icmp( name, "weapon_soulcube" ) == 0 ) {
 			result = true;
 		}
-	} 
+	}
 
 	return result;
 }
@@ -3587,8 +3330,7 @@ void idGameLocal::SpawnMapEntities( void ) {
 		args = mapEnt->epairs;
 
 		if ( !InhibitEntitySpawn( args ) ) {
-
-                        // precache any media specified in the map entity
+			// precache any media specified in the map entity
 			CacheDictionaryMedia( &args );
 
 			SpawnEntityDef( args );
@@ -3854,51 +3596,6 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 }
 
 /*
-=================
-idGameLocal::HurtBox
-Check if something is on over lapping the player and cause damage to the player
-//rev 2020 added
-=================
-*/
-void idGameLocal::HurtBox( idEntity *ent ) {
-	int			i;
-	int			num;
-	idEntity *	hit;
-	idClipModel *cm;
-	idClipModel *clipModels[ MAX_GENTITIES ];
-	idPhysics	*phys;
-
-	phys = ent->GetPhysics();
-	if ( !phys->GetNumClipModels() ) {
-		return;
-	}
-
-	num = clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels, MAX_GENTITIES );
-	for ( i = 0; i < num; i++ ) {
-		cm = clipModels[ i ];
-
-		// don't check render entities
-		if ( cm->IsRenderModel() ) {
-			continue;
-		}
-
-		hit = cm->GetEntity();
-		if ( ( hit == ent ) || !hit->fl.takedamage ) {
-			continue;
-		}
-
-		if ( !phys->ClipContents( cm ) ) {
-			continue;
-		}
-
-		// nail it
-		if ( hit->IsType( idPlayer::Type ) ) {
-			hit->Damage( NULL, NULL, vec3_origin, "damage_touchofdeath", 1.0f, 0 );
-		}
-	}
-}
-
-/*
 ================
 idGameLocal::RequirementMet
 ================
@@ -3998,8 +3695,6 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 		ent = entityList[ e ];
 		assert( ent );
 
-		//gameLocal.Printf("Splash found: %s\n", ent->GetName() ); //un noted change from original sdk
-
 		if ( !ent->fl.takedamage ) {
 			continue;
 		}
@@ -4046,7 +3741,6 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 			}
 
 			ent->Damage( inflictor, attacker, dir, damageDefName, damageScale, INVALID_JOINT );
-			//gameLocal.Printf("Splash damaged: %s\n", ent->GetName() ); //un noted change from original sdk
 		}
 	}
 
@@ -4119,7 +3813,7 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 		// scale the push for the inflictor
 		if ( ent == inflictor || ( ent->IsType( idAFAttachment::Type ) && static_cast<idAFAttachment*>(ent)->GetBody() == inflictor ) ) {
 			scale = inflictorScale;
-	    } //Denton
+	    } 
 		else if ( ent->IsType (idAFEntity_Base::Type) && static_cast<idAFEntity_Base*>(ent)->IsActiveAF()) {	// Only scale push when ragdoll is active - BY Clone JCD
 				scale = ent->spawnArgs.GetFloat ("ragdoll_push_scale", "1.0");	// Scales down ragdoll push based on def's value
 		}
@@ -4210,9 +3904,16 @@ void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float d
 		idVec3(  1.0f, -1.0f, 0.0f )
 	};
 
-	if ( !g_decals.GetBool() ) {
+	// DG: with size 0 we get trouble in functions called from this,
+	//     and it's harder to figure out the cause there
+	//     so just catch this here (so please fix the caller to make sure it doesn't happen)
+	assert(size > 0.0f);
+
+	if ( !g_decals.GetBool() || size <= 0.0f ) {
 		return;
 	}
+
+
 
 	// randomly rotate the decal winding
 	idMath::SinCos16( ( angle ) ? angle : random.RandomFloat() * idMath::TWO_PI, s, c );
@@ -4692,7 +4393,7 @@ void idGameLocal::ThrottleUserInfo( void ) {
 	mpGame.ThrottleUserInfo();
 }
 
-#ifdef _PORTALSKY //un noted change from original sdk
+#ifdef _PORTALSKY
 /*
 =================
 idGameLocal::SetPortalSkyEnt
@@ -4799,131 +4500,9 @@ void idGameLocal::SwitchTeam( int clientNum, int team ) {
 	}
 }
 
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-/*
-===============
-idGameLocal::GetMapLoadingGUI    6th venom
-
-Uses a new instance of a sound world just for the map loading sequence.
-This could even be made map specific if the "gui" string is pulled apart
-and uses as the basis for the shader name.
-===============
-*/
-idSoundWorld * loadSoundWorld = NULL;
-void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) {
-
-if ( !loadSoundWorld ) {
-      loadSoundWorld = soundSystem->AllocSoundWorld( NULL );
-   }
-if ( loadSoundWorld ) {
-      soundSystem->SetMute( false );
-      soundSystem->SetPlayingSoundWorld( loadSoundWorld );
- //     loadSoundWorld->PlayShaderDirectly( "music_"+ *gui );
-      loadSoundWorld->PlayShaderDirectly( gui );
-   }
-}
-
-#else
-
 /*
 ===============
 idGameLocal::GetMapLoadingGUI
 ===============
 */
 void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) { }
-
-#endif
-
-//ivan start
-
-/*
-================
-idGameLocal::UpdateSeeDistances
-================
-
-
-void idGameLocal::UpdateCameraPosition( const idVec3 &cameraPos ){
-	playerCameraOrigin = cameraPos;
-	//TODO: use renderView_t *	renderView;	?
-}
-*/
-
-/*
-================
-idGameLocal::UpdateSeeDistances
-================
-*/
-
-void idGameLocal::UpdateSeeDistances( float distance ) {		
-	
-	//gameLocal.Printf("UpdateSeeDistances: distance %f\n", distance );
-	if( distance < 5.0f){ 
-		gameLocal.Warning("UpdateSeeDistances: distance should be > 5\n");
-		distance = 5.0f; //default min value
-	} 
-
-	//-- upd Proj see distance -- 
-	//note: the radius of the sphere is based on the camera distance, that is, the horizontal distance, which is bigger than the vertical one.
-	//projSeeDistance = distance; //was: * 1.4f; 
-	projSeeDistance = distance +80.0f; //was: * 1.4f; 
-}
-
-/*
-================
-idGameLocal::SetMusicEntity
-================
-*/
-void idGameLocal::SetMusicEntity( idMusic *newMusicEnt ) {
-	idMusic *currentMusicEnt = musicEntity.GetEntity();
-	if ( currentMusicEnt && currentMusicEnt != newMusicEnt && currentMusicEnt->IsActive() ) {
-		currentMusicEnt->PostEventMS( &EV_Music_Stop, 0 ); //turn off immediately
-		Warning( "Music entity '%s' was already playing: stopped", currentMusicEnt->GetName() );
-	}
-	musicEntity = newMusicEnt;
-}
-
-/*
-================
-idGameLocal::StopMusic
-================
-*/
-void idGameLocal::StopMusic( void ) {
-	idMusic *currentMusicEnt = musicEntity.GetEntity();
-	if ( currentMusicEnt ) {
-		currentMusicEnt->PostEventMS( &EV_Music_FadeOut, 0 );
-	} else {
-		gameLocal.Warning("There's no music to stop!");
-	}
-}
-
-/*
-================
-idGameLocal::UpdateMusicVolume
-================
-*/
-void idGameLocal::UpdateMusicVolume( void ) {
-	if ( s_music_volume.IsModified() ) {
-		s_music_volume.ClearModified();
-		if ( s_music_volume.GetFloat() > MIN_MUSIC_VOLUME ) {
-			gameSoundWorld->FadeSoundClasses( MUSIC_SOUND_CLASS, s_music_volume.GetFloat(), 0.0f );
-		} else {
-			gameSoundWorld->FadeSoundClasses( MUSIC_SOUND_CLASS, DISABLED_MUSIC_VOLUME, 0.0f );
-		}
-	}
-}
-
-//ivan end
-
-//Lubos BEGIN
-vrClientInfo *pVRClientInfo;
-
-void idGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
-	pVRClientInfo = pVR;
-
-	static bool firstTime = true;
-	if (firstTime) {
-		common->HapticEnable();
-		firstTime = false;
-	}
-}
-//Lubos END

@@ -300,8 +300,6 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 
 	for ( i = 0; i < maxWalkPathIterations; i++ ) {
 
-		//ivan: testing this.
-
 		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach ) ) {
 			break;
 		}

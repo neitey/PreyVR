@@ -692,15 +692,6 @@ public:
 	void					SetFrictionDirection( const idVec3 &dir );
 	bool					GetFrictionDirection( idVec3 &dir ) const;
 
-#ifdef _WATER_PHYSICS	 // un credited changes from original sdk
-	float					GetVolume( void ) const { return volume; }
-	
-	// returns the depth of the object in the water
-	// 0.0f if out of water
-	float					GetWaterLevel() const;
-	float					SetWaterLevel( idPhysics_Liquid *l, const idVec3 &gravityNormal, bool fixedDensityBuoyancy );
-#endif
-
 	void					SetContactMotorDirection( const idVec3 &dir );
 	bool					GetContactMotorDirection( idVec3 &dir ) const;
 	void					SetContactMotorVelocity( float vel ) { contactMotorVelocity = vel; }
@@ -741,12 +732,6 @@ private:
 	idMat3					inertiaTensor;				// inertia tensor
 	idMat3					inverseInertiaTensor;		// inverse inertia tensor
 
-#ifdef _WATER_PHYSICS // un credited changes from original sdk
-	float					volume;						// volume of body
-	float					liquidMass;					// mass of object in a liquid
-	float					invLiquidMass;				// inverse liquid mass
-	float					waterLevel;					// percent of body in water
-#endif
 							// physics state
 	AFBodyPState_t			state[2];
 	AFBodyPState_t *		current;					// current physics state
@@ -904,18 +889,6 @@ public:
 							// update the clip model positions
 	void					UpdateClipModels( void );
 
-#ifdef _WATER_PHYSICS // un credited changes from original sdk
-	int						nextWaterSplash; //ivan - meant to be used by func_splash
-	
-	// buoyancy stuff
-	void					SetLiquidDensity( float density );
-	float					GetLiquidDensity() const;
-
-							// this will reset liquidDensity so be careful when using it
-	void					SetFixedDensityBuoyancy( bool fixed );
-	bool					GetFixedDensityBuoyancy() const;
-#endif
-
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -1039,12 +1012,6 @@ private:
 							// physics state
 	AFPState_t				current;
 	AFPState_t				saved;
-
-#ifdef _WATER_PHYSICS // un credited changes from original sdk
-	bool					fixedDensityBuoyancy;			// treats liquid Density as THE density for each body when the AF is in liquid.
-															// otherwise liquidDensity is just a gravity scalar for the AF in any liquid.
-	float					liquidDensity;					// explained above.
-#endif
 
 	idAFBody *				masterBody;						// master body
 	idLCP *					lcp;							// linear complementarity problem solver

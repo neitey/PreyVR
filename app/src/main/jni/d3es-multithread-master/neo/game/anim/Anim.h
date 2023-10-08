@@ -128,7 +128,6 @@ typedef enum {
 	FC_MUZZLEFLASH,
 	FC_CREATEMISSILE,
 	FC_LAUNCHMISSILE,
-	//FC_FIREWEAPON, //ivan
 	FC_FIREMISSILEATTARGET,
 	FC_FOOTSTEP,
 	FC_LEFTFOOT,
@@ -146,15 +145,28 @@ typedef enum {
 	FC_ENABLE_LEG_IK,
 	FC_DISABLE_LEG_IK,
 	FC_RECORDDEMO,
-	FC_AVIGAME,
+	FC_AVIGAME
 	//ivan start
-
+	, 
 	FC_FIREWEAPON, 
 	FC_START_AUTOMELEE,
 	FC_STOP_AUTOMELEE,
 	FC_START_KICK, 
 	FC_STOP_KICK,
-	FC_SCRIPTFUNCTIONWEAPON 
+	FC_COMBOFORCEHIGHPAIN, 
+	FC_COMBOALLOWHIGHPAIN, 
+	FC_COMBODENYHIGHPAIN,
+	FC_SCRIPTFUNCTIONWEAPON, 
+	FC_LAUNCH_PROJECTILE,
+	FC_TRIGGER_FX,
+	FC_TRIGGER_FX_JOINT,
+	FC_TRIGGER_FX_JOINTPOS,
+	FC_START_ACTOR_EMITTER,
+	FC_STOP_ACTOR_EMITTER,
+	FC_START_WEAPON_EMITTER,
+	FC_STOP_WEAPON_EMITTER //,
+	//FC_START_MELEE_BEAM,
+	//FC_STOP_MELEE_BEAM
 	//ivan end
 } frameCommandType_t;
 
@@ -489,6 +501,7 @@ ID_INLINE idAFPoseJointMod::idAFPoseJointMod( void ) {
 */
 
 class idAnimator {
+
 public:
 								idAnimator();
 								~idAnimator();
@@ -537,7 +550,7 @@ public:
 	void						SetFrame( int channelNum, int animnum, int frame, int currenttime, int blendtime );
 	void						CycleAnim( int channelNum, int animnum, int currenttime, int blendtime );
 	void						PlayAnim( int channelNum, int animnum, int currenttime, int blendTime );
-
+	
 								// copies the current anim from fromChannelNum to channelNum.
 								// the copied anim will have frame commands disabled to avoid executing them twice.
 	void						SyncAnimChannels( int channelNum, int fromChannelNum, int currenttime, int blendTime );

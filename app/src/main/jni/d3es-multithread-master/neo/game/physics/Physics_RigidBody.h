@@ -86,14 +86,6 @@ public:
 	void					EnableImpact( void );
 	void					DisableImpact( void );
 
-	//ivan start
-	void					DelayedActivationOnImpact( int delay );
-#ifdef _WATER_PHYSICS
-	void					AbortDropToFloor( void ){ dropToFloor = false; };
-	void					SetWaterGravityMult( float mult ){ waterGravityMult = mult; };
-#endif
-	//ivan end
-
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -189,18 +181,6 @@ private:
 	bool					hasMaster;
 	bool					isOrientated;
 
-	//ivan start
-	int						activationDelay;
-	bool					activateNextImpact;
-	//ivan end
-
-#ifdef _WATER_PHYSICS
-	float					waterGravityMult;			//ivan - changes only gravity in water. Doesn't change friction.
-	float					volume;						// object volume
-	// buoyancy
-	int						noMoveTime;					// suspend simulation if hardly any movement for this many seconds
-#endif
-
 private:
 	friend void				RigidBodyDerivatives( const float t, const void *clientData, const float *state, float *derivatives );
 	void					Integrate( const float deltaTime, rigidBodyPState_t &next );
@@ -208,22 +188,9 @@ private:
 	bool					CollisionImpulse( const trace_t &collision, idVec3 &impulse );
 	void					ContactFriction( float deltaTime );
 	void					DropToFloorAndRest( void );
-#ifdef _WATER_PHYSICS //un credited changes from original sdk
-	// Buoyancy stuff
-	// Approximates the center of mass of the submerged portion of the rigid body.
-	virtual bool				GetBuoyancy( const idVec3 &pos, const idMat3 &rotation, idVec3 &bCenter, float &percent ) const;
-	// Returns rough a percentage of which percent of the body is in water.
-	virtual float				GetSubmergedPercent( const idVec3 &pos, const idMat3 &rotation ) const;
-	
-	bool					TestIfAtRest( void );
-#else
 	bool					TestIfAtRest( void ) const;
-#endif //un credited changes from original sdk
 	void					Rest( void );
 	void					DebugDraw( void );
-
-
 };
-
 
 #endif /* !__PHYSICS_RIGIDBODY_H__ */

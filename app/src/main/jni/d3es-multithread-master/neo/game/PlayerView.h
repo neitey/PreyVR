@@ -172,7 +172,7 @@ private:
 	const idMaterial *m_matFinalScenePass;
 	const idMaterial *m_matCookVignette;
 
-	// For debug renders 
+	// For debug renders
 	const idMaterial *m_matDecodedLumTexture64x64;
 	const idMaterial *m_matDecodedLumTexture4x4;
 	const idMaterial *m_matDecodedAdaptLuminance;

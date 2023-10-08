@@ -36,18 +36,18 @@ END_CLASS
 
 // movement parameters
 const float PM_STOPSPEED		= 100.0f;
-const float PM_SWIMSCALE		= 0.5f;		//ivan note: must be < 1
+const float PM_SWIMSCALE		= 0.5f;
 const float PM_LADDERSPEED		= 100.0f;
 const float PM_STEPSCALE		= 1.0f;
 
-const float PM_ACCELERATE		= 10000.0f;	//ivan - was: 10.0f;
-const float PM_AIRACCELERATE	= 6.0f;		//ivan - was: 1.0f; 
+const float PM_ACCELERATE		= 10.0f;
+const float PM_AIRACCELERATE	= 1.0f;
 const float PM_WATERACCELERATE	= 4.0f;
 const float PM_FLYACCELERATE	= 8.0f;
 
-const float PM_FRICTION			= 60.0f;	//ivan - was: 6.0f;
+const float PM_FRICTION			= 6.0f;
 const float PM_AIRFRICTION		= 0.0f;
-const float PM_WATERFRICTION	= 1.0f;	//1.0f;		//ivan note: this cannot be < 1 because it's multiplied with water level
+const float PM_WATERFRICTION	= 1.0f;
 const float PM_FLYFRICTION		= 3.0f;
 const float PM_NOCLIPFRICTION	= 12.0f;
 
@@ -67,15 +67,12 @@ const int PMF_ALL_TIMES			= (PMF_TIME_WATERJUMP|PMF_TIME_LAND|PMF_TIME_KNOCKBACK
 
 int c_pmove = 0;
 
-//ivan start
+//k double-jump
+#ifdef _RIVENSIN
 const int DOUBLE_JUMP_MIN_DELAY		= 500;	// ms
 
-const int WALLJUMP_INPUT_MAXTIME	= 500;	//300 //200 // ms
-const int WALLJUMP_MAXDISTANCE		= 40;	//30 // max wall distance
-const int WALLJUMP_Y_POWER			= 500;	// speed on Y axis
-const int WALLJUMP_Z_POWER			= 160;	// speed in Z axis
-const int WALLJUMP_NEXT_TIME		= 200;  //400 // ms
-//ivan end
+static idCVar	harm_pm_doubleJump("harm_pm_doubleJump", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "[Harmattan]: Enable double-jump.");
+#endif
 
 /*
 ============
@@ -189,6 +186,15 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 	primal_velocity = current.velocity;
 
 	if ( gravity ) {
+		
+		/*
+		if( animMoveGravityMultiplier != 1.0f ){ //ivan
+		    endVelocity = current.velocity + gravityVector * frametime * animMoveGravityMultiplier; 
+		}else{ //old
+			endVelocity = current.velocity + gravityVector * frametime;
+		}
+		*/
+
 		endVelocity = current.velocity + gravityVector * frametime;
 		current.velocity = ( current.velocity + endVelocity ) * 0.5f;
 		primal_velocity = endVelocity;
@@ -478,8 +484,6 @@ void idPhysics_Player::Friction( void ) {
 	}
 	// apply ground friction
 	else if ( walking && waterLevel <= WATERLEVEL_FEET ) {
-		nextWaterSplash = 0; //ivan - reset this so splash can happen
-		
 		// no friction on slick surfaces
 		if ( !(groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK) ) {
 			// if getting knocked back, no friction
@@ -491,10 +495,7 @@ void idPhysics_Player::Friction( void ) {
 	}
 	// apply water friction even if just wading
 	else if ( waterLevel ) {
-		//ivan start - greater friction if on ground, lower otherwise
-		//was: drop += speed * PM_WATERFRICTION * waterLevel * frametime; 
-		drop += speed * PM_WATERFRICTION * waterLevel * frametime * ( groundPlane ? 1.5f : 0.5f ); // 1.5f : 0.2f 
-		//ivan end
+		drop += speed * PM_WATERFRICTION * waterLevel * frametime;
 	}
 	// apply air friction
 	else {
@@ -543,25 +544,6 @@ void idPhysics_Player::WaterMove( void ) {
 	float	scale;
 	float	vel;
 
-	//ivan start - this is a water jump from the ground
-	if ( groundPlane && waterLevel >= WATERLEVEL_HEAD ) {
-		if( idPhysics_Player::CheckJump() ){
-			idPhysics_Player::WaterJumpMove();
-			return;
-		}
-	}
-	//ivan end
-
-	//ivan start - moved here from below so CheckWaterJump can use the correct value
-	// project moves down to flat plane, so that our movement doesn't depend on view angles 
-	viewForward -= (viewForward * gravityNormal) * gravityNormal;
-	viewRight -= (viewRight * gravityNormal) * gravityNormal;
-	viewForward.Normalize();
-	viewRight.Normalize();
-	//ivan end
-
-
-	//jump out of water
 	if ( idPhysics_Player::CheckWaterJump() ) {
 		idPhysics_Player::WaterJumpMove();
 		return;
@@ -573,21 +555,10 @@ void idPhysics_Player::WaterMove( void ) {
 
 	// user intentions
 	if ( !scale ) {
-		//ivan start
-		//was: wishvel = gravityNormal * 60; // sink towards bottom
-
-		if(( command.buttons & BUTTON_6 ) != 0 ){ //button up
-			wishvel = gravityNormal * 30; // sink towards bottom slower
-		}else if( ( command.buttons & BUTTON_7 ) != 0 ){ //button down
-			wishvel = gravityNormal * 80; // sink towards bottom faster
-		}else {
-			wishvel = gravityNormal * 60; // sink towards bottom
-		} 
-		//ivan end
-	} else {		
+		wishvel = gravityNormal * 60; // sink towards bottom
+	} else {
 		wishvel = scale * (viewForward * command.forwardmove + viewRight * command.rightmove);
 		wishvel -= scale * gravityNormal * command.upmove;
-		wishvel += scale * gravityNormal * 30; //ivan - sink down a bit anyway
 	}
 
 	wishdir = wishvel;
@@ -599,11 +570,8 @@ void idPhysics_Player::WaterMove( void ) {
 
 	idPhysics_Player::Accelerate( wishdir, wishspeed, PM_WATERACCELERATE );
 
-
-	//ivan note: this is what was giving us a knockback!
 	// make sure we can go up slopes easily under water
-	//was: if ( groundPlane && ( current.velocity * groundTrace.c.normal ) < 0.0f ) {
-	if ( groundPlane && ( command.forwardmove != 0 ) && ( current.velocity * groundTrace.c.normal ) < 0.0f ) { //ivan fix - do this only if we are actually trying to walk
+	if ( groundPlane && ( current.velocity * groundTrace.c.normal ) < 0.0f ) {
 		vel = current.velocity.Length();
 		// slide along the ground plane
 		current.velocity.ProjectOntoPlane( groundTrace.c.normal, OVERCLIP );
@@ -611,13 +579,6 @@ void idPhysics_Player::WaterMove( void ) {
 		current.velocity.Normalize();
 		current.velocity *= vel;
 	}
-
-	//ivan start - quick and fast fix: don't allow high speed on Z axis //TODO: redo this in a better way 
-	if( current.velocity.z > 300.0f || current.velocity.z < -300.0f){
-		//gameLocal.Printf("Z water fix: %f\n", current.velocity.z );
-		current.velocity.z = current.velocity.z * 0.9;
-	} 
-	//ivan end
 
 	idPhysics_Player::SlideMove( false, true, false, false );
 }
@@ -653,180 +614,6 @@ void idPhysics_Player::FlyMove( void ) {
 	idPhysics_Player::SlideMove( false, false, false, false );
 }
 
-//ivan start
-
-/*
-=============
-idPhysics_Player::CheckDoubleJump
-=============
-*/
-bool idPhysics_Player::CheckDoubleJump( void ) {
-	idVec3 addVelocity;
-
-	if( nextDoubleJump > gameLocal.time ){
-		// not enough time passed by
-		return false;
-	}
-	/*
-	else if( gameLocal.time > nextDoubleJump + DOUBLE_JUMP_MIN_DELAY ){
-		//too much time passed by
-		return false;
-	}
-	*/
-
-	if ( command.upmove < 10 ) {
-		// not holding jump
-		return false;
-	}
-
-	// must wait for jump to be released
-	if ( current.movementFlags & PMF_JUMP_HELD ) {
-		return false;
-	}
-
-	// don't jump if we can't stand up
-	if ( current.movementFlags & PMF_DUCKED ) {
-		return false;
-	}
-
-	//common settings
-	groundPlane = false;		// jumping away
-	walking = false;
-	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
-
-	//apply velocity
-	addVelocity = 1.5f * maxJumpHeight * -gravityVector; 
-	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
-	current.velocity.z = addVelocity.z; 
-
-	//gameLocal.Printf("double jump\n");
-	doubleJumpDone = true;
-	return true;
-}
-
-/*
-=============
-idPhysics_Player::CanWallJump
-=============
-*/
-bool idPhysics_Player::CanWallJump( bool left ){
-    idEntity *ent;
-	trace_t	trace;
-	const idVec3 walldir = idVec3( 0.0f, ( left ? -1.0f : 1.0f ), 0.0f ); 
-	const idVec3 start = current.origin + idVec3( 0.0f, 0.0f, 5.0f ); //a little Z offset to make sure we don't touch the ground 
-	const idVec3 end = start + walldir * WALLJUMP_MAXDISTANCE;
-	const idVec3 mins = idVec3( -5.0f, -5.0f, 0.0f ); //Z: don't touch something below
-	const idVec3 maxs = idVec3( 5.0f, 5.0f, 35.0f ); 
-	int contents_mask = MASK_SOLID|CONTENTS_RENDERMODEL; //|CONTENTS_RENDERMODEL
-
-	gameLocal.clip.TraceBounds( trace, start, end, idBounds( mins, maxs ), contents_mask, self );
-
-	if ( trace.fraction < 1.0f ) {
-		//gameLocal.Printf("something near\n");
-		ent = gameLocal.GetTraceEntity( trace );
-		if ( ent->IsType( idActor::Type ) || ent->IsType( idMoveableItem::Type ) || ent->IsType( idMoveable::Type ) ) { //don't wall jump against actors or moveables
-			return false;
-		}else{
-			return true;
-		}
-	}
-      
-	//gameLocal.Printf("no Wall\n");
-    return false;
-} 
-
-/*
-=============
-idPhysics_Player::CheckWallJump
-=============
-*/
-bool idPhysics_Player::CheckWallJump( void ) {
-	idVec3 addVelocity;
-	bool left;
-
-	if( nextWallJump > gameLocal.time ){
-		// not enough time passed by
-		return false;
-	}
-	
-	signed char real_fw = ( fw_inverted ? -command.forwardmove : command.forwardmove );
-
-	// -- check the key sequence -- 
-	if( command.upmove > 0 ){ //up
-		if( wallJumpTimeout < gameLocal.time ){
-			//gameLocal.Printf("too much time passed by\n");
-		}else if ( wallJumpKeyState == WALLJUMP_L1_HOLD ){
-			wallJumpKeyState = WALLJUMP_L_READY;
-			//gameLocal.Printf("WALLJUMP_L_READY\n");
-			wallJumpTimeout = 0; //don't accept other jumps
-		} else if ( wallJumpKeyState == WALLJUMP_R1_HOLD ){
-			wallJumpKeyState = WALLJUMP_R_READY;
-			//gameLocal.Printf("WALLJUMP_R_READY\n");
-			wallJumpTimeout = 0; //don't accept other jumps
-		} 
-	}else if ( real_fw < 0 ) { //left
-		if ( wallJumpKeyState != WALLJUMP_L1_HOLD ){
-			wallJumpKeyState = WALLJUMP_L1_HOLD;
-			//gameLocal.Printf("WALLJUMP_L1_HOLD\n");
-			wallJumpTimeout = gameLocal.time + WALLJUMP_INPUT_MAXTIME; //jump within this time
-		} 
-	}else if ( real_fw > 0 ) { //right
-		if ( wallJumpKeyState != WALLJUMP_R1_HOLD ){
-			wallJumpKeyState = WALLJUMP_R1_HOLD;
-			//gameLocal.Printf("WALLJUMP_R1_HOLD\n");
-			wallJumpTimeout = gameLocal.time + WALLJUMP_INPUT_MAXTIME; //jump within this time
-		} 
-	}else{ //no left or right
-		if ( wallJumpKeyState != WALLJUMP_NONE ){
-			wallJumpKeyState = WALLJUMP_NONE;
-			//gameLocal.Printf("WALLJUMP_NONE\n");
-			wallJumpTimeout = 0; //don't accept other jumps
-		} 
-	}
-	
-	
-	// -- check if we should try -- 
-	if( wallJumpKeyState == WALLJUMP_R_READY ){
-		left = false;
-	}else if( wallJumpKeyState == WALLJUMP_L_READY ){
-		left = true;
-	}else{
-		return false;
-	}
-	
-
-	// -- try to do it --
-
-	//reset the state
-	wallJumpKeyState = WALLJUMP_NONE;
-
-	//don't try again too soon
-	nextWallJump = gameLocal.time + WALLJUMP_NEXT_TIME;
-
-	if( CanWallJump( left ) ){
-		//velocity
-		addVelocity = WALLJUMP_Z_POWER * -gravityVector; 
-		addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
-		addVelocity += WALLJUMP_Y_POWER * idVec3(0.0f, (left? 1.0f : -1.0f), 0.0f);
-		current.velocity = addVelocity; 
-
-		//common settings
-		groundPlane = false;		// jumping away
-		walking = false;
-		current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
-
-		//remember we did it -> no double jump
-		wallJumpDone = true;
-		//gameLocal.Printf("wallJumpDone\n");
-		
-		return true;
-	}
-
-	return false;
-}
-
-//ivan end
-
 /*
 ===================
 idPhysics_Player::AirMove
@@ -838,17 +625,16 @@ void idPhysics_Player::AirMove( void ) {
 	float		wishspeed;
 	float		scale;
 
-	//ivan start	
-	if( wallJumpEnabled ){ //we can do as many wall Jumps as we want
-		CheckWallJump();
-	}
-
-	if( doubleJumpEnabled && !doubleJumpDone && !wallJumpDone ){ //only one double jump and only if no wallJump has been done.
+//k double-jump
+#ifdef __ANDROID__
+	if( 
+			harm_pm_doubleJump.GetBool() && 
+			//doubleJumpEnabled && 
+			!doubleJumpDone ){ //only one double jump and only if no wallJump has been done.
 		CheckDoubleJump();
 	}
+#endif
 	
-	//ivan end
-
 	idPhysics_Player::Friction();
 
 	scale = idPhysics_Player::CmdScale( command );
@@ -940,14 +726,13 @@ void idPhysics_Player::WalkMove( void ) {
 		}
 	}
 
-	// REVILITY REMOVED
 	// when a player gets hit, they temporarily lose full control, which allows them to be moved a bit
-	//if ( ( groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK ) || current.movementFlags & PMF_TIME_KNOCKBACK ) {
-		//accelerate = PM_AIRACCELERATE;
-	//}
-	//else {
+	if ( ( groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK ) || current.movementFlags & PMF_TIME_KNOCKBACK ) {
+		accelerate = PM_AIRACCELERATE;
+	}
+	else {
 		accelerate = PM_ACCELERATE;
-	//}
+	}
 
 	idPhysics_Player::Accelerate( wishdir, wishspeed, accelerate );
 
@@ -1319,7 +1104,7 @@ void idPhysics_Player::CheckDuck( void ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
 		// stand up when up against a ladder
-		if ( (command.upmove < 0 && !ladder) || current.movementType == PM_ANIM_CROUCH ) { // un credited changes from original sdk
+		if ( command.upmove < 0 && !ladder ) {
 			// duck
 			current.movementFlags |= PMF_DUCKED;
 		} else {
@@ -1440,89 +1225,25 @@ bool idPhysics_Player::CheckJump( void ) {
 	walking = false;
 	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
 
-	//ivan start - much weaker jump if in water
-	//was: addVelocity = 2.0f * maxJumpHeight * -gravityVector;
-	addVelocity = maxJumpHeight * -gravityVector * ( waterLevel >= WATERLEVEL_HEAD ? 0.2f : 2.0f );
-
-	//if(waterLevel >= WATERLEVEL_HEAD){ gameLocal.Printf("weak water jump\n"); }
-	//ivan end
+	addVelocity = 2.0f * maxJumpHeight * -gravityVector;
 	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
 	current.velocity += addVelocity;
 
-	//ivan start
-
+//k double-jump
+#ifdef __ANDROID__
 	//reset double jump so that we can do it again
 	nextDoubleJump = gameLocal.time + DOUBLE_JUMP_MIN_DELAY;
 	doubleJumpDone = false;
-
-	//reset wall jump
-	wallJumpDone = false;
-
-	//ivan end
+#endif
 
 	return true;
 }
 
-//ivan start
 /*
 =============
 idPhysics_Player::CheckWaterJump
 =============
 */
-bool idPhysics_Player::CheckWaterJump( void ) {
-	if ( current.movementTime ) {
-		return false;
-	}
-
-	// check for water jump
-	if ( waterLevel != WATERLEVEL_WAIST ) {
-		return false;
-	}
-
-	if ( command.upmove < 10 ) {
-		// not holding jump
-		return false;
-	}
-
-	/*
-	// must wait for jump to be released
-	if ( current.movementFlags & PMF_JUMP_HELD ) {
-		return false;
-	}
-	*/
-
-	// don't jump if we can't stand up
-	if ( current.movementFlags & PMF_DUCKED ) {
-		return false;
-	}
-
-	groundPlane = false;		// jumping away
-	walking = false;
-	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
-
-	// jump out of water
-	current.velocity = -350.0f * gravityNormal;
-	if( command.forwardmove > 0 ){ //ivan: jump direction based on inputs
-		current.velocity += 200.0f * viewForward;
-	}else if( command.forwardmove < 0 ){ 
-		current.velocity -= 200.0f * viewForward;
-	}
-	current.movementFlags |= PMF_TIME_WATERJUMP;
-	current.movementTime = 2000;
-
-	//reset double jump so that we can do it again
-	nextDoubleJump = gameLocal.time + DOUBLE_JUMP_MIN_DELAY;
-	doubleJumpDone = false;
-
-	//reset wall jump
-	wallJumpDone = false;
-
-	return true;
-	
-}
-//ivan end
-
-#if 0
 bool idPhysics_Player::CheckWaterJump( void ) {
 	idVec3	spot;
 	int		cont;
@@ -1540,28 +1261,6 @@ bool idPhysics_Player::CheckWaterJump( void ) {
 	flatforward = viewForward - (viewForward * gravityNormal) * gravityNormal;
 	flatforward.Normalize();
 
-#ifdef _WATER_PHYSICS
-	const idBounds &bounds = this->GetBounds();
-	const idVec3 offset = ( ((bounds[0] + bounds[1]) * 0.5f) * gravityNormal) * gravityNormal; //ivan - const added
-
-	spot = current.origin + ((bounds[1].x + 1.0f) * flatforward);
-	spot += offset;
-	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
-	if ( !(cont & CONTENTS_SOLID) ) {
-		return false;
-	}
-
-	spot += 0.75f * offset;
-	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
-	if ( cont ) {
-		return false;
-	}
-
-	// jump out of water
-	current.velocity = (300.0f * viewForward) - (300.0f * gravityNormal);
-	current.movementFlags |= PMF_TIME_WATERJUMP;
-	current.movementTime = 2000;
-#else
 	spot = current.origin + 30.0f * flatforward;
 	spot -= 4.0f * gravityNormal;
 	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
@@ -1579,15 +1278,16 @@ bool idPhysics_Player::CheckWaterJump( void ) {
 	current.velocity = 200.0f * viewForward - 350.0f * gravityNormal;
 	current.movementFlags |= PMF_TIME_WATERJUMP;
 	current.movementTime = 2000;
-#endif // ivan
+
+//k double-jump
+#ifdef __ANDROID__
+	nextDoubleJump = gameLocal.time + DOUBLE_JUMP_MIN_DELAY;
+	doubleJumpDone = false;
+#endif
 
 	return true;
 }
-#endif // ivan
 
-#ifdef _WATER_PHYSICS
-//SetWaterLevel removed!
-#else
 /*
 =============
 idPhysics_Player::SetWaterLevel
@@ -1630,7 +1330,6 @@ void idPhysics_Player::SetWaterLevel( void ) {
 		}
 	}
 }
-#endif //un credited changes from original sdk
 
 /*
 ================
@@ -1667,7 +1366,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 	// determine the time
 	framemsec = msec;
-	frametime = framemsec * 0.001f;
+	frametime = framemsec * 0.001f; //that is, timestep
 
 	// default speed
 	playerSpeed = walkSpeed;
@@ -1709,7 +1408,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		return;
 	}
 
-	// no control when dead or anim move //un credited changes from original sdk
+	// no control when dead or anim move
 	if (( current.movementType == PM_DEAD ) 
 		|| ( current.movementType == PM_PHYSICS_ONLY )		//ivan
 		|| ( current.movementType == PM_ANIM_ALWAYS )		//ivan
@@ -1735,6 +1434,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	idPhysics_Player::DropTimers();
 
 	// move
+
 	if ( current.movementType == PM_DEAD ) {
 		// dead
 		idPhysics_Player::DeadMove();
@@ -1742,11 +1442,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 	//ivan start - anim based movements
 	else if ( current.movementType == PM_ANIM_ALWAYS || ( walking && current.movementType == PM_ANIM_GROUND ) ) { 
-		//ivan start - water fix: move less!
-		if ( waterLevel >= WATERLEVEL_HEAD ) {
-			delta *= PM_SWIMSCALE;
-		}
-		//ivan end
+		
 		current.velocity = delta / frametime;
 		current.velocity -= ( current.velocity * gravityNormal ) * gravityNormal;
 		
@@ -1820,7 +1516,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		}
 		*/
 	}
-	//ivan end 
+	//ivan end - anim based movements
 
 	else if ( ladder ) {
 		// going up or down a ladder
@@ -1846,16 +1542,11 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// set watertype, waterlevel and groundentity
 	idPhysics_Player::SetWaterLevel();
 	idPhysics_Player::CheckGround();
-
+	
 	// move the player velocity back into the world frame
 	current.velocity += current.pushVelocity;
 	current.pushVelocity.Zero();
 }
-
-#ifdef _WATER_PHYSICS //un credited changes from original sdk
-//GetWaterLevel and GetWaterType removed!
-#else
-
 
 /*
 ================
@@ -1874,7 +1565,6 @@ idPhysics_Player::GetWaterType
 int idPhysics_Player::GetWaterType( void ) const {
 	return waterType;
 }
-#endif //un credited changes from original sdk
 
 /*
 ================
@@ -1952,28 +1642,16 @@ idPhysics_Player::idPhysics_Player( void ) {
 	waterLevel = WATERLEVEL_NONE;
 	waterType = 0;
 
-	blockingEntity = NULL; //ivan //rev 2019
-	delta.Zero(); //ivan //rev 2019
-	//ivan start
+	blockingEntity = NULL; //ivan
+	delta.Zero(); //ivan
+	//animMoveGravityMultiplier = 1.0f; //ivan
+	//animMoveUseGravity = true; //ivan
+	
+//k double-jump
+#ifdef __ANDROID__
 	doubleJumpDone = false;
-	doubleJumpEnabled = false;
+	doubleJumpEnabled = true;
 	nextDoubleJump = 0;
-
-	wallJumpDone  = false;
-	wallJumpEnabled = false; 
-	nextWallJump = 0;
-	wallJumpTimeout = 0; 
-	wallJumpKeyState = WALLJUMP_NONE;
-
-	fw_inverted = false;
-
-	blockingEntity = NULL; 
-	delta.Zero(); 
-	//ivan end
-
-#ifdef _WATER_PHYSICS
-	waterLevel = WATERLEVEL_NONE;
-	waterType = 0;
 #endif
 }
 
@@ -2045,32 +1723,10 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( (int)waterLevel );
 	savefile->WriteInt( waterType );
 
-	//ivan start
-	savefile->WriteBool( doubleJumpDone );
-	savefile->WriteBool( doubleJumpEnabled );
-	savefile->WriteInt( nextDoubleJump ); 
-
-	savefile->WriteBool( fw_inverted );
-
-	savefile->WriteBool( wallJumpDone );
-	savefile->WriteBool( wallJumpEnabled );
-	savefile->WriteInt( nextWallJump );
-
 	savefile->WriteVec3( delta ); //ivan
 	savefile->WriteObject( blockingEntity ); //ivan
-
-	/*
-	//NOT SAVED:
-	//we don't need to save wallJumps details...
-	wallJumpTimeout
-	wallJumpKeyState
-	*/
-
-	//ivan end
-#ifdef _WATER_PHYSICS
-	savefile->WriteInt( (int)waterLevel );
-	savefile->WriteInt( waterType );
-#endif
+	//savefile->WriteFloat( animMoveGravityMultiplier ); //ivan
+	//savefile->WriteBool( animMoveUseGravity ); //ivan
 }
 
 /*
@@ -2109,33 +1765,11 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)waterLevel );
 	savefile->ReadInt( waterType );
 
-	//ivan start
-	savefile->ReadBool( doubleJumpDone );
-	savefile->ReadBool( doubleJumpEnabled );
-	savefile->ReadInt( nextDoubleJump ); 
-
-	savefile->ReadBool( fw_inverted );
-
-	savefile->ReadBool( wallJumpDone );
-	savefile->ReadBool( wallJumpEnabled );
-	savefile->ReadInt( nextWallJump );
-
 	savefile->ReadVec3( delta ); //ivan
 	savefile->ReadObject( reinterpret_cast<idClass *&>( blockingEntity ) ); //ivan
+	//savefile->ReadFloat( animMoveGravityMultiplier ); //ivan
+	//savefile->ReadBool( animMoveUseGravity ); //ivan
 
-
-	//NOT SAVED:
-	//we don't need to save wallJumps details...
-	wallJumpTimeout = 0;
-	wallJumpKeyState = WALLJUMP_NONE;
-	//ivan end
-
-#ifdef _WATER_PHYSICS
-	savefile->ReadInt( (int &)waterLevel );
-	savefile->ReadInt( waterType );
-#endif
-
-//rev 2021 Dhewm 3 1.5.1 updates start
 	/* DG: It can apparently happen that the player saves while the clipModel's axis are
 	 *     modified by idPush::TryRotatePushEntity() -> idPhysics_Player::Rotate() -> idClipModel::Link()
 	 *     Normally idPush seems to reset them to the identity matrix in the next frame,
@@ -2149,7 +1783,6 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	if ( clipModel != NULL ) {
 		clipModel->SetPosition( clipModel->GetOrigin(), mat3_identity );
 	}
-//rev 2021 Dhewm 3 1.5.1 updates end
 }
 
 /*
@@ -2238,9 +1871,9 @@ idPhysics_Player::Evaluate
 bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	idVec3 masterOrigin, oldOrigin;
 	idMat3 masterAxis;
-
+	
 	blockingEntity = NULL; //ivan
-
+	
 	waterLevel = WATERLEVEL_NONE;
 	waterType = 0;
 	oldOrigin = current.origin;
@@ -2715,6 +2348,17 @@ void idPhysics_Player::AnimMove( idVec3 &start, idVec3 &velocity, const idVec3 &
 	return; 
 }
 
+
+/*
+================
+idPhysics_Player::ForceGravityForAnimMove
+================
+
+void idPhysics_Player::SetGravityInAnimMove( float mult ) {
+	animMoveGravityMultiplier = mult;
+}
+*/
+
 /*
 ****************************************************************************************
 Ivan end
@@ -2722,7 +2366,58 @@ Ivan end
 */
 
 //ivan start
-int idPhysics_Player::GetHintForForceFields( void ){
-	return command.upmove;
+
+//k double-jump
+#ifdef __ANDROID__
+/*
+=============
+idPhysics_Player::CheckDoubleJump
+=============
+*/
+bool idPhysics_Player::CheckDoubleJump( void ) {
+	idVec3 addVelocity;
+
+	if( nextDoubleJump > gameLocal.time ){
+		// not enough time passed by
+		return false;
+	}
+	/*
+	else if( gameLocal.time > nextDoubleJump + DOUBLE_JUMP_MIN_DELAY ){
+		//too much time passed by
+		return false;
+	}
+	*/
+
+	if ( command.upmove < 10 ) {
+		// not holding jump
+		return false;
+	}
+
+	// must wait for jump to be released
+	if ( current.movementFlags & PMF_JUMP_HELD ) {
+		return false;
+	}
+
+	// don't jump if we can't stand up
+	if ( current.movementFlags & PMF_DUCKED ) {
+		return false;
+	}
+
+	//common settings
+	groundPlane = false;		// jumping away
+	walking = false;
+	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
+
+	//apply velocity
+	addVelocity = 1.5f * maxJumpHeight * -gravityVector; 
+	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
+	current.velocity.z = addVelocity.z; 
+
+	//gameLocal.Printf("double jump\n");
+	doubleJumpDone = true;
+	return true;
 }
+#endif
+
 //ivan end
+

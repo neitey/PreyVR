@@ -37,13 +37,15 @@ class idSaveGame;
 class idRestoreGame;
 
 #define MAX_STRING_LEN		128
-//#define MAX_GLOBALS			196608			// in bytes
-// DG: apparently the default value is not enough (=> idProgram::ReserveMem() throws error on game start on Linux amd64)
-//     so use the value D3XP uses
-#define MAX_GLOBALS			296608			// in bytes
+#define MAX_GLOBALS			296608 			// in bytes vanilla d3 is 196608 rev 2018
 #define MAX_STRINGS			1024
 #define MAX_FUNCS			3072
+//k: When include DOOM3 base game map script into doom_main.script, statement count overflow the maximum limit.
+#ifdef _RIVENSIN
+#define MAX_STATEMENTS		181920			// +100000, When include DOOM3 base game map script, overflow the maximum limit.
+#else
 #define MAX_STATEMENTS		81920			// statement_t - 18 bytes last I checked
+#endif
 
 typedef enum {
 	ev_error = -1, ev_void, ev_scriptevent, ev_namespace, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_function, ev_virtualfunction, ev_pointer, ev_object, ev_jumpoffset, ev_argsize, ev_boolean
@@ -478,7 +480,7 @@ public:
 	// save games
 	void										Save( idSaveGame *savefile ) const;
 	bool										Restore( idRestoreGame *savefile );
-	int											CalculateChecksum( bool forOldSavegame 
+	int											CalculateChecksum( bool forOldSavegame
 #ifdef __ANDROID__
 			 = false 
 #endif

@@ -33,8 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/tr_local.h"
 
-#include "../../Doom3Quest/VrCommon.h"
-
 #if defined(_WIN32) && defined(ID_ALLOW_TOOLS)
 #include "sys/win32/win_local.h"
 #include <SDL_syswm.h>
@@ -45,7 +43,13 @@ If you have questions concerning this license or the applicable additional terms
 GLimp_Init
 ===================
 */
-extern "C" void Doom3Quest_GetScreenRes(int *width, int *height);
+extern "C" {
+	void Doom3Quest_GetScreenRes(int *width, int *height);
+	void Doom3Quest_processMessageQueue();
+	void Doom3Quest_prepareEyeBuffer();
+	void Doom3Quest_finishEyeBuffer();
+	void Doom3Quest_submitFrame();
+}
 
 bool GLimp_Init(glimpParms_t parms) {
 	common->Printf("Initializing OpenGL subsystem\n");

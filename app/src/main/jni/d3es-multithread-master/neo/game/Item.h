@@ -37,15 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-
-/*
-===============================================================================
-
-  idItem
-
-===============================================================================
-*/
-class idItem : public idEntity { 
+class idItem : public idEntity {
 public:
 	CLASS_PROTOTYPE( idItem );
 
@@ -77,16 +69,17 @@ public:
 	// networking
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
-	//int						GetWeaponNum( void ) { return weaponNum; }; //ivan
 
+//ivan start
 protected:
 	bool					canPickUp;
-	int						weaponNum; //ivan
+//ivan end
 
 private:
 	idVec3					orgOrigin;
 	bool					spin;
 	bool					pulse;
+	//bool					canPickUp; //ivan - commented out
 
 	// for item pulse effect
 	int						itemShellHandle;
@@ -100,19 +93,13 @@ private:
 
 	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const;
 	static bool				ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
-	
-	//ivan start
-	void					CallScriptFunction( void ) const; 
-	void					CheckWeaponNum( void );
-	void					Event_CheckWeaponNum( void );
-	//ivan end
+	void					CallScriptFunction( void ) const; //ivan
 
 	void					Event_DropToFloor( void );
 	void					Event_Touch( idEntity *other, trace_t *trace );
 	void					Event_Trigger( idEntity *activator );
 	void					Event_Respawn( void );
 	void					Event_RespawnFx( void );
-	
 };
 
 //ivan start
@@ -136,7 +123,6 @@ private:
 	void					Event_Touch( idEntity *other, trace_t *trace );
 };
 //ivan end
-
 
 class idItemPowerup : public idItem {
 public:

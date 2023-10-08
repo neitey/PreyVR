@@ -73,7 +73,10 @@ void idAnimState::Save( idSaveGame *savefile ) const {
 	savefile->WriteObject( self );
 
 	// Save the entity owner of the animator
-	savefile->WriteObject( animator->GetEntity() );
+	if(animator != NULL) // DG: don't crash if it's NULL
+		savefile->WriteObject( animator->GetEntity() );
+	else
+		savefile->WriteInt(0);
 
 	savefile->WriteObject( thread );
 
@@ -360,11 +363,13 @@ const idEventDef AI_SetNextState( "setNextState", "s" );
 const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
-//ivan start
-const idEventDef AI_IsOnScreen( "isOnScreen", NULL, 'd' );
-const idEventDef AI_IsXlocked( "isXlocked", NULL, 'd' );
-//ivan end
 
+//ivan start - particles
+const idEventDef AI_TriggerFX( "triggerFX", "ssdd" ); //ivan - dd added
+const idEventDef AI_StartEmitter( "startEmitter", "sss", 'e' ); 
+const idEventDef AI_GetEmitter( "getEmitter", "s", 'e' ); 
+const idEventDef AI_StopEmitter( "stopEmitter", "s" ); 
+//ivan end
 
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
@@ -409,9 +414,11 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_SetState,					idActor::Event_SetState )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
-	//ivan start
-	EVENT( AI_IsOnScreen,				idActor::Event_IsOnScreen )
-	EVENT( AI_IsXlocked,				idActor::Event_IsXlocked )
+	//ivan start - particles
+	EVENT( AI_TriggerFX,				idActor::Event_TriggerFX )
+	EVENT( AI_StartEmitter,				idActor::Event_StartEmitter )
+	EVENT( AI_GetEmitter,				idActor::Event_GetEmitter )
+	EVENT( AI_StopEmitter,				idActor::Event_StopEmitter )
 	//ivan end
 END_CLASS
 
@@ -422,8 +429,9 @@ idActor::idActor
 */
 idActor::idActor( void ) {
 	viewAxis.Identity();
-
+	
 	//ivan start
+	nextImpulse = 0;
 	force_torso_override = false; 
 	//ivan end
 
@@ -467,14 +475,6 @@ idActor::idActor( void ) {
 
 	enemyNode.SetOwner( this );
 	enemyList.SetOwner( this );
-
-	//ivan start
-	isXlocked			= false; 
-	isOnScreen			= false; 
-	updXlock			= false; 
-	//ignoredByAI			= false;
-	fastXpos			= 0.0f;
-	//ivan end
 }
 
 /*
@@ -645,12 +645,6 @@ void idActor::Spawn( void ) {
 	finalBoss = spawnArgs.GetBool( "finalBoss" );
 
 	FinishSetup();
-
-	//ivan start
-	fastXpos = GetPhysics()->GetOrigin().x; //ivan - remember initial pos.
-	isXlocked = spawnArgs.GetBool( "isXlocked", "1" ); //ivan
-	updXlock =	spawnArgs.GetBool( "updXlock", "1" ); //ivan
-	//ivan end
 }
 
 /*
@@ -819,6 +813,30 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( damageScale[ i ] );
 	}
 
+	//ivan start
+	savefile->WriteInt( damageGroupsNames.Num() );
+	for( i = 0; i < damageGroupsNames.Num(); i++ ) {
+		savefile->WriteString( damageGroupsNames[ i ] );
+	}
+
+	savefile->WriteInt( highpainThreshold.Num() );
+	for( i = 0; i < highpainThreshold.Num(); i++ ) {
+		savefile->WriteFloat( highpainThreshold[ i ] );
+	}
+
+	savefile->WriteInt( highpainDecreaseRate.Num() );
+	for( i = 0; i < highpainDecreaseRate.Num(); i++ ) {
+		savefile->WriteFloat( highpainDecreaseRate[ i ] );
+	}
+
+	savefile->WriteInt( highpainCurrentDamage.Num() );
+	for( i = 0; i < highpainCurrentDamage.Num(); i++ ) {
+		savefile->WriteFloat( highpainCurrentDamage[ i ] );
+	}
+
+	savefile->WriteInt( nextImpulse ); 
+	//ivan end
+
 	savefile->WriteBool( use_combat_bbox );
 	head.Save( savefile );
 
@@ -892,13 +910,16 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( "" );
 	}
 
-	//ivan start
-	savefile->WriteBool( isXlocked ); 
-	savefile->WriteBool( isOnScreen ); 
-	savefile->WriteBool( updXlock );
-	//savefile->WriteBool( ignoredByAI );
-	savefile->WriteFloat( fastXpos );
-	savefile->WriteBool( force_torso_override ); 
+	savefile->WriteBool( force_torso_override ); //ivan
+
+	//ivan start - particles
+	savefile->WriteInt(funcEmitters.Num());
+	for(int i = 0; i < funcEmitters.Num(); i++) {
+		funcEmitter_t* emitter = funcEmitters.GetIndex(i);
+		savefile->WriteString(emitter->name);
+		savefile->WriteJoint(emitter->joint);
+		savefile->WriteObject(emitter->particle);
+	}
 
 	//dmgfx start
 	savefile->WriteInt( dmgFxEntities.Num() );
@@ -908,7 +929,6 @@ void idActor::Save( idSaveGame *savefile ) const {
 	//dmgfx end
 
 	//ivan end
-
 }
 
 /*
@@ -956,6 +976,35 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	for( i = 0; i < num; i++ ) {
 		savefile->ReadFloat( damageScale[ i ] );
 	}
+
+	//ivan start
+	savefile->ReadInt( num );
+	damageGroupsNames.SetGranularity( 1 );
+	damageGroupsNames.SetNum( num );
+	for( i = 0; i < num; i++ ) {
+		savefile->ReadString( damageGroupsNames[ i ] );
+	}
+	
+	savefile->ReadInt( num );
+	highpainThreshold.SetNum( num );
+	for( i = 0; i < num; i++ ) {
+		savefile->ReadFloat( highpainThreshold[ i ] );
+	}
+
+	savefile->ReadInt( num );
+	highpainDecreaseRate.SetNum( num );
+	for( i = 0; i < num; i++ ) {
+		savefile->ReadFloat( highpainDecreaseRate[ i ] );
+	}	
+
+	savefile->ReadInt( num );
+	highpainCurrentDamage.SetNum( num );
+	for( i = 0; i < num; i++ ) {
+		savefile->ReadFloat( highpainCurrentDamage[ i ] );
+	}
+	
+	savefile->ReadInt( nextImpulse ); 
+	//ivan end
 
 	savefile->ReadBool( use_combat_bbox );
 	head.Restore( savefile );
@@ -1018,13 +1067,35 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		idealState = GetScriptFunction( statename );
 	}
 
-	//ivan start
-	savefile->ReadBool( isXlocked ); 
-	savefile->ReadBool( isOnScreen ); 
-	savefile->ReadBool( updXlock ); 
-	//savefile->ReadBool( ignoredByAI ); 
-	savefile->ReadFloat( fastXpos ); 
-	savefile->ReadBool( force_torso_override );
+	savefile->ReadBool( force_torso_override ); //ivan
+
+	//ivan start - particles
+	//Clean up the emitters
+	for(int i = 0; i < funcEmitters.Num(); i++) {
+		funcEmitter_t* emitter = funcEmitters.GetIndex(i);
+		if(emitter->particle) {
+			//Destroy the emitters
+			emitter->particle->PostEventMS(&EV_Remove, 0 );
+		}
+	}
+	funcEmitters.Clear();
+
+	int emitterCount;
+	savefile->ReadInt( emitterCount );
+	for(int i = 0; i < emitterCount; i++) {
+		funcEmitter_t newEmitter;
+		memset(&newEmitter, 0, sizeof(newEmitter));
+
+		idStr name;
+		savefile->ReadString( name ); 
+
+		strcpy( newEmitter.name, name.c_str() );
+
+		savefile->ReadJoint( newEmitter.joint );
+		savefile->ReadObject(reinterpret_cast<idClass *&>(newEmitter.particle));
+		
+		funcEmitters.Set(newEmitter.name, newEmitter);
+	}
 
 	//dmgfx start
 	dmgFxEntities.Clear();
@@ -2194,10 +2265,6 @@ void idActor::Gib( const idVec3 &dir, const char *damageDefName ) {
 		head.GetEntity()->Hide();
 	}
 	StopSound( SND_CHANNEL_VOICE, false );
-
-	//ivan start - turn off dmgfxs on gib
-	StopDamageFxs();
-	//ivan end
 }
 
 
@@ -2220,21 +2287,23 @@ Bleeding wounds and surface overlays are applied in the collision code that
 calls Damage()
 ============
 */
+
+//ivan note: Damage() is only used by idAI because idPlayer overrides it.
+//ivan note: Pain() is used by idAI and idPlayer.
+
 void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 					  const char *damageDefName, const float damageScale, const int location ) {
 	if ( !fl.takedamage ) {
 		return;
 	}
 
+	//gameLocal.Printf( "idActor::Damage - damageDefName: '%s' -location '%d' \n", damageDefName, location);
+
 	if ( !inflictor ) {
 		inflictor = gameLocal.world;
 	}
 	if ( !attacker ) {
 		attacker = gameLocal.world;
-	}
-
-	if ( finalBoss && !inflictor->IsType( idSoulCubeMissile::Type ) ) {
-		return;
 	}
 
 	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
@@ -2244,7 +2313,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	//ivan start
 	if(damageDef->GetBool( "ignore_friends" )){
-		if(team == attacker->spawnArgs.GetInt( "team", "0" )){
+		if(team == attacker->spawnArgs.GetInt("team","0")){
 			return;
 		}
 	}
@@ -2254,12 +2323,49 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	}
 	//ivan end
 
+//REVILITY IDGUIDEDPROJECTILEX START
+//Since there is no soul cube in Ruiner or need for one.  We are replacing the soulcube special damage with a new projectile for special damage on spirits.
+	//if ( finalBoss && !inflictor->IsType( idSoulCubeMissile::Type ) ) {
+		//return;
+	//}
+
+	if ( finalBoss && !damageDef->GetBool("damageSpirits","0") ) { //Ivan - was !inflictor->IsType( idGuidedProjectilex::Type )
+		return;
+	}
+//REVILITY IDGUIDEDPROJECTILEX END
+
 	int	damage = damageDef->GetInt( "damage" ) * damageScale;
+	
+	//ivan start - damage anims code
+	int forceHighPain = damageDef->GetInt("useHighPain","0"); //was: 0; //-1 deny, 0 allow, 1 force
+	bool fromMelee = damageDef->GetBool("melee","0");
+	bool useHighPain = false;
+
+	//decide if we have to force highpain
+	//1 - from damagedef - not used.
+	//forceHighPain = damageDef->GetInt("forceHighPainAnim","0"); //-1 deny, 0 allow, 1 force
+	//2 - from player
+	if(forceHighPain == 0){ //if no preference is expressed
+		if ( attacker->IsType( idPlayer::Type ) ) {
+			idPlayer * thePlayer = static_cast<idPlayer *>(attacker); 
+			forceHighPain = thePlayer->comboForceHighPain; 
+		}
+	}
+	//ivan end
 
 	// By Clone JCD For Improved damage behaviour
 	if (health > 0){ // Make sure that an actor is alive when we go for Damage location	
-		damage = GetDamageForLocation( damage, location ); 
+		damage = GetDamageForLocation( damage, location ); //damage multiplier
 //		gameLocal.Printf(" \n damage applied: %d", damage );
+
+		//ivan start - choose if we need to play highpain anims
+		addDamageToLocation( damage, location ); //upd pain value
+		if(forceHighPain == 1){ //force
+			useHighPain = true;
+		}else if (forceHighPain == 0){ //if no forced or denied...check
+			if(checkDamageForLocation(location)){ useHighPain = true; }
+		} //else is denied -> false!
+		//ivan end
 	}
 
 	// inform the attacker that they hit someone
@@ -2270,6 +2376,33 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			if ( health < -999 ) {
 				health = -999;
 			}
+
+			//Ivan start - headshot			
+			if ( head.GetEntity() ) {
+				if ( damageDef->GetBool( "check_headshot" ) ) { //damage requests checking headshots
+					if ( spawnArgs.GetInt( "headshot_disabled","0" ) == 0 ) { //headshots are not disabled on this actor				
+						idStr damageGroup = GetDamageGroup( location );
+						if ( damageGroup.Length() && ( damageGroup == "head" ) ) { //hit on head
+
+							//search the "headshot" script function 
+							const function_t *func;
+							func = scriptObject.GetFunction( "headshot" );
+							if ( func ) {
+								// create a thread and call the function
+								idThread *thread;
+								thread = new idThread();
+								thread->CallFunction( this, func, false );
+								thread->Start(); 
+
+								//don't apply impulse
+								nextImpulse = gameLocal.time; // was + 10 commented out 2018 revility.  Was causing frozen ragdolls after head shots.
+							}
+						}
+					}
+				}
+			}
+			//Ivan end
+
 			Killed( inflictor, attacker, damage, dir, location );
     
 			//Improved Gibbing System by Clone JC Denton
@@ -2283,7 +2416,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 				Gib( dir, damageDefName );
 			}
 		} else {
-			Pain( inflictor, attacker, damage, dir, location );
+			Pain( inflictor, attacker, damage, dir, location, useHighPain, fromMelee );
 		}
 	} else {
 		// don't accumulate knockback
@@ -2306,12 +2439,81 @@ void idActor::ClearPain( void ) {
 	pain_debounce_time = 0;
 }
 
+
+/*
+=====================
+idActor::ChoosePainAnim
+=====================
+*/
+void idActor::ChoosePainAnim( int location, bool useHighPain){ //ivan - new function: code extracted from old idActor::Pain function
+	// set the pain anim
+	idStr damageGroup = GetDamageGroup( location );
+
+	//ivan start - set the anim prefix  
+	idStr typePrefix;	
+	if (useHighPain ){
+		typePrefix = "highpain";
+		resetCurrentDamageForLocations(); //if we use an HighPain anim, reset the damage for all locations
+	}else{
+		typePrefix = "pain";
+	} 
+	//ivan end
+
+	painAnim = "";
+	
+	if ( animPrefix.Length() ) {
+		if ( damageGroup.Length()  ) { //ivan - && ( damageGroup != "legs" )
+			sprintf( painAnim, "%s_%s_%s", animPrefix.c_str(), typePrefix.c_str(), damageGroup.c_str() ); //ivan - typePrefix added insted of "pain"
+			if ( !animator.HasAnim( painAnim ) ) {
+				sprintf( painAnim, "%s_%s", typePrefix.c_str(), damageGroup.c_str() ); //ivan - typePrefix added insted of "pain"
+				if ( !animator.HasAnim( painAnim ) ) {
+					painAnim = "";
+				}
+			}
+		}
+
+		if ( !painAnim.Length() ) {
+			sprintf( painAnim, "%s_%s", animPrefix.c_str(), typePrefix.c_str() ); //ivan - typePrefix added insted of "pain"
+			if ( !animator.HasAnim( painAnim ) ) {
+				painAnim = "";
+			}
+		}
+	} else if ( damageGroup.Length() ) { //ivan - && ( damageGroup != "legs" )
+		sprintf( painAnim, "%s_%s", typePrefix.c_str(), damageGroup.c_str() ); //ivan - typePrefix added insted of "pain"
+		//if ( !animator.HasAnim( painAnim ) ) { //ivan - why was the same thing checked twice ??
+		//	sprintf( painAnim, "%s_%s", typePrefix.c_str(), damageGroup.c_str() ); //ivan - typePrefix added insted of "pain"
+			if ( !animator.HasAnim( painAnim ) ) {
+				painAnim = "";
+			}
+		//}
+	}
+
+	if ( !painAnim.Length() ) {
+		if (useHighPain && !animator.HasAnim( "highpain" ) ) { //ivan fix if "highpain" not found
+				painAnim = "pain";
+		}else{
+			painAnim = typePrefix; //ivan - was "pain";
+		}
+	}
+
+	if ( g_debugDamage.GetBool() ) {
+		gameLocal.Printf( "Damage: joint: '%s', zone '%s', anim '%s'\n", animator.GetJointName( ( jointHandle_t )location ),
+			damageGroup.c_str(), painAnim.c_str() );
+	}
+}
+
+
+
 /*
 =====================
 idActor::Pain
 =====================
 */
-bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+
+//ivan note: Damage() is only used by idAI because idPlayer overrides it.
+//ivan note: Pain() is used by idAI and idPlayer.
+
+bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location,bool useHighPain, bool fromMelee ) { //ivan - useHighPain and fromMelee added
 	if ( af.IsLoaded() ) {
 		// clear impacts
 		af.Rest();
@@ -2320,8 +2522,11 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 		BecomeActive( TH_PHYSICS );
 	}
 
-	if ( gameLocal.time < pain_debounce_time ) {
-		return false;
+
+	if ( !fromMelee ){ //ivan - ignore the "pain_delay" key if it's a melee damage
+		if ( gameLocal.time < pain_debounce_time ) {
+			return false;
+		}
 	}
 
 	// don't play pain sounds more than necessary
@@ -2336,56 +2541,21 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	} else {
 		StartSound( "snd_pain_huge", SND_CHANNEL_VOICE, 0, false, NULL );
 	}
-
-	if ( !allowPain || ( gameLocal.time < painTime ) ) {
+	
+	
+	if ( !allowPain || ( gameLocal.time < painTime ) ) { //don't play it if it's disabled... even if fromMelee is true!
 		// don't play a pain anim
 		return false;
 	}
 
-	if ( pain_threshold && ( damage < pain_threshold ) ) {
-		return false;
-	}
-
-	// set the pain anim
-	idStr damageGroup = GetDamageGroup( location );
-
-	painAnim = "";
-	if ( animPrefix.Length() ) {
-		if ( damageGroup.Length() && ( damageGroup != "legs" ) ) {
-			sprintf( painAnim, "%s_pain_%s", animPrefix.c_str(), damageGroup.c_str() );
-			if ( !animator.HasAnim( painAnim ) ) {
-				sprintf( painAnim, "pain_%s", damageGroup.c_str() );
-				if ( !animator.HasAnim( painAnim ) ) {
-					painAnim = "";
-				}
-			}
-		}
-
-		if ( !painAnim.Length() ) {
-			sprintf( painAnim, "%s_pain", animPrefix.c_str() );
-			if ( !animator.HasAnim( painAnim ) ) {
-				painAnim = "";
-			}
-		}
-	} else if ( damageGroup.Length() && ( damageGroup != "legs" ) ) {
-		sprintf( painAnim, "pain_%s", damageGroup.c_str() );
-		if ( !animator.HasAnim( painAnim ) ) {
-			sprintf( painAnim, "pain_%s", damageGroup.c_str() );
-			if ( !animator.HasAnim( painAnim ) ) {
-				painAnim = "";
-			}
+	if( !fromMelee ){	//ivan - ignore the "pain_threshold" key if it's a melee damage
+		if (pain_threshold && ( damage < pain_threshold ) ) { 
+			return false;
 		}
 	}
-
-	if ( !painAnim.Length() ) {
-		painAnim = "pain";
-	}
-
-	if ( g_debugDamage.GetBool() ) {
-		gameLocal.Printf( "Damage: joint: '%s', zone '%s', anim '%s'\n", animator.GetJointName( ( jointHandle_t )location ),
-			damageGroup.c_str(), painAnim.c_str() );
-	}
-
+	
+	ChoosePainAnim( location, useHighPain);
+	
 	return true;
 }
 
@@ -2415,6 +2585,7 @@ void idActor::SetupDamageGroups( void ) {
 	float					scale;
 
 	// create damage zones
+	damageGroupsNames.SetNum(0);
 	damageGroups.SetNum( animator.NumJoints() );
 	arg = spawnArgs.MatchPrefix( "damage_zone ", NULL );
 	while ( arg ) {
@@ -2426,6 +2597,9 @@ void idActor::SetupDamageGroups( void ) {
 			damageGroups[ jointnum ] = groupname;
 		}
 		jointList.Clear();
+		//ivan start
+		damageGroupsNames.Append(groupname);
+		//ivan start
 		arg = spawnArgs.MatchPrefix( "damage_zone ", arg );
 	}
 
@@ -2448,7 +2622,132 @@ void idActor::SetupDamageGroups( void ) {
 		}
 		arg = spawnArgs.MatchPrefix( "damage_scale ", arg );
 	}
+
+	//ivan start - pain stuff
+
+	//init
+	highpainThreshold.SetNum( damageGroupsNames.Num() );
+	highpainDecreaseRate.SetNum( damageGroupsNames.Num() );
+	highpainCurrentDamage.SetNum( damageGroupsNames.Num() );
+	for( i = 0; i < highpainThreshold.Num(); i++ ) {
+		highpainThreshold[ i ] = 0.0f; // initilize the max damage per zone to 0hp --> disabled on that zone
+		highpainDecreaseRate[ i ] = 0.0f; // initilize the decrease rate per zone to 0hp per tick
+		highpainCurrentDamage[ i ] = 0.0f; // initilize the current damage per zone to 0hp
+	}
+
+	// set the max damage for pain anims on damage zones
+	arg = spawnArgs.MatchPrefix( "highpain_threshold ", NULL );
+	while ( arg ) {
+		scale = atof( arg->GetValue() );
+		groupname = arg->GetKey();
+		groupname.Strip( "highpain_threshold " );
+		for( i = 0; i < damageGroupsNames.Num(); i++ ) {
+			if ( damageGroupsNames[ i ] == groupname ) {
+				highpainThreshold[ i ] = scale;
+			}
+		}
+		arg = spawnArgs.MatchPrefix( "highpain_threshold ", arg );
+	}
+
+	// set the amount of damage that will be subtracted each tick on damage zones
+	arg = spawnArgs.MatchPrefix( "highpain_resettime ", NULL );
+	while ( arg ) {
+		scale = atof( arg->GetValue() );
+		groupname = arg->GetKey();
+		groupname.Strip( "highpain_resettime " );
+		for( i = 0; i < damageGroupsNames.Num(); i++ ) {
+			if ( damageGroupsNames[ i ] == groupname ) {
+				if(scale > 0){
+					highpainDecreaseRate[ i ] = highpainThreshold[ i ]/(60.0f * scale); //this will be subtracted each tick (60 per second)
+				}else{
+					highpainDecreaseRate[ i ] = highpainThreshold[ i ]; //if scale is 0, always remove all the damage
+				}
+				//gameLocal.Printf( "Setup damage: zone '%s', highpainDecreaseRate: %f \n", damageGroupsNames[i].c_str(), highpainDecreaseRate[ i ] );
+			}
+		}
+		arg = spawnArgs.MatchPrefix( "highpain_resettime ", arg );
+	}
+	
+	//ivan end
 }
+
+//ivan start
+
+/*
+=====================
+idActor::addDamageToLocation
+=====================
+*/
+void idActor::addDamageToLocation( int damage, int location ) {
+	idStr damageGroup = GetDamageGroup( location ); //from joint to group name
+
+	for( int i = 0; i < damageGroupsNames.Num(); i++ ) {
+		if ( damageGroupsNames[ i ] == damageGroup ) { //from group name to number
+			if(highpainThreshold[ i ] > 0 ){ //update only if enabled on that zone
+				highpainCurrentDamage[ i ] += damage;
+				//gameLocal.Printf( "Added damage: zone '%s', added: %d ,painvalue: %f \n", damageGroupsNames[i].c_str(), damage ,highpainCurrentDamage[ i ] );
+			}
+			return;
+		}
+	}
+}
+
+/*
+=====================
+idActor::checkDamageForLocation
+=====================
+*/
+bool idActor::checkDamageForLocation( int location ) { //returns true if the damage is greater than the max
+	idStr damageGroup = GetDamageGroup( location ); //from joint to group name
+
+	for( int i = 0; i < damageGroupsNames.Num(); i++ ) {
+		if ( damageGroupsNames[ i ] == damageGroup ) { //from group name to number
+			if( (highpainThreshold[ i ] > 0 ) && (highpainCurrentDamage[ i ] > highpainThreshold[ i ])){
+				//gameLocal.Printf( "Exceeded damage in zone '%s'\n", damageGroupsNames[i].c_str() );
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/*
+=====================
+idActor::resetCurrentDamageForLocations
+=====================
+*/
+void idActor::resetCurrentDamageForLocations( void ) { //returns true if the damage is greater than the max
+	for( int i = 0; i < highpainCurrentDamage.Num(); i++ ) {
+		highpainCurrentDamage[ i ] = 0.0f;
+		//gameLocal.Printf( "reset damage: zone '%s', painvalue: '%f'\n", damageGroupsNames[i].c_str(), highpainCurrentDamage[ i ] );
+	}
+}
+
+/*
+=====================
+idActor::updateCurrentDamageForLocations - this should be called in a "think" function of the class that uses this stuff. Since there's no "think" function for idActor it'll be only called in idAI. But it's ready to use for players too. 
+=====================
+*/
+void idActor::updateCurrentDamageForLocations( void ) { //decrease pain values
+	for( int location = 0; location < highpainCurrentDamage.Num(); location++ ) {
+		if(highpainCurrentDamage[ location ] > 0){
+			highpainCurrentDamage[ location ] -= highpainDecreaseRate[ location ];
+			//set it to 0 if we get a negative number
+			if(highpainCurrentDamage[ location ] < 0) highpainCurrentDamage[ location ] = 0;
+			
+			/*
+			if ( g_debugDamage.GetBool() ) {
+				gameLocal.Printf( "Upd damage: zone '%s', painvalue: '%f'\n", damageGroupsNames[location].c_str(), highpainCurrentDamage[ location ] );
+			}*/
+	    }
+	}
+}
+
+
+
+//ivan end
+
 
 /*
 =====================
@@ -2699,14 +2998,12 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		torsoAnim.idleAnim = false;
 		torsoAnim.PlayAnim( anim );
 		flags = torsoAnim.GetAnimFlags();
-
 		//ivan test
 		if (force_torso_override){
 			legsAnim.animBlendFrames = torsoAnim.lastAnimBlendFrames;
 			SyncAnimChannels( ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
 		}else
 		//ivan end
-
 		if ( !flags.prevent_idle_override ) {
 			if ( headAnim.IsIdle() ) {
 				headAnim.animBlendFrames = torsoAnim.lastAnimBlendFrames;
@@ -3373,24 +3670,159 @@ void idActor::Event_GetHead( void ) {
 	idThread::ReturnEntity( head.GetEntity() );
 }
 
-//ivan start
+//ivan start - particles
 
-/*
-=====================
-idActor::Event_IsOnScreen
-=====================
-*/
-void idActor::Event_IsOnScreen( void ) {
-	idThread::ReturnInt( isOnScreen );
+void idActor::TriggerFX( const char* joint, const char* fx, bool bindToJoint, bool orientated ) { //ivan - bool bindToJoint, bool orientated added
+	
+	if( !strcmp(joint, "origin") ) {
+		idEntityFx::StartFx( fx, NULL, NULL, this, true );
+	} else {
+		idVec3	joint_origin;
+		idMat3	joint_axis;
+		jointHandle_t jointNum;
+		jointNum = animator.GetJointHandle( joint );
+
+		if ( jointNum == INVALID_JOINT ) {
+			gameLocal.Warning( "Unknown fx joint '%s' on entity %s", joint, name.c_str() );
+			return;
+		}
+
+		GetJointWorldTransform( jointNum, gameLocal.time, joint_origin, joint_axis );
+		//idEntityFx::StartFx( fx, &joint_origin, &joint_axis, this, true );
+		idEntityFx::StartFx( fx, &joint_origin, &joint_axis, this, true, orientated, (bindToJoint ? jointNum : INVALID_JOINT ) ); //ivan - joint passed... I wonder how they thought to bind it to a joint... without knowing the joint O_o
+	}
 }
 
 /*
 =====================
-idActor::Event_IsXlocked
+idActor::StartEmitter
 =====================
 */
-void idActor::Event_IsXlocked( void ) {
-	idThread::ReturnInt( isXlocked );
+idEntity* idActor::StartEmitter( const char* name, const char* joint, const char* particle ) { 
+
+	idEntity* existing = GetEmitter(name);
+	if(existing) {
+		return existing;
+	}
+
+	jointHandle_t jointNum;
+	jointNum = animator.GetJointHandle( joint );
+
+	idVec3 offset;
+	idMat3 axis;
+
+	GetJointWorldTransform( jointNum, gameLocal.time, offset, axis );
+
+	/*animator.GetJointTransform( jointNum, gameLocal.time, offset, axis );
+	offset = GetPhysics()->GetOrigin() + offset * GetPhysics()->GetAxis();
+	axis = axis * GetPhysics()->GetAxis();*/
+
+
+
+	idDict args;
+
+	const idDeclEntityDef *emitterDef = gameLocal.FindEntityDef( "func_emitter", false );
+	args = emitterDef->dict;
+	args.Set("model", particle);
+	args.Set( "origin", offset.ToString() );
+	args.SetBool("start_off", true);
+
+	idEntity* ent;
+	gameLocal.SpawnEntityDef(args, &ent, false);
+
+	ent->GetPhysics()->SetOrigin(offset);
+
+	// case 1: joint axis
+	ent->GetPhysics()->SetAxis(axis);
+
+	/*
+	// case 2: joint axis - z fixed
+	// align z-axis of model with the direction
+	idVec3		tmp;
+	//axis = (viewAxis[ 0 ] * physicsObj.GetGravityAxis()).ToMat3();
+	axis = (viewAxis[ 0 ] * GetPhysics()->GetAxis()).ToMat3(); //ivan fix - no physicsObj here...
+	tmp = axis[2];
+	axis[2] = axis[0];
+	axis[0] = -tmp;
+	ent->GetPhysics()->SetAxis(axis);
+	*/
+
+	/*
+	// case 3: entity axis
+	//axis = physicsObj.GetGravityAxis();
+	axis = GetPhysics()->GetAxis(); //ivan fix - no physicsObj here...
+	ent->GetPhysics()->SetAxis(axis);
+	*/
+
+	
+	ent->GetPhysics()->GetClipModel()->SetOwner( this );
+
+	
+	//Keep a reference to the emitter so we can track it
+	funcEmitter_t newEmitter;
+	strcpy(newEmitter.name, name);
+	newEmitter.particle = (idFuncEmitter*)ent;
+	newEmitter.joint = jointNum;
+	funcEmitters.Set(newEmitter.name, newEmitter);
+
+	//Bind it to the joint and make it active
+	newEmitter.particle->BindToJoint(this, jointNum, true);
+	newEmitter.particle->BecomeActive(TH_THINK);
+	newEmitter.particle->Show();
+	newEmitter.particle->PostEventMS(&EV_Activate, 0, this);
+	return newEmitter.particle;
+}
+
+/*
+=====================
+idActor::GetEmitter
+=====================
+*/
+idEntity* idActor::GetEmitter( const char* name ) {
+	funcEmitter_t* emitter;
+	funcEmitters.Get(name, &emitter);
+	if(emitter) {
+		return emitter->particle;
+	}
+	return NULL;
+}
+
+/*
+=====================
+idActor::StopEmitter
+=====================
+*/
+void idActor::StopEmitter( const char* name ) {
+	funcEmitter_t* emitter;
+	funcEmitters.Get(name, &emitter);
+	if(emitter) {
+		emitter->particle->Unbind();
+		emitter->particle->PostEventMS( &EV_Remove, 0 );
+		funcEmitters.Remove(name);
+	}
+}
+
+
+/*
+================
+idAI::Event_TriggerFX
+================
+*/
+void idActor::Event_TriggerFX( const char* joint, const char* fx, int bindToJoint, int orientated ) { //ivan - int bindToJoint, int orientated added
+	TriggerFX(joint, fx, (bindToJoint != 0), (orientated != 0) );
+}
+
+void idActor::Event_StartEmitter( const char* name, const char* joint, const char* particle ) {
+	idEntity *ent = StartEmitter(name, joint, particle);
+	idThread::ReturnEntity(ent);
+}
+
+void idActor::Event_GetEmitter( const char* name ) {
+	idThread::ReturnEntity(GetEmitter(name));
+}
+
+void idActor::Event_StopEmitter( const char* name ) {
+	StopEmitter(name);
 }
 
 
@@ -3465,4 +3897,5 @@ void idActor::StopDamageFxs( void ){
 		}
 	}
 }
+
 //ivan end

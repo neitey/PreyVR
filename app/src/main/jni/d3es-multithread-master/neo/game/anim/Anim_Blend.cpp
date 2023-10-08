@@ -561,7 +561,7 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		}
 		fc.type = FC_LAUNCHMISSILE;
 		fc.string = new idStr( token );
-	}
+	} 
 	//ivan start
 	else if ( token == "fire_weapon" ) { 
 		fc.type = FC_FIREWEAPON;
@@ -622,6 +622,27 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_STOP_KICK;
 	}
 
+	else if ( token == "comboForceHighPain" ) { 
+		fc.type = FC_COMBOFORCEHIGHPAIN;
+	}
+	else if ( token == "comboAllowHighPain" ) { 
+		fc.type = FC_COMBOALLOWHIGHPAIN;
+	}
+	else if ( token == "comboDenyHighPain" ) { 
+		fc.type = FC_COMBODENYHIGHPAIN;
+	}
+	/*
+	else if ( token == "enableGravityInAnimMove" ) { 
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		fc.type = FC_ENABLEGRAVITYINANIMMOVE;
+		fc.string = new idStr( token );
+	}
+	else if ( token == "disableGravityInAnimMove" ) { 
+		fc.type = FC_DISABLEGRAVITYINANIMMOVE;
+	}*/
+
 	//ivan end
 	else if ( token == "fire_missile_at_target" ) {
 		if( !src.ReadTokenOnLine( &token ) ) {
@@ -637,7 +658,125 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_FIREMISSILEATTARGET;
 		fc.string = new idStr( token );
 		fc.index = jointInfo->num;
-	} else if ( token == "footstep" ) {
+	//ivan start
+    } else if ( token == "launch_projectile" ) {
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		if ( !declManager->FindDeclWithoutParsing( DECL_ENTITYDEF, token, false ) ) {
+			return "Unknown projectile def";
+		}
+		fc.type = FC_LAUNCH_PROJECTILE;
+		fc.string = new idStr( token );
+	} else if ( token == "bind_fx" ) { //this is just like the 2 following ones and will call the same event, but with different parms!
+		
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		jointInfo = modelDef->FindJoint( token );
+		if ( !jointInfo ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		if ( !declManager->FindType( DECL_FX, token, false ) ) {
+			return "Unknown FX def";
+		}
+
+		fc.type = FC_TRIGGER_FX; //<--!
+		fc.string = new idStr( token );
+		fc.index = jointInfo->num;
+
+	} else if ( token == "bindjoint_fx" ) { //this is just like the above and will call the same event, but with different parms!
+		
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		jointInfo = modelDef->FindJoint( token );
+		if ( !jointInfo ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		if ( !declManager->FindType( DECL_FX, token, false ) ) {
+			return "Unknown FX def";
+		}
+
+		fc.type = FC_TRIGGER_FX_JOINT; //<--!
+		fc.string = new idStr( token );
+		fc.index = jointInfo->num;
+
+	} else if ( token == "bindposjoint_fx" ) { //this is just like the above and will call the same event, but with different parms!
+		
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		jointInfo = modelDef->FindJoint( token );
+		if ( !jointInfo ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		if ( !declManager->FindType( DECL_FX, token, false ) ) {
+			return "Unknown FX def";
+		}
+
+		fc.type = FC_TRIGGER_FX_JOINTPOS; //<--!
+		fc.string = new idStr( token );
+		fc.index = jointInfo->num;
+
+	} else if ( token == "start_actor_prt" ) {
+
+		idStr str;
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		str = token + " ";
+
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		jointInfo = modelDef->FindJoint( token );
+		if ( !jointInfo ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		str += token;
+		fc.type = FC_START_ACTOR_EMITTER;
+		fc.string = new idStr( str );
+		fc.index = jointInfo->num;
+
+	} else if ( token == "stop_actor_prt" ) {
+
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		fc.type = FC_STOP_ACTOR_EMITTER;
+		fc.string = new idStr( token );
+
+	} else if ( token == "start_weapon_prt" ) {
+
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		fc.type = FC_START_WEAPON_EMITTER;
+		fc.string = new idStr( token );
+
+	} else if ( token == "stop_weapon_prt" ) {
+
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		fc.type = FC_STOP_WEAPON_EMITTER;
+		fc.string = new idStr( token );
+	} 
+	//ivan end
+	else if ( token == "footstep" ) {
 		fc.type = FC_FOOTSTEP;
 	} else if ( token == "leftfoot" ) {
 		fc.type = FC_LEFTFOOT;
@@ -982,7 +1121,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 				case FC_STOP_KICK: {
 					ent->ProcessEvent( &EV_Player_StopKick );
 					break;
-				}/*
+				}
 				case FC_COMBOALLOWHIGHPAIN: {
 					ent->ProcessEvent( &EV_Player_ComboForceHighPain, 0 );
 					break;
@@ -991,7 +1130,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					ent->ProcessEvent( &EV_Player_ComboForceHighPain, -1 );
 					break;
 				}
-				
+				/*
 				case FC_ENABLEGRAVITYINANIMMOVE: {
 					float value = atof(command.string->c_str());
 					ent->ProcessEvent( &EV_Player_SetGravityInAnimMove, value );
@@ -1007,6 +1146,49 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					ent->ProcessEvent( &AI_FireMissileAtTarget, modelDef->GetJointName( command.index ), command.string->c_str() );
 					break;
 				}
+				//ivan start
+				case FC_LAUNCH_PROJECTILE: {
+					ent->ProcessEvent( &AI_LaunchProjectile, command.string->c_str() );
+					break;
+				}
+				case FC_TRIGGER_FX: {
+					ent->ProcessEvent( &AI_TriggerFX, modelDef->GetJointName( command.index ), command.string->c_str(), 0 , 1 ); //int bindToJoint, int orientated
+					break;
+				}
+				case FC_TRIGGER_FX_JOINT: {
+					ent->ProcessEvent( &AI_TriggerFX, modelDef->GetJointName( command.index ), command.string->c_str(), 1 , 1 ); //int bindToJoint, int orientated
+					break;
+				}
+				case FC_TRIGGER_FX_JOINTPOS: {
+					ent->ProcessEvent( &AI_TriggerFX, modelDef->GetJointName( command.index ), command.string->c_str(), 1 , 0 ); //int bindToJoint, int orientated
+					break;
+				}
+				case FC_START_ACTOR_EMITTER: {
+					int index = command.string->Find(" ");
+					if(index >= 0) {
+						idStr name = command.string->Left(index);
+						idStr particle = command.string->Right(command.string->Length() - index - 1);
+						ent->ProcessEvent( &AI_StartEmitter, name.c_str(), modelDef->GetJointName( command.index ), particle.c_str() );
+					}
+					break;
+				}
+
+				case FC_STOP_ACTOR_EMITTER: {
+					ent->ProcessEvent( &AI_StopEmitter, command.string->c_str() );
+					break;
+				}
+				
+				case FC_START_WEAPON_EMITTER: {
+					ent->ProcessEvent( &EV_Weapon_StartParticle, command.string->c_str() );
+					break;
+				}
+
+				case FC_STOP_WEAPON_EMITTER: {
+					ent->ProcessEvent( &EV_Weapon_StopParticle, command.string->c_str() );
+					break;
+				}
+											
+			    //ivan end
 				case FC_FOOTSTEP : {
 					ent->ProcessEvent( &EV_Footstep );
 					break;
@@ -2095,6 +2277,7 @@ void idAnimBlend::BlendDelta( int fromtime, int totime, idVec3 &blendDelta, floa
 	}
 
 	delta = pos2 - pos1;
+
 	if ( !blendWeight ) {
 		blendDelta = delta;
 		blendWeight = weight;
@@ -3176,6 +3359,7 @@ idAnimator::idAnimator() {
 			channels[ i ][ j ].Reset( NULL );
 		}
 	}
+	
 }
 
 /*
@@ -4253,7 +4437,7 @@ void idAnimator::ServiceAnims( int fromtime, int totime ) {
 		blend = channels[ 0 ];
 		for( i = 0; i < ANIM_NumAnimChannels; i++ ) {
 			for( j = 0; j < ANIM_MaxAnimsPerChannel; j++, blend++ ) {
-				blend->CallFrameCommands( entity, fromtime, totime );
+				blend->CallFrameCommands( entity, fromtime, totime );	
 			}
 		}
 	}

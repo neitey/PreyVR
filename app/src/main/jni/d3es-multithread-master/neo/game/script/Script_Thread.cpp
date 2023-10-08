@@ -75,6 +75,8 @@ const idEventDef EV_Thread_VecLength( "vecLength", "v", 'f' );
 const idEventDef EV_Thread_VecDotProduct( "DotProduct", "vv", 'f' );
 const idEventDef EV_Thread_VecCrossProduct( "CrossProduct", "vv", 'v' );
 const idEventDef EV_Thread_VecToAngles( "VecToAngles", "v", 'v' );
+const idEventDef EV_Thread_RotateVector("rotateVector", "vv", 'v'); //ivan
+const idEventDef EV_Thread_VecToOrthoBasisAngles( "VecToOrthoBasisAngles", "v", 'v' ); //ivan
 const idEventDef EV_Thread_OnSignal( "onSignal", "des" );
 const idEventDef EV_Thread_ClearSignal( "clearSignalThread", "de" );
 const idEventDef EV_Thread_SetCamera( "setCamera", "e" );
@@ -110,9 +112,9 @@ const idEventDef EV_Thread_DebugCircle( "debugCircle", "vvvfdf" );
 const idEventDef EV_Thread_DebugBounds( "debugBounds", "vvvf" );
 const idEventDef EV_Thread_DrawText( "drawText", "svfvdf" );
 const idEventDef EV_Thread_InfluenceActive( "influenceActive", NULL, 'd' );
-//ivan start
-const idEventDef EV_Thread_StopCurrentMusic( "stopCurrentMusic", NULL );
-//ivan end
+//Ivan start
+const idEventDef EV_Thread_GetShaderVolume( "getShaderVolume", "s", 'f' );
+//Ivan end
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
@@ -156,6 +158,8 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_VecDotProduct,			idThread::Event_VecDotProduct )
 	EVENT( EV_Thread_VecCrossProduct,		idThread::Event_VecCrossProduct )
 	EVENT( EV_Thread_VecToAngles,			idThread::Event_VecToAngles )
+	EVENT( EV_Thread_RotateVector,			idThread::Event_RotateVector ) //ivan
+	EVENT( EV_Thread_VecToOrthoBasisAngles, idThread::Event_VecToOrthoBasisAngles ) //ivan
 	EVENT( EV_Thread_OnSignal,				idThread::Event_OnSignal )
 	EVENT( EV_Thread_ClearSignal,			idThread::Event_ClearSignalThread )
 	EVENT( EV_Thread_SetCamera,				idThread::Event_SetCamera )
@@ -193,9 +197,9 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_DebugBounds,			idThread::Event_DebugBounds )
 	EVENT( EV_Thread_DrawText,				idThread::Event_DrawText )
 	EVENT( EV_Thread_InfluenceActive,		idThread::Event_InfluenceActive )
-	//ivan start
-	EVENT( EV_Thread_StopCurrentMusic,		idThread::Event_StopCurrentMusic )
-	//ivan end
+	//Ivan start
+	EVENT( EV_Thread_GetShaderVolume,		idThread::Event_GetShaderVolume )
+	//Ivan end
 END_CLASS
 
 idThread			*idThread::currentThread = NULL;
@@ -1347,6 +1351,42 @@ void idThread::Event_VecToAngles( idVec3 &vec ) {
 	ReturnVector( idVec3( ang[0], ang[1], ang[2] ) );
 }
 
+
+//ivan start
+/*
+================
+idThread::Event_RotateVector
+================
+*/
+void idThread::Event_RotateVector( idVec3 &vec, idVec3 &ang ) {
+
+	idAngles tempAng(ang);
+	idMat3 axis = tempAng.ToMat3();
+	idVec3 ret = vec * axis;
+	ReturnVector(ret);
+
+}
+
+/*
+================
+idThread::Event_VecToOrthoBasisAngles
+================
+*/
+void idThread::Event_VecToOrthoBasisAngles( idVec3 &vec ) {
+	idVec3 left, up;
+	idAngles ang;
+
+	vec.OrthogonalBasis( left, up );
+	idMat3 axis( left, up, vec );
+
+	ang = axis.ToAngles();
+
+	ReturnVector( idVec3( ang[0], ang[1], ang[2] ) );
+}
+
+//ivan end
+
+
 /*
 ================
 idThread::Event_OnSignal
@@ -1845,15 +1885,26 @@ void idThread::Event_InfluenceActive( void ) {
 	}
 }
 
-//ivan start
 
+//Ivan start
 /*
 ================
-idThread::Event_StopCurrentMusic
+idThread::Event_GetShaderVolume
 ================
 */
-void idThread::Event_StopCurrentMusic( void ) {
-	gameLocal.StopMusic();
-}
+void idThread::Event_GetShaderVolume( const char *sound ) {
+	float shader_volume;
+	const idSoundShader *sndShader;
+	const soundShaderParms_t *shaderParms;
+	
+	sndShader = declManager->FindSound( sound );
+	if ( sndShader ) {
+            shaderParms = sndShader->GetParms();
+            shader_volume = shaderParms->volume;
+    }else{
+            shader_volume = 0.0f;
+    }
 
-//ivan end
+	ReturnFloat( shader_volume );
+}
+//Ivan end

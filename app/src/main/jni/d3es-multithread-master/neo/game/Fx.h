@@ -35,11 +35,11 @@ If you have questions concerning this license or the applicable additional terms
   Special effects.
 
   Ivan notes: 
-  - duration = 0 --> endless ( it lasts al long as the others are active). 
-  - duration = -1 --> like 0, but disabled when fade starts
+  - duration 0  = endless ( it lasts al long as the others are active). 
+  - duration -1 = like 0, but disabled when fade starts
   If there are only endless ones, the fx is self-removed instantly unless "manualRemove" is set.
 
-  - delay = -1 --> activated when fade starts
+  - delay -1 = activated when fade starts
   If "manualRemove" is not set the fx will self-remove after the max "duration" value.
 
 ===============================================================================
@@ -71,7 +71,7 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			Think( void ); //un noted change from original sdk
+	virtual void			Think( void );
 	void					Setup( const char *fx );
 	void					Run( int time );
 	virtual void			Start( int time ); //ivan - virtual added
@@ -79,7 +79,7 @@ public:
 	const int				Duration( void );
 	const char *			EffectName( void );
 	const char *			Joint( void );
-	const bool				Done( void ); //un noted change from original sdk
+	const bool				Done( void );
 
 	//ivan start
 	void					FadeOutFx( void ); 
@@ -91,7 +91,7 @@ public:
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual void			ClientPredictionThink( void );
 
-	//static idEntityFx *		StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind ); //un noted change from original sdk
+	//static idEntityFx *		StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind );
 	static idEntityFx *		StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind, bool orientated = true, jointHandle_t jointnum = INVALID_JOINT ); //ivan
 	static void				StartFxUtility( idEntityFx *nfx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind, bool orientated = true, jointHandle_t jointnum = INVALID_JOINT ); //ivan
 

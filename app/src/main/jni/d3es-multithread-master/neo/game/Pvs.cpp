@@ -1419,7 +1419,7 @@ void idPVS::ReadPVS( const pvsHandle_t handle, const idBitMsg &msg ) {
 
 #endif
 
-#ifdef _PORTALSKY //un noted code change from original sdk
+#ifdef _PORTALSKY
 /*
 ================
 idPVS::CheckAreasForPortalSky

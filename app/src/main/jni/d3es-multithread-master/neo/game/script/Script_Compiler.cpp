@@ -2482,7 +2482,12 @@ void idCompiler::ParseEventDef( idTypeDef *returnType, const char *name ) {
 
 		if ( i < num - 1 ) {
 			if ( CheckToken( ")" ) ) {
+				//k: For compact DOOM3 base game, some event arguments is different with Rivensin mod, .i.e launchProjectiles() createProjectile()
+#ifndef _RIVENSIN
 				Error( "Too few parameters for event definition.  Internal definition has %d parameters.", num );
+#else
+				Warning( "Too few parameters for event definition.  Internal definition has %d parameters.", num );
+#endif
 			}
 			ExpectToken( "," );
 		}

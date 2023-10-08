@@ -76,8 +76,6 @@ const idEventDef EV_GetMaxs( "getMaxs", NULL, 'v' );
 const idEventDef EV_IsHidden( "isHidden", NULL, 'd' );
 const idEventDef EV_Hide( "hide", NULL );
 const idEventDef EV_Show( "show", NULL );
-const idEventDef EV_PlatformOver( "platformover", NULL );
-const idEventDef EV_PlatformUnder( "platformunder", NULL );
 const idEventDef EV_Touches( "touches", "E", 'd' );
 const idEventDef EV_ClearSignal( "clearSignal", "d" );
 const idEventDef EV_GetShaderParm( "getShaderParm", "d", 'f' );
@@ -107,22 +105,20 @@ const idEventDef EV_StartFx( "startFx", "s" );
 const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
-//ivan start
+//Ivan start
+const idEventDef EV_GetGuiParm ( "getGuiParm", "ds", 's' );
+const idEventDef EV_GetGuiParmFloat ( "getGuiParmFloat", "ds", 'f' );
+const idEventDef EV_GuiNamedEvent ( "guiNamedEvent", "ds" );
+const idEventDef EV_GetEntityHealth( "getEntityHealth", NULL, 'f' );
+const idEventDef EV_SetEntityHealth( "setEntityHealth", "f" );
 const idEventDef EV_Interact( "interact", "ed" ); 
+//Ivan end
 
-//smart AI start
+//ivan start
 const idEventDef EV_GetClosestTargetTypePrefix( "getClosestTargetTypePrefix", "ss", 'e' );
 const idEventDef EV_GetRandomTargetTypePrefix( "getRandomTargetTypePrefix", "ss", 'e' );
-const idEventDef EV_GuiNamedEvent ( "guiNamedEvent", "ds" );
-const idEventDef EV_StartRandomSound( "startRandomSound", "sdd", 'f' );
-const idEventDef EV_AddSoundSkin( "addSoundSkin", "s" );
-//smart AI end
-
-#ifdef _WATER_PHYSICS
-const idEventDef EV_GetMass("getMass","d",'f');
-const idEventDef EV_IsInLiquid("isInLiquid",NULL,'d');
-#endif
-
+const idEventDef EV_FireProjectile( "fireProjectile", "svv", 'e' ); 
+const idEventDef EV_FireProjAtTarget( "fireProjAtTarget", "svE", 'e' ); //E = NULL ok too
 //ivan end
 
 ABSTRACT_DECLARATION( idClass, idEntity )
@@ -150,8 +146,6 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_IsHidden,				idEntity::Event_IsHidden )
 	EVENT( EV_Hide,					idEntity::Event_Hide )
 	EVENT( EV_Show,					idEntity::Event_Show )
-	EVENT( EV_PlatformUnder,		idEntity::Event_PlatformUnder ) 	//rev 2020
-	EVENT( EV_PlatformOver,			idEntity::Event_PlatformOver )		//rev 2020
 	EVENT( EV_CacheSoundShader,		idEntity::Event_CacheSoundShader )
 	EVENT( EV_StartSoundShader,		idEntity::Event_StartSoundShader )
 	EVENT( EV_StartSound,			idEntity::Event_StartSound )
@@ -191,19 +185,18 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
-
-	//smart AI start Ivan
+	
+	//ivan start
+	EVENT( EV_GetGuiParm,			idEntity::Event_GetGuiParm )
+	EVENT( EV_GetGuiParmFloat,		idEntity::Event_GetGuiParmFloat )
+	EVENT( EV_GuiNamedEvent,		idEntity::Event_GuiNamedEvent )
+    EVENT( EV_GetEntityHealth,		idEntity::Event_GetEntityHealth )
+    EVENT( EV_SetEntityHealth,		idEntity::Event_SetEntityHealth )
 	EVENT( EV_GetClosestTargetTypePrefix,	idEntity::Event_GetClosestTargetTypePrefix )
 	EVENT( EV_GetRandomTargetTypePrefix,	idEntity::Event_GetRandomTargetTypePrefix )
-	EVENT( EV_GuiNamedEvent,				idEntity::Event_GuiNamedEvent )
-	EVENT( EV_StartRandomSound,				idEntity::Event_StartRandomSound )
-	EVENT( EV_AddSoundSkin,					idEntity::Event_AddSoundSkin )
-	//smart AI end
-
-#ifdef _WATER_PHYSICS
-	EVENT( EV_GetMass,				idEntity::Event_GetMass )
-	EVENT( EV_IsInLiquid,			idEntity::Event_IsInLiquid )
-#endif
+	EVENT( EV_FireProjectile,		idEntity::Event_FireProjectile ) //ff 1.1
+	EVENT( EV_FireProjAtTarget,		idEntity::Event_FireProjAtTarget ) //ff 1.1
+	//ivan end
 
 END_CLASS
 
@@ -456,18 +449,12 @@ idEntity::idEntity() {
 
 	memset( &renderEntity, 0, sizeof( renderEntity ) );
 	modelDefHandle	= -1;
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	modelDefHandlePost = -1;                                    // new 6th venom
-	shaderPost = NULL;                                          // new
-#endif
 	memset( &refSound, 0, sizeof( refSound ) );
 
 	mpGUIState = -1;
-
-	//ivan start
-	//updLastRenderTime = false;
-	//lastRenderTime = -1;
-	//ivan end
+//rev grab
+	noGrab = false;
+//rev grab
 }
 
 /*
@@ -511,17 +498,11 @@ void idEntity::Spawn( void ) {
 	// parse static models the same way the editor display does
 	gameEdit->ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
 
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	//new 6th venom
-	temp = spawnArgs.GetString( "shader_post" );
-
-	if( temp[0] != '\0' )
-	      shaderPost = (idMaterial *)declManager->FindMaterial( temp );
-
-#endif
-
 	renderEntity.entityNum = entityNumber;
 
+//rev grab
+	noGrab = spawnArgs.GetBool( "noGrab", "0" );	
+//rev grab	
 	// go dormant within 5 frames so that when the map starts most monsters are dormant
 	dormantStart = gameLocal.time - DELAY_DORMANT_TIME + gameLocal.msec * 5;
 
@@ -598,10 +579,6 @@ void idEntity::Spawn( void ) {
 	if ( spawnArgs.GetString( "bind", "", &temp ) ) {
 		PostEventMS( &EV_SpawnBind, 0 );
 	}
-
-	//smart AI start //un noted change from original sdk
-	SetDefaultSoundSkin();
-	//smart AI end
 
 	// auto-start a sound on the entity
 	if ( refSound.shader && !refSound.waitfortrigger ) {
@@ -718,13 +695,11 @@ void idEntity::Save( idSaveGame *savefile ) const {
 	entityFlags_s flags = fl;
 	LittleBitField( &flags, sizeof( flags ) );
 	savefile->Write( &flags, sizeof( flags ) );
-
+//rev grab
+	savefile->WriteBool( noGrab );
+//rev grab
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	savefile->WriteInt( modelDefHandlePost );                   // new 6th venom
-	savefile->WriteMaterial( shaderPost );                      // new
-#endif
 	savefile->WriteRefSound( refSound );
 
 	savefile->WriteObject( bindMaster );
@@ -754,11 +729,6 @@ void idEntity::Save( idSaveGame *savefile ) const {
 	}
 
 	savefile->WriteInt( mpGUIState );
-
-	//ivan start
-	//savefile->WriteBool( updLastRenderTime );
-	//savefile->WriteInt( lastRenderTime );
-	//ivan end
 }
 
 /*
@@ -802,13 +772,11 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
-
+//rev grab
+	savefile->ReadBool( noGrab );
+//rev grab
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	savefile->ReadInt( modelDefHandlePost );                    // new 6th venom
-	savefile->ReadMaterial( shaderPost );                       // new
-#endif
 	savefile->ReadRefSound( refSound );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( bindMaster ) );
@@ -849,23 +817,6 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 	if ( modelDefHandle != -1 ) {
 		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
 	}
-
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	// new 6th venom
-	if( shaderPost )
-	{
-		  renderEntity_t post = renderEntity;
-		  post.customShader = shaderPost;
-
-		  if( modelDefHandlePost != -1 )
-		        modelDefHandlePost = gameRenderWorld->AddEntityDef( &post );
-	}
-#endif
-
-	//ivan start
-	//savefile->ReadBool( updLastRenderTime );
-	//savefile->ReadInt( lastRenderTime );
-	//ivan end
 }
 
 /*
@@ -926,7 +877,7 @@ void idEntity::Think( void ) {
 	RunPhysics();
 	Present();
 
-#ifdef _DENTONMOD_ENTITY_CPP //un noted change from original sdk
+#ifdef _DENTONMOD_ENTITY_CPP
 	if ( thinkFlags & TH_UPDATEWOUNDPARTICLES )
 		UpdateParticles();
 #endif
@@ -1237,14 +1188,6 @@ void idEntity::FreeModelDef( void ) {
 		gameRenderWorld->FreeEntityDef( modelDefHandle );
 		modelDefHandle = -1;
 	}
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	//new 6th venom
-	if( modelDefHandlePost != -1 )
-	{
-	      gameRenderWorld->FreeEntityDef( modelDefHandlePost );
-	      modelDefHandlePost = -1;
-	}
-#endif
 }
 
 /*
@@ -1289,36 +1232,6 @@ void idEntity::Show( void ) {
 	}
 }
 
-//rev 2020 start. new stuff for jumpthrough platforms
-/*
-================
-idEntity::PlatformUnder
-================
-*/
-void idEntity::PlatformUnder( void ) {
-	if ( spawnArgs.GetBool( "jpt_monster_pass" ) ) {
-		GetPhysics()->SetContents( CONTENTS_MOVEABLECLIP|CONTENTS_IKCLIP );
-	} else {
-		GetPhysics()->SetContents( CONTENTS_MONSTERCLIP|CONTENTS_MOVEABLECLIP|CONTENTS_IKCLIP );
-	}		
-	FreeModelDef();
-	UpdateVisuals();
-}
-
-/*
-================
-idEntity::PlatformOver
-================
-*/
-void idEntity::PlatformOver( void ) {
-	if ( spawnArgs.GetBool( "jpt_monster_pass" ) ) {
-		GetPhysics()->SetContents( CONTENTS_PLAYERCLIP|CONTENTS_MOVEABLECLIP|CONTENTS_IKCLIP );
-	} else {
-		GetPhysics()->SetContents( CONTENTS_MONSTERCLIP|CONTENTS_PLAYERCLIP|CONTENTS_MOVEABLECLIP|CONTENTS_IKCLIP );
-	}	
-	UpdateVisuals();
-}
-//rev 2020 end. new stuff
 /*
 ================
 idEntity::UpdateModelTransform
@@ -1553,19 +1466,6 @@ void idEntity::Present( void ) {
 	} else {
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-	//new 6th venom
-	if( shaderPost )
-	{
-	      renderEntity_t post = renderEntity;
-	      post.customShader = shaderPost;
-
-	      if( modelDefHandlePost == -1 )
-	            modelDefHandlePost = gameRenderWorld->AddEntityDef( &post );
-	      else
-	            gameRenderWorld->UpdateEntityDef( modelDefHandlePost, &post );
-	}
-#endif
 }
 
 /*
@@ -1595,15 +1495,6 @@ bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderVie
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
-
-	//ivan start - this is node for all but only used by AI. Not a great solution, but using another ModelCallback function for actors would be tricky.
-	/*
-	if( updLastRenderTime ){ 
-		//gameLocal.Printf("UpdateRenderEntity %s\n", GetName() );
-		lastRenderTime = gameLocal.time; 
-	}
-	*/
-	//ivan end
 
 	idAnimator *animator = GetAnimator();
 	if ( animator ) {
@@ -2187,6 +2078,27 @@ void idEntity::RemoveBinds( void ) {
 	}
 }
 
+//ivan start
+/*
+================
+idEntity::UnbindBinds
+================
+
+void idEntity::UnbindBinds( void ) {
+	idEntity *ent;
+	idEntity *next;
+
+	for( ent = teamChain; ent != NULL; ent = next ) {
+		next = ent->teamChain;
+		if ( ent->bindMaster == this ) {
+			ent->Unbind();
+			next = teamChain;
+		}
+	}
+}
+*/
+//ivan end
+
 /*
 ================
 idEntity::IsBound
@@ -2394,12 +2306,17 @@ bool idEntity::GetMasterPosition( idVec3 &masterOrigin, idMat3 &masterAxis ) con
 		// if bound to a joint of an animated model
 		if ( bindJoint != INVALID_JOINT ) {
 			masterAnimator = bindMaster->GetAnimator();
-			if ( !masterAnimator ) {
+			// DG: not sure this is the proper solution, but I had idMoveableArrows where
+			//     masterAnimator->modelDef was NULL, so masterAnimator->GetJointTransform()
+			//     wouldn't do anything and masterOrigin/Axis would remain uninitialized
+			//     and eventually spread NaNs all over the place
+			if ( !masterAnimator || !masterAnimator->ModelDef() ) {
 				masterOrigin = vec3_origin;
 				masterAxis = mat3_identity;
 				return false;
 			} else {
-				masterAnimator->GetJointTransform( bindJoint, gameLocal.time, masterOrigin, masterAxis );
+				bool b = masterAnimator->GetJointTransform( bindJoint, gameLocal.time, masterOrigin, masterAxis );
+				assert(b); // DG: this mustn't fail, else masterAxis/Origin remain uninitialized!
 				masterAxis *= bindMaster->renderEntity.axis;
 				masterOrigin = bindMaster->renderEntity.origin + masterOrigin * bindMaster->renderEntity.axis;
 			}
@@ -3182,6 +3099,9 @@ inflictor, attacker, dir, and point can be NULL for environmental effects
 
 ============
 */
+/*
+Ivan note: idPlayer and idActor are the only classes that override this method without calling idEntity::Damage
+*/
 void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 					  const char *damageDefName, const float damageScale, const int location ) {
 	if ( !fl.takedamage ) {
@@ -3200,6 +3120,10 @@ void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	if ( !damageDef ) {
 		gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );
 	}
+
+	//ivan start - damaging fx
+	//CheckDamageFx( damageDef );
+	//ivan end
 
 	int	damage = damageDef->GetInt( "damage" );
 
@@ -3245,7 +3169,7 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( key );
 	}
-	if ( *sound == '\0' ) { //un noted change from original sdk
+	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( "snd_metal" );	// default sound 1
 	}
 	if ( *sound == '\0' ) {
@@ -3268,7 +3192,7 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 	if ( g_decals.GetBool() ) {
 		// place a wound overlay on the model
 		
-		if( g_debugDamage.GetBool() ) { //un noted change from original sdk
+		if( g_debugDamage.GetBool() ) {
 			gameLocal.Printf("\n Collision Material Type- %s", materialType);
 			gameLocal.Printf("\n file :%s", collision.c.material->GetFileName());
 			gameLocal.Printf("\n Collision material:%s", collision.c.material->ImageName());
@@ -3287,16 +3211,19 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 			float size;	
 			idVec3 dir = velocity;
 			dir.Normalize();
-//un noted change from original sdk
+
 			if ( !def->dict.GetFloat( va( "size_wound_%s", materialType ), "6.0", size ) ) { // If Material Specific decal size not found, look for default size
 				size = def->dict.GetFloat( "size_wound", "6.0" );
 			}
 
+			if(size > 0.0f) {
+
 #ifdef _DENTONMOD_ENTITY_CPP		
-			gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, size, decal );
+				gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, size, decal );
 #else
-			ProjectOverlay( collision.c.point, dir, size, decal ); // added by Clone JCD
-#endif													// Modified for custom wound size
+				ProjectOverlay( collision.c.point, dir, size, decal ); // added by Clone JCD
+#endif															// Modified for custom wound size
+			}
 		}
 	}
 
@@ -3332,7 +3259,7 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 			BecomeActive( TH_UPDATEWOUNDPARTICLES );
 		}
 	}
-#endif //un noted change from original sdk
+#endif
 }
 
 /*
@@ -3838,21 +3765,11 @@ void idEntity::ActivateTargets( idEntity *activator ) const {
 	int			i, j;
 
 	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();	
+		ent = targets[ i ].GetEntity();
 		if ( !ent ) {
 			continue;
 		}
-//rev 2020 start	
-//this is what allows the player to move through static entities with the platform key
-		if ( ent->spawnArgs.GetBool( "platform" ) ) { //get the platform bool from our targeted entity	
-			if ( spawnArgs.GetBool( "jumpthrough" ) ){ //used to get the jumpthrough key from the trigger
-				ent->PlatformOver();
-			} else {
-				ent->PlatformUnder();
-			}
-		}
-//rev 2020 end		
-		if ( ent->RespondsTo( EV_Activate ) || ent->HasSignal( SIG_TRIGGER ) ) {			
+		if ( ent->RespondsTo( EV_Activate ) || ent->HasSignal( SIG_TRIGGER ) ) {
 			ent->Signal( SIG_TRIGGER );
 			ent->ProcessEvent( &EV_Activate, activator );
 		}
@@ -3984,7 +3901,7 @@ bool idEntity::InteractTouchingTriggers( int flags ) const {
 
 		ent = cm->GetEntity();
 
-		if ( !ent->RespondsTo( EV_Interact ) ) {
+		if ( !ent->RespondsTo( EV_Interact ) ) { //if ( !ent->RespondsTo( EV_Touch ) && !ent->HasSignal( SIG_TOUCH ) ) {
 			continue;
 		}
 
@@ -4004,7 +3921,12 @@ bool idEntity::InteractTouchingTriggers( int flags ) const {
 		trace.c.id = cm->GetId();
 		*/
 
-		ent->ProcessEvent( &EV_Interact, this, flags );
+		ent->ProcessEvent( &EV_Interact, this, flags ); //sono arrivato qui - ora chiamo sta funz in player ::think se ? il caso e vedo se posso semplificare il mio trigger...
+
+		/* was
+		ent->Signal( SIG_TOUCH );
+		ent->ProcessEvent( &EV_Touch, this, &trace );
+		*/
 
 		if ( !gameLocal.entities[ entityNumber ] ) {
 			gameLocal.Printf( "entity was removed while interacting with triggers\n" );
@@ -4031,45 +3953,63 @@ idEntity * idEntity::GetFirstValidTarget( void ) const {
 	return ent;
 }
 
+
 /*
-================
-idEntity::GetRandomTarget
-================
-*/
-idEntity* idEntity::GetRandomTarget( const char *ignore ) { //un noted change from original sdk
-	int			num;
-	idEntity	*ent;
-	int			i;
-	int			ignoreNum;
+=====================
+idEntity::CheckDamageFx
+=====================
 
-	RemoveNullTargets();
-	if ( !targets.Num() ) {
-		return NULL;
+void idEntity::CheckDamageFx( const idDict *damageDef ){ //TODO: move to actors?
+	if( !damageDef ){ return; }
+	if( !spawnArgs.GetBool( "allowDmgfxs", "0" ) ){
+		return;
+	}	
+	int dmgFxType = damageDef->GetInt( "dmgFxType", "0" ); //default is "0" -> no fx
+	if( dmgFxType > DMGFX_NONE && dmgFxType < NUM_DMGFX_TYPES ){ 
+		StartDamageFx( dmgFxType ); 
 	}
-
-	ignoreNum = -1;
-	if ( ignore && ( ignore[ 0 ] != 0 ) && ( targets.Num() > 1 ) ) {
-		for( i = 0; i < targets.Num(); i++ ) {
-			ent = targets[ i ].GetEntity();
-			if ( ent && ( ent->name == ignore ) ) {
-				ignoreNum = i;
-				break;
-			}
-		}
-	}
-
-	if ( ignoreNum >= 0 ) {
-		num = gameLocal.random.RandomInt( targets.Num() - 1 );
-		if ( num >= ignoreNum ) {
-			num++;
-		}
-	} else {
-		num = gameLocal.random.RandomInt( targets.Num() );
-	}
-
-	ent = targets[ num ].GetEntity();
-	return ent;
 }
+*/
+
+/*
+=====================
+idEntity::StartDamageFx
+=====================
+
+void idEntity::StartDamageFx( int type ){ //TODO: move to actors?
+	int i;
+	idDamagingFx* tempFx;
+
+	if( type <= DMGFX_NONE || type >= NUM_DMGFX_TYPES ){ 
+		gameLocal.Warning("StartDamageFx: invalid dmgFxType");
+		return;
+	}
+
+	//remove invalid ones
+	for( i = dmgFxEntities.Num() - 1; i >= 0; i-- ) {
+		if ( !dmgFxEntities[ i ].GetEntity() ) {
+			dmgFxEntities.RemoveIndex( i );
+		}
+	}
+
+	//check if the effect is already active --> restart it
+	for( i = dmgFxEntities.Num() - 1; i >= 0; i-- ) {
+		tempFx = dmgFxEntities[ i ].GetEntity();
+		if( tempFx->GetDmgFxType() == type ){
+			tempFx->Restart();
+			return;
+		}
+	}
+
+	//start a new one
+	tempFx = idDamagingFx::StartDamagingFx( type, this );
+	if( tempFx ){
+		idEntityPtr<idDamagingFx> &newFxPtr = dmgFxEntities.Alloc();
+        newFxPtr = tempFx;
+	}
+	
+}
+*/
 //ivan end
 
 /*
@@ -4201,11 +4141,6 @@ idEntity::Event_RandomTarget
 ================
 */
 void idEntity::Event_RandomTarget( const char *ignore ) {
-	idThread::ReturnEntity( GetRandomTarget( ignore ) );
-
-	//ivan start
-	/*
-	//was
 	int			num;
 	idEntity	*ent;
 	int			i;
@@ -4239,9 +4174,6 @@ void idEntity::Event_RandomTarget( const char *ignore ) {
 
 	ent = targets[ num ].GetEntity();
 	idThread::ReturnEntity( ent );
-	*/
-
-	//ivan end
 }
 
 /*
@@ -4476,25 +4408,6 @@ void idEntity::Event_Show( void ) {
 	Show();
 }
 
-//rev 2020 start New stuff
-/*
-================
-idEntity::Event_PlatformOver
-================
-*/
-void idEntity::Event_PlatformOver( void ) {
-	PlatformOver();
-}
-
-/*
-================
-idEntity::Event_PlatformUnder
-================
-*/
-void idEntity::Event_PlatformUnder( void ) {
-	PlatformUnder();
-}
-//rev 2020 end
 /*
 ================
 idEntity::Event_CacheSoundShader
@@ -4771,6 +4684,9 @@ idEntity::Event_SetKey
 */
 void idEntity::Event_SetKey( const char *key, const char *value ) {
 	spawnArgs.Set( key, value );
+//rev grab
+	UpdateChangeableSpawnArgs( NULL );
+//rev grab
 }
 
 /*
@@ -5023,28 +4939,6 @@ void idEntity::Event_CallFunction( const char *funcname ) {
 	thread->CallFunction( this, func, false );
 }
 
-
-#ifdef _WATER_PHYSICS //un noted change from original sdk
-/*
-================
-idEntity::Event_GetMass //un noted change from original sdk
-================
-*/
-void idEntity::Event_GetMass( int id ) {
-	idThread::ReturnFloat(physics->GetMass(id));
-}
-
-/*
-================
-idEntity::Event_IsInLiquid
-================
-*/
-void idEntity::Event_IsInLiquid( void ) {
-	idThread::ReturnInt(physics->GetWater() != NULL);
-}
-
-#endif
-
 /*
 ================
 idEntity::Event_SetNeverDormant
@@ -5054,6 +4948,40 @@ void idEntity::Event_SetNeverDormant( int enable ) {
 	fl.neverDormant	= ( enable != 0 );
 	dormantStart = 0;
 }
+
+
+//Ivan start
+void idEntity::Event_GetGuiParm(int guiNum, const char *key) {
+	if(renderEntity.gui[guiNum-1]) {
+		idThread::ReturnString(renderEntity.gui[guiNum-1]->GetStateString(key));
+		return;
+	}
+	idThread::ReturnString("");
+}
+
+void idEntity::Event_GetGuiParmFloat(int guiNum, const char *key) {
+	if(renderEntity.gui[guiNum-1]) {
+		idThread::ReturnFloat(renderEntity.gui[guiNum-1]->GetStateFloat(key));
+		return;
+	}
+	idThread::ReturnFloat(0.0f);
+}
+
+void idEntity::Event_GuiNamedEvent(int guiNum, const char *event) {
+	if(renderEntity.gui[guiNum-1]) {
+		renderEntity.gui[guiNum-1]->HandleNamedEvent(event);
+	}
+}
+
+void idEntity::Event_SetEntityHealth( float newHealth ) {
+	health = newHealth;
+}
+
+
+void idEntity::Event_GetEntityHealth( void ) {
+	idThread::ReturnFloat( health );
+}
+//Ivan end
 
 /***********************************************************************
 
@@ -5344,6 +5272,220 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 	return false;
 }
 
+//rev grab
+/*
+================
+idEntity::SetGrabbedState
+================
+*/
+void idEntity::SetGrabbedState( bool grabbed ) {
+	fl.grabbed = grabbed;
+}
+
+/*
+================
+idEntity::IsGrabbed
+================
+*/
+bool idEntity::IsGrabbed() {
+	return fl.grabbed;
+}
+//rev grab
+
+//ivan start - just copied from ff1.1
+
+/*
+================
+idEntity::CommonFireProjectile
+================
+*/
+idProjectile* idEntity::CommonFireProjectile( const char *projDefName , const idVec3 &firePos, const idVec3 &dir ) {
+	idProjectile	*proj;
+	idEntity		*ent;
+	idDict			projectileDict;
+
+	if ( gameLocal.isClient ) { return NULL; }
+
+	const idDeclEntityDef *projectileDef = gameLocal.FindEntityDef( projDefName, false );
+	if ( !projectileDef ) {
+		gameLocal.Warning( "No def '%s' found", projDefName );
+		return NULL;
+	}
+
+	projectileDict = projectileDef->dict;
+	if ( !projectileDict.GetNumKeyVals() ) {
+		gameLocal.Warning( "No projectile defined '%s'", projDefName );
+		return NULL;
+	}
+
+	if ( IsType( idPlayer::Type ) ) {
+		static_cast<idPlayer *>( this )->AddProjectilesFired(1);
+		gameLocal.AlertAI( this );
+	}
+
+	gameLocal.SpawnEntityDef( projectileDict, &ent, false );
+
+	if ( !ent || !ent->IsType( idProjectile::Type ) ) {
+		gameLocal.Error( "'%s' is not an idProjectile", projDefName );
+	}
+
+	if ( projectileDict.GetBool( "net_instanthit" ) ) {
+		ent->fl.networkSync = false;
+	}
+
+	proj = static_cast<idProjectile *>(ent);
+	proj->Create( this, firePos, dir );
+	proj->Launch( firePos, dir, vec3_origin ); 
+	return proj;
+}
+
+
+/*
+=====================
+idEntity::CommonGetAimDir
+=====================
+*/
+void idEntity::CommonGetAimDir( const idVec3 &firePos, idEntity *aimAtEnt, idVec3 &aimDir ) {
+	idVec3	mainTargetPos;
+	idVec3	secTargetPos; //not used, but necessary
+
+	if ( aimAtEnt ) { //target entity ok!
+		if ( aimAtEnt->IsType( idPlayer::Type ) ) { //player - head
+			static_cast<idPlayer *>( aimAtEnt )->GetAIAimTargets( aimAtEnt->GetPhysics()->GetOrigin(), mainTargetPos, secTargetPos );
+		} else if ( aimAtEnt->IsType( idActor::Type ) ) { //AI - chest
+			static_cast<idActor *>( aimAtEnt )->GetAIAimTargets( aimAtEnt->GetPhysics()->GetOrigin(), secTargetPos, mainTargetPos );
+		} else { //center
+			mainTargetPos = aimAtEnt->GetPhysics()->GetAbsBounds().GetCenter();
+		}
+		
+		aimDir = mainTargetPos - firePos;
+		aimDir.Normalize();
+
+	} else { //no valid aimAtEnt entity!
+		if ( IsType( idPlayer::Type ) ) { //player - view
+			static_cast<idPlayer *>( this )->viewAngles.ToVectors( &aimDir, NULL, NULL ); 
+		} else if ( IsType( idActor::Type ) ) { //AI - axis
+			aimDir = static_cast<idActor *>( this )->viewAxis[ 0 ]; 
+		} else {
+			aimDir = GetPhysics()->GetAxis()[ 0 ];
+		}
+	}
+}
+
+/*
+================
+idEntity::Event_FireProjectile
+================
+*/
+void idEntity::Event_FireProjectile( const char* projDefName , const idVec3 &firePos, const idAngles &fireAng ) {
+	idProjectile	*proj;
+	idVec3	dir;
+
+	dir = fireAng.ToForward();
+	proj = CommonFireProjectile( projDefName , firePos, dir );
+
+	idThread::ReturnEntity( proj );
+}
+
+/*
+================
+idEntity::Event_FireProjAtTarget
+================
+*/
+void idEntity::Event_FireProjAtTarget( const char* projDefName , const idVec3 &firePos, idEntity* aimAtEnt) {
+	idProjectile	*proj;
+	idVec3			dir;
+
+	CommonGetAimDir( firePos, aimAtEnt, dir );
+	proj = CommonFireProjectile( projDefName , firePos, dir );
+
+	idThread::ReturnEntity( proj );
+}
+
+//ivan end
+
+//ivan start
+/*
+=====================
+idEntity::Event_GetClosestTargetTypePrefix
+=====================
+*/
+void idEntity::Event_GetClosestTargetTypePrefix( const char *typePrefix, const char *ignoreType  ) {
+	int	i;
+	float dist;
+	float bestDist;
+	int	prefixLenght;
+	int	ignoreLenght;
+	idEntity *ent;
+	idEntity *bestEnt;
+
+	prefixLenght = idStr::Length( typePrefix );
+	ignoreLenght = idStr::Length( ignoreType );
+	bestDist = idMath::INFINITY;
+	bestEnt = NULL;
+
+	for( i = 0; i < targets.Num(); i++ ) {
+		ent = targets[ i ].GetEntity();		
+		if( ent ){
+			if ( (ignoreLenght > 0) && (idStr::Cmp( ent->GetEntityDefName(), ignoreType ) == 0) ) {
+				continue;
+			}
+			if ( idStr::Cmpn( ent->GetEntityDefName(), typePrefix, prefixLenght ) == 0 ) {		
+				dist = ( GetPhysics()->GetOrigin() - ent->GetPhysics()->GetOrigin() ).LengthFast();
+				if( dist < bestDist ){
+					bestDist = dist;
+					bestEnt = ent;
+				}
+			}
+		}
+	}
+
+	idThread::ReturnEntity( bestEnt );
+}
+
+/*
+=====================
+idEntity::Event_GetRandomTargetTypePrefix
+=====================
+*/
+void idEntity::Event_GetRandomTargetTypePrefix( const char *typePrefix, const char *ignoreType ) {
+	int	i;
+	int	num;
+	int which;
+	int	prefixLenght;
+	int	ignoreLenght;
+	idEntity *ent;
+	idEntity *ents[ MAX_GENTITIES ];
+
+	prefixLenght = idStr::Length( typePrefix );
+	ignoreLenght = idStr::Length( ignoreType );
+
+	num = 0;
+	for( i = 0; i < targets.Num(); i++ ) {
+		ent = targets[ i ].GetEntity();		
+		if( ent ){
+			if ( (ignoreLenght > 0) && (idStr::Cmp( ent->GetEntityDefName(), ignoreType ) == 0) ) {
+				continue;
+			}
+			if ( idStr::Cmpn( ent->GetEntityDefName(), typePrefix, prefixLenght ) == 0 ) {		
+				ents[ num++ ] = ent;
+				if ( num >= MAX_GENTITIES ) {
+					break;
+				}
+			}
+		}
+	}
+
+	if ( !num ) {
+		idThread::ReturnEntity( NULL );
+		return;
+	}
+
+	which = gameLocal.random.RandomInt( num );
+	idThread::ReturnEntity( ents[ which ] );
+}
+//ivan end
+
 /*
 ===============================================================================
 
@@ -5359,6 +5501,10 @@ const idEventDef EV_SetJointPos( "setJointPos", "ddv" );
 const idEventDef EV_SetJointAngle( "setJointAngle", "ddv" );
 const idEventDef EV_GetJointPos( "getJointPos", "d", 'v' );
 const idEventDef EV_GetJointAngle( "getJointAngle", "d", 'v' );
+//ivan start
+const idEventDef EV_FireProjectileFromJoint( "fireProjectileFromJoint", "sdv", 'e' ); 
+const idEventDef EV_FireProjAtTargetFromJoint( "fireProjAtTargetFromJoint", "sdE", 'e' ); //E = NULL ok too
+//ivan end
 
 CLASS_DECLARATION( idEntity, idAnimatedEntity )
 	EVENT( EV_GetJointHandle,		idAnimatedEntity::Event_GetJointHandle )
@@ -5368,6 +5514,10 @@ CLASS_DECLARATION( idEntity, idAnimatedEntity )
 	EVENT( EV_SetJointAngle,		idAnimatedEntity::Event_SetJointAngle )
 	EVENT( EV_GetJointPos,			idAnimatedEntity::Event_GetJointPos )
 	EVENT( EV_GetJointAngle,		idAnimatedEntity::Event_GetJointAngle )
+	//ivan start
+	EVENT( EV_FireProjectileFromJoint,		idAnimatedEntity::Event_FireProjectileFromJoint ) 
+	EVENT( EV_FireProjAtTargetFromJoint,	idAnimatedEntity::Event_FireProjAtTargetFromJoint ) 
+	//ivan end
 END_CLASS
 
 /*
@@ -5378,7 +5528,7 @@ idAnimatedEntity::idAnimatedEntity
 idAnimatedEntity::idAnimatedEntity() {
 	animator.SetEntity( this );
 	damageEffects = NULL;
-	nextBloodPoolTime = 0; //un noted change from original sdk
+	nextBloodPoolTime = 0;
 }
 
 /*
@@ -5649,7 +5799,6 @@ void idAnimatedEntity::AddDamageEffect( const trace_t &collision, const idVec3 &
 		msg.WriteDir( localNormal, 24 );
 		msg.WriteDir( localDir, 24 );
 #endif
-
 		msg.WriteInt( gameLocal.ServerRemapDecl( -1, DECL_ENTITYDEF, def->Index() ) );
 		msg.WriteInt( gameLocal.ServerRemapDecl( -1, DECL_MATERIAL, collision.c.material->Index() ) );
 		ServerSendEvent( EVENT_ADD_DAMAGE_EFFECT, &msg, false, -1 );
@@ -6047,149 +6196,194 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idThread::ReturnVector( vec );
 }
 
-//smart AI start //un noted change from original sdk
+//ivan start
 /*
-=====================
-idEntity::Event_GetClosestTargetTypePrefix
-=====================
+================
+idAnimatedEntity::Event_FireProjectileFromJoint
+================
 */
-void idEntity::Event_GetClosestTargetTypePrefix( const char *typePrefix, const char *ignoreType  ) {
-	int	i;
-	float dist;
-	float bestDist;
-	int	prefixLenght;
-	int	ignoreLenght;
-	idEntity *ent;
-	idEntity *bestEnt;
+void idAnimatedEntity::Event_FireProjectileFromJoint( const char *projDefName, jointHandle_t jointnum, const idAngles &fireAng ) {
+	idProjectile	*proj;
+	idVec3			dir;
+	idVec3			firePos;
+	idMat3			axis; //useless but needed
 
-	prefixLenght = idStr::Length( typePrefix );
-	ignoreLenght = idStr::Length( ignoreType );
-	bestDist = idMath::INFINITY;
-	bestEnt = NULL;
+	if ( !GetJointWorldTransform( jointnum, gameLocal.time, firePos, axis ) ) {
+		gameLocal.Warning( "Joint # %d out of range on entity '%s'",  jointnum, name.c_str() );
+	}
 
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();		
-		if( ent ){
-			if ( (ignoreLenght > 0) && (idStr::Cmp( ent->GetEntityDefName(), ignoreType ) == 0) ) {
-				continue;
-			}
-			if ( idStr::Cmpn( ent->GetEntityDefName(), typePrefix, prefixLenght ) == 0 ) {		
-				dist = ( GetPhysics()->GetOrigin() - ent->GetPhysics()->GetOrigin() ).LengthFast();
-				if( dist < bestDist ){
-					bestDist = dist;
-					bestEnt = ent;
-				}
+	dir = fireAng.ToForward();
+	proj = CommonFireProjectile( projDefName , firePos, dir );
+
+	idThread::ReturnEntity( proj );
+}
+
+/*
+================
+idAnimatedEntity::Event_FireProjAtTargetFromJoint
+================
+*/
+void idAnimatedEntity::Event_FireProjAtTargetFromJoint( const char *projDefName, jointHandle_t jointnum, idEntity *aimAtEnt ) {
+	idProjectile	*proj;
+	idVec3			dir;
+	idVec3			firePos;
+	idMat3			axis; //useless but needed
+
+	if ( !GetJointWorldTransform( jointnum, gameLocal.time, firePos, axis ) ) {
+		gameLocal.Warning( "Joint # %d out of range on entity '%s'",  jointnum, name.c_str() );
+	}
+
+	CommonGetAimDir( firePos, aimAtEnt, dir );
+	proj = CommonFireProjectile( projDefName , firePos, dir );
+
+	idThread::ReturnEntity( proj );
+}
+//ivan end
+
+//test:
+/*
+================
+idWeapon::ModelCallback
+================
+
+bool idAnimatedEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+	const idWeapon *ent;
+
+	//gameLocal.Printf("idWeapon::ModelCallback\n");
+	ent = static_cast<idWeapon *>(gameLocal.entities[ renderEntity->entityNum ]);
+	if ( !ent ) {
+		gameLocal.Error( "idBrittleFracture::ModelCallback: callback with NULL game entity" );
+	}
+
+	return ent->UpdateRenderEntity( renderEntity, renderView );
+}
+
+bool idAnimatedEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const {
+	int i, j, k, n, msec, numTris;
+	float fade;
+	dword packedColor;
+	srfTriangles_t *tris, *decalTris;
+	modelSurface_t surface;
+	idDrawVert *v;
+	idPlane plane;
+	idMat3 tangents;
+
+	//ivan
+	const idMaterial * material = declManager->FindMaterial( "textures/decals/irblend" );
+
+	// this may be triggered by a model trace or other non-view related source,
+	// to which we should look like an empty model
+	if ( !renderView ) {
+		return false;
+	}
+
+	gameLocal.Printf("idAnimatedEntity::UpdateRenderEntity...\n %s\n%s\n%s\n%s\n", 
+		spawnArgs.GetString( "pointL_old", "0 0 0" ),
+		spawnArgs.GetString( "pointH_old", "0 0 0" ),
+		spawnArgs.GetString( "pointL_new", "0 0 0" ),
+		spawnArgs.GetString( "pointH_new", "0 0 0" )
+		);
+
+	numTris = 2; //1 quadrato = 2 tris
+
+	// FIXME: re-use model surfaces
+	//renderEntity->hModel->InitEmpty( brittleFracture_SnapshotName );
+
+	// allocate triangle surfaces for the fractures and decals
+	tris = renderEntity->hModel->AllocSurfaceTriangles( numTris * 3, material->ShouldCreateBackSides() ? numTris * 6 : numTris * 3 );
+
+	for ( i = 0; i < 1; i++ ) { //shards.Num()
+		//const idVec3 &origin = GetOrigin();
+		//const idMat3 &axis = GetAxis();
+
+		
+		fade = 1.0f;
+		if ( shards[i]->droppedTime >= 0 ) {
+			msec = gameLocal.time - shards[i]->droppedTime - SHARD_FADE_START;
+			if ( msec > 0 ) {
+				fade = 1.0f - (float) msec / ( SHARD_ALIVE_TIME - SHARD_FADE_START );
 			}
 		}
-	}
+		packedColor = PackColor( idVec4( renderEntity->shaderParms[ SHADERPARM_RED ] * fade,
+										renderEntity->shaderParms[ SHADERPARM_GREEN ] * fade,
+                                        renderEntity->shaderParms[ SHADERPARM_BLUE ] * fade,
+										fade ) );
+										
+		packedColor = PackColor( idVec4( 1,1,1,1 ) ); //ivan
 
-	idThread::ReturnEntity( bestEnt );
-}
-
-/*
-=====================
-idEntity::Event_GetRandomTargetTypePrefix
-=====================
-*/
-void idEntity::Event_GetRandomTargetTypePrefix( const char *typePrefix, const char *ignoreType ) {
-	int	i;
-	int	num;
-	int which;
-	int	prefixLenght;
-	int	ignoreLenght;
-	idEntity *ent;
-	idEntity *ents[ MAX_GENTITIES ];
-
-	prefixLenght = idStr::Length( typePrefix );
-	ignoreLenght = idStr::Length( ignoreType );
-
-	num = 0;
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();		
-		if( ent ){
-			if ( (ignoreLenght > 0) && (idStr::Cmp( ent->GetEntityDefName(), ignoreType ) == 0) ) {
-				continue;
-			}
-			if ( idStr::Cmpn( ent->GetEntityDefName(), typePrefix, prefixLenght ) == 0 ) {		
-				ents[ num++ ] = ent;
-				if ( num >= MAX_GENTITIES ) {
-					break;
-				}
-			}
-		}
-	}
-
-	if ( !num ) {
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-
-	which = gameLocal.random.RandomInt( num );
-	idThread::ReturnEntity( ents[ which ] );
-}
-
-/*
-================
-idEntity::Event_GuiNamedEvent
-================
-*/
-void idEntity::Event_GuiNamedEvent(int guiNum, const char *event) {
-	if(renderEntity.gui[guiNum-1]) {
-		renderEntity.gui[guiNum-1]->HandleNamedEvent(event);
-	}
-}
-
-/*
-================
-idEntity::Event_StartRandomSound
-================
-*/
-void idEntity::Event_StartRandomSound( const char *soundBaseName, int channel, int netSync ) {
-	int length;
-	const char *rnd_sndName = spawnArgs.RandomPrefix( soundBaseName, gameLocal.random );
-
-	gameLocal.Printf("Chosen shader: '%s' \n", rnd_sndName );
-
-	StartSoundShader( declManager->FindSound( rnd_sndName ), (s_channelType)channel, 0, ( netSync != 0 ), &length );
-	idThread::ReturnFloat( MS2SEC( length ) );
-}
-
-
-/*
-=====================
-idEntity::Event_AddSoundSkin
-=====================
-*/
-void idEntity::Event_AddSoundSkin( const char *soundSkinName ) {  
-	AddSoundSkin( soundSkinName );
-}
-
-
-/*
-=====================
-idEntity::AddSoundSkin
-=====================
-*/
-void idEntity::AddSoundSkin( const char *soundSkinName ) {
 	
-	const idDeclEntityDef *soundSkinDef = gameLocal.FindEntityDef( soundSkinName, false );	
-	if ( !soundSkinDef ) { return; }
+		//was: const idWinding &winding = shards[i]->winding;
 
-	// copy the sounds from the skin def into our spawnargs
-	const idKeyValue *kv = soundSkinDef->dict.MatchPrefix( "snd_" );
-	while( kv ) {
-		//gameLocal.Printf("Key copied: '%s' \n", kv->GetValue().c_str() );
-		spawnArgs.Set( kv->GetKey(), kv->GetValue() );
-		kv = soundSkinDef->dict.MatchPrefix( "snd_", kv );
+		//ivan
+		idFixedWinding winding;
+		winding.Clear();
+		winding.AddPoint( spawnArgs.GetVector( "pointL_old", "0 0 0" ));
+		winding.AddPoint( spawnArgs.GetVector( "pointH_old", "0 0 0" ));
+		winding.AddPoint( spawnArgs.GetVector( "pointL_new", "0 0 0" ));
+		winding.AddPoint( spawnArgs.GetVector( "pointH_new", "0 0 0" ));
+		//ivan end
+
+		winding.GetPlane( plane );
+		tangents = ( plane.Normal() ).ToMat3(); //was: ( plane.Normal() * axis ).ToMat3();
+
+		for ( j = 2; j < winding.GetNumPoints(); j++ ) {
+
+			v = &tris->verts[tris->numVerts++];
+			v->Clear();
+			v->xyz = winding[0].ToVec3(); //was: origin + winding[0].ToVec3() * axis;
+			v->st[0] = winding[0].s;
+			v->st[1] = winding[0].t;
+			v->normal = tangents[0];
+			v->tangents[0] = tangents[1];
+			v->tangents[1] = tangents[2];
+			v->SetColor( packedColor );
+
+			v = &tris->verts[tris->numVerts++];
+			v->Clear();
+			v->xyz = winding[j-1].ToVec3(); //was: origin + winding[j-1].ToVec3() * axis;
+			v->st[0] = winding[j-1].s;
+			v->st[1] = winding[j-1].t;
+			v->normal = tangents[0];
+			v->tangents[0] = tangents[1];
+			v->tangents[1] = tangents[2];
+			v->SetColor( packedColor );
+
+			v = &tris->verts[tris->numVerts++];
+			v->Clear();
+			v->xyz = winding[j].ToVec3(); //was: origin + winding[j].ToVec3() * axis;
+			v->st[0] = winding[j].s;
+			v->st[1] = winding[j].t;
+			v->normal = tangents[0];
+			v->tangents[0] = tangents[1];
+			v->tangents[1] = tangents[2];
+			v->SetColor( packedColor );
+
+			tris->indexes[tris->numIndexes++] = tris->numVerts - 3;
+			tris->indexes[tris->numIndexes++] = tris->numVerts - 2;
+			tris->indexes[tris->numIndexes++] = tris->numVerts - 1;
+
+			if ( material->ShouldCreateBackSides() ) {
+
+				tris->indexes[tris->numIndexes++] = tris->numVerts - 2;
+				tris->indexes[tris->numIndexes++] = tris->numVerts - 3;
+				tris->indexes[tris->numIndexes++] = tris->numVerts - 1;
+			}
+		}
+
 	}
-}
 
-/*
-=====================
-idEntity::SetDefaultSoundSkin
-=====================
-*/
-void idEntity::SetDefaultSoundSkin( void ) {
-	AddSoundSkin( spawnArgs.GetString( "def_sound_skin" ) );
+	tris->tangentsCalculated = true;
+
+	SIMDProcessor->MinMax( tris->bounds[0], tris->bounds[1], tris->verts, tris->numVerts );
+
+	memset( &surface, 0, sizeof( surface ) );
+	surface.shader = material;
+	surface.id = 0;
+	surface.geometry = tris;
+	renderEntity->hModel->AddSurface( surface );
+
+	return true;
 }
-//smart AI end
+*/
+
+//test:

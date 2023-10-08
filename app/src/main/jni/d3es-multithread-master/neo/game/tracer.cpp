@@ -1,9 +1,11 @@
+
 #ifdef _DENTONMOD
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
 #include "Game_local.h"
+
 
 /*
 ===============================================================================
@@ -499,9 +501,7 @@ void dnRailBeam::Create( const idVec3 &beamEnd ) {
 		
 		smokeLength = smokeLength > 0.0f ? smokeLength : 10.0f; // make sure smokeLength is non-zero
 
-		nSmokeParticles = length.LengthFast()/smokeLength;
-		if( nSmokeParticles > 50 ) nSmokeParticles = 50; //ivan - fix for performance
-		//gameLocal.Warning("%d nSmokeParticles", nSmokeParticles );
+		nSmokeParticles = length.LengthFast()/smokeLength;		 
         
 		length.Normalize();
 		renderEntity.axis = length.ToMat3();				//For creating proper non random particle effect, we need to set the axis right

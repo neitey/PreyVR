@@ -47,42 +47,17 @@ typedef enum {
 	PM_SPECTATOR,			// flying without gravity but with collision detection
 	PM_FREEZE,				// stuck in place without control
 	PM_NOCLIP,				// flying without collision detection nor gravity
-	PM_ANIM_CROUCH,					//ivan - animation and gravity 
 	PM_PHYSICS_ONLY,		//ivan - physics without inputs
 	PM_ANIM_ALWAYS,			//ivan - animation and custom gravity 
 	PM_ANIM_GROUND			//ivan - animation on ground and normal movement in air 
 } pmtype_t;
 
-#ifdef _WATER_PHYSICS //un credited changes from original sdk
-//removed
-#else
 typedef enum {
 	WATERLEVEL_NONE,
 	WATERLEVEL_FEET,
 	WATERLEVEL_WAIST,
 	WATERLEVEL_HEAD
 } waterLevel_t;
-#endif //un credited changes from original sdk
-
-
-//ivan start
-typedef enum {
-	WALLJUMP_NONE,
-	WALLJUMP_L1_HOLD,
-	//WALLJUMP_L1_LEFT,
-	WALLJUMP_R1_HOLD,
-	//WALLJUMP_R1_LEFT,
-	/*
-	WALLJUMP_L2_HOLD,
-	WALLJUMP_L2_LEFT,
-	WALLJUMP_R2_HOLD,
-	WALLJUMP_R2_LEFT,
-	*/
-	WALLJUMP_R_READY,
-	WALLJUMP_L_READY
-} wallJumpState_t;
-
-//ivan end
 
 #define	MAXTOUCH					32
 
@@ -117,24 +92,14 @@ public:
 	void					SetKnockBack( const int knockBackTime );
 	void					SetDebugLevel( bool set );
 							// feed back from last physics frame
-#ifdef _WATER_PHYSICS //un credited changes from original sdk
-	//removed
-#else
 	waterLevel_t			GetWaterLevel( void ) const;
 	int						GetWaterType( void ) const;
-#endif	//un credited changes from original sdk
-	
 	bool					HasJumped( void ) const;
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
 	bool					IsCrouching( void ) const;
 	bool					OnLadder( void ) const;
 	const idVec3 &			PlayerGetOrigin( void ) const;	// != GetOrigin
-
-        //ivan start
-	void					SetFwInverted( bool inv ){ fw_inverted = inv; };
-	int					GetHintForForceFields( void );
-	//ivan end
 
 public:	// common physics interface
 	bool					Evaluate( int timeStepMSec, int endTimeMSec );
@@ -167,16 +132,9 @@ public:	// common physics interface
 
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
-
-	//ivan start
-	void					SetDoubleJumpEnabled( bool on ){ doubleJumpEnabled = on; };
-	bool					IsDoubleJumpEnabled( void ){ return doubleJumpEnabled; }; 
-
-	void					SetWallJumpEnabled( bool on ){ wallJumpEnabled = on; };
-	bool					IsWallJumpEnabled( void ){ return wallJumpEnabled; };
-
+						
 	void					SetDelta( const idVec3 &d ); // ivan - set delta for next move
-	//ivan end
+	//void					SetGravityInAnimMove( float mult); //ivan
 
 private:
 	// player physics state
@@ -211,30 +169,21 @@ private:
 	bool					ladder;
 	idVec3					ladderNormal;
 
-#ifdef _WATER_PHYSICS //un credited changes from original sdk
-	//removed
-#else
 	// results of last evaluate
 	waterLevel_t			waterLevel;
 	int						waterType;
-#endif
-
-	//ivan start
+	
 	idEntity *				blockingEntity;		//ivan 
 	idVec3					delta;				//ivan - delta for next move
+	//float					animMoveGravityMultiplier;
+	//bool					animMoveUseGravity;
 
+	//k double-jump
+#ifdef _RIVENSIN
 	bool					doubleJumpDone;
 	bool					doubleJumpEnabled; 
 	int						nextDoubleJump;
-
-	bool					fw_inverted;
-
-	bool					wallJumpDone;
-	bool					wallJumpEnabled; 
-	int						nextWallJump;
-	int						wallJumpTimeout;
-	wallJumpState_t			wallJumpKeyState;
-	//ivan end
+#endif
 
 private:
 	float					CmdScale( const usercmd_t &cmd ) const;
@@ -256,23 +205,16 @@ private:
 	void					CheckLadder( void );
 	bool					CheckJump( void );
 	bool					CheckWaterJump( void );
-#ifdef _WATER_PHYSICS //un credited changes from original sdk
-	//removed
-#else
 	void					SetWaterLevel( void );
-#endif
-
 	void					DropTimers( void );
 	void					MovePlayer( int msec );
-
-	//ivan start
+	//k double-jump
+#ifdef __ANDROID__
 	bool					CheckDoubleJump( void );
-	bool					CheckWallJump( void );
-	bool					CanWallJump( bool left );
+#endif
 
 	void					AnimMove( idVec3 &start, idVec3 &velocity, const idVec3 &delta ); //ivan - taken from idPhysics_Monster::StepMove
 	monsterMoveResult_t		AnimSlideMove( idVec3 &start, idVec3 &velocity, const idVec3 &delta ); //ivan - from idPhysics_Monster::SlideMove
-	//ivan end
 };
 
 #endif /* !__PHYSICS_PLAYER_H__ */

@@ -29,14 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GAME_PLAYER_H__
 #define __GAME_PLAYER_H__
 
-class idAI;
-
-#ifndef _DENTONMOD_PLAYER_CPP //un noted change from original sdk
-#define _DENTONMOD_PLAYER_CPP //un noted change from original sdk
+#ifndef _DENTONMOD_PLAYER_CPP
+#define _DENTONMOD_PLAYER_CPP
 #endif
 
-#define SHOW_MOVING_CROSSHAIR //un noted change from original sdk
-//#define AUTOUPD_RESPAWN_POS
+class idAI;
 
 /*
 ===============================================================================
@@ -46,9 +43,25 @@ class idAI;
 ===============================================================================
 */
 
+//ivan - uncomment this to enable cursor world entity
+//#define USE_CURSOR_ENTITY
+
+//ivan - uncomment this to enable cursor 3D-to-2D in cursor.gui
+#define USE_3D_TO_2D_CURSOR
+
+/*
+//definition of USE_AIM_DIR_FIX was moved to weapon.h
+*/
+
+//
+// events
+//
+//ivan start
+extern const idEventDef EV_Player_ComboForceHighPain; 
 extern const idEventDef EV_Player_SetGravityInAnimMove; 
 extern const idEventDef EV_Player_StartKick; 
 extern const idEventDef EV_Player_StopKick; 
+//ivan end
 extern const idEventDef EV_Player_GetButtons;
 extern const idEventDef EV_Player_GetMove;
 extern const idEventDef EV_Player_GetViewAngles;
@@ -64,7 +77,7 @@ const int	LAND_RETURN_TIME = 300;
 const int	FOCUS_TIME = 300;
 const int	FOCUS_GUI_TIME = 500;
 
-const int MAX_WEAPONS = 32; //16 //un noted change from original sdk
+const int MAX_WEAPONS = 32; //16
 
 const int DEAD_HEARTRATE = 0;			// fall to as you die
 const int LOWHEALTH_HEARTRATE_ADJ = 20; //
@@ -82,21 +95,7 @@ extern const int ASYNC_PLAYER_INV_AMMO_BITS;
 extern const int ASYNC_PLAYER_INV_CLIP_BITS;
 
 //ivan start
-const int NUM_SLOTS = 2;
-const float LOOK_BLEND_TIME = 100.0f;
-const float VIEWPOS_LEFT_MAX = 20.0f;		//max 'viewpos' value
-const float VIEWPOS_MOUSE_STEP = 2.0f;		//mouse sensibility for 'viewpos'
-const float PITCH_MOUSE_ALLOWED = 70.0f;	//degrees - max 89. This is not used by the new Abuse-style aim.
-const float CAMERA_SENSIBILITY = 0.05f;		//max 1 ( = instant ) //sensibility does not depend on distance from target pos
-const float CAMERA_DEFAULT_DISTANCE = 350.0f; //remember to upd default value of the cvar if you change this. Not striclty needed, but could be handy for the user. 
-const float CAMERA_DEFAULT_HEIGHT = 50.0f;    //remember to upd default value of the cvar if you change this. Not striclty needed, but could be handy for the user. 
-const float CAMERA_MIN_Z_SPEED_NEG = 0.5f;	
-const float CAMERA_MAX_Z_DELTA_POS = 460.0f;	
-const float CAMERA_MAX_Z_DELTA_NEG = -130.0f; 
-const float CAMERA_MIN_Y_SPEED = 0.5f;		//max 1 //speed depends on distance from target pos
-const float CAMERA_MAX_Y_DELTA = 330.0f; 
-const float CAMERA_MIN_X_SPEED = 0.3f;		//max 1 //speed depends on distance from target pos
-const float CAMERA_MAX_X_DELTA = 400.0f; 
+const int NUM_SLOTS = 3;
 //ivan end
 
 struct idItemInfo {
@@ -150,21 +149,6 @@ enum {
 	ANIMMOVE_PHYSICS,
 	ANIMMOVE_NUMTYPES //always the last one, not valid value
 };
-
-typedef struct {
-	bool	lockYaxis;	// Lock camera on the Y axis. Camera will not move left/right
-	bool	lockZaxis;	// Lock camera on the Z axis. Camera will not move up/down
-	float	lockedYpos;	// Y position of the camera. Used when lockYaxis is true
-	float	lockedZpos;	// Y position of the camera. Used when lockYaxis is true
-	float	distance;	// this usually equals pm_thirdPersonRange.
-	float	height;		// this usually equals pm_thirdPersonHeight.
-} CameraSettings_t;
-
-typedef struct {
-	int					entityNumber;
-	idVec3				spawnPos;
-	CameraSettings_t	cameraSettings;
-} CheckPointInfo_t;
 //ivan end
 
 typedef struct {
@@ -182,6 +166,7 @@ public:
 	int						ammo[ AMMO_NUMTYPES ];
 	int						clip[ MAX_WEAPONS ];
 	int						powerupEndTime[ MAX_POWERUPS ];
+	int						weapon_mode[ MAX_WEAPONS ]; //ivan
 
 	// mp
 	int						ammoPredictTime;
@@ -232,12 +217,12 @@ public:
 	int						WeaponIndexForAmmoClass( const idDict & spawnArgs, const char *ammo_classname ) const;
 	ammo_t					AmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired );
 	const char *			AmmoPickupNameForIndex( ammo_t ammonum ) const;
-//	void					AddPickupName( const char *name, const char *icon ); //un noted change from original sdk
+//	void					AddPickupName( const char *name, const char *icon );
 	void					AddPickupName( const char *name, const char *icon, idPlayer* owner ); //new, dont know what it does.
 
 	int						HasAmmo( ammo_t type, int amount );
 	bool					UseAmmo( ammo_t type, int amount );
-	int						HasAmmo( const char *weapon_classname, bool includeClip = false, idPlayer* owner = NULL );			//new _D3XP //un noted change from original sdk
+	int						HasAmmo( const char *weapon_classname, bool includeClip = false, idPlayer* owner = NULL );			//new _D3XP
 	//int						HasAmmo( const char *weapon_classname );			// looks up the ammo information for the weapon class first
 
 	void					UpdateArmor( void );
@@ -276,20 +261,9 @@ public:
 		EVENT_ABORT_TELEPORTER,
 		EVENT_POWERUP,
 		EVENT_SPECTATE,
-		EVENT_PICKUPNAME, //new, for use with inventory::AddPickupName //un noted change from original sdk
+		EVENT_PICKUPNAME, //new, for use with inventory::AddPickupName
 		EVENT_MAXEVENTS
 	};
-
-	//ivan start
-	enum {
-		FORCEDMOVE_STATE_DISABLED,
-		FORCEDMOVE_STATE_WAITING,
-		FORCEDMOVE_STATE_BLOCKED,
-		FORCEDMOVE_STATE_GOINGFW,
-		FORCEDMOVE_STATE_ABORTING
-	};
-	//ivan end
-
 
 	usercmd_t				usercmd;
 
@@ -317,6 +291,8 @@ public:
 	idScriptBool			AI_STRAFE_RIGHT;
 	idScriptBool			AI_ATTACK_HELD;
 	idScriptBool			AI_WEAPON_FIRED;
+	idScriptBool			AI_SEC_ATTACK_HELD; //ivan
+	idScriptBool			AI_SEC_WEAPON_FIRED; //ivan
 	idScriptBool			AI_JUMP;
 	idScriptBool			AI_CROUCH;
 	idScriptBool			AI_ONGROUND;
@@ -339,26 +315,24 @@ public:
 	idUserInterface *		objectiveSystem;
 	bool					objectiveSystemOpen;
 
+	//ivan start
+	idUserInterface *		combolist;	
+	bool					combolistOpen;
+	//ivan end
+
 	int						weapon_soulcube;
 	int						weapon_pda;
 	int						weapon_fists;
 
-	int						waitForDamage;	//rev 2018	
-	bool					noDamage;	//rev 2020	
-
-//rev 2018 start
-	int						touchofdeathx;		//player def key.  used in player script to change animations.
-	int						touchofdeathy;		//player def key.  used in player script to change animations.
-//rev 2018 end
+	int						crossHairOrigin;	//rev 2018
+	int						CheckCrossHairOrigin;	//rev 2018
+	int						telishield;		//player def key.  used in player script to change animations.
 	
 	int						heartRate;
 	idInterpolate<float>	heartInfo;
 	int						lastHeartAdjust;
 	int						lastHeartBeat;
 	int						lastDmgTime;
-	int						lastChargeTime;	//rev 2020 charge
-	int						chargeAmount;	//rev 2020 charge
-	int						chargeDir;		//rev 2020 charge
 	int						deathClearContentsTime;
 	bool					doingDeathSkin;
 	int						lastArmorPulse;		// lastDmgTime if we had armor at time of hit
@@ -409,8 +383,13 @@ public:
 	// if a third person view is used
 	idVec3					firstPersonViewOrigin;
 	idMat3					firstPersonViewAxis;
+#ifdef USE_AIM_DIR_FIX
+	idMat3					fixedAimViewAxis;	//used by weapons
+	idVec3					endPos;				//used by updateCursorPosOnGui()
+#endif
 
 	idDragEntity			dragEntity;
+	int						comboForceHighPain;
 
 public:
 	CLASS_PROTOTYPE( idPlayer );
@@ -428,14 +407,14 @@ public:
 	virtual void			Hide( void );
 	virtual void			Show( void );
 
-	void					Init( bool quickRespawn ); //ivan - quickRespawn added
+	void					Init( void );
 	void					PrepareForRestart( void );
 	virtual void			Restart( void );
 	void					LinkScriptVariables( void );
 	void					SetupWeaponEntity( void );
 	void					SelectInitialSpawnPoint( idVec3 &origin, idAngles &angles );
 	void					SpawnFromSpawnSpot( void );
-	void					SpawnToPoint( const idVec3	&spawn_origin, const idAngles &spawn_angles, bool quickRespawn = false ); //ivan - quickRespawn added
+	void					SpawnToPoint( const idVec3	&spawn_origin, const idAngles &spawn_angles );
 	void					SetClipModel( void );	// spectator mode uses a different bbox size
 
 	void					SavePersistantInfo( void );
@@ -479,19 +458,24 @@ public:
 	void					CalculateRenderView( void );	// called every tic by player code
 	void					CalculateFirstPersonView( void );
 
+#ifdef USE_AIM_DIR_FIX
+	void					CalculateFixedAim( void );
+#endif
+
 	void					DrawHUD( idUserInterface *hud );
 
 	void					WeaponFireFeedback( const idDict *weaponDef );
+	void					WeaponSecFireFeedback( const idDict *weaponDef ); //ivan
 
 	float					DefaultFov( void ) const;
 	float					CalcFov( bool honorZoom );
-	//void					CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis ); //un noted change from original sdk
+	void					CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis );
 	idVec3					GetEyePosition( void ) const;
 	void					GetViewPos( idVec3 &origin, idMat3 &axis ) const;
 	void					OffsetThirdPersonView( float angle, float range, float height, bool clip );
 
 	bool					Give( const char *statname, const char *value );
-	bool					GiveItem( idItem *item ); 
+	bool					GiveItem( idItem *item );
 	void					GiveItem( const char *name );
 	void					GiveHealthPool( float amt );
 
@@ -518,40 +502,18 @@ public:
 	void					NextWeapon( void );
 	void					NextBestWeapon( void );
 	void					PrevWeapon( void );
-	void					SelectWeapon( int num, bool force , const bool toggleWeapons = false ); //un noted change from original sdk
-	
+	void					SelectWeapon( int num, bool force , const bool toggleWeapons=false );
+
 	//ivan start
 	//was: void					DropWeapon( bool died );
 	bool					DropWeapon( bool died, bool selectNext=true );
-	bool					StartForcedMov( idEntity *destinationEntity, int inhibitInputDelay = 0, bool canAbort = true, bool totalForce = false, bool forceStart = false ); //rev 2019 note rivensin can abort fyi
-	void					BlockForcedMov( void );
+	bool					StartForcedMov( idEntity *destinationEntity, bool canAbort, int inhibitInputDelay = 0, bool totalForce = false );
 	void					UpdForcedMov( void );
 	void					StopForcedMov( void );
-	void					AddPossibleInteract( int flags );
-	void					AddWeaponInteract( int flags, int weaponNum ); //, const char * weaponName
-	bool					WeaponItemCanGiveAmmo( int weaponNum ); //idItem *item
-	int						GetWeaponNumByItem( idItem *item );
-	void					LockYCamera( float ypos );
-	void					LockZCamera( float zpos );
-	void					UnlockYCamera( void );
-	void					UnlockZCamera( void );
-	void					SetCameraDistance( float distance, bool blend );
-	void					SetCameraHeight( float height, bool blend );
-	void					UpdateCameraSettingsFromEntity( idEntity *eny );
+	void					ShowPossibleInteract( int flags );
+	bool					WeaponItemCanGiveAmmo( idItem *item );
+	//void					SetYCameraForced( bool force, float ypos = 0.0f );
 	void					DropNotSelectedWeapon( int weapNum );
-	void					AddLifes( int num ); 
-	void					AddScore( int num ); 
-	void					AddSecretFound( void ); 
-	void					SaveCheckPointPos( idEntity* checkEnt, bool useEntOrigin );
-	//float					GetIdealCameraDistance( void );
-	void					SetLock2D( bool on );
-	void					SpawnAllWeapons( void ); //cheat fix
-	bool					SpawnInsteadOfGiving( const char *classname, int offsetYmult = 1, int offsetZmult = 0); //cheat fix
-	void					ShowInfo( const char *text, float time = 6.0f );
-	void					HideInfo( void );
-
-	void					Event_HideInfo( void );
-	void					Event_GetWaterLevel( void );
 	//ivan end
 
 	void					StealWeapon( idPlayer *player );
@@ -571,8 +533,7 @@ public:
 	void					AdjustHeartRate( int target, float timeInSecs, float delay, bool force );
 	void					SetCurrentHeartRate( void );
 	int						GetBaseHeartRate( void );
-	//void					UpdateAir( void );
-	void					UpdateWaterAir( void );
+	void					UpdateAir( void );
 
 	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src );
 	bool					GuiActive( void ) { return focusGUIent != NULL; }
@@ -622,7 +583,7 @@ public:
 
 	// New------------------
 #ifdef _DENTONMOD_PLAYER_CPP
-	void					SetWeaponZoom( bool _Status );
+	void					SetWeaponZoom( bool Status );
 	void					SetProjectileType( int type );
 	int						GetProjectileType( void );
 #endif// _DENTONMOD_PLAYER_CPP
@@ -653,72 +614,46 @@ public:
 	bool					SelfSmooth( void );
 	void					SetSelfSmooth( bool b );
 
-private:
 	//ivan start
 	bool					IsComboActive( void ); 
-	//const char *			interactShownWeaponName;
-	int						interactShownWeaponNum;
-	int						interactFlag;
-	bool					skipMouseUpd;
-	int						health_lost;	//stat
-	//bool					allowPickupWeapons;	//can interact this frame
-	int						currentSlot;
-	int						numLives;
-	int						score;
-	//bool					hq2QuickRespawning;
-	CheckPointInfo_t		lastCheckPoint;
-	idVec3					safeRespawnPos;
-	float					safeRespawnCameraDist;
-	float					safeRespawnCameraHeight;
-#ifdef AUTOUPD_RESPAWN_POS
-	idVec3					tempRespawnPos;
-	int						nextRespPosTime;
-#endif
+	int						GetCurrentWeaponMode( void );
+	void					SetCurrentWeaponMode( int value );
+	//ivan end
 
-#ifdef SHOW_MOVING_CROSSHAIR
-	bool					reqDefaultCrossPos;
-	float					coffx; //was int
-	int						cposx;
-	int						cposy;
-	void					UpdateCrosshairPos( void );	
-	void					UpdateAimFromCrosshair( void );	
-#endif
+private:
+	//ivan start - from hq2
+	int						currentSlot;
 	
+	/*
 	//controls & direction
 	bool					save_walk_dir;	//save the current walking direction 
 	bool					keep_walk_dir;	//don't change the walking direction 
 	bool					fw_toggled;		
 	bool					fw_inverted;
+	bool					blendModelYaw;
 	float					old_viewAngles_yaw;
-    float					viewPos; // This determines which what the player will face. <= 0 faces right. > 0 faces left //TODO: float really needed?	
 	int						inhibitInputTime;
 	int						inhibitAimCrouchTime;
 
 	//camera
 	bool					skipCameraZblend;	//skip blending next frame
 	bool					enableCameraYblend;	//start blending to the new pos
-	bool					enableCameraXblend;	//start blending to the new distance
-	CameraSettings_t		cameraSettings;
-	/*
 	bool					forceCameraY;
 	float					forcedCameraYpos;
-	float					idealCameraDistance; //this usually equals pm_thirdPersonRange. 
-	float					idealCameraHeight; //this usually equals pm_thirdPersonHeight.
-	*/
 	idVec3					oldCameraPos;
+	
 
-	//forced movement
+	//movement 
 	bool					forcedMovCanBeAborted;
 	bool					forcedMovTotalForce;
+	bool					forcedMovAborted;
 	bool					forcedMovIncreasingX;
-	bool					forcedMovWasLocked;
-	int						forcedMovState;
 	idEntity *				forcedMovTarget;
 	idVec3					forcedMovDelta;
 	idVec3					forcedMovOldOrg;
 
-	//slide move or whatever
-	bool					animBasedMovement;	
+	bool					isanimmove;
+	*/
 	//ivan end
 	
 	jointHandle_t			hipJoint;
@@ -736,7 +671,7 @@ private:
 	bool					blendModelYaw;		// true when isAnimMove ends, to blend the model angles
 	//ivan ewnd
 
-	//ivan - kick stuff start //rev 2019
+	//ivan - kick stuff start
 	idStr					kickDefName;
 	const idDeclEntityDef *	kickDef;
 	idEntity *				lastKickedEnt;
@@ -748,29 +683,23 @@ private:
 	idBounds				kickBox;
 	jointHandle_t			fromJointKick;
 	jointHandle_t			toJointKick;
-	//ivan - kick stuff end //rev 2019
+	//ivan - kick stuff end
+
 	idList<aasLocation_t>	aasLocation;		// for AI tracking the player
 
-	/*
-	int						bobFoot; //un noted change from original sdk
+	int						bobFoot;
 	float					bobFrac;
 	float					bobfracsin;
 	int						bobCycle;			// for view bobbing and footstep generation
-	*/
 	float					xyspeed;
-	/*
-	int						stepUpTime; //un noted change from original sdk
+	int						stepUpTime;
 	float					stepUpDelta;
-	*/
 	float					idealLegsYaw;
 	float					legsYaw;
 	bool					legsForward;
 	float					oldViewYaw;
-	/*
-	//commented out by ivan 
 	idAngles				viewBobAngles;
 	idVec3					viewBob;
-	*/
 	int						landChange;
 	int						landTime;
 
@@ -824,6 +753,7 @@ private:
 	int						focusTime;
 	idAFEntity_Vehicle *	focusVehicle;
 	idUserInterface *		cursor;
+	int						lastSpread; //ivan
 
 	// full screen guis track mouse movements directly
 	int						oldMouseX;
@@ -844,7 +774,7 @@ private:
 	idVec3					smoothedOrigin;
 	idAngles				smoothedAngles;
 
-	idHashTable<WeaponToggle_t>	weaponToggles; // new //un noted change from original sdk
+	idHashTable<WeaponToggle_t>	weaponToggles; // new
 	// mp
 	bool					ready;					// from userInfo
 	bool					respawning;				// set to true while in SpawnToPoint for telefrag checks
@@ -873,14 +803,21 @@ private:
 
 	bool					selfSmooth;
 
-	idEntityPtr<idActor>	friendsCommonEnemy; //ivan
+#ifdef USE_CURSOR_ENTITY
+	//friend class			idPlayerCursor;  //test only
+	idPlayerCursor			playerCursor;	//ivan - the cursor entity
+#endif
+
+#ifdef 	USE_3D_TO_2D_CURSOR
+	void					updateCursorPosOnGui( void );
+#endif
 
 	void					GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delta ); //ivan
 	void					LookAtKiller( idEntity *inflictor, idEntity *attacker );
 
 	void					StopFiring( void );
 	void					FireWeapon( void );
-	void					WeaponSpecialFunction( bool keyTapped ); // New //un noted change from original sdk
+	void					WeaponSpecialFunction( bool keyTapped ); // New
 	void					Weapon_Combat( void );
 	void					Weapon_NPC( void );
 	void					Weapon_GUI( void );
@@ -915,19 +852,17 @@ private:
 	void					ExtractEmailInfo( const idStr &email, const char *scan, idStr &out );
 	void					UpdateObjectiveInfo( void );
 
-	bool					WeaponAvailable( const char* name ); //new //un noted change from original sdk
+	bool					WeaponAvailable( const char* name ); //new
 	
 	void					UseVehicle( void );
 	
 	//ivan start
-	void					UpdateCameraCvarsFromSettings( void );
-
 	bool					EvaluateKick( void );
 	void					Event_StartKick( const char *meleeDefName, float dmgMult );
 	void					Event_StopKick( void ); 
 	//ivan end
 
-	void					Event_WeaponAvailable( const char* name ); // new //un noted change from original sdk
+	void					Event_WeaponAvailable( const char* name ); // new
 	void					Event_GetImpulseKey( void ); // new
 
 	void					Event_GetButtons( void );
@@ -949,40 +884,36 @@ private:
 	void					Event_Gibbed( void );
 	void					Event_GetIdealWeapon( void );
 
-	//ivan start
+	//Ivan start
+	void                    Event_AddProjectilesFired( int num );
+	void                    Event_AddProjectileHits( int num );
+	void                    Event_SetArmor( float newArmor );
+	void                    Event_GetArmor( void );
+	void					Event_StartWeaponParticle( const char* name );
+	void					Event_StopWeaponParticle( const char* name );
 	void					Event_StartAutoMelee( float dmgMult, int trailNum );
 	void					Event_StopAutoMelee( void );
-
+	//void					Event_StartMeleeBeam( int num );
+	//void					Event_StopMeleeBeam( void );
+	void					Event_SetSkin( const char *skinname ); 
+	void					Event_DropWeapon( int weapNum );
 	void					Event_HudEvent( const char* name ); 
 	void					Event_SetHudParm( const char *key, const char *val ); 
 	void					Event_GetHudFloat( const char *key);
-	void					Event_ShowStats( void );
-	void					Event_DropWeapon( int weapNum );
-	void					Event_DoubleJumpEnabled( int on );
-	void					Event_WallJumpEnabled( int on );
-	void					Event_SetSkin( const char *skinname );
 	void					Event_SetFullBodyAnimOn( int anim_movement, int allow_turn, int iscombo );
 	void					Event_SetFullBodyAnimOff( void );
 	void					Event_SetGravityInAnimMove( float mult );
 	void					Event_ComboForceHighPain( int mode );
-
-	//smart AI start
 	void					Event_ForceUpdateNpcStatus( void );
-	void					Event_SetCommonEnemy( idEntity *enemy ); 
-	void					Event_GetCommonEnemy( void );
-	//smart AI end
 
-	//bool					CanPickupWeapons( void );
 	void					AddWeaponToSlots( idStr weaponName, bool select );
 	void					AddWeaponToSlots( int weaponNum, bool select );
 	bool					SetCurrentSlot( int newslot );
-	void					SetupWeaponSlots( void );
+	void					SetupSlots( void );
 	void					Interact( void );
-	void					SetSlideMoveState( void );
-	void					SetChargeMoveState( void );	//Rev 2020 charge
-	void					Hq2QuickRespawn( void );
-	void					ShowPossibleInteract( void );
-	//ivan end	
+
+    //Ivan end
+
 };
 
 // New------------------
@@ -1008,9 +939,6 @@ ID_INLINE void idPlayer::SetProjectileType( int type ) {
 ID_INLINE int idPlayer::GetProjectileType( void ) {
 	return projectileType[ currentWeapon ];
 }
-
-
-
 // New------------------
 #endif // _DENTONMOD_PLAYER_CPP
 
@@ -1046,13 +974,5 @@ ID_INLINE bool idPlayer::SelfSmooth( void ) {
 ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
 	selfSmooth = b;
 }
-
-/*
-//ivan start
-ID_INLINE float idPlayer::GetIdealCameraDistance( void ) {
-	return cameraSettings.distance;
-}
-//ivan end
-*/
 
 #endif /* !__GAME_PLAYER_H__ */

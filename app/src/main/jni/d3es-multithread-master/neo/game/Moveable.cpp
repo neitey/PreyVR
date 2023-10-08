@@ -43,13 +43,6 @@ const idEventDef EV_BecomeNonSolid( "becomeNonSolid" );
 const idEventDef EV_SetOwnerFromSpawnArgs( "<setOwnerFromSpawnArgs>" );
 const idEventDef EV_IsAtRest( "isAtRest", NULL, 'd' );
 const idEventDef EV_EnableDamage( "enableDamage", "f" );
-//ivan start
-#ifdef _WATER_PHYSICS
-const idEventDef EV_ActivateIfInWater( "<activateIfInWater>" ); 
-#endif
-const idEventDef EV_ActivatePhysics( "<activatePhysics>" ); 
-//ivan end
-
 
 CLASS_DECLARATION( idEntity, idMoveable )
 	EVENT( EV_Activate,					idMoveable::Event_Activate )
@@ -57,11 +50,6 @@ CLASS_DECLARATION( idEntity, idMoveable )
 	EVENT( EV_SetOwnerFromSpawnArgs,	idMoveable::Event_SetOwnerFromSpawnArgs )
 	EVENT( EV_IsAtRest,					idMoveable::Event_IsAtRest )
 	EVENT( EV_EnableDamage,				idMoveable::Event_EnableDamage )
-#ifdef _WATER_PHYSICS
-	//ivan
-	EVENT( EV_ActivateIfInWater,		idMoveable::Event_ActivateIfInWater )
-	EVENT( EV_ActivatePhysics,			idMoveable::Event_ActivatePhysics ) 
-#endif
 END_CLASS
 
 
@@ -86,14 +74,12 @@ idMoveable::idMoveable( void ) {
 	allowStep			= false;
 	canDamage			= false;
 
+//REV GRAB
+	attacker			= NULL;
+//REV GRAB
 /*#ifdef _DENTONMOD
 	entDamageEffects	= NULL;
 #endif*/
-
-	//ivan start
-	isXlocked			= false; 
-	lockedXpos			= 0.0f;
-	//ivan end
 }
 
 /*
@@ -147,6 +133,10 @@ void idMoveable::Spawn( void ) {
 	fxCollide = spawnArgs.GetString( "fx_collide" );
 	nextCollideFxTime = 0;
 
+//rev grab
+	monsterDamage = spawnArgs.GetString( "monster_damage", "" );
+	attacker = NULL;
+//rev grab
 	fl.takedamage = true;
 	damage = spawnArgs.GetString( "def_damage", "" );
 	canDamage = spawnArgs.GetBool( "damageWhenActive" ) ? false : true;
@@ -180,15 +170,9 @@ void idMoveable::Spawn( void ) {
 	if ( spawnArgs.GetFloat( "mass", "10", mass ) ) {
 		physicsObj.SetMass( mass );
 	}
-	
+
 	if ( spawnArgs.GetBool( "nodrop" ) ) {
 		physicsObj.PutToRest();
-		//ivan start
-		int actDelay = spawnArgs.GetInt( "nodrop_delayms", "0" );
-		if ( actDelay > 0 ) {
-			physicsObj.DelayedActivationOnImpact( actDelay );
-		}
-		//ivan end
 	} else {
 		physicsObj.DropToFloor();
 	}
@@ -196,25 +180,12 @@ void idMoveable::Spawn( void ) {
 	if ( spawnArgs.GetBool( "noimpact" ) || spawnArgs.GetBool( "notPushable" ) ) {
 		physicsObj.DisableImpact();
 	}
-#ifdef _WATER_PHYSICS
-	else if ( !spawnArgs.GetBool( "startDisabledInWater", "0" ) ) { //start active in water by default, unless 'noimpact' or 'notPushable' or 'startDisabledInWater' are set
-		PostEventMS( &EV_ActivateIfInWater, 0 ); //wait for all entities to spawn before checking collisions
-	}
-#endif
 
-	if ( spawnArgs.GetBool( "nonsolid" ) ) {
+	if ( spawnArgs.GetBool( "nonsolid" ) ) { 
 		BecomeNonSolid();
 	}
 
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
-
-	//ivan start
-	lockedXpos = GetPhysics()->GetOrigin().x; //remember initial pos.
-	isXlocked = spawnArgs.GetBool( "isXlocked", "0" );
-#ifdef _WATER_PHYSICS
-	physicsObj.SetWaterGravityMult( spawnArgs.GetFloat( "waterGravityMult", "1" )); //1 = no extra mult by default
-#endif
-	//ivan end
 
 	PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 );
 }
@@ -228,6 +199,10 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString( brokenModel );
 	savefile->WriteString( damage );
+//REV GRAB
+	savefile->WriteString( monsterDamage );
+	savefile->WriteObject( attacker );
+//REV GRAB
 	savefile->WriteString( fxCollide );
 	savefile->WriteInt( nextCollideFxTime );
 	savefile->WriteFloat( minDamageVelocity );
@@ -242,11 +217,6 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( initialSplineDir );
 
 	savefile->WriteStaticObject( physicsObj );
-
-	//ivan start
-	savefile->WriteBool( isXlocked ); 
-	savefile->WriteFloat( lockedXpos ); 
-	//ivan end
 }
 
 /*
@@ -259,6 +229,10 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadString( brokenModel );
 	savefile->ReadString( damage );
+//REV GRAB
+	savefile->ReadString( monsterDamage );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( attacker ) );
+//REV GRAB
 	savefile->ReadString( fxCollide );
 	savefile->ReadInt( nextCollideFxTime );
 	savefile->ReadFloat( minDamageVelocity );
@@ -280,11 +254,6 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
-
-	//ivan start
-	savefile->ReadBool( isXlocked ); 
-	savefile->ReadFloat( lockedXpos ); 
-	//ivan end
 }
 
 /*
@@ -304,7 +273,7 @@ idMoveable::Show
 */
 void idMoveable::Show( void ) {
 	idEntity::Show();
-	if ( !spawnArgs.GetBool( "nonsolid" ) ) {
+	if ( !spawnArgs.GetBool( "nonsolid" ) ) { 
 		physicsObj.SetContents( CONTENTS_SOLID );
 	}
 }
@@ -319,8 +288,6 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	idVec3 dir;
 	idEntity *ent;
 
-	//gameLocal.Printf("collision\n"); //un noted change from original sdk
-
 	v = -( velocity * collision.c.normal );
 	if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) {
 		f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
@@ -332,8 +299,8 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		nextSoundTime = gameLocal.time + 500;
 	}
 	
-
-	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
+//REV GRAB CODE START AND REPLACE
+/*	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
 		ent = gameLocal.entities[ collision.c.entityNum ];
 		if ( ent && v > minDamageVelocity ) {
 			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
@@ -343,7 +310,59 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			nextDamageTime = gameLocal.time + 1000;
 		}
 	}
+*/
+	// _D3XP :: changes relating to the addition of monsterDamage
+	if ( !gameLocal.isClient && canDamage && gameLocal.time > nextDamageTime ) {
+		bool hasDamage = damage.Length() > 0;
+		bool hasMonsterDamage = monsterDamage.Length() > 0;
 
+		if ( hasDamage || hasMonsterDamage ) {
+			ent = gameLocal.entities[ collision.c.entityNum ];
+			if ( ent && v > minDamageVelocity ) {
+				f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+				dir = velocity;
+				dir.NormalizeFast();
+				if ( ent->IsType( idAI::Type ) && hasMonsterDamage ) {
+					if ( attacker ) {
+						ent->Damage( this, attacker, dir, monsterDamage, f, INVALID_JOINT );
+					}
+					else {
+						ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, monsterDamage, f, INVALID_JOINT );
+					}
+
+					ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, monsterDamage, f, INVALID_JOINT );
+				} else if ( hasDamage ) {
+
+					// in multiplayer, scale damage wrt mass of object
+					if ( gameLocal.isMultiplayer ) {
+						f *= GetPhysics()->GetMass() * g_moveableDamageScale.GetFloat();
+					}
+
+					if ( attacker ) {
+						ent->Damage( this, attacker, dir, damage, f, INVALID_JOINT );
+					}
+					else {
+						ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, INVALID_JOINT );
+					}
+
+					ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, INVALID_JOINT );
+
+				}
+
+				nextDamageTime = gameLocal.time + 1000;
+			}
+		}
+	}
+
+	if ( this->IsType( idExplodingBarrel::Type ) ) {
+		idExplodingBarrel *ebarrel = static_cast<idExplodingBarrel*>(this);
+
+		if ( !ebarrel->IsStable() ) {
+			PostEventSec( &EV_Explode, 0.04f );
+		}
+	}
+
+//REV GRAB CODE END
 	if ( fxCollide.Length() && gameLocal.time > nextCollideFxTime ) {
 		idEntityFx::StartFx( fxCollide, &collision.c.point, NULL, this, false );
 		nextCollideFxTime = gameLocal.time + 3500;
@@ -473,14 +492,6 @@ void idMoveable::Think( void ) {
 		}
 	}
 	idEntity::Think();
-
-	//ivan start - lock the X position 
-	//if ( thinkFlags & TH_PHYSICS ) {			
-		if( isXlocked ){
-			physicsObj.SetOrigin( idVec3( lockedXpos, physicsObj.GetOrigin().y, physicsObj.GetOrigin().z ) );
-		}
-	//}
-	//ivan end
 }
 
 /*
@@ -527,6 +538,17 @@ idMoveable::Event_BecomeNonSolid
 void idMoveable::Event_BecomeNonSolid( void ) {
 	BecomeNonSolid();
 }
+
+//REV GRAB CODE START
+/*
+================
+idMoveable::SetAttacker
+================
+*/
+void idMoveable::SetAttacker( idEntity *ent ) {
+	attacker = ent;
+}
+//REV GRAB CODE END
 
 /*
 ================
@@ -578,43 +600,6 @@ void idMoveable::Event_SetOwnerFromSpawnArgs( void ) {
 	}
 }
 
-//ivan start
-#ifdef _WATER_PHYSICS
-
-/*
-================
-idMoveable::Event_ActivateIfInWater
-================
-*/
-void idMoveable::Event_ActivateIfInWater( void ) {
-	if( physicsObj.SetWaterLevelf() == 1.0f ) {
-		//gameLocal.Printf("'%s' activated by water\n", GetName() );
-		//ProcessEvent( &EV_Activate, this ); //this would kill exploding barrels and start splines!
-		Show();
-		if ( !spawnArgs.GetInt( "notPushable" ) ) {
-			physicsObj.EnableImpact();
-		}
-		physicsObj.AbortDropToFloor(); //this stops the drop-to-floor thing, which could take a bit of time to complete at map start
-		physicsObj.Activate();
-	}
-}
-#endif
-
-/*
-================
-idMoveable::Event_ActivatePhysics
-================
-*/
-void idMoveable::Event_ActivatePhysics( void ) {
-	gameLocal.Printf("'%s': Event_ActivatePhysics\n", GetName() );
-	Show();
-	if ( !spawnArgs.GetInt( "notPushable" ) ) {
-		physicsObj.EnableImpact();
-	}
-	physicsObj.Activate();
-}
-//ivan end
-
 /*
 ================
 idMoveable::Event_IsAtRest
@@ -630,8 +615,14 @@ idMoveable::Event_EnableDamage
 ================
 */
 void idMoveable::Event_EnableDamage( float enable ) {
+//REV GRAB
+	// clear out attacker
+	attacker = NULL;
+//REV GRAB
 	canDamage = ( enable != 0.0f );
 }
+
+
 
 
 /*
@@ -706,12 +697,6 @@ void idBarrel::BarrelThink( void ) {
 
 	// run physics
 	RunPhysics();
-
-	//ivan start - lock the X position 
-	if( isXlocked ){
-		physicsObj.SetOrigin( idVec3( lockedXpos, physicsObj.GetOrigin().y, physicsObj.GetOrigin().z ) );
-	}
-	//ivan end
 
 	// only need to give the visual model an additional rotation if the physics were run
 	if ( !wasAtRest ) {
@@ -857,6 +842,9 @@ idExplodingBarrel::idExplodingBarrel() {
 	spawnOrigin.Zero();
 	spawnAxis.Zero();
 	state = NORMAL;
+//REV GRAB
+	isStable = true;
+//REV GRAB
 	particleModelDefHandle = -1;
 	lightDefHandle = -1;
 	memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
@@ -899,6 +887,9 @@ void idExplodingBarrel::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( particleTime );
 	savefile->WriteInt( lightTime );
 	savefile->WriteFloat( time );
+//REV GRAB
+	savefile->WriteBool( isStable );
+//REV GRAB
 }
 
 /*
@@ -920,6 +911,9 @@ void idExplodingBarrel::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( particleTime );
 	savefile->ReadInt( lightTime );
 	savefile->ReadFloat( time );
+//REV GRAB
+	savefile->ReadBool( isStable );
+//REV GRAB
 }
 
 /*
@@ -930,6 +924,9 @@ idExplodingBarrel::Spawn
 void idExplodingBarrel::Spawn( void ) {
 	health = spawnArgs.GetInt( "health", "5" );
 	fl.takedamage = true;
+//REV GRAB
+	isStable = true;
+//REV GRAB
 	spawnOrigin = GetPhysics()->GetOrigin();
 	spawnAxis = GetPhysics()->GetAxis();
 	state = NORMAL;
@@ -996,6 +993,53 @@ void idExplodingBarrel::Think( void ) {
 
 	}
 }
+
+//REV GRAB CODE START
+/*
+================
+idExplodingBarrel::SetStability
+================
+*/
+void idExplodingBarrel::SetStability( bool stability ) {
+	isStable = stability;
+}
+
+/*
+================
+idExplodingBarrel::IsStable
+================
+*/
+bool idExplodingBarrel::IsStable( void ) {
+	return isStable;
+}
+
+/*
+================
+idExplodingBarrel::StartBurning
+================
+*/
+void idExplodingBarrel::StartBurning( void ) {
+	state = BURNING;
+	AddParticles( "barrelfire.prt", true );
+}
+
+/*
+================
+idExplodingBarrel::StartBurning
+================
+*/
+void idExplodingBarrel::StopBurning( void ) {
+	state = NORMAL;
+
+	if ( particleModelDefHandle >= 0 ){
+		gameRenderWorld->FreeEntityDef( particleModelDefHandle );
+		particleModelDefHandle = -1;
+
+		particleTime = 0;
+		memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
+	}
+}
+//REV GRAB CODE END
 
 /*
 ================
@@ -1090,6 +1134,7 @@ void idExplodingBarrel::ExplodingEffects( void ) {
 	}
 }
 
+
 //ivan start
 /*
 ================
@@ -1162,6 +1207,9 @@ void idExplodingBarrel::Killed( idEntity *inflictor, idEntity *attacker, int dam
 		}
 	}
 
+	//ivan: remove entities bound to this entity
+	PostEventMS( &EV_RemoveBinds, 100 ); //wait a bit so that we can also remove the arrow that made us explode 
+
 	// do this before applying radius damage so the ent can trace to any damagable ents nearby
 	Hide();
 #ifdef _DENTONMOD
@@ -1210,7 +1258,7 @@ void idExplodingBarrel::Killed( idEntity *inflictor, idEntity *attacker, int dam
 		}
 		kv = spawnArgs.MatchPrefix( "def_debris", kv );
 	}
-	
+
 	SpawnDrops(); //ivan
 
 #ifdef _DENTONMOD
@@ -1232,12 +1280,6 @@ void idExplodingBarrel::Killed( idEntity *inflictor, idEntity *attacker, int dam
 	if ( spawnArgs.GetBool( "triggerTargets" ) ) {
 		ActivateTargets( this );
 	}
-
-	//ivan start - add score only if player is the killer
-	if ( attacker && attacker->IsType( idPlayer::Type ) ) {
-		static_cast< idPlayer* >( attacker )->AddScore( spawnArgs.GetInt( "score", "100" ) ); 
-	}
-	//ivan end
 }
 
 /*
@@ -1380,3 +1422,89 @@ bool idExplodingBarrel::ClientReceiveEvent( int event, int time, const idBitMsg 
 
 	return idBarrel::ClientReceiveEvent( event, time, msg );
 }
+
+//ivan start
+/*
+===============================================================================
+
+  idMoveableArrow
+	
+===============================================================================
+*/
+
+CLASS_DECLARATION( idMoveable, idMoveableArrow )
+END_CLASS
+
+/*
+================
+idMoveableArrow::idMoveableArrow
+================
+*/
+idMoveableArrow::idMoveableArrow() {
+	unbindTime = 0;
+}
+
+/*
+================
+idMoveableArrow::Spawn
+================
+*/
+void idMoveableArrow::Spawn( void ) {
+	unbindTime = gameLocal.time + 5000; //5 sec
+}
+
+/*
+================
+idMoveableArrow::Save
+================
+*/
+void idMoveableArrow::Save( idSaveGame *savefile ) const {
+	savefile->WriteInt( unbindTime );
+}
+
+/*
+================
+idMoveableArrow::Restore
+================
+*/
+void idMoveableArrow::Restore( idRestoreGame *savefile ) {
+	savefile->ReadInt( unbindTime );
+}
+
+/*
+================
+idBarrel::Think
+================
+*/
+void idMoveableArrow::Think( void ) {
+	idEntity::Think();
+	if ( unbindTime > 0 && gameLocal.time > unbindTime ) {
+		//gameLocal.Printf("gameLocal.time > unbindTime\n");
+		unbindTime = 0;
+		Unbind();
+		BecomeSolid();
+		PostEventMS( &EV_Remove, 4000 );
+	}
+}
+
+/*
+================
+idMoveableArrow::BecomeNonSolid
+================
+*/
+void idMoveableArrow::BecomeNonSolid( void ) {
+	physicsObj.SetContents( 0 );
+	physicsObj.SetClipMask( 0 );
+}
+
+/*
+================
+idMoveableArrow::BecomeSolid
+================
+*/
+void idMoveableArrow::BecomeSolid( void ) {
+	physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
+	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
+}
+
+//ivan end

@@ -6,6 +6,7 @@
 
 #include "../Game_local.h"
 
+
 /*
 ===============================================================================
 
@@ -15,13 +16,7 @@
 */
 
 const idEventDef AI_Bot_SelectWeapon( "selectBotWeapon", "d", 'd' );
-const idEventDef AI_Bot_IsWeaponEnabled( "isBotWeaponEnabled", "d", 'd' ); 
-const idEventDef AI_Bot_AddWeaponInBalancing( "addWeaponInBalancing", "d" ); 
-const idEventDef AI_Bot_GetBalancedWeapon( "getBalancedWeapon", NULL, 'd' ); 
-const idEventDef AI_Bot_RegisterAttackForBalancing( "registerAttackForBalancing", "d" ); 
 const idEventDef AI_Bot_SelectAnotherWeapon( "selectAnotherWeapon", "dd", 'd' );
-//const idEventDef AI_Bot_SelectAnotherWeaponByNode( "selectAnotherWeaponByNode", "e", 'd' ); 
-const idEventDef AI_Bot_GetNextSquadMate( "getNextSquadMate", "E", 'e' ); 
 const idEventDef AI_Bot_GetCurrentWeapon( "getCurrentBotWeapon", NULL, 'd' );
 const idEventDef AI_Bot_GetWeaponNumByName( "getBotWeaponNumByName", "s", 'd' );
 const idEventDef AI_Bot_FireWeapon( "fireWeapon", NULL, 'e' );
@@ -39,29 +34,23 @@ const idEventDef AI_Bot_GetRandomTargetTypePrefix( "getRandomTargetTypePrefix", 
 const idEventDef AI_Bot_LostTimeMoreThan( "lostTimeMoreThan", "d", 'd' );
 const idEventDef AI_Bot_WeaponChangedMoreThan( "weaponChangedMoreThan", "d", 'd' );
 const idEventDef AI_Bot_PlayAnimOnWeapon( "playAnimOnWeapon", "s" );
-//const idEventDef AI_Bot_ReleaseNode( "releaseCurrentNode" );
-//const idEventDef AI_Bot_TryLockNode( "tryLockNode", "e", 'd' );
+const idEventDef AI_Bot_ReleaseNode( "releaseCurrentNode" );
+const idEventDef AI_Bot_TryLockNode( "tryLockNode", "e", 'd' );
 const idEventDef AI_Bot_FindEnemyAIorPL( "findEnemyAIorPL", "d", 'e' );
-//const idEventDef AI_Bot_FindClosestBotNode( "findClosestBotNode", "E", 'e' );
-const idEventDef AI_Bot_CanSpeak( "canSpeak", "f" );
 
 /*
-//redefined - no need to declare them again:
+//redefined:
 const idEventDef AI_CanHitEnemyFromAnim( "canHitEnemyFromAnim", "s", 'd' ); 
 const idEventDef AI_CreateMissile( "createMissile", "s", 'e' ); 
 const idEventDef AI_LaunchMissile( "launchMissile", "vv", 'e' ); 
 const idEventDef AI_CanHitEnemyFromJoint( "canHitEnemyFromJoint", "s", 'd' ); 
 */
 
+
+
 CLASS_DECLARATION( idAI, idAI_Bot ) 
 	EVENT( AI_Bot_SelectWeapon,					idAI_Bot::Event_SelectWeapon )
-	EVENT( AI_Bot_IsWeaponEnabled,				idAI_Bot::Event_IsWeaponEnabled ) 
-	EVENT( AI_Bot_AddWeaponInBalancing,			idAI_Bot::Event_AddWeaponInBalancing ) 
-	EVENT( AI_Bot_GetBalancedWeapon,			idAI_Bot::Event_GetBalancedWeapon ) 
-	EVENT( AI_Bot_RegisterAttackForBalancing,	idAI_Bot::Event_RegisterAttackForBalancing ) 
 	EVENT( AI_Bot_SelectAnotherWeapon,			idAI_Bot::Event_SelectAnotherWeapon )
-	//EVENT( AI_Bot_SelectAnotherWeaponByNode,	idAI_Bot::Event_SelectAnotherWeaponByNode )
-	EVENT( AI_Bot_GetNextSquadMate,				idAI_Bot::Event_GetNextSquadMate )
 	EVENT( AI_Bot_GetCurrentWeapon,				idAI_Bot::Event_GetCurrentWeapon )
 	EVENT( AI_Bot_GetWeaponNumByName,			idAI_Bot::Event_GetWeaponNumByName ) 
 	EVENT( AI_Bot_FireWeapon,					idAI_Bot::Event_FireWeapon )  
@@ -78,57 +67,17 @@ CLASS_DECLARATION( idAI, idAI_Bot )
 	EVENT( AI_Bot_LostTimeMoreThan,				idAI_Bot::Event_LostTimeMoreThan )
 	EVENT( AI_Bot_WeaponChangedMoreThan,		idAI_Bot::Event_WeaponChangedMoreThan )
 	EVENT( AI_Bot_PlayAnimOnWeapon,				idAI_Bot::Event_PlayAnimOnWeapon )
-	//EVENT( AI_Bot_ReleaseNode,					idAI_Bot::Event_ReleaseNode )
-	//EVENT( AI_Bot_TryLockNode,					idAI_Bot::Event_TryLockNode )
+	EVENT( AI_Bot_ReleaseNode,					idAI_Bot::Event_ReleaseNode )
+	EVENT( AI_Bot_TryLockNode,					idAI_Bot::Event_TryLockNode )
 	EVENT( AI_Bot_FindEnemyAIorPL,				idAI_Bot::Event_FindEnemyAIorPL )
-	//EVENT( AI_Bot_FindClosestBotNode,			idAI_Bot::Event_FindClosestBotNode )
-	EVENT( AI_Bot_CanSpeak,						idAI_Bot::Event_CanSpeak )
-	EVENT( AI_CanHitEnemyFromAnim,				idAI_Bot::Event_CanHitEnemyFromAnim )	//redefined
-	EVENT( AI_CreateMissile,					idAI_Bot::Event_CreateMissile )			//redefined
-	EVENT( AI_LaunchMissile,					idAI_Bot::Event_LaunchMissile )			//redefined
-	EVENT( AI_CanHitEnemyFromJoint,				idAI_Bot::Event_CanHitEnemyFromJoint )	//redefined
+	
+	EVENT( AI_CanHitEnemyFromAnim,				idAI_Bot::Event_CanHitEnemyFromAnim ) //redefined
+	EVENT( AI_CreateMissile,					idAI_Bot::Event_CreateMissile ) //redefined
+	EVENT( AI_LaunchMissile,					idAI_Bot::Event_LaunchMissile ) //redefined
+	EVENT( AI_CanHitEnemyFromJoint,				idAI_Bot::Event_CanHitEnemyFromJoint ) //redefined
+	EVENT( AI_Burn,								idAI_Bot::Event_Burn )
 END_CLASS
 
-
-int idAI_Bot::say_times[ AI_BOT_SAY_MAXVALUE ] = { 0 } ; //will not be saved/restored!
-const int idAI_Bot::say_delays[ AI_BOT_SAY_MAXVALUE ] = { 8 * 1000, //generic min time
-							20 * 1000,	//WATCHOUT
-							20 * 1000,	//SIGHT
-							20 * 1000,	//BACKTOIDLE
-							20 * 1000,	//SUSPICIOUS
-							20 * 1000,	//STARTMOVE
-							20 * 1000,	//LOST
-							20 * 1000,	//AFTERLOST
-							20 * 1000,	//DAMAGED
-							20 * 1000,	//FIRE
-							10 * 1000,	//MATEDOWN
-							8 * 1000};	//CHATTER - not the real chatter time: it's the minimum common 'distance'
-
-const char* idAI_Bot::say_names_default[ AI_BOT_SAY_MAXVALUE ] = {"", 
-							"snd_watchout",		//WATCHOUT
-							"snd_sight",		//SIGHT
-							"snd_backtoidle",	//BACKTOIDLE
-							"snd_suspicious",	//SUSPICIOUS
-							"snd_startmove",	//STARTMOVE
-							"snd_lost",			//LOST
-							"snd_afterlost",	//AFTERLOST
-							"snd_damaged",		//DAMAGED
-							"snd_fire",			//FIRE
-							"snd_matedown",		//MATEDOWN
-							""};	//CHATTER - not used. real snd will be set by SetChatSound.
-
-const char* idAI_Bot::say_names_squad[ AI_BOT_SAY_MAXVALUE ] = {"", 
-							"snd_watchout_squad",	//WATCHOUT
-							"snd_sight_squad",		//SIGHT
-							"snd_backtoidle_squad",	//BACKTOIDLE
-							"snd_suspicious_squad",	//SUSPICIOUS
-							"snd_startmove_squad",	//STARTMOVE
-							"snd_lost_squad",		//LOST
-							"snd_afterlost_squad",	//AFTERLOST
-							"snd_damaged_squad",	//DAMAGED
-							"snd_fire_squad",		//FIRE
-							"snd_matedown_squad",	//MATEDOWN
-							""};	//CHATTER - not used. real snd will be set by SetChatSound.
 
 /*
 ===============================================================================
@@ -152,12 +101,8 @@ idAI_Bot::idAI_Bot() {
 	lastHitNSDCheckTime = 0;
 	lastVisibleEnemyTime = 0;
 	lastWeaponChangedTime = 0;
-	//attackNodesMaxDist = 0.0f;
-	//currentNode = NULL;
-	squad = NULL;
+	currentNode = NULL;
 	weapons.SetGranularity( 1 );
-
-	SetDefaultSayTimes(0); //need to reset it in case we load another map
 }
 
 
@@ -170,6 +115,8 @@ idAI_Bot::~idAI_Bot
 idAI_Bot::~idAI_Bot() {
 	int i;
 	idEntity *ent;
+
+	//gameLocal.Printf("~idAI_Bot!\n");
 
 	DeconstructScriptObject();
 	scriptObject.Free();
@@ -185,22 +132,7 @@ idAI_Bot::~idAI_Bot() {
 		//projectileClipModel
 		delete weapons[ i ].projectileClipModel;
 	}
-
-
-	//we could be removed without being killed, so make sure we are removed from the squad
-	if ( gameLocal.GameState() == GAMESTATE_ACTIVE ) {
-		//gameLocal.Printf("idAI_Bot::~idAI_Bot in GAMESTATE_ACTIVE\n");
-		ClearSquad(); //remove from current squad
-	}
 }
-
-/*
-===============================================================================
-
-	Save and Restore
-
-===============================================================================
-*/
 
 /*
 =====================
@@ -210,9 +142,7 @@ idAI_Bot::Save
 void idAI_Bot::Save( idSaveGame *savefile ) const {
 	int i;
 
-	//currentNode.Save( savefile );
-	squad.Save( savefile );
-
+	currentNode.Save( savefile );
 	savefile->WriteInt( currentWeapon );
 	savefile->WriteInt( lastVisibleEnemyTime );
 	savefile->WriteBool( lastHitFCWCheckResult );
@@ -220,8 +150,6 @@ void idAI_Bot::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( lastHitNSDCheckResult );
 	savefile->WriteInt( lastHitNSDCheckTime );
 	savefile->WriteInt( lastWeaponChangedTime );
-	//savefile->WriteFloat( attackNodesMaxDist );
-	savefile->WriteBool( canSpeak );
 
 	savefile->WriteInt( weapons.Num() );
 	for( i = 0; i < weapons.Num(); i++ ) {
@@ -245,6 +173,7 @@ void idAI_Bot::Save( idSaveGame *savefile ) const {
 		ent->spawnArgs.GetString( "def_projectile", "", projectileName );
 		savefile->WriteString( projectileName );
 
+
 		//projectile - other stuff
 		savefile->WriteFloat( weapons[i].projectileRadius );
 		savefile->WriteFloat( weapons[i].projectileSpeed );
@@ -257,12 +186,6 @@ void idAI_Bot::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( weapons[i].attack_accuracy );
 		savefile->WriteFloat( weapons[i].projectile_spread );
 		savefile->WriteInt( weapons[i].num_projectiles );
-		savefile->WriteInt( weapons[i].fireMode );
-		
-		//balancing info
-		savefile->WriteInt( weapons[i].attackCounter );
-		savefile->WriteInt( weapons[i].balancing_multiplier );
-		savefile->WriteBool( weapons[i].requestedForBalancing );
 
 		//clip
 		savefile->WriteInt( weapons[i].clipSize );
@@ -274,7 +197,10 @@ void idAI_Bot::Save( idSaveGame *savefile ) const {
 		savefile->WriteVec3( weapons[i].flashColor );
 		savefile->WriteFloat( weapons[i].flashRadius );
 		savefile->WriteInt( weapons[i].flashTime );
+
 	}
+
+
 }
 
 /*
@@ -285,9 +211,10 @@ idAI_Bot::Restore
 void idAI_Bot::Restore( idRestoreGame *savefile ) {
 	int	num;
 	int i;
+
+	//gameLocal.Printf("idAI_Bot::Restore\n");
 	
-	//currentNode.Restore( savefile );
-	squad.Restore( savefile );
+	currentNode.Restore( savefile );
 
 	savefile->ReadInt( currentWeapon );
 	savefile->ReadInt( lastVisibleEnemyTime );
@@ -296,8 +223,6 @@ void idAI_Bot::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( lastHitNSDCheckResult );
 	savefile->ReadInt( lastHitNSDCheckTime );
 	savefile->ReadInt( lastWeaponChangedTime );
-	//savefile->ReadFloat( attackNodesMaxDist ); 
-	savefile->ReadBool( canSpeak );
 
 	savefile->ReadInt( num );
 	weapons.SetGranularity( 1 );
@@ -340,12 +265,6 @@ void idAI_Bot::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( weapons[i].attack_accuracy );
 		savefile->ReadFloat( weapons[i].projectile_spread );
 		savefile->ReadInt( weapons[i].num_projectiles );
-		savefile->ReadInt( weapons[i].fireMode );
-
-		//balancing info
-		savefile->ReadInt( weapons[i].attackCounter );
-		savefile->ReadInt( weapons[i].balancing_multiplier );
-		savefile->ReadBool( weapons[i].requestedForBalancing );
 
 		//clip
 		savefile->ReadInt( weapons[i].clipSize );
@@ -364,28 +283,38 @@ void idAI_Bot::Restore( idRestoreGame *savefile ) {
 		//upd muzzle light
 		setWeaponMuzzleFlash();
 	}
-
-	//don't know old values, so just average values...
-	SetDefaultSayTimes( 0.4f );
 }
+
 
 /*
 ===============================================================================
 
-	Spawn, killed, remove
+	Pain and talk stuff
 
 ===============================================================================
 */
 
 /*
-================
-idAI_Bot::Show
-================
-*/
-void idAI_Bot::Show( void ) {
-	idAI::Show();
-	ShowOnlyCurrentWeapon();
+=====================
+idAI::Pain
+=====================
+
+bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+	
+	SAY_DAMAGE = true;
+
+	return idAI::Pain( inflictor, attacker, damage, dir, location );
 }
+*/
+
+
+/*
+===============================================================================
+
+	Spawn and remove stuff
+
+===============================================================================
+*/
 
 /*
 =====================
@@ -395,16 +324,12 @@ idAI_Bot::Spawn
 void idAI_Bot::Spawn( void ) {
 	//gameLocal.Printf("idAI_Bot::Spawn\n");
 
-	LinkScriptVariables();
 	CreateWeapons();
 	SelectInitialWeapon();
 	ShowOnlyCurrentWeapon();
-
-	//spawnArgs.GetFloat("attackNodesMaxDist", "0", attackNodesMaxDist );
-	spawnArgs.GetBool( "can_speak",				"0", canSpeak );
-	
+	LinkScriptVariables();
 	/*
-	//Warning: idAI_Bot::CalculateAttackOffsets is called by idAI::Spawn --> weapons are not available yet!
+	//Warning: idAI_Bot::CalculateAttackOffsets is called by idAI::Spawn --> weapons are no available yet!
 	//CalculateAttackOffsets(); 
 	*/
 }
@@ -419,7 +344,7 @@ void idAI_Bot::LinkScriptVariables( void ) {
 	AI_WEAPON_CHANGED.LinkTo( scriptObject, "AI_WEAPON_CHANGED" );
 	AI_WEAPON_NEED_RELOAD.LinkTo( scriptObject, "AI_WEAPON_NEED_RELOAD" );
 	AI_LEAVE_NODE_TO_FIGHT.LinkTo( scriptObject, "AI_LEAVE_NODE_TO_FIGHT" );
-	AI_SAY_HINT.LinkTo( scriptObject, "AI_SAY_HINT" );
+	AI_SAY_DAMAGED.LinkTo( scriptObject, "AI_SAY_DAMAGED" );
 }
 
 /*
@@ -538,10 +463,9 @@ void idAI_Bot::AttachWeapon( idEntity *ent, idStr weaponName) { //TODO: spawn on
 			delete projectile.GetEntity();
 			projectile = NULL;
 
-			attach.attack_accuracy = ent->spawnArgs.GetFloat( "attack_accuracy", "1" ); 
+			attach.attack_accuracy = ent->spawnArgs.GetFloat( "attack_accuracy", "1" ); //was 7 
 			attach.projectile_spread = ent->spawnArgs.GetFloat( "projectile_spread", "0" );
 			attach.num_projectiles = ent->spawnArgs.GetInt( "num_projectiles", "1" );
-			attach.fireMode = ent->spawnArgs.GetInt( "fireMode", "0" ); 
 			attach.clipSize = ent->spawnArgs.GetInt( "clipSize", "0" );  //0 = unlimited
 			if(attach.clipSize < 0){ attach.clipSize = 0; }
 			attach.ammoInClip = attach.clipSize; //start with full ammo
@@ -568,7 +492,6 @@ void idAI_Bot::AttachWeapon( idEntity *ent, idStr weaponName) { //TODO: spawn on
 			attach.attack_accuracy = 0.0f;
 			attach.projectile_spread = 0.0f;
 			attach.num_projectiles = 0;
-			attach.fireMode = 0;
 			attach.clipSize = 0;
 			attach.ammoInClip = 0;
 			attach.reloadTolerance = 0;
@@ -582,11 +505,6 @@ void idAI_Bot::AttachWeapon( idEntity *ent, idStr weaponName) { //TODO: spawn on
 
 	attach.priorityLevel = ent->spawnArgs.GetInt( "priorityLevel", "0" );
 	attach.projectileClipModel = NULL; //will be initialized later
-
-	//balancing info
-	attach.attackCounter = 0;
-	attach.balancing_multiplier = ent->spawnArgs.GetInt( "balancing_multiplier", "0" );
-	attach.requestedForBalancing = false;
 
 	//gameLocal.Printf("fireJoint check: %d \n", weapons[ currentWeapon ].fireJoint);
 }
@@ -684,12 +602,13 @@ void idAI_Bot::DropWeapon( int weaponNum ) {
 
 	velocity = 150.0f * idAngles( -60, current_yaw, 0 ).ToForward();
 
-	item = idMoveableItem::DropItem( classname, myweapon->GetPhysics()->GetOrigin(), myweapon->GetPhysics()->GetAxis(), velocity , 200, AI_BOT_WEAPON_DROP_TIME );
+	item = idMoveableItem::DropItem( classname, myweapon->GetPhysics()->GetOrigin(), myweapon->GetPhysics()->GetAxis(), velocity , 200, AI_WEAPON_DROP_TIME );
 	if ( !item ) {
 		return;
 	}
 
 	if(weapons[ weaponNum ].clipSize <= 0){ //do nothing if clipSize is unlimited
+		//gameLocal.Printf("clipSize <= 0\n");
 		return;
 	}
 		
@@ -712,10 +631,7 @@ void idAI_Bot::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	idAI::Killed( inflictor, attacker, damage, dir, location );
 	
 	// drop the current weapon
-	
-//rev 2021 start. prevent bots from dropping weapons because we want them to drop ammo instead.
-	//DropWeapon(currentWeapon);
-//rev 2021 end
+	DropWeapon(currentWeapon);
 
 	//now we can remove all the weapons
 	RemoveWeapons();
@@ -723,16 +639,11 @@ void idAI_Bot::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	//be sure...
 	flashJointWorld = INVALID_JOINT; 
 
-	/*
 	//release the current node
 	if ( currentNode.GetEntity() ) {
 		currentNode.GetEntity()->Release();
 		currentNode = NULL;
 	}
-	*/
-
-	//leave the squad
-	ClearSquad();
 }
 /*
 ================
@@ -759,181 +670,14 @@ void idAI_Bot::RemoveWeapons( void ) {
 	currentWeapon = -1;
 }
 
-
 /*
 ===============================================================================
 
-	Squad
-
-===============================================================================
-*/
-
-/*
-=====================
-idAI_Bot::SetSquad
-=====================
-*/
-void idAI_Bot::SetSquad( idBotSquad* newsquad ) {
-	if( squad.GetEntity() ){
-		gameLocal.Error( "%s (%s) already belongs to a squad", name.c_str(), GetEntityDefName() );
-	}
-
-	squad = newsquad;
-}
-
-/*
-=====================
-idAI_Bot::ClearSquad
-=====================
-*/
-void idAI_Bot::ClearSquad( void ) {
-	if( squad.GetEntity() ){
-		squad.GetEntity()->RemoveMember( this );
-		squad = NULL;
-	}
-}
-
-/*
-=====================
-idAI_Bot::HandleSquadMsg
-=====================
-*/
-void idAI_Bot::HandleSquadMsg( squadMsg_t type, int parm ) {
-
-	switch(type) {					
-		case AI_SQUAD_MEMBER_REMOVED:
-			AI_SAY_HINT = AI_BOT_SAY_MATEDOWN;
-			//gameLocal.Printf("farewell my friend\n");
-			break;						
-		case AI_SQUAD_MEMBER_ADDED:
-			//TODO
-			break;     
-		default:           
-			gameLocal.Warning("Unknown message");
-	}
-}
-
-/*
-===============================================================================
-
-	Talk utils
+	Weapon selection and utilities
 
 ===============================================================================
 */
 
-/*
-=====================
-idAI_Bot::SetDefaultSayTimes
-=====================
-*/
-void idAI_Bot::SetDefaultSayTimes( float mult ) {
-	int i;
-	for (i=0; i < AI_BOT_SAY_MAXVALUE; i++){
-		say_times[i] = gameLocal.time + (int)(say_delays[i]*mult);
-	}
-}
-
-/*
-=====================
-idAI_Bot::SetChatSound
-=====================
-*/
-void idAI_Bot::SetChatSound( void ) {
-	const char *snd;
-
-	if ( IsHidden() ) {
-		snd = NULL;
-	} else if ( enemy.GetEntity() ) {
-		snd = spawnArgs.GetString( "snd_chatter_combat", NULL );
-		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_combat_min", "5" ) );
-		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_combat_max", "10" ) );
-	}else if ( idStr::Cmp( spawnArgs.GetString( "shownState", "" ), "Following" ) == 0  ) {
-		snd = spawnArgs.GetString( "snd_chatter_following", NULL );
-		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_following_min", "5" ) );
-		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_following_max", "10" ) );
-	}else if ( !spawnArgs.GetBool( "no_idle_chatter" ) ) {
-		snd = spawnArgs.GetString( "snd_chatter", NULL );
-		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_min", "5" ) );
-		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_max", "10" ) );
-	} else {
-		snd = NULL;
-	}
-
-	if ( snd && *snd ) {
-		//gameLocal.Printf("SetChatSound %s \n", snd );
-		chat_snd = declManager->FindSound( snd );
-		chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * ( chat_max - chat_min );
-	} else {
-		//gameLocal.Printf("SetChatSound NULL \n" );
-		chat_snd = NULL;
-	}
-}
-
-/*
-=====================
-idAI_Bot::PlayChatter
-=====================
-*/
-void idAI_Bot::PlayChatter( void ) {
-	//--- say code --- 
-
-	if( AI_DEAD || !canSpeak || (say_times[AI_BOT_SAY_GENERIC] > gameLocal.time ) ) return;
-
-	int lenght = 0;
-
-	//check flags
-	if( AI_SAY_HINT != AI_BOT_SAY_GENERIC ){
-		int type = (int) AI_SAY_HINT; 
-		AI_SAY_HINT = AI_BOT_SAY_GENERIC; //reset it every time!
-
-		if( type < 0 || type >= AI_BOT_SAY_MAXVALUE ){ //invalid values are used to upd chat snd
-			SetChatSound();
-			return;
-		}
-
-		if( say_times[type] < gameLocal.time ){
-
-			if( squad.GetEntity() && (squad.GetEntity()->GetNumMembers() > 1)){
-				if( StartSound( say_names_squad[type], SND_CHANNEL_VOICE, 0, false, &lenght ) ){
-					//gameLocal.Printf("Say %s , flag %d, lenght %d \n", say_names_squad[type], type, lenght );
-				}
-			}
-			
-			if(lenght == 0){ //(alone) OR (no shader for squad defined) 
-				if( StartSound( say_names_default[type], SND_CHANNEL_VOICE, 0, false, &lenght ) ){
-					//gameLocal.Printf("Say %s , flag %d, lenght %d \n", say_names_default[type], type, lenght );
-				}
-			}
-			
-			say_times[type] = gameLocal.time + lenght + say_delays[type];
-			say_times[AI_BOT_SAY_GENERIC] = gameLocal.time + lenght + say_delays[AI_BOT_SAY_GENERIC];
-		}
-		return; //don't check chatter after this
-	}
-	//--- say code end --- 
-
-	//old chatter code:
-
-	// check if it's time to play a chat sound
-	if ( !chat_snd || ( chat_time > gameLocal.time ) || (say_times[AI_BOT_SAY_CHATTER] > gameLocal.time ) ) {
-		return;
-	}
-
-	StartSoundShader( chat_snd, SND_CHANNEL_VOICE, 0, false, &lenght );
-	//gameLocal.Printf("Say %s \n", chat_snd->GetName() );
-
-	// set the next chat time
-	chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * ( chat_max - chat_min );
-	say_times[AI_BOT_SAY_CHATTER] = gameLocal.time + lenght + say_delays[AI_BOT_SAY_CHATTER]; //shared
-}
-
-/*
-===============================================================================
-
-	Weapons
-
-===============================================================================
-*/
 
 /*
 ================
@@ -948,7 +692,7 @@ void idAI_Bot::SelectInitialWeapon( void ) {
 	weaponNum = -1; //default is none
 
 	//get the initialweapon key
-	initialweaponValue = spawnArgs.GetString( "initialWeapon", "" );
+	initialweaponValue = spawnArgs.GetString( "initialweapon", "" );
 	if( initialweaponValue.Length() ){
 		weaponNum = GetWeaponNumByName( initialweaponValue );
 		//gameLocal.Printf("The initial requested weapon is: %d \n" ,weaponNum);
@@ -994,9 +738,9 @@ bool idAI_Bot::SelectWeapon( int weaponNum ) {
 	
 	if (weaponNum == currentWeapon){
 		//gameLocal.Printf("The requested weapon:%d is already selected\n" ,weaponNum);
-		return true;
+		return false;
 	}
-	if( weaponNum < -1 || weaponNum >= weapons.Num()){ //if 3 allocated, max allowed value is 2. Note: -1 is accepted because it means 'no weapon'
+	if( weaponNum < -1 || weaponNum >= weapons.Num()){ //if 3 allocated, max allowed value is 2. Note: -1 is accepted because means 'no weapon'
 		gameLocal.Warning("The requested weapon: %d is out of range" ,weaponNum);
 		return false;
 	}
@@ -1017,28 +761,13 @@ bool idAI_Bot::SelectWeapon( int weaponNum ) {
 		//ammo
 		if(weapons[ weaponNum ].clipSize > 0){ //only if limited clip size
 			if(weapons[ weaponNum ].ammoInClip <= 0){
-				//AI_WEAPON_NEED_RELOAD = true;		
-			//REV 2021 dHEWM 3 1.5.1 UPDATE start
-				if(AI_WEAPON_NEED_RELOAD.IsLinked()) { // DG: otherwise this asserts at level start //REV 2021 dHEWM 3 1.5.1 UPDATE
-					AI_WEAPON_NEED_RELOAD = true;	
-			//REV 2021 dHEWM 3 1.5.1 UPDATE END
-				}				
+				AI_WEAPON_NEED_RELOAD = true;
 			}else{
-				//AI_WEAPON_NEED_RELOAD = false;
-			//REV 2021 dHEWM 3 1.5.1 UPDATE start	
-				if(AI_WEAPON_NEED_RELOAD.IsLinked()) { // DG: otherwise this asserts at level start
-					AI_WEAPON_NEED_RELOAD = false;
-				}				
-			//REV 2021 dHEWM 3 1.5.1 UPDATE END	
+				AI_WEAPON_NEED_RELOAD = false;
 			}
 		}
 	}else{ //no weapon selected
-		//AI_WEAPON_NEED_RELOAD = false;
-	//REV 2021 dHEWM 3 1.5.1 UPDATE start		
-		if(AI_WEAPON_NEED_RELOAD.IsLinked()) { // DG: otherwise this asserts at level start
-			AI_WEAPON_NEED_RELOAD = false;
-		}		
-	//REV 2021 dHEWM 3 1.5.1 UPDATE END			
+		AI_WEAPON_NEED_RELOAD = false;
 	}
 
 	//remove the current projectileClipModel so that it'll be recreated the next time GetAimDir is called
@@ -1062,12 +791,7 @@ bool idAI_Bot::SelectWeapon( int weaponNum ) {
 	setWeaponMuzzleFlash(); //ok because currentWeapon already updated
 
 	//upd script
-	//AI_WEAPON_CHANGED = true;
-//REV 2021 DHEWM 3 1.5.1 UPDATES START	
-	if(AI_WEAPON_CHANGED.IsLinked()) { // DG: otherwise the assignment will cause an assertion
-		AI_WEAPON_CHANGED = true;
-	}	
-//REV 2021 DHEWM 3 1.5.1 UPDATES END	
+	AI_WEAPON_CHANGED = true;
 	return true;
 }
 
@@ -1233,7 +957,7 @@ void idAI_Bot::setWeaponMuzzleFlash( void ) {
 /*
 ===============================================================================
 
-	Projectiles 
+	Projectiles stuff
 
 ===============================================================================
 */
@@ -1326,17 +1050,15 @@ idProjectile *idAI_Bot::LaunchProjectile( const char *jointname, idEntity *targe
 	float				attack_cone;
 	float				projectile_spread;
 	float				diff;
-	float				angle = 0.0f;
+	float				angle;
 	float				spin;
 	idAngles			ang;
 	int					num_projectiles;
-	int					fireMode;
 	int					i;
 	idMat3				axis;
 	idVec3				tmp;
 	idProjectile		*lastProjectile;
-	int 				noAim; //rev 2019
-	
+
 	if ( currentWeapon < 0){
 		gameLocal.Warning( "%s (%s) is trying to fire but doesn't have a weapon selected", name.c_str(), GetEntityDefName() );
 		return NULL;
@@ -1351,7 +1073,6 @@ idProjectile *idAI_Bot::LaunchProjectile( const char *jointname, idEntity *targe
 	attack_cone = spawnArgs.GetFloat( "attack_cone", "70" );
 	projectile_spread = weapons[ currentWeapon ].projectile_spread;
 	num_projectiles = weapons[ currentWeapon ].num_projectiles;
-	fireMode = weapons[ currentWeapon ].fireMode;
 
 	GetMuzzle( jointname, muzzle, axis );
 
@@ -1361,8 +1082,6 @@ idProjectile *idAI_Bot::LaunchProjectile( const char *jointname, idEntity *targe
 
 	lastProjectile = projectile.GetEntity();
 
-//rev 2019 start.  make the ai shoot only shoot straight ahead when the noaim key is set to 1 in their def file	
-/*	
 	if ( target != NULL ) {
 		tmp = target->GetPhysics()->GetAbsBounds().GetCenter() - muzzle;
 		tmp.Normalize();
@@ -1370,30 +1089,6 @@ idProjectile *idAI_Bot::LaunchProjectile( const char *jointname, idEntity *targe
 	} else {
 		axis = viewAxis;
 	}
-*/
-
-	noAim  = spawnArgs.GetInt( "noaim" );	
-	if ( noAim > 0 ) {
-		// FIXME: DG: the following line is not good
-		if ( target = NULL ) {  //rev 202 reverted back to = NULL.  != NULL broke noaim from working.  i am sure this is the wrong way to do this. :p
-			tmp = target->GetPhysics()->GetAbsBounds().GetCenter() - muzzle;
-			tmp.Normalize();
-			axis = tmp.ToMat3();
-		} else {
-			axis = viewAxis;
-		}
-	}
-	if ( noAim < 1 ) {
-		if ( target != NULL ) {
-			tmp = target->GetPhysics()->GetAbsBounds().GetCenter() - muzzle;
-			tmp.Normalize();
-			axis = tmp.ToMat3();
-		} else {
-			axis = viewAxis;
-		}
-	}
-		
-//rev 2019 noaim end
 
 	// rotate it because the cone points up by default
 	tmp = axis[2];
@@ -1444,55 +1139,12 @@ idProjectile *idAI_Bot::LaunchProjectile( const char *jointname, idEntity *targe
 
 	axis = ang.ToMat3();
 
-	//ivan start - fire modes - setup
-	int firemodeCounter = 0;
-	int firemodeCounterPos = 0;
-	idVec3 updown_offset;
-	updown_offset.Zero();
-
-	if( fireMode == AI_FIREMODE_2D_STEP_SPREAD){ 
-		if(num_projectiles > 1){								//Example: spread = 90, num projs = 5
-			angle = 2*projectile_spread/(num_projectiles-1);	//Spread step: 2* 90 /(5-1) = 45 degrees
-			angle = angle/180.0f;								//normalized from 0 to 1: 45/180 = 0.5 --> % of 180 degrees to use: 0, 0.25, -0.25, 0.5, -0.5
-		}
-	} 
-	//ivan end
-
 	float spreadRad = DEG2RAD( projectile_spread );
-	for( i = 0; i < num_projectiles; i++ ) {		
-		//ivan start - fire modes - direction
-		if( fireMode == AI_FIREMODE_DEFAULT){
-			// spread the projectiles out
-			angle = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
-			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) ) - axis[ 1 ] * ( angle * idMath::Cos( spin ) );
-		}else if( fireMode == AI_FIREMODE_2D_STEP_SPREAD){
-			// FIXME: DG: angle might not be properly initialized (if num_projectiles == 1); I added the angle = 0 to the variable definition
-			dir = (axis[ 0 ] * (1-angle*firemodeCounterPos) ) + ( axis[ 2 ] * angle*firemodeCounter );
-			//upd counter
-			if(firemodeCounter >= 0){
-				firemodeCounter++;
-				firemodeCounterPos = firemodeCounter;
-			}
-			firemodeCounter = - firemodeCounter;
-		}else if( fireMode == AI_FIREMODE_2D_PARALLEL_SPREAD){ 
-			dir = axis[ 0 ];
-			updown_offset = axis[ 2 ]*projectile_spread*firemodeCounter; 
-			//upd counter
-			if(firemodeCounter >= 0){
-				firemodeCounter++;
-			}
-			firemodeCounter = - firemodeCounter;
-		}else if( fireMode == AI_FIREMODE_2D_RANDOM_SPREAD){
-			// spread the projectiles out
-			angle = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
-			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-			dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) );
-		}else{
-			gameLocal.Error("Unknown AI fire mode: %d", fireMode );
-		}
-		//ivan end
-		
+	for( i = 0; i < num_projectiles; i++ ) {
+		// spread the projectiles out
+		angle = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
+		spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
+		dir = axis[ 0 ] + axis[ 2 ] * ( angle * idMath::Sin( spin ) ) - axis[ 1 ] * ( angle * idMath::Cos( spin ) );
 		dir.Normalize();
 
 		// launch the projectile
@@ -1500,12 +1152,7 @@ idProjectile *idAI_Bot::LaunchProjectile( const char *jointname, idEntity *targe
 			CreateProjectile( muzzle, dir );
 		}
 		lastProjectile = projectile.GetEntity();
-
-		//ivan start - fire modes - postion offset
-		//lastProjectile->Launch( muzzle, dir, vec3_origin );
-		lastProjectile->Launch( muzzle + updown_offset, dir, vec3_origin );
-		//ivan test end
-
+		lastProjectile->Launch( muzzle, dir, vec3_origin );
 		projectile = NULL;
 	}
 
@@ -1529,7 +1176,7 @@ idProjectile *idAI_Bot::LaunchProjectile( const char *jointname, idEntity *targe
 /*
 ===============================================================================
 
-	Aim
+	Misc
 
 ===============================================================================	
 */
@@ -1629,7 +1276,7 @@ void idAI_Bot::GetMuzzle( const char *jointname, idVec3 &muzzle, idMat3 &axis ) 
 			else{ 
 				joint = weapons[ currentWeapon ].bindJoint; //bindJoint is always valid
 				GetJointWorldTransform( joint, gameLocal.time, muzzle, axis );
-				//gameLocal.Printf("GetMuzzle using bindJoint\n");
+				//gameLocal.Printf("GetMuzzle che usa bindJoint\n");
 			}
 		//NO-WEAPON CASE 1: my origin
 		}else{ 
@@ -1646,6 +1293,18 @@ void idAI_Bot::GetMuzzle( const char *jointname, idVec3 &muzzle, idMat3 &axis ) 
 	}
 }
 
+
+/*
+================
+idAI_Bot::Show
+================
+*/
+void idAI_Bot::Show( void ) {
+	idAI::Show();
+	ShowOnlyCurrentWeapon();
+}
+
+
 /*
 ===============================================================================
 
@@ -1661,82 +1320,8 @@ idAI_Bot::Event_SelectWeapon
 ================
 */
 void idAI_Bot::Event_SelectWeapon( int weaponNum ){
+	//gameLocal.Printf("Event_SelectWeapon requested: %d \n" ,weaponNum);
 	idThread::ReturnInt( SelectWeapon( weaponNum ) );
-}
-
-/*
-================
-idAI_Bot::Event_IsWeaponEnabled
-================
-*/
-void idAI_Bot::Event_IsWeaponEnabled( int weaponNum ){
-	if( weaponNum == -1 ){ //no weapon... is always enabled
-		idThread::ReturnInt( true );
-		return;
-	}
-
-	if( weaponNum < 0 || weaponNum >= weapons.Num()){ 
-		gameLocal.Warning("The weapon: %d is out of range" ,weaponNum);
-		idThread::ReturnInt( false );
-		return;
-	}else{
-		idThread::ReturnInt( weapons[ weaponNum ].enabled );
-		return;
-	}
-}
-
-/*
-================
-idAI_Bot::Event_AddWeaponInBalancing
-================
-*/
-void idAI_Bot::Event_AddWeaponInBalancing( int weaponNum ){
-	if( weaponNum < 0 || weaponNum >= weapons.Num()){ //-1 is meaningless here
-		gameLocal.Warning("The weapon: %d is out of range" ,weaponNum);
-		return;
-	}
-
-	weapons[ weaponNum ].requestedForBalancing = true;
-}
-
-/*
-================
-idAI_Bot::Event_GetBalancedWeapon
-================
-*/
-void idAI_Bot::Event_GetBalancedWeapon(){
-	int bestWeapon = -1;	
-	int bestValue = 0;	
-	int i;	
-	for( i = 0; i < weapons.Num(); i++ ) { //need to search the one with the lower attackCounter
-		if( weapons[ i ].requestedForBalancing ){
-			/*
-			gameLocal.Printf("Checking Weapon: %d " ,i);
-			gameLocal.Printf(" - attackCounter: %d \n" ,weapons[ i ].attackCounter);
-			*/
-			weapons[ i ].requestedForBalancing = false; //remove the flag!
-			if( (weapons[ i ].attackCounter < bestValue) || (bestValue == 0)){
-				bestValue = weapons[ i ].attackCounter;
-				bestWeapon = i;
-			}
-		}
-	}
-
-	idThread::ReturnInt( bestWeapon ); //can be -1
-}
-
-/*
-================
-idAI_Bot::Event_RegisterAttackForBalancing
-================
-*/
-void idAI_Bot::Event_RegisterAttackForBalancing( int weaponNum ){
-	if( weaponNum < 0 || weaponNum >= weapons.Num()){ //-1 is meaningless here
-		gameLocal.Warning("The weapon: %d is out of range" ,weaponNum);
-		return;
-	}
-
-	weapons[ weaponNum ].attackCounter += weapons[ weaponNum ].balancing_multiplier;
 }
 
 /*
@@ -1886,19 +1471,6 @@ void idAI_Bot::Event_GetWeaponNumByName( const char *weaponName ){
 	int weaponNum;
 	weaponNum = GetWeaponNumByName( idStr( weaponName ) );
 	idThread::ReturnInt( weaponNum );
-}
-
-
-/*
-=====================
-idAI::Event_AllowMovement
-=====================
-*/
-void idAI_Bot::Event_CanSpeak( float can ) {
-	canSpeak = ( can != 0.0f );
-	if(canSpeak){
-		SetDefaultSayTimes(0.5f);
-	}
 }
 
 /*
@@ -2188,7 +1760,7 @@ void idAI_Bot::Event_CanFireToEnemyNoSelfDamage( int requireVisible ) {
 	lastHitNSDCheckTime = gameLocal.time;
 
 	//get muzzle and destination positions
-	GetMuzzle( "", muzzle, axis ); //"" will force to use the weapon fire position
+	GetMuzzle( "", muzzle, axis ); //"" will force use the weapon fire position
 	idVec3 toPos = enemyEnt->GetEyePosition();
 
 	if ( weapons[ currentWeapon ].projectileClipModel == NULL ) {
@@ -2197,36 +1769,16 @@ void idAI_Bot::Event_CanFireToEnemyNoSelfDamage( int requireVisible ) {
 
 	gameLocal.clip.Translation( tr, muzzle, toPos, weapons[ currentWeapon ].projectileClipModel, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
 	
-	//fix crash
-	if ( tr.fraction >= 1.0f ){
-		//gameLocal.Printf("NoSelfDamage OK: As far as we know, there's nothing between us.\n");
-		lastHitNSDCheckResult = true;
-		idThread::ReturnInt( lastHitNSDCheckResult );
-		return;
-	}
-
-	if ( tr.fraction == 0.0f ){
-		//gameLocal.Printf("NoSelfDamage NO: something is completely blocking our aim.\n");
-		lastHitNSDCheckResult = false;
-		idThread::ReturnInt( lastHitNSDCheckResult );
-		return;
-	}
-	//fix end
-
-
-	float dist = ( muzzle - tr.endpos ).LengthFast(); //crashato qui 1 volta
+	float dist = ( muzzle - tr.endpos ).LengthFast();
 	
-	if ( tr.c.material->GetSurfaceType() == SURFTYPE_GLASS ) { //TODO: fix this in another way... he could see me through a glass but hit another material type.
-		//gameLocal.Printf("NoSelfDamage NO: Never fire against glasses!\n");
-		lastHitNSDCheckResult = false;
-	}else if ( gameLocal.GetTraceEntity( tr ) == enemyEnt ) { //was: ( tr.fraction >= 1.0f || ( gameLocal.GetTraceEntity( tr ) == enemyEnt ) ) {
-		//gameLocal.Printf("NoSelfDamage OK: I can hit him!\n");
+	if ( tr.fraction >= 1.0f || ( gameLocal.GetTraceEntity( tr ) == enemyEnt ) ) {
+		//gameLocal.Printf("OK NoSelfDamage!\n");
 		lastHitNSDCheckResult = true;
 	} else if (dist > weapons[ currentWeapon ].minSelfDmgDistance ){ //60.0f
-		//gameLocal.Printf("NoSelfDamage OK: I cannot hit him but is distant enough %f!\n", dist);
+		//gameLocal.Printf("OK NoSelfDamage perche distante %f!\n", dist);
 		lastHitNSDCheckResult = true;
 	} else {
-		//gameLocal.Printf("NoSelfDamage NO: I would hit myself!\n");
+		//gameLocal.Printf("NO NoSelfDamage!\n");
 		lastHitNSDCheckResult = false;
 	}
 
@@ -2519,7 +2071,7 @@ void idAI_Bot::Event_CanHitEnemyFromJoint( const char *jointname ) { //deprecate
 
 /*
 =====================
-idAI_Bot::Event_FindEnemyAIorPL
+idAI_Bot::Event_FindEnemyAI
 =====================
 */
 void idAI_Bot::Event_FindEnemyAIorPL( int useFOV ) {
@@ -2592,62 +2144,21 @@ void idAI_Bot::Event_FindEnemyAIorPL( int useFOV ) {
 
 /*
 =====================
-idAI_Bot::Event_FindClosestBotNode
+idAI::Event_Burn
 =====================
-
-void idAI_Bot::Event_FindClosestBotNode( idEntity *ignoreNode ) {
-	idEntity	*ent;
-	idBotNode	*botNode;
-	idBotNode	*bestBotNode;
-	float		bestDist;
-	float		dist;
-	idVec3		delta;
-	//pvsHandle_t pvs;
-
-	//pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
-
-	bestDist = idMath::INFINITY;
-	bestBotNode = NULL;
-	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( !ent->IsType( idBotNode::Type ) ) { //ent->fl.isDormant ||  <-- set bot nodes never dormant to cycle entities faster (TODO?)
-			//gameLocal.Printf("%s is not an idBotNode \n", ent->GetName());
-			continue;
-		}
-
-		botNode = static_cast<idBotNode *>( ent );
-		if ( ( botNode->IsDisabled() ) || botNode->IsInUse() ) { //skip at least the ones disabled or already in use
-			//gameLocal.Printf("%s IsDisabled || IsInUse \n", botNode->GetName());
-			continue;
-		}
-
-		if( (ignoreNode) && (botNode == ignoreNode) ){
-			//gameLocal.Printf("%s == ignoreNode \n", botNode->GetName());
-			continue;
-		}
-
-		delta = physicsObj.GetOrigin() - botNode->GetPhysics()->GetOrigin();
-		dist = delta.LengthSqr();
-		if ( dist < bestDist ) { //TODO: add can reach test?
-			bestDist = dist;
-			bestBotNode = botNode;
-		}
-	}
-
-	//gameLocal.pvs.FreeCurrentPVS( pvs );
-	bestDist = bestDist * idMath::RSqrt( bestDist ); //see idVec3::LengthFast()
-	if(bestDist < attackNodesMaxDist){
-		idThread::ReturnEntity( bestBotNode );
-	}else{
-		//gameLocal.Printf("TOO FAR: %f\n",bestDist);
-		idThread::ReturnEntity( NULL );
+*/
+void idAI_Bot::Event_Burn( void ) {
+	idAI::Event_Burn();
+	idEntity *myWeaponEnt = weapons[ currentWeapon ].ent.GetEntity();
+	if(myWeaponEnt){
+		myWeaponEnt->GetRenderEntity()->shaderParms[ SHADERPARM_TIME_OF_DEATH ] = gameLocal.time * 0.001f;
 	}
 }
-*/
 
 /*
 ===============================================================================
 
-	Misc Events
+	Misc
 
 ===============================================================================
 */
@@ -2748,7 +2259,7 @@ void idAI_Bot::Event_PlayAnimOnWeapon( const char *animname ) {
 =====================
 idAI_Bot::idAI_Bot
 =====================
-
+*/
 
 void idAI_Bot::Event_ReleaseNode( void ) {
 	if ( currentNode.GetEntity() ) {
@@ -2756,13 +2267,13 @@ void idAI_Bot::Event_ReleaseNode( void ) {
 		currentNode = NULL;
 	}
 }
-*/
+
 
 /*
 =====================
 idAI_Bot::Event_TryLockNode
 =====================
-
+*/
 
 void idAI_Bot::Event_TryLockNode( idEntity *node ) {
 	bool resultOK;
@@ -2790,80 +2301,9 @@ void idAI_Bot::Event_TryLockNode( idEntity *node ) {
 	}
 
 	idThread::ReturnInt( resultOK );
+
 }
-*/
 
-
-/*
-================
-idAI_Bot::Event_SelectAnotherWeaponByNode
-================
-
-void idAI_Bot::Event_SelectAnotherWeaponByNode( idEntity *node ){ 
-	int			testWeapon;
-	int			nextWeapon;
-	const char *testWeaponName;
-	int			wCounter;
-	int			wNum;
-
-	assert( node );
-
-	wNum = weapons.Num();
-
-	//weapon loop
-	testWeapon = currentWeapon;
-	nextWeapon = currentWeapon;
-
-	for( wCounter = 0; wCounter < wNum; wCounter++ ) { //do exactly a complete loop (also test the current weapon so that it's ok even if we start from -1)
-		
-		//find the next one
-		testWeapon++;
-		if(testWeapon >= wNum){testWeapon = 0;}
-
-		//test it
-		if ( (weapons[ testWeapon ].enabled) ){
-			//check if the weapon is enabled on the node by its name
-			testWeaponName = weapons[ testWeapon ].weaponName.c_str();
-			if ( node->spawnArgs.GetBool(testWeaponName,"1") ){ //default: everything enabled
-				nextWeapon = testWeapon;
-				break;
-			}
-		}
-	}
-
-	if(nextWeapon != currentWeapon){ //found!
-		//gameLocal.Printf("weapon '%s' selected!\n", testWeaponName );
-		idThread::ReturnInt( SelectWeapon( nextWeapon ) ); //it's enabled and on range, so no way this could be false.
-		return;
-	}
-
-	//nothing can satisfy the conditions
-	idThread::ReturnInt( false );
-}
-*/
-
-
-/*
-================
-idAI_Bot::Event_GetNextSquadMate
-================
-*/
-void idAI_Bot::Event_GetNextSquadMate( idEntity *lastMatch ) {
-	idAI_Bot *temp_bot;
-
-	if(!squad.GetEntity()){
-		idThread::ReturnEntity( NULL );
-		return;
-	}
-	
-	if ( lastMatch && lastMatch->IsType( idAI_Bot::Type ) ) {
-		temp_bot = static_cast<idAI_Bot *>( lastMatch );
-	}else{
-		temp_bot = NULL;
-	}
-
-	idThread::ReturnEntity( squad.GetEntity()->GetNextMember( temp_bot, this ) );
-}
 
 
 /***********************************************************************
@@ -2872,7 +2312,6 @@ idBotNode
 
 ***********************************************************************/
 
-/*
 const idEventDef EV_BotNode_EvaluateConditions( "evaluateConditions", NULL, 'd' );
 const idEventDef EV_BotNode_GetNextUsableNode( "getNextUsableNode", "e", 'e' );
 const idEventDef EV_BotNode_CanBeUsedBy( "canBeUsedBy", "e", 'd' );
@@ -2884,13 +2323,12 @@ CLASS_DECLARATION( idEntity, idBotNode )
 	EVENT( EV_BotNode_CanBeUsedBy,				idBotNode::Event_CanBeUsedBy ) 
 	EVENT( EV_BotNode_Reached,					idBotNode::Event_Reached )
 END_CLASS
-*/
 
 /*
 =====================
 idBotNode::idBotNode
 =====================
-
+*/
 idBotNode::idBotNode( void ) {
 	fight_distance_atnode = 0.0f;
 	end_distance_min = 0.0f; 
@@ -2907,13 +2345,13 @@ idBotNode::idBotNode( void ) {
 	reached = false;
 	ownerBot = NULL;
 }
-*/
+
 
 /*
 =====================
 idBotNode::Save
 =====================
-
+*/
 void idBotNode::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( fight_distance_atnode );
 	savefile->WriteFloat( end_distance_min );
@@ -2934,12 +2372,12 @@ void idBotNode::Save( idSaveGame *savefile ) const {
 
 	ownerBot.Save( savefile );
 }
-*/
+
 /*
 =====================
 idBotNode::Restore
 =====================
-
+*/
 void idBotNode::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( fight_distance_atnode );
 	savefile->ReadFloat( end_distance_min );
@@ -2960,13 +2398,13 @@ void idBotNode::Restore( idRestoreGame *savefile ) {
 
 	ownerBot.Restore( savefile );
 }
-*/
+
 
 /*
 =====================
 idBotNode::Spawn
 =====================
-
+*/
 void idBotNode::Spawn( void ) {
 	fight_distance_atnode = spawnArgs.GetFloat( "fight_distance_atnode" ,"0");
 	end_distance_min = spawnArgs.GetFloat( "end_distance_min","0" );
@@ -2987,16 +2425,13 @@ void idBotNode::Spawn( void ) {
 
 	disabled = spawnArgs.GetBool( "start_off" );
 	node_distance_max = spawnArgs.GetFloat( "node_distance_max","0" );
-
-	BecomeActive( TH_THINK ); //just to be in the list of the active entitites in order to be easily found  //TODO: create my own list for nodes
 }
-*/
 
 /*
 =====================
 idBotNode::TryLock
 =====================
-
+*/
 bool idBotNode::TryLock( idAI_Bot *activator ) {
 	if( !activator ){
 		gameLocal.Warning("trylock failed on '%s' : activator not valid!", GetName() );
@@ -3023,13 +2458,12 @@ bool idBotNode::TryLock( idAI_Bot *activator ) {
 	//gameLocal.Warning("trylock ok on '%s' !", GetName() );
 	return true; 
 }
-*/
 
 /*
 =====================
 idBotNode::Release
 =====================
-
+*/
 void idBotNode::Release( void ) {
 	if(inuse){
 		if ( spawnArgs.GetBool( "use_once" ) ) {
@@ -3042,26 +2476,24 @@ void idBotNode::Release( void ) {
 		//gameLocal.Printf("node '%s' released!\n", GetName() );
 	}
 }
-*/
 
 /*
 =====================
 idBotNode::Event_Reached
 =====================
-
+*/
 void idBotNode::Event_Reached( void ) {
 	if(inuse && !reached){
 		reached = true;
 		intial_health = ownerBot.GetEntity()->GetHealth();
 	}
 }
-*/
 
 /*
 =====================
 idBotNode::Event_CanBeUsedBy
 =====================
-
+*/
 void idBotNode::Event_CanBeUsedBy( idEntity *botEntity ) {
 	if(disabled || inuse || !botEntity || !botEntity->IsType( idAI_Bot::Type )){
 		//gameLocal.Printf("cannot use the node '%s'!\n", GetName() );
@@ -3071,27 +2503,26 @@ void idBotNode::Event_CanBeUsedBy( idEntity *botEntity ) {
 	idThread::ReturnInt( true ); 
 
 }
-*/
+
 
 /*
 =====================
 idBotNode::Event_GetNextNode
 =====================
-
+*/
 void idBotNode::Event_GetNextUsableNode( idEntity *botEntity ) {
 	if( !botEntity || !botEntity->IsType( idAI_Bot::Type )){
-		idThread::ReturnEntity( NULL ); return;
+		idThread::ReturnInt( false ); return;
 	}
 
 	idThread::ReturnEntity( GetNextUsableNode( static_cast<idAI_Bot *>( botEntity ) , 2 ) );
 }
-*/
 
 /*
 =====================
 idBotNode::AllNextNodesUsed
 =====================
-
+*/
 bool idBotNode::AllNextNodesUsed( void ){
 	int	i;
 	idEntity *ent;
@@ -3116,13 +2547,13 @@ bool idBotNode::AllNextNodesUsed( void ){
 
 	return allUsed ;
 }
-*/
+
 
 /*
 =====================
 idBotNode::GetNextUsableNode
 =====================
-
+*/
 idEntity * idBotNode::GetNextUsableNode( idAI_Bot *botEntity, int lookAheadMaxLevel ) {
 	int	i;
 	int	numBotNodes;
@@ -3155,6 +2586,7 @@ idEntity * idBotNode::GetNextUsableNode( idAI_Bot *botEntity, int lookAheadMaxLe
 	}
 
 	if ( !numBotNodes ) { //no nodes next
+		//gameLocal.Printf("no nodi dopo!\n");
 		return NULL;
 	}
 
@@ -3204,13 +2636,12 @@ idEntity * idBotNode::GetNextUsableNode( idAI_Bot *botEntity, int lookAheadMaxLe
 	//gameLocal.Printf("nothing found :( \n");
 	return NULL;
 }
-*/
 
 /*
 =====================
 idBotNode::DistanceContidionsTrue
 =====================
-
+*/
 int idBotNode::DistanceContidionsTrue( idAI_Bot *testEntity ) {
 	idEntity * testEnemy; 
 	float entityRange;
@@ -3259,13 +2690,12 @@ int idBotNode::DistanceContidionsTrue( idAI_Bot *testEntity ) {
 	//gameLocal.Printf("DistanceContidions all ok\n" );
 	return DISTANCE_COND_OK;
 }
-*/
 
 /*
 =====================
 idBotNode::Event_EvaluateConditions
 =====================
-
+*/
 void idBotNode::Event_EvaluateConditions( void ) { //true if one of them is verified!
 	idAI_Bot* currentOwner;
 	int result;
@@ -3275,7 +2705,7 @@ void idBotNode::Event_EvaluateConditions( void ) { //true if one of them is veri
 		idThread::ReturnInt( true ); return;
 	}
 
-	assert( ownerBot );
+	assert( ownerBot.IsValid() );
 	currentOwner = ownerBot.GetEntity();
 
 
@@ -3297,8 +2727,7 @@ void idBotNode::Event_EvaluateConditions( void ) { //true if one of them is veri
 	if( deltaToUse > 0){
 		if( deltaToUse < (intial_health - currentOwner->GetHealth())){
 			//gameLocal.Printf("health cond!\n" );
-			//currentOwner->AI_SAY_DAMAGED = true;
-			currentOwner->AI_SAY_HINT = AI_BOT_SAY_DAMAGED;
+			currentOwner->AI_SAY_DAMAGED = true;
 			if(!reached){ currentOwner->AI_LEAVE_NODE_TO_FIGHT = true; } 
 			idThread::ReturnInt( true ); return;
 		}
@@ -3318,185 +2747,4 @@ void idBotNode::Event_EvaluateConditions( void ) { //true if one of them is veri
 	//else
 	//gameLocal.Printf("Event_EvaluateConditions all false...go on!\n" );
 	idThread::ReturnInt( false );
-}
-*/
-
-/***********************************************************************
-
-idBotSquad
-
-***********************************************************************/
-
-const idEventDef EV_FindMembers( "<findMembers>", NULL );
-
-CLASS_DECLARATION( idEntity, idBotSquad )
-	EVENT( EV_FindMembers,			idBotSquad::Event_FindMembers )
-	EVENT( EV_Activate,				idBotSquad::Event_Activate )
-END_CLASS
-
-/*
-=====================
-idBotSquad::idBotSquad
-=====================
-*/
-idBotSquad::idBotSquad( void ) {
-	members.SetGranularity( 1 );
-}
-
-/*
-=====================
-idBotSquad::Save
-=====================
-*/
-void idBotSquad::Save( idSaveGame *savefile ) const {
-	int i;
-	savefile->WriteInt( members.Num() );
-	for( i = 0; i < members.Num(); i++ ) {
-		members[ i ].Save( savefile ); //save the pointer
-	}
-}
-
-/*
-=====================
-idBotSquad::Restore
-=====================
-*/
-void idBotSquad::Restore( idRestoreGame *savefile ) {
-	int num, i;
-
-	members.Clear();
-	savefile->ReadInt( num );
-	members.SetNum( num );
-	for( i = 0; i < num; i++ ) {
-		members[ i ].Restore( savefile );
-	}
-}
-
-/*
-=====================
-idBotSquad::FindMembers
-=====================
-*/
-void idBotSquad::FindMembers( void ) {
-	idEntity *ent;
-	idAI_Bot *bot;
-	int i;
-
-	for( i = 0; i < targets.Num(); i++ ) { 
-		ent = targets[ i ].GetEntity();
-		if ( ent && ent->IsType( idAI_Bot::Type ) ) {
-			bot = static_cast<idAI_Bot *>( ent );
-			
-			//Add Member 
-			idEntityPtr<idAI_Bot> &entityPtr = members.Alloc();
-			entityPtr = bot;
-
-			bot->SetSquad( this ); 
-		}
-	}
-
-	gameLocal.Printf("idBotSquad::FindMembers - result: %d\n", members.Num());
-}
-
-/*
-===============
-idBotSquad::Event_FindMembers
-===============
-*/
-void idBotSquad::Event_FindMembers( void ) {
-	FindMembers();
-}
-
-/*
-=====================
-idAI::Event_Activate
-=====================
-*/
-void idBotSquad::Event_Activate( idEntity *activator ) {
-	ActivateTargets( (!activator) ? this : activator );
-}
-
-
-/*
-=====================
-idBotSquad::Spawn
-=====================
-*/
-void idBotSquad::Spawn( void ) {	
-	if ( spawnArgs.MatchPrefix( "target" ) ) {
-		if ( gameLocal.GameState() == GAMESTATE_STARTUP ) {
-			PostEventMS( &EV_FindMembers, 0 );
-		} else {
-			// not during spawn, so it's ok to get the targets
-			FindMembers();
-		}
-	}
-}
-
-
-/*
-=====================
-idBotSquad::RemoveMember
-=====================
-*/
-void idBotSquad::RemoveMember( idAI_Bot *bot ){
-	int i;
-	idAI_Bot *temp_bot;
-	
-	//gameLocal.Printf("idBotSquad::RemoveMember...\n");
-
-	for( i = members.Num() - 1; i >= 0; i-- ) {
-		if ( members[ i ].GetEntity() == bot) {
-			break;
-		}
-	}
-
-	if(i >= 0){ //then it has been removed
-		members.RemoveIndex( i );
-		//gameLocal.Printf("...Member removed\n");
-
-		for( i = members.Num() - 1; i >= 0; i-- ) {
-			temp_bot = members[ i ].GetEntity();
-			if ( temp_bot ) {
-				temp_bot->HandleSquadMsg( AI_SQUAD_MEMBER_REMOVED, members.Num() );
-			}
-		}
-	}
-}
-
-/*
-=====================
-idBotSquad::GetNextMember
-=====================
-*/
-idAI_Bot* idBotSquad::GetNextMember( idAI_Bot *lastMatch, idAI_Bot *ignore ) {
-	int i;
-	idAI_Bot *temp_bot;
-	bool lastMatch_found;
-
-	//gameLocal.Printf("idBotSquad::GetNextMember\n");
-
-	if(lastMatch){
-		lastMatch_found = false;
-	}else{
-		lastMatch_found = true; //no need to search it
-	}
-
-	for( i = members.Num() - 1; i >= 0; i-- ) {
-		temp_bot = members[ i ].GetEntity();
-
-		if(!temp_bot){
-			continue;
-		}
-
-		if (lastMatch_found && ( temp_bot != ignore ) ){
-			return temp_bot;
-		}
-
-		if( !lastMatch_found && ( temp_bot == lastMatch ) ){
-			lastMatch_found = true;
-		}
-	}
-
-	return NULL;
 }

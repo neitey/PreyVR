@@ -45,292 +45,6 @@ CLASS_DECLARATION( idEntity, idTarget )
 END_CLASS
 
 
-//ivan start
-/*
-===============================================================================
-
-idTarget_PlayerUtils
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_PlayerUtils )
-	EVENT( EV_Activate, idTarget_PlayerUtils::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_PlayerUtils::Event_Activate
-================
-*/
-void idTarget_PlayerUtils::Event_Activate( idEntity *activator ) {
-	int actionId;
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		if( spawnArgs.GetInt( "actionId", "0", actionId ) ){
-			switch( actionId ) {
-				default :				
-				case PU_ACTION_UNLOCK_PL: {
-					player->SetLock2D( false );
-					break;
-				}
-				case PU_ACTION_LOCK_PL: {
-					player->SetLock2D( true );
-					break;
-				}
-				case PU_ACTION_ADDSCORE: {
-					player->AddScore( spawnArgs.GetInt("score", "0") );
-					break;
-				}	
-				case PU_ACTION_INFOTXT: {
-					const char *infoText = spawnArgs.GetString( "infoText" );
-					if ( *infoText != '\0' ) {
-						player->ShowInfo( infoText, spawnArgs.GetFloat( "time", "6" ) );
-					}
-					break;
-				}
-			}
-		} 
-	}
-}
-
-/*
-===============================================================================
-
-idTarget_Camera
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_Camera )
-	EVENT( EV_Activate, idTarget_Camera::Event_Activate )
-END_CLASS
-
-
-/*
-================
-idTarget_Camera::Event_Activate
-================
-*/
-void idTarget_Camera::Event_Activate( idEntity *activator ) {
-	int actionId;
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		player->UpdateCameraSettingsFromEntity( this );
-	}
-}
-
-/*
-===============================================================================
-
-idTarget_EnableTargets
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_EnableTargets )
-	EVENT( EV_Activate, idTarget_EnableTargets::Event_Activate )
-END_CLASS
-/*
-================
-idTarget_EnableTargets::idTarget_EnableTargets
-================
-*/
-idTarget_EnableTargets::idTarget_EnableTargets( void ) {
-	toggle = false;
-	enable = false;
-}
-
-/*
-================
-idTarget_EnableTargets::Save
-================
-*/
-void idTarget_EnableTargets::Save( idSaveGame *savefile ) const {
-	savefile->WriteBool( toggle );
-	savefile->WriteBool( enable );
-}
-
-/*
-================
-idTarget_EnableTargets::Restore
-================
-*/
-void idTarget_EnableTargets::Restore( idRestoreGame *savefile ) {
-	savefile->ReadBool( toggle );
-	savefile->ReadBool( enable );
-}
-
-/*
-================
-idTarget_EnableTargets::Spawn
-================
-*/
-void idTarget_EnableTargets::Spawn( void ) {
-	toggle = spawnArgs.GetBool( "toggle", "0" );
-	enable = spawnArgs.GetBool( "enable", "1" );
-}
-
-
-
-/*
-================
-idTarget_EnableTargets::Event_Activate
-================
-*/
-void idTarget_EnableTargets::Event_Activate( idEntity *activator ) {
-	idEntity	*ent;
-	int			i;
-	
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( !ent ) {
-			continue;
-		}
-		if( enable ){
-			//gameLocal.Printf("idTarget_EnableTargets enable\n");
-			if ( ent->RespondsTo( EV_Enable ) ) {
-				ent->ProcessEvent( &EV_Enable );
-			} 	
-		}else{
-			//gameLocal.Printf("idTarget_EnableTargets disable\n");
-			if ( ent->RespondsTo( EV_Disable ) ) {
-				ent->ProcessEvent( &EV_Disable );
-			} 	
-		}
-	}
-
-	if( toggle ){ enable = !enable; }
-}
-
-
-/*
-===============================================================================
-
-idTarget_Secret
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_Secret )
-	EVENT( EV_Activate, idTarget_Secret::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_Secret::idTarget_Secret
-================
-*/
-idTarget_Secret::idTarget_Secret( void ) {
-	found = false;
-}
-
-/*
-================
-idTarget_Secret::Save
-================
-*/
-void idTarget_Secret::Save( idSaveGame *savefile ) const {
-	savefile->WriteBool( found );
-}
-
-/*
-================
-idTarget_Secret::Restore
-================
-*/
-void idTarget_Secret::Restore( idRestoreGame *savefile ) {
-	savefile->ReadBool( found );
-}
-
-
-/*
-================
-idTarget_Secret::Spawn
-================
-*/
-void idTarget_Secret::Spawn( void ) {
-	gameLocal.secrets_spawned_counter++;
-}
-
-/*
-================
-idTarget_Secret::Event_Activate
-================
-*/
-void idTarget_Secret::Event_Activate( idEntity *activator ) {
-	if( found ){ return; }
-	found = true;
-
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		player->AddSecretFound();
-	}
-}
-
-/*
-===============================================================================
-
-idTarget_NoLockPath
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_NoLockPath )
-	EVENT( EV_Activate, idTarget_NoLockPath::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_NoLockPath::Event_Activate
-================
-*/
-void idTarget_NoLockPath::Event_Activate( idEntity *activator ) {
-	spawnArgs.SetBool( "allowLock", !spawnArgs.GetBool( "allowLock", "0" ) ); //just for this entity, the default is "no lock"
-}
-
-/*
-===============================================================================
-
-idTarget_SetPlatPos
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_SetPlatPos )
-	EVENT( EV_Activate, idTarget_SetPlatPos::Event_Activate )
-END_CLASS
-/*
-================
-idTarget_SetPlatPos::idTarget_SetPlatPos
-================
-*/
-idTarget_SetPlatPos::idTarget_SetPlatPos( void ) {
-}
-
-/*
-================
-idTarget_SetPlatPos::Event_Activate
-================
-*/
-void idTarget_SetPlatPos::Event_Activate( idEntity *activator ) {
-	idEntity	*ent;
-	int			i;
-	int		useDestPos = spawnArgs.GetInt( "useDestPos", "0" );
-
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( !ent ) {
-			continue;
-		}
-
-		if ( ent->RespondsTo( EV_GoToBinaryPos ) ) {
-			ent->ProcessEvent( &EV_GoToBinaryPos, useDestPos );
-		} 	
-	}
-}
-//ivan end
-
 /*
 ===============================================================================
 
@@ -396,69 +110,6 @@ void idTarget_Show::Event_Activate( idEntity *activator ) {
 	PostEventMS( &EV_Remove, 0 );
 }
 
-/*
-===============================================================================
-
-idTarget_Show_Repeat //rev 2020 new entity this one does not disappear after one use
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_Show_Repeat )
-	EVENT( EV_Activate, idTarget_Show_Repeat::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_Show_Repeat::Event_Activate //rev 2020 added new type of target entity
-================
-*/
-void idTarget_Show_Repeat::Event_Activate( idEntity *activator ) {
-	int			i;
-	idEntity	*ent;
-
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( ent ) {
-			ent->Show();
-		}
-	}
-
-	// delete our self when done
-	//PostEventMS( &EV_Remove, 0 );  //This version of show is allowed to repeat
-}
-
-/*
-===============================================================================
-
-idTarget_Hide_Repeat // rev 2020 added new entity
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_Hide_Repeat )
-	EVENT( EV_Activate, idTarget_Hide_Repeat::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_Hide_Repeat::Event_Activate // rev 2020 added new entity
-================
-*/
-void idTarget_Hide_Repeat::Event_Activate( idEntity *activator ) {
-	int			i;
-	idEntity	*ent;
-
-	for( i = 0; i < targets.Num(); i++ ) {
-		ent = targets[ i ].GetEntity();
-		if ( ent ) {
-			ent->Hide();
-		}
-	}
-
-	// delete our self when done
-	//PostEventMS( &EV_Remove, 0 ); //we don't want it to go away
-}
 
 /*
 ===============================================================================
@@ -957,7 +608,7 @@ void idTarget_Give::Event_Activate( idEntity *activator ) {
 				d2.Copy( *dict );
 				d2.Set( "name", va( "givenitem_%i", giveNum++ ) );
 				idEntity *ent = NULL;
-				if ( gameLocal.SpawnEntityDef( d2, &ent ) && ent && ent->IsType( idItem::Type ) ) { 
+				if ( gameLocal.SpawnEntityDef( d2, &ent ) && ent && ent->IsType( idItem::Type ) ) {
 					idItem *item = static_cast<idItem*>(ent);
 					item->GiveToPlayer( gameLocal.GetLocalPlayer() );
 				}
@@ -1920,13 +1571,11 @@ void idTarget_Tip::Event_Activate( idEntity *activator ) {
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player ) {
 		if ( player->IsTipVisible() ) {
-			PostEventSec( &EV_Activate, 0.5f, activator ); //ivan - was 5.1
+			PostEventSec( &EV_Activate, 5.1f, activator );
 			return;
 		}
 		player->ShowTip( spawnArgs.GetString( "text_title" ), spawnArgs.GetString( "text_tip" ), true ); //ivan - was: false
-		
-		//ivan - was: PostEventMS( &EV_GetPlayerPos, 2000 ); 
-		PostEventMS( &EV_GetPlayerPos, spawnArgs.GetInt( "minTimeMs", "2000" ) ); 
+		PostEventMS( &EV_GetPlayerPos, 2000 );
 	}
 }
 
@@ -1950,6 +1599,7 @@ void idTarget_Tip::Event_TipOff( void ) {
 	}
 	//else job already done!
 }
+
 
 /*
 ===============================================================================
@@ -2109,26 +1759,3 @@ void idTarget_FadeSoundClass::Event_RestoreVolume() {
 	// restore volume
 	gameSoundWorld->FadeSoundClasses( 0, fadeDB, fadeTime );
 }
-
-//ivan start
-/*
-===============================================================================
-
-idTarget_StopMusic
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idTarget, idTarget_StopMusic )
-EVENT( EV_Activate,	idTarget_StopMusic::Event_Activate )
-END_CLASS
-
-/*
-================
-idTarget_EnableStamina::idTarget_StopMusic
-================
-*/
-void idTarget_StopMusic::Event_Activate( idEntity *activator ) {
-	gameLocal.StopMusic();
-}
-//ivan end

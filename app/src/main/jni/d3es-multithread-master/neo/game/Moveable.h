@@ -39,9 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 
 extern const idEventDef EV_BecomeNonSolid;
 extern const idEventDef EV_IsAtRest;
-//ivan start
-extern const idEventDef EV_ActivatePhysics; 
-//ivan end
 
 class idMoveable : public idEntity {
 public:
@@ -67,10 +64,18 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
+//REV GRAB
+	void					SetAttacker( idEntity *ent );
+//REV GRAB
+
 protected:
 	idPhysics_RigidBody		physicsObj;				// physics object
 	idStr					brokenModel;			// model set when health drops down to or below zero
 	idStr					damage;					// if > 0 apply damage to hit entities
+//REV GRAB
+	idStr					monsterDamage;
+	idEntity				*attacker;
+//REV GRAB
 	idStr					fxCollide;				// fx system to start when collides with something
 	int						nextCollideFxTime;		// next time it is ok to spawn collision fx
 	float					minDamageVelocity;		// minimum velocity before moveable applies damage
@@ -84,17 +89,8 @@ protected:
 	int						nextDamageTime;			// next time the movable can hurt the player
 	int						nextSoundTime;			// next time the moveable can make a sound
 
-	//ivan start
-	float					lockedXpos;
-	bool					isXlocked;
-#ifdef _WATER_PHYSICS
-	void					Event_ActivateIfInWater( void );
-#endif
-	void					Event_ActivatePhysics( void );
-	//ivan end
-
 	const idMaterial *		GetRenderModelMaterial( void ) const;
-	void					BecomeNonSolid( void );
+	virtual	void			BecomeNonSolid( void ); //ivan virtual added
 	void					InitInitialSpline( int startTime );
 	bool					FollowInitialSplinePath( void );
 
@@ -163,6 +159,13 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
+//REV GRAB
+	bool					IsStable( void );
+	void					SetStability( bool stability );
+	void					StartBurning( void );
+	void					StopBurning( void );	
+//REV GRAB	
+	
 	virtual void			Think( void );
 	virtual void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 								const char *damageDefName, const float damageScale, const int location );
@@ -196,6 +199,10 @@ private:
 	int						lightTime;
 	float					time;
 
+//REV GRAB
+	bool					isStable;	
+//REV GRAB	
+	
 	void					AddParticles( const char *name, bool burn );
 	void					AddLight( const char *name , bool burn );
 	void					ExplodingEffects( void );
@@ -206,5 +213,33 @@ private:
 	void					Event_Explode();
 	void					Event_TriggerTargets();
 };
+
+//ivan start
+/*
+===============================================================================
+
+  Arrows starts bound to something without collisions. 
+  After few seconds they unbind themselves and activate collisions
+
+===============================================================================
+*/
+
+class idMoveableArrow : public idMoveable {
+
+public:
+	CLASS_PROTOTYPE( idMoveableArrow );
+
+							idMoveableArrow( void );
+	void					Spawn( void );
+	void					Save( idSaveGame *savefile ) const;
+	void					Restore( idRestoreGame *savefile );
+	virtual void			Think( void );
+
+protected:
+	int						unbindTime;
+	virtual	void			BecomeNonSolid( void );
+	void					BecomeSolid( void );
+};
+//ivan end
 
 #endif /* !__GAME_MOVEABLE_H__ */

@@ -31,10 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Game_local.h"
 
-//ivan start
-//const int ITEM_SCORE = 3;
-//ivan end
-
 /*
 ===============================================================================
 
@@ -49,7 +45,6 @@ const idEventDef EV_RespawnFx( "<respawnFx>" );
 const idEventDef EV_GetPlayerPos( "<getplayerpos>" );
 const idEventDef EV_HideObjective( "<hideobjective>", "e" );
 const idEventDef EV_CamShot( "<camshot>" );
-const idEventDef EV_CheckWeaponNum( "<checkWeaponNum>" ); //ivan
 
 CLASS_DECLARATION( idEntity, idItem )
 	EVENT( EV_DropToFloor,		idItem::Event_DropToFloor )
@@ -57,7 +52,6 @@ CLASS_DECLARATION( idEntity, idItem )
 	EVENT( EV_Activate,			idItem::Event_Trigger )
 	EVENT( EV_RespawnItem,		idItem::Event_Respawn )
 	EVENT( EV_RespawnFx,		idItem::Event_RespawnFx )
-	EVENT( EV_CheckWeaponNum,	idItem::Event_CheckWeaponNum ) //ivan
 END_CLASS
 
 
@@ -80,10 +74,6 @@ idItem::idItem() {
 /*#ifdef _DENTONMOD
 	entDamageEffects = NULL;
 #endif*/
-
-	//ivan start
-	weaponNum = -1;
-	//ivan end
 }
 
 /*
@@ -116,10 +106,6 @@ void idItem::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( inViewTime );
 	savefile->WriteInt( lastCycle );
 	savefile->WriteInt( lastRenderViewTime );
-
-	//ivan start
-	savefile->WriteInt( weaponNum );
-	//ivan end
 }
 
 /*
@@ -141,10 +127,6 @@ void idItem::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( lastCycle );
 	savefile->ReadInt( lastRenderViewTime );
 
-	//ivan start
-	savefile->ReadInt( weaponNum );
-	//ivan end
-
 	itemShellHandle = -1;
 }
 
@@ -164,7 +146,8 @@ bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_
 	//ivan start - glow if near
 	//if we are here, the item is visible on screen
 
-	/* was:
+	//old way:
+
 	// check for glow highlighting if near the center of the view
 	idVec3 dir = renderEntity->origin - renderView->vieworg;
 	dir.Normalize();
@@ -188,12 +171,12 @@ bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_
 			lastCycle = ceil( cycle );
 		}
 	}
-	*/
-
-	// two second pulse cycle
+	
+	/*
+	//HQ2 way: two second pulse cycle
 	float cycle = ( renderView->time - inViewTime ) / 2000.0f;
 
-	if ( !inView ) { //if not done yet...start now! Ivan
+	if ( !inView ) { //if not done yet...start now!
 		inView = true;
 		if ( cycle > lastCycle ) {
 			// restart at the beginning
@@ -201,8 +184,8 @@ bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_
 			cycle = 0.0f;
 		}
 	} 	
+	*/
 	//ivan end
-
 
 	// fade down after the last pulse finishes
 	if ( !inView && cycle > lastCycle ) {
@@ -262,20 +245,11 @@ void idItem::Think( void ) {
 			ang.yaw = ( gameLocal.time & 4095 ) * 360.0f / -4096.0f;
 			SetAngles( ang );
 
-			//ivan start
-			/*
-			//was:
 			float scale = 0.005f + entityNumber * 0.00001f;
 
 			org = orgOrigin;
 			org.z += 4.0f + cos( ( gameLocal.time + 2000 ) * scale ) * 4.0f;
 			SetOrigin( org );
-			*/
-
-			org = orgOrigin;
-			org.z += 4.0f + cos( ( gameLocal.time + 2000 ) * 0.005f ) * 4.0f;
-			SetOrigin( org );
-			//ivan end
 		}
 	}
 
@@ -315,31 +289,6 @@ void idItem::Present( void ) {
 	}
 }
 
-//ivan start
-/*
-================
-idItem::CheckWeaponNum
-================
-*/
-void idItem::CheckWeaponNum( void ) {
-	//get the weapon num, -1 if not a weapon
-	idPlayer *player = gameLocal.GetLocalPlayer();
-	if ( player ) {
-		weaponNum = player->GetWeaponNumByItem( this );
-		//gameLocal.Printf("%s is weapon %d\n", GetName(), weaponNum );
-	}
-}
-
-/*
-===============
-idItem::Event_CheckWeaponNum
-===============
-*/
-void idItem::Event_CheckWeaponNum( void ) {
-	CheckWeaponNum();
-}
-//ivan end
-
 /*
 ================
 idItem::Spawn
@@ -349,15 +298,6 @@ void idItem::Spawn( void ) {
 	idStr		giveTo;
 	idEntity *	ent;
 	float		tsize;
-
-	/*
-	//ivan start
-	int score;
-	if( !spawnArgs.FindKey( "score" ) ){ //if not defined in the def
-		spawnArgs.SetInt( "score", ITEM_SCORE ); //default score value for each item
-	}
-	//ivan end
-	*/
 
 	if ( spawnArgs.GetBool( "dropToFloor" ) ) {
 		PostEventMS( &EV_DropToFloor, 0 );
@@ -390,7 +330,7 @@ void idItem::Spawn( void ) {
 	}
 
 	//ivan start
-	pulse = !spawnArgs.GetBool( "nopulse", "0" ); //pulse by default
+	pulse = !spawnArgs.GetBool( "nopulse", "1" ); //don't pulse by default
 	
 	/*
 	//temp hack for tim
@@ -406,23 +346,13 @@ void idItem::Spawn( void ) {
 	inViewTime = -1000;
 	lastCycle = -1;
 	itemShellHandle = -1;
-	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
-
 	//ivan start
+	//was: shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
+
+	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
 	//spawnArgs.GetString( "mtr_pulse", "itemHighlightShell" )
 	//shaderParm4
-
-	//check weapon num
-	if ( spawnArgs.MatchPrefix( "inv_weapon" ) ) { //if it is probably a valid weapon
-		if ( gameLocal.GameState() == GAMESTATE_STARTUP ) {
-			PostEventMS( &EV_CheckWeaponNum, 1 ); //seems like 0 is not enough to find local player
-		} else {
-			// not during startup, so it's ok
-			CheckWeaponNum();
-		}
-	}	
 	//ivan end
-	
 }
 
 //ivan start
@@ -469,7 +399,6 @@ bool idItem::GiveToPlayer( idPlayer *player ) {
 
 	return player->GiveItem( this );
 }
-
 //ivan start
 /*
 ================
@@ -638,7 +567,7 @@ void idItem::Event_DropToFloor( void ) {
 	if ( GetBindMaster() != NULL && GetBindMaster() != this ) {
 		return;
 	}
-
+	
 	//ivan start
 	//was: gameLocal.clip.TraceBounds( trace, renderEntity.origin, renderEntity.origin - idVec3( 0, 0, 64 ), renderEntity.bounds, MASK_SOLID | CONTENTS_CORPSE, this );	
 	if( spin ){
@@ -650,6 +579,23 @@ void idItem::Event_DropToFloor( void ) {
 	//ivan end
 
 	SetOrigin( trace.endpos );
+}
+
+/*
+================
+idItem::Event_Touch
+================
+*/
+void idItem::Event_Touch( idEntity *other, trace_t *trace ) {
+	if ( !other->IsType( idPlayer::Type ) ) {
+		return;
+	}
+
+	if ( !canPickUp ) {
+		return;
+	}
+
+	Pickup( static_cast<idPlayer *>(other) );
 }
 
 /*
@@ -703,23 +649,6 @@ void idItem::Event_RespawnFx( void ) {
 	}
 }
 
-/*
-================
-idItem::Event_Touch
-================
-*/
-void idItem::Event_Touch( idEntity *other, trace_t *trace ) {
-	if ( !other->IsType( idPlayer::Type ) ) {
-		return;
-	}
-
-	if ( !canPickUp ) {
-		return;
-	}
-
-	Pickup( static_cast<idPlayer *>(other) );
-}
-
 //ivan start
 
 /*
@@ -742,7 +671,7 @@ idItemInteract::Spawn
 ================
 */
 void idItemInteract::Spawn( void ) {
-	SetShellMrt( "itemInteractHighlightShell" );
+	//SetShellMrt( "itemInteractHighlightShell" );
 }
 
 /*
@@ -760,16 +689,12 @@ void idItemInteract::Event_Touch( idEntity *other, trace_t *trace ) {
 
 	if ( other->IsType( idPlayer::Type ) ) {
 		idPlayer * player = static_cast< idPlayer * >( other );
-		
-		if( weaponNum != -1 ){ //it is a weapon
-			if( player->WeaponItemCanGiveAmmo( weaponNum ) ){
-				//gameLocal.Printf("bypass\n");
-				Pickup( player );
-			}else{
-				player->AddWeaponInteract( INTERACT_IMPULSE, weaponNum ); //, spawnArgs.GetString("inv_name")
-			}
+
+		if( player->WeaponItemCanGiveAmmo( this ) ){
+			//gameLocal.Printf("bypass\n");
+			Pickup( player );
 		}else{
-			player->AddPossibleInteract( INTERACT_IMPULSE );
+			player->ShowPossibleInteract( INTERACT_IMPULSE );
 		}
 	}
 }
@@ -808,6 +733,7 @@ bool idItemInteract::CanInteract( int flags ) const {
 }
 
 //ivan end
+
 
 /*
 ===============================================================================
@@ -952,7 +878,7 @@ void idObjective::Event_CamShot( ) {
 			fullView.width = SCREEN_WIDTH;
 			fullView.height = SCREEN_HEIGHT;
 
-#ifdef _PORTALSKY //un noted change from original sdk
+#ifdef _PORTALSKY
 			// HACK : always draw sky-portal view if there is one in the map, this isn't real-time
 			if ( gameLocal.portalSkyEnt.GetEntity() && g_enablePortalSky.GetBool() ) {
 				renderView_t	portalView = fullView;
@@ -1290,7 +1216,7 @@ idMoveableItem::Pickup
 ================
 */
 bool idMoveableItem::Pickup( idPlayer *player ) {
-	bool ret = idItem::Pickup( player ); 
+	bool ret = idItem::Pickup( player );
 	if ( ret ) {
 		trigger->SetContents( 0 );
 	}
@@ -1302,7 +1228,7 @@ bool idMoveableItem::Pickup( idPlayer *player ) {
 idMoveableItem::DropItem
 ================
 */
-idEntity *idMoveableItem::DropItem( const char *classname, const idVec3 &origin, const idMat3 &axis, const idVec3 &velocity, int activateDelay, int removeDelay, bool dropToFloor) {
+idEntity *idMoveableItem::DropItem( const char *classname, const idVec3 &origin, const idMat3 &axis, const idVec3 &velocity, int activateDelay, int removeDelay, bool dropToFloor ) {
 	idDict args;
 	idEntity *item;
 
@@ -1324,9 +1250,8 @@ idEntity *idMoveableItem::DropItem( const char *classname, const idVec3 &origin,
 	}
 
 	gameLocal.SpawnEntityDef( args, &item );
-
 	if ( item ) {
-
+		
 		//ivan start
 		if ( item->IsType( idItem::Type ) && !item->IsType( idMoveableItem::Type ) ) { //it's an item but not moveable
 			
@@ -1345,7 +1270,7 @@ idEntity *idMoveableItem::DropItem( const char *classname, const idVec3 &origin,
 			item->UpdateVisuals();
 			if ( activateDelay ) {
 				item->PostEventMS( &EV_Activate, activateDelay, item );
-			}			
+			}
 			if( removeDelay >= 0 ){ //ivan - remove only if delay >= 0 (-1 = never remove)
 				if ( !removeDelay ) {
 					removeDelay = 5 * 60 * 1000;
@@ -1513,7 +1438,6 @@ bool idMoveablePDAItem::GiveToPlayer(idPlayer *player) {
 	return true;
 }
 
-
 //ivan start
 
 /*
@@ -1536,7 +1460,7 @@ idMoveableItemInteract::Spawn
 ================
 */
 void idMoveableItemInteract::Spawn( void ) {
-	SetShellMrt( "itemInteractHighlightShell" );
+	//SetShellMrt( "itemInteractHighlightShell" );
 }
 
 /*
@@ -1554,16 +1478,12 @@ void idMoveableItemInteract::Event_Touch( idEntity *other, trace_t *trace ) {
 
 	if ( other->IsType( idPlayer::Type ) ) {
 		idPlayer * player = static_cast< idPlayer * >( other );
-		
-		if( weaponNum != -1 ){ //it is a weapon
-			if( player->WeaponItemCanGiveAmmo( weaponNum ) ){
-				//gameLocal.Printf("bypass\n");
-				Pickup( player );
-			}else{
-				player->AddWeaponInteract( INTERACT_IMPULSE, weaponNum ); //, spawnArgs.GetString("inv_name")
-			}
+
+		if( player->WeaponItemCanGiveAmmo( this ) ){
+			//gameLocal.Printf("bypass\n");
+			Pickup( player );
 		}else{
-			player->AddPossibleInteract( INTERACT_IMPULSE );
+			player->ShowPossibleInteract( INTERACT_IMPULSE );
 		}
 	}
 }

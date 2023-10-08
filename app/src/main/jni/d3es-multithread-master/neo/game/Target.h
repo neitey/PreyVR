@@ -43,137 +43,6 @@ public:
 };
 
 
-//ivan start
-/*
-===============================================================================
-
-idTarget_PlayerUtils
-
-===============================================================================
-*/
-
-class idTarget_PlayerUtils : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_PlayerUtils );
-
-private:
-	// actions - numbers must match the ones in hq2_targets.def! 
-	enum {
-		PU_ACTION_FREE_CAM	 = 0, //remove
-		PU_ACTION_FORCE_CAM	 = 1, //remove
-		PU_ACTION_DISTANCE	 = 2, //remove
-		PU_ACTION_UNLOCK_PL	 = 3,
-		PU_ACTION_LOCK_PL	 = 4,
-		PU_ACTION_ADDSCORE	 = 5,
-		PU_ACTION_CAM_HEIGHT = 6, //remove
-		PU_ACTION_INFOTXT	 = 7
-	};
-
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-idTarget_Camera
-
-===============================================================================
-*/
-
-class idTarget_Camera : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_Camera );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-idTarget_EnableTargets
-
-===============================================================================
-*/
-
-class idTarget_EnableTargets : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_EnableTargets );
-
-						idTarget_EnableTargets( void );
-	void				Spawn( void );
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-private:
-	bool				toggle;
-	bool				enable;
-	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
-idTarget_Secret
-
-===============================================================================
-*/
-
-class idTarget_Secret : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_Secret );
-
-						idTarget_Secret( void );
-	void				Spawn( void );
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-	
-private:
-	bool				found;
-	void				Event_Activate( idEntity *activator );
-};
-
-
-/*
-===============================================================================
-
-idTarget_NoLockPath
-
-===============================================================================
-*/
-
-class idTarget_NoLockPath : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_NoLockPath );
-	
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-idTarget_SetPlatPos
-
-===============================================================================
-*/
-
-class idTarget_SetPlatPos : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_SetPlatPos );
-
-						idTarget_SetPlatPos( void );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-
-//ivan end
-
 /*
 ===============================================================================
 
@@ -207,37 +76,6 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
-/*
-===============================================================================
-
-idTarget_Show_Repeat rev 2020 added new type of target entity
-
-===============================================================================
-*/
-
-class idTarget_Show_Repeat : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_Show_Repeat );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
-
-/*
-===============================================================================
-
-idTarget_Hide_Repeat rev 2020 added new type of target entity
-
-===============================================================================
-*/
-
-class idTarget_Hide_Repeat : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_Hide_Repeat );
-
-private:
-	void				Event_Activate( idEntity *activator );
-};
 
 /*
 ===============================================================================
@@ -724,20 +562,5 @@ private:
 	void				Event_RestoreVolume();
 };
 
-//ivan start
-/*
-===============================================================================
-
-idTarget_StopMusic
-
-===============================================================================
-*/
-class idTarget_StopMusic : public idTarget {
-public:
-	CLASS_PROTOTYPE( idTarget_StopMusic );
-private:
-	void				Event_Activate( idEntity *activator );
-};
-//ivan end
 
 #endif /* !__GAME_TARGET_H__ */
