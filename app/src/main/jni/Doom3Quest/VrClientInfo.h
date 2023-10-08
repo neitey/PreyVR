@@ -46,6 +46,7 @@ typedef struct {
 
     //Lubos BEGIN
     bool inMenu;
+    float snapTurn;
     vec2_t uiScale;
     vec2_t uiOffset;
     //Lubos END

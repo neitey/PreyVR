@@ -878,7 +878,7 @@ void R_SetViewMatrix( viewDef_t *viewDef ) {
 		position.y = -pVRClientInfo->hmdposition_last[0];
 		position.z = pVRClientInfo->hmdposition_last[1] - 1.5f;
 		position.x = -pVRClientInfo->hmdposition_last[2];
-		viewDef->renderView.vieworg += position * 32.0f;
+		viewDef->renderView.vieworg += 32.0f * position * viewDef->renderView.viewaxis.ToMat4();
 	}
 	//Lubos END
 

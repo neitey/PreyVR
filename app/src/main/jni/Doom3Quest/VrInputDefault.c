@@ -522,8 +522,8 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
             //in meantime, then it wouldn't stop the gun firing and it would get stuck
             handleTrackedControllerButton_AsButton(pOffTrackedRemoteNew->Buttons, pOffTrackedRemoteOld->Buttons, false, ovrButton_Trigger, UB_SPEED);
 
-            int vr_turn_mode = Android_GetCVarInteger("vr_turnmode");
-            float vr_turn_angle = Android_GetCVarInteger("vr_turnangle");
+            int vr_turn_mode = 2;//Lubos:Android_GetCVarInteger("vr_turnmode");
+            float vr_turn_angle = 15;//Lubos:Android_GetCVarInteger("vr_turnangle");
 
             //This fixes a problem with older thumbsticks misreporting the X value
             static float joyx[4] = {0};
@@ -534,23 +534,20 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
 
 
             //No snap turn when using mounted gun
-            snapTurn = 0;
             static int increaseSnap = true;
             {
                 if (joystickX > 0.7f) {
                     if (increaseSnap) {
                         float turnAngle = vr_turn_mode ? (vr_turn_angle / 9.0f) : vr_turn_angle;
-                        snapTurn -= turnAngle;
+                        pVRClientInfo->snapTurn -= turnAngle;
 
                         if (vr_turn_mode == 0) {
                             increaseSnap = false;
                         }
 
-                        if (snapTurn < -180.0f) {
-                            snapTurn += 360.f;
+                        if (pVRClientInfo->snapTurn < -180.0f) {
+                            pVRClientInfo->snapTurn += 360.f;
                         }
-                    } else {
-                        snapTurn = 0;
                     }
                 } else if (joystickX < 0.2f) {
                     increaseSnap = true;
@@ -561,19 +558,17 @@ void HandleInput_Default( int controlscheme, int switchsticks, ovrInputStateGame
                     if (decreaseSnap) {
 
                         float turnAngle = vr_turn_mode ? (vr_turn_angle / 9.0f) : vr_turn_angle;
-                        snapTurn += turnAngle;
+                        pVRClientInfo->snapTurn += turnAngle;
 
                         //If snap turn configured for less than 10 degrees
                         if (vr_turn_mode == 0) {
                             decreaseSnap = false;
                         }
 
-                        if (snapTurn > 180.0f) {
-                            snapTurn -= 360.f;
+                        if (pVRClientInfo->snapTurn > 180.0f) {
+                            pVRClientInfo->snapTurn -= 360.f;
                         }
 
-                    } else {
-                        snapTurn = 0;
                     }
                 } else if (joystickX > -0.2f) {
                     decreaseSnap = true;

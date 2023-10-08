@@ -1028,8 +1028,8 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
     *hmd_forward = positional_movementForward;
     *hmd_side = positional_movementSideways;
     *up = remote_movementUp;
-    //*yaw = vr.hmdorientation[YAW] + snapTurn;
-    *yaw = snapTurn;
+    //*yaw = vr.hmdorientation[YAW] + vr.snapTurn;
+    *yaw = vr.snapTurn;
     //*pitch = vr.hmdorientation[PITCH];
     //*roll = vr.hmdorientation[ROLL];}
 }
@@ -1421,7 +1421,7 @@ void VR_Init()
 	remote_movementUp = 0.0f;
 	positional_movementSideways = 0.0f;
 	positional_movementForward = 0.0f;
-	snapTurn = 0.0f;
+	vr.snapTurn = 0.0f;
 	vr.visible_hud = true;
 
 	//init randomiser

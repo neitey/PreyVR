@@ -6221,6 +6221,13 @@ void idPlayer::UpdateViewAngles( void ) {
 		}
 	}
 
+	//Lubos BEGIN
+	if (game->isVR) {
+		viewAngles[YAW] = pVRClientInfo->snapTurn;
+		viewAngles[PITCH] = pVRClientInfo->hmdorientation_temp[PITCH];
+	}
+	//Lubos END
+
 	UpdateDeltaViewAngles( viewAngles );
 	
 	// orient the model towards the direction we're looking
