@@ -4506,3 +4506,17 @@ idGameLocal::GetMapLoadingGUI
 ===============
 */
 void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) { }
+
+//Lubos BEGIN
+vrClientInfo *pVRClientInfo;
+
+void idGameLocal::SetVRClientInfo(vrClientInfo *pVR) {
+	pVRClientInfo = pVR;
+
+	static bool firstTime = true;
+	if (firstTime) {
+		common->HapticEnable();
+		firstTime = false;
+	}
+}
+//Lubos END

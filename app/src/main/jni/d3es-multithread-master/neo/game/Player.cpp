@@ -5717,7 +5717,7 @@ void idPlayer::UpdateFocus( void ) {
 			continue;
 		}
 
-		pt = gameRenderWorld->GuiTrace( ent->GetModelDefHandle(), start, end );
+		pt = gameRenderWorld->GuiTrace( ent->GetModelDefHandle(), NULL, start, end );
 		if ( pt.x != -1 ) {
 			// we have a hit
 			renderEntity_t *focusGUIrenderEntity = ent->GetRenderEntity();
