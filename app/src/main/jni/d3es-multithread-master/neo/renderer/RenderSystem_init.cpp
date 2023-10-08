@@ -850,7 +850,7 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 R_RenderingFPS
 ================
 */
-static float R_RenderingFPS( const renderView_t *renderView ) {
+static float R_RenderingFPS( renderView_t *renderView ) {
 	qglFinish();
 
 	int		start = Sys_Milliseconds();

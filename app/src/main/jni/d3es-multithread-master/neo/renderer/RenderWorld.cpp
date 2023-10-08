@@ -680,7 +680,7 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 ====================
 */
-void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
+void idRenderWorldLocal::RenderScene( renderView_t *renderView ) {
 	renderView_t	copy;
 
 	if ( !glConfig.isInitialized ) {
@@ -688,6 +688,14 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 	}
 
 	copy = *renderView;
+
+	//Lubos BEGIN
+	float fov = renderSystem->GetFOV();
+	if (game->isVR && (fov > 0)) {
+		renderView->fov_x = fov;
+		renderView->fov_y = fov;
+	}
+	//Lubos END
 
 	// skip front end rendering work, which will result
 	// in only gui drawing
