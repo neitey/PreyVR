@@ -1,5 +1,5 @@
 
-package com.lvonasek.hardcorps;
+package com.lvonasek.rivensin;
 
 import android.app.Activity;
 import android.view.Surface;

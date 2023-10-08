@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.lvonasek.hardcorpsst'
+    namespace 'com.lvonasek.rivensin'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.lvonasek.hardcorps"
+        applicationId "com.lvonasek.rivensin"
         minSdk 26
         targetSdk 26
         versionCode 1
