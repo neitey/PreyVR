@@ -596,7 +596,7 @@ idPlayerView::DoubleVision
 */
 void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view, int offset ) {
 
-	if ( !g_doubleVision.GetBool() ) {
+	if ( !g_doubleVision.GetBool() || game->isVR ) {
 		SingleView( hud, view );
 		return;
 	}
