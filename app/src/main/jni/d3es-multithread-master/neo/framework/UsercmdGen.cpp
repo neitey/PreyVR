@@ -863,8 +863,8 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
 
 		//Maybe this is right as long as I don't include HMD
-		cmd.rightmove = idMath::ClampChar( cmd.forwardmove + forward );
-		cmd.forwardmove = idMath::ClampChar( cmd.rightmove + strafe );
+		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe );
+		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward );
 
 		// check to make sure the angles haven't wrapped
 		if( viewangles[PITCH] - oldAngles[PITCH] > 90 )
