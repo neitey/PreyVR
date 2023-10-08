@@ -206,12 +206,15 @@ import java.util.Vector;
 	public void create() {
 
 		File root = new File("/sdcard/Doom3Quest");
-		File base = new File(root, "hardcorps");
+		File base = new File(root, "rivensin");
 
 		boolean exitAfterCopy = false;
 
 		//If this is first run on clean system, or user hasn't copied anything yet, just exit after we have copied
-		if (!(new File(base, "pak666.pk4").exists()))
+		File main = new File(base, "pak0976.pk4");
+		File patch1 = new File(base, "pak0980.pk4");
+		File patch2 = new File(base, "pak0981.pk4");
+		if (!main.exists() || !patch1.exists() || !patch2.exists())
 		{
 			exitAfterCopy = true;
 		}
@@ -229,7 +232,7 @@ import java.util.Vector;
 		}
 
 		//Read these from a file and pass through
-		commandLineParams = "doom3quest +set fs_game hardcorps";
+		commandLineParams = "doom3quest +set fs_game rivensin";
 
 		try {
 			ApplicationInfo ai =  getApplicationInfo();
