@@ -3311,8 +3311,25 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 			//was: cursor->Redraw( gameLocal.realClientTime ); 
 
 #ifdef USE_3D_TO_2D_CURSOR
-			updateCursorPosOnGui();
-			cursor->Redraw( gameLocal.realClientTime ); 
+			if (!game->isVR || ((weapon.GetEntity()->CanDrop()) && (weapon.GetEntity()->GetIsFiring()))) //Lubos
+			{
+				updateCursorPosOnGui();
+				//Lubos BEGIN
+				if (game->isVR) {
+					pVRClientInfo->uiOffset[0] = 160;
+					pVRClientInfo->uiOffset[1] = 120;
+					pVRClientInfo->uiScale[0] = 0.5f;
+					pVRClientInfo->uiScale[1] = 0.5f;
+					cursor->Redraw( gameLocal.realClientTime );
+					pVRClientInfo->uiOffset[0] = 0;
+					pVRClientInfo->uiOffset[1] = 0;
+					pVRClientInfo->uiScale[0] = 1;
+					pVRClientInfo->uiScale[1] = 1;
+				} else {
+					cursor->Redraw( gameLocal.realClientTime );
+				}
+				//Lubos END
+			}
 #endif
 
 #ifdef USE_CURSOR_ENTITY
@@ -6223,8 +6240,7 @@ void idPlayer::UpdateViewAngles( void ) {
 
 	//Lubos BEGIN
 	if (game->isVR) {
-		viewAngles[YAW] = pVRClientInfo->snapTurn;
-		viewAngles[PITCH] = pVRClientInfo->hmdorientation_temp[PITCH];
+		viewAngles[YAW] += pVRClientInfo->snapTurn;
 	}
 	//Lubos END
 
@@ -6904,6 +6920,23 @@ void idPlayer::PerformImpulse( int impulse ) {
 		return;
 	}
 
+	//Lubos BEGIN
+	static int vr_weapon = 0;
+	if ( impulse == IMPULSE_14 ) {
+		vr_weapon--;
+		if (vr_weapon < 0) {
+			vr_weapon = 12;
+		}
+		impulse = IMPULSE_0 + vr_weapon;
+	}
+	if ( impulse == IMPULSE_15 ) {
+		vr_weapon++;
+		if (vr_weapon > 12) {
+			vr_weapon = 0;
+		}
+		impulse = IMPULSE_0 + vr_weapon;
+	}
+
 	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) {
 		WeaponToggle_t* weaponToggle;
 
@@ -6922,6 +6955,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		return;
 	}
+	//Lubos END
+
 	switch( impulse ) {
 		case IMPULSE_13: {
 			Reload(); //ivan - reload is also used by weapon scripts to change mode!
@@ -7970,7 +8005,7 @@ void idPlayer::updateCursorPosOnGui( void ) { //assumes 'cursor' is valid
 #endif
 
 	//camera info
-	const idMat3 &cameraAxis = renderView->viewaxis; 
+	const idMat3 &cameraAxis = renderView->viewaxis;
 	const idVec3 &cameraOrigin = renderView->vieworg;
 
 	// project camera-to-pos vector to camera plane, then get the angles
@@ -7983,6 +8018,12 @@ void idPlayer::updateCursorPosOnGui( void ) { //assumes 'cursor' is valid
 	float multX = 1.6f + ( 90.0f - renderView->fov_x )/128.0f; //1.6f a 90, 1.95f a 45, 1.15f a 135. That's the fix for the fov :)
 	cposx = (int) (320 - 320 * ( multX * deltaLookAng[1] / renderView->fov_x )); //xfov usually 90 | 90/1.6 = 56.25
 	cposy = (int) (240 + 240 * ( 1.8f * deltaLookAng[0] / renderView->fov_y )); //yfov usually 73,739792? | .../1.8 = 41
+	//Lubos BEGIN
+	if (game->isVR) {
+		cposx = 320;
+		cposy = 240;
+	}
+	//Lubos END
 
 
 	//todo: comment this out - it's just for debug
@@ -9015,6 +9056,22 @@ void idPlayer::CalculateFirstPersonView( void ) {
 		firstPersonViewAxis = firstPersonViewAxis * playerView.ShakeAxis();
 #endif
 	}
+
+	//Lubos BEGIN
+	if (game->isVR && renderView) {
+		idAngles angles;
+		angles.pitch = pVRClientInfo->hmdorientation_temp[PITCH];
+		angles.yaw = pVRClientInfo->hmdorientation_temp[YAW];
+		angles.roll = pVRClientInfo->hmdorientation_temp[ROLL];
+		firstPersonViewAxis = angles.ToMat3() * renderView->viewaxis;
+
+		idVec3 position;
+		position.y = -pVRClientInfo->hmdposition_last[0];
+		position.z = pVRClientInfo->hmdposition_last[1] - 1.5f;
+		position.x = -pVRClientInfo->hmdposition_last[2];
+		firstPersonViewOrigin = renderView->vieworg + 32.0f * position * firstPersonViewAxis.ToMat4();
+	}
+	//Lubos END
 }
 
 /*
