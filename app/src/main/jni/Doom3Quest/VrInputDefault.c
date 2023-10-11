@@ -292,7 +292,6 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
             dominantGripPushTime = 0;
         }
 
-        float controllerYawHeading = 0.0f;
         //GBFP - off-hand stuff
         {
             pVRClientInfo->offhandoffset_temp[0] = pOff->HeadPose.Pose.Position.x - pVRClientInfo->hmdposition[0];
@@ -373,6 +372,10 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
             pVRClientInfo->player_moving = (fabs(x) + fabs(y)) > 0.05f;
 
             //Adjust to be off-hand controller oriented
+            float controllerYawHeading = 0.0f;
+            if (Android_GetCVarInteger("vr_walkdirection") == 1) {
+                controllerYawHeading = pVRClientInfo->offhandangles_temp[YAW] - pVRClientInfo->hmdorientation_temp[YAW];
+            }
             vec2_t v;
             rotateAboutOrigin(x, y, controllerYawHeading, v);
 

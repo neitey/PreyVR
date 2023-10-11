@@ -377,6 +377,37 @@
 							choiceType	0
 						}
 					}
+
+					buttonDef OA_Walking {
+						rect			10, 280, 400, 50
+						leftMat			"guis/assets/menu/textbar_corner.tga"
+						middleMat		"guis/assets/menu/textbarstrip.tga"
+						rightMat		"guis/assets/menu/textbar_invcorner.tga"
+
+						windowDef OAT_Walking {
+							rect		0, 0, 200, 25
+							text		"Walk direction"
+							textalign	1
+							textaligny	0
+							textscale	0.33
+							shadow		1
+							forecolor	STATIC_FORECOLOR_COMMA
+						}
+
+						choiceDef OAC_Walking {
+							rect		200, 0, 200, 25
+							textscale	0.33
+							textalign	1
+							textaligny	0
+							shadow		1
+							forecolor	EDITABLE_FORECOLOR_COMMA
+							hovercolor	EDITABLE_HOVERCOLOR_COMMA
+							choices		"HMD;Controller"
+							values		"0;1"
+							cvar		"vr_walkdirection"
+							choiceType	1
+						}
+					}
 				}
 			}
 
