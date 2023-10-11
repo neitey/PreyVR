@@ -117,7 +117,6 @@ void HandleInput_Default(int controlscheme, int switchsticks)
 
     if ( ( !inCinematic && !inMenu ) || ( pVRClientInfo->vehicleMode && !inMenu ) )
     {
-        float controllerYawHeading = 0.0f;
         //GBFP - off-hand stuff
         {
             pVRClientInfo->offhandoffset_temp[0] = pOff.position.x - pVRClientInfo->hmdposition[0];
@@ -196,6 +195,10 @@ void HandleInput_Default(int controlscheme, int switchsticks)
             pVRClientInfo->player_moving = (fabs(x) + fabs(y)) > 0.05f;
 
             //Adjust to be off-hand controller oriented
+            float controllerYawHeading = 0.0f;
+            if (Android_GetCVarInteger("vr_walkdirection") == 1) {
+                controllerYawHeading = pVRClientInfo->offhandangles_temp[YAW] - pVRClientInfo->hmdorientation_temp[YAW];
+            }
             vec2_t v;
             rotateAboutOrigin(x, y, controllerYawHeading, v);
 
