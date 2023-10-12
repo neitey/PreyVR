@@ -1128,6 +1128,20 @@ void R_MakeShadowFrustums( idRenderLightLocal *light ) {
 	// right on the planes must have a sil plane created for them
 }
 
+//Lubos BEGIN
+bool ShouldRenderShadow() {
+	// Basic conditions for shadows
+	if (!pVRClientInfo) return false;
+	if (!r_shadows.GetBool()) return false;
+
+	// Performance reasons
+	if (pVRClientInfo->lockedCamera && (strcmp(pVRClientInfo->levelname, "maps/game/feedingtowera") == 0)) return false;
+
+	// Shadows could be rendered
+	return true;
+}
+//Lubos END
+
 /*
 =================
 R_CreateShadowVolume
@@ -1162,7 +1176,7 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	srfTriangles_t	*newTri;
 	int		capPlaneBits;
 
-	if ( !r_shadows.GetBool() ) {
+	if ( !ShouldRenderShadow() ) {
 		return NULL;
 	}
 

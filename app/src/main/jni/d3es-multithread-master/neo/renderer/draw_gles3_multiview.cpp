@@ -1129,7 +1129,7 @@ void RB_GLSL_StencilShadowPass(const drawSurf_t* drawSurfs, const viewLight_t* v
 	// Skip cases
 	//////////////
 
-	if ( !r_shadows.GetBool()) {
+	if ( !ShouldRenderShadow() ) {
 		return;
 	}
 
