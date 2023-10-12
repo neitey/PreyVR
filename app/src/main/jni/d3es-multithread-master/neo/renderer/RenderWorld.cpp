@@ -704,7 +704,10 @@ void idRenderWorldLocal::RenderScene(renderView_t *renderView ) {
 	float fovx = renderSystem->GetFOV(0);
 	float fovy = renderSystem->GetFOV(1);
 	if (game->isVR && (fovx > 0) && (fovy > 0)) {
-		if (pVRClientInfo->weaponZoom) {
+		if (pVRClientInfo->inMenu) {
+			renderView->fov_x = 95;
+			renderView->fov_y = 85;
+		} else if (pVRClientInfo->weaponZoom) {
 			float aspect = fovx / fovy;
 			renderView->fov_y = renderView->fov_x / aspect;
 		} else {
