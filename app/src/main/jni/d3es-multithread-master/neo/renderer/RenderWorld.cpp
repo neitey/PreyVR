@@ -702,7 +702,10 @@ void idRenderWorldLocal::RenderScene(renderView_t *renderView ) {
 
 	//Lubos BEGIN
 	if (game->isVR) {
-		if (pVRClientInfo->weaponZoom) {
+		if (pVRClientInfo->inMenu) {
+			renderView->fov_x = 95;
+			renderView->fov_y = 85;
+		} else if (pVRClientInfo->weaponZoom) {
 			renderView->fov_y = renderView->fov_x;
 		} else {
 			renderView->fov_x = renderSystem->GetFOV();
