@@ -1377,6 +1377,8 @@ typedef enum {
 	SG_STATIC,		// clip to bounds
 } shadowGen_t;
 
+bool ShouldRenderShadow(); //Lubos
+
 srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
                                       const srfTriangles_t *tri, const idRenderLightLocal *light,
                                       shadowGen_t optimize, srfCullInfo_t &cullInfo );

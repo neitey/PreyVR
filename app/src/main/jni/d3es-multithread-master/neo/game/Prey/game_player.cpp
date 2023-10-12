@@ -5211,6 +5211,7 @@ hhPlayer::AdjustBodyAngles
 ==============
 */
 void hhPlayer::AdjustBodyAngles( void ) {
+	pVRClientInfo->lockedCamera = bClampYaw;//Lubos
 	if (InVehicle()) {
 		return;
 	}
