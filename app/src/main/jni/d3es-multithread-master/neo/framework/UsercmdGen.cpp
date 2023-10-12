@@ -912,6 +912,7 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		hmd_strafe *= vr_trackingScale.GetFloat();
 
 		pVRClientInfo->disableFootStep = fabs(hmd_forward) + fabs(hmd_strafe) > fabs(forward) + fabs(strafe);
+		pVRClientInfo->levelname = (char*)session->GetCurrentMapName();
 
 		cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_forward );
 		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_strafe );
