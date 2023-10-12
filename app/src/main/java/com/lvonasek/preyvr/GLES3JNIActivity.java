@@ -454,6 +454,7 @@ import java.util.Vector;
 			externalHapticsServiceClient.stopBinding();
 		}
 
+		System.exit(0);
 		super.onDestroy();
 	}
 
