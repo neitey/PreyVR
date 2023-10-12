@@ -1671,11 +1671,15 @@ JNIEXPORT void JNICALL Java_com_lvonasek_preyvr_GLES3JNILib_onSurfaceCreated( JN
 	ALOGV( "        NativeWindow = ANativeWindow_fromSurface( env, surface )" );
 	gAppState.NativeWindow = newNativeWindow;
 
-	pthread_t thread = 0;
-	const int createErr = pthread_create( &thread, NULL, AppThreadFunction, NULL );
-	if ( createErr != 0 )
-	{
-		ALOGE( "pthread_create returned %i", createErr );
+	static bool firstStart = true;
+	if (firstStart) {
+		pthread_t thread = 0;
+		const int createErr = pthread_create( &thread, NULL, AppThreadFunction, NULL );
+		if ( createErr != 0 ) {
+			ALOGE( "pthread_create returned %i", createErr );
+		} else {
+			firstStart = false;
+		}
 	}
 }
 
