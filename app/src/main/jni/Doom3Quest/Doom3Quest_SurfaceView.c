@@ -846,7 +846,7 @@ void Doom3Quest_Vibrate(int channel, float low, float high, int length)
 {
 	if (Android_GetCVarInteger("vr_haptics")) {
 		vibration_channel_intensity[channel][0] = low;
-		vibration_channel_intensity[channel][1] = high;
+		vibration_channel_intensity[channel][1] = high * 10;
 		vibration_length[channel] = length;
 	}
 }
