@@ -60,12 +60,16 @@ extern bool inCinematic;
 //All this to allow stick and button switching!
 ovrVector2f *pPrimaryJoystick;
 ovrVector2f *pSecondaryJoystick;
+uint32_t primaryButtonsNew;
+uint32_t primaryButtonsOld;
 uint32_t secondaryButtonsNew;
 uint32_t secondaryButtonsOld;
 uint32_t weaponButtonsNew;
 uint32_t weaponButtonsOld;
 uint32_t offhandButtonsNew;
 uint32_t offhandButtonsOld;
+int primaryButton1;
+int primaryButton2;
 int secondaryButton1;
 int secondaryButton2;
 
@@ -99,6 +103,10 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
     {
         pSecondaryJoystick = &pDominantTrackedRemoteNew->Joystick;
         pPrimaryJoystick = &pOffTrackedRemoteNew->Joystick;
+        primaryButtonsNew = pOffTrackedRemoteNew->Buttons;
+        primaryButtonsOld = pOffTrackedRemoteOld->Buttons;
+        primaryButton1 = offButton1;
+        primaryButton2 = offButton2;
         secondaryButtonsNew = pDominantTrackedRemoteNew->Buttons;
         secondaryButtonsOld = pDominantTrackedRemoteOld->Buttons;
         secondaryButton1 = domButton1;
@@ -106,6 +114,10 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
     } else {
         pPrimaryJoystick = &pDominantTrackedRemoteNew->Joystick;
         pSecondaryJoystick = &pOffTrackedRemoteNew->Joystick;
+        primaryButtonsNew = pDominantTrackedRemoteNew->Buttons;
+        primaryButtonsOld = pDominantTrackedRemoteOld->Buttons;
+        primaryButton1 = domButton1;
+        primaryButton2 = domButton2;
         secondaryButtonsNew = pOffTrackedRemoteNew->Buttons;
         secondaryButtonsOld = pOffTrackedRemoteOld->Buttons;
         secondaryButton1 = offButton1;
@@ -325,15 +337,15 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
             //Lubos END
 
             //Duck
-            if ((weaponButtonsNew & domButton1) != (weaponButtonsOld & domButton1)) {
+            if ((primaryButtonsNew & primaryButton1) != (primaryButtonsOld & primaryButton1)) {
 
-                handleTrackedControllerButton_AsToggleButton(weaponButtonsNew, weaponButtonsOld, domButton1, UB_DOWN);
+                handleTrackedControllerButton_AsToggleButton(primaryButtonsNew, primaryButtonsOld, primaryButton1, UB_DOWN);
             }
 
             //Jump
-            if ((weaponButtonsNew & domButton2) != (weaponButtonsOld & domButton2))
+            if ((primaryButtonsNew & primaryButton2) != (primaryButtonsOld & primaryButton2))
             {
-                handleTrackedControllerButton_AsButton(weaponButtonsNew, weaponButtonsOld, false, domButton2, UB_UP);
+                handleTrackedControllerButton_AsButton(primaryButtonsNew, primaryButtonsOld, false, primaryButton2, UB_UP);
             }
 
 			//Weapon Chooser
@@ -418,14 +430,14 @@ HandleInput_Default(int controlscheme, int switchsticks, ovrInputStateGamepad *p
                 }
 
                 //Lubos BEGIN
-                if (((offhandButtonsNew & offButton1) !=
-                     (offhandButtonsOld & offButton1)) &&
-                    (offhandButtonsNew & offButton1)) {
+                if (((secondaryButtonsNew & secondaryButton1) !=
+                     (secondaryButtonsOld & secondaryButton1)) &&
+                    (secondaryButtonsNew & secondaryButton1)) {
                     Android_SetImpulse(UB_IMPULSE16); //lighter
                 }
-                if (((offhandButtonsNew & offButton2) !=
-                     (offhandButtonsOld & offButton2)) &&
-                    (offhandButtonsNew & offButton2)) {
+                if (((secondaryButtonsNew & secondaryButton2) !=
+                     (secondaryButtonsOld & secondaryButton2)) &&
+                    (secondaryButtonsNew & secondaryButton2)) {
                     if ((offhandButtonsNew & ovrButton_Trigger) &&
                     (offhandButtonsNew & ovrButton_GripTrigger)) {
 						if (weaponButtonsNew & ovrButton_GripTrigger)
