@@ -921,8 +921,8 @@
 								textaligny	0
 								textscale	0.33
 								shadow		1
-								choices		"60Hz;72Hz;80Hz;90Hz"
-								values		"60;72;80;90"
+								choices		"72Hz;80Hz;90Hz"
+								values		"72;80;90"
 								cvar		"vr_refreshrate"
 								choiceType	1
 							}
