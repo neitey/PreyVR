@@ -768,7 +768,7 @@
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							visible			("gui::powerfulHMD" != 0)
+							visible			("gui::powerfulHMD" == 2)
 
 							windowDef OVA_Title_Shadows {
 								rect		0, 0, 200, 25
