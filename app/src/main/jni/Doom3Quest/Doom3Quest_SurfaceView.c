@@ -1271,7 +1271,7 @@ void Doom3Quest_FrameSetup(int controlscheme, int switch_sticks, int refresh)
             //Force 60hz for Quest 1
             vrapi_SetDisplayRefreshRate(gAppState.Ovr, 60);
             break;
-        case VRAPI_DEVICE_TYPE_OCULUSQUEST2:
+        default:
             vrapi_SetDisplayRefreshRate(gAppState.Ovr, refresh);
             break;
     }
