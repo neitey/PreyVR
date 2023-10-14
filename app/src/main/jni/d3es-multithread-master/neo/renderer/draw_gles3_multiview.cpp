@@ -2231,12 +2231,8 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 			//Lubos BEGIN
 			idStr texture(surf->material->ImageName());
 			if(((texture.Find("ramp_fx") != -1) || (texture.CmpPrefix("textures/sfx/genericdissolve") == 0)) && surf->renderEntity) {
-				static int entityCount[MAX_GENTITIES];
-				static int renderCount[MAX_GENTITIES];
-				if (pVRClientInfo->levelChanged) {
-					memset(renderCount, 0, MAX_GENTITIES * sizeof(int));
-					pVRClientInfo->levelChanged = false;
-				}
+				static int entityCount[MAX_GENTITIES] = {};
+				static int renderCount[MAX_GENTITIES] = {};
 
 				int index = surf->renderEntity->entityNum;
 				if (renderCount[index] != tr.frameCount) {
@@ -2245,18 +2241,18 @@ void RB_GLSL_T_RenderShaderPasses(const drawSurf_t* surf, GLuint projection) {
 				}
 				entityCount[index]++;
 
-				if (pVRClientInfo->levelname) {
-					if (strcmp(pVRClientInfo->levelname, "maps/game/roadhouse") == 0) {
-						//TODO:fix effects in roadhouse level
-						/*if (renderCount[surf->renderEntity->entityNum] == tr.frameCount) {
-							qglEnable(GL_POLYGON_OFFSET_FILL);
-							qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
-							GL_State(GLS_DEPTHMASK | pStage->drawStateBits - GLS_DEPTHFUNC_EQUAL);
-						}*/
-					} else if (entityCount[index] == 1) {
-						continue;
-					}
+				if (pVRClientInfo->levelname && strcmp(pVRClientInfo->levelname, "maps/game/roadhouse") == 0) {
+					//TODO:fix effects in roadhouse level
+					/*if (renderCount[surf->renderEntity->entityNum] == tr.frameCount) {
+						qglEnable(GL_POLYGON_OFFSET_FILL);
+						qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset);
+						GL_State(GLS_DEPTHMASK | pStage->drawStateBits - GLS_DEPTHFUNC_EQUAL);
+					}*/
 				}
+				//TODO:fix effects in dreamworld level
+				/*else if (entityCount[index] == 1) {
+					continue;
+				}*/
 			} else
 			//Lubos END
 			if ( pStage->privatePolygonOffset ) {
