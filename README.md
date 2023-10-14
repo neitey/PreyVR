@@ -102,9 +102,9 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 
 ### Known issues
 * 6DoF doesn't allow movement over invisible colliders
-* Alien light effects in the first level are not correct
 * Jen has detached head on screen (level Hidden Agendas)
 * Jukebox doesn't update the pointer (collider issue)
+* Light effects are not correct (roadhouse and dreamworld)
 * Performance issues when fog is present
 * Performance issues when portals are shown
 * Screen with Jen is not rendered (level Hidden Agendas)

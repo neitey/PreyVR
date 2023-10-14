@@ -44,7 +44,6 @@ typedef struct {
     bool weaponZoom;
     float vehicleYaw;
     char* levelname;
-    bool levelChanged;
     bool lockedCamera;
     bool credits;
     bool weaponGun;
