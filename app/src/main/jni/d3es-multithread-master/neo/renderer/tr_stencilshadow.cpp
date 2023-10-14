@@ -1176,9 +1176,10 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	srfTriangles_t	*newTri;
 	int		capPlaneBits;
 
-	if ( !ShouldRenderShadow() ) {
+	//Lubos
+	/*if ( !ShouldRenderShadow() ) {
 		return NULL;
-	}
+	}*/
 
 	if ( tri->numSilEdges == 0 || tri->numIndexes == 0 || tri->numVerts == 0 ) {
 		return NULL;
