@@ -764,11 +764,11 @@
 						}
 
 						buttonDef OVA_Shadows {
-							rect			10, 190, 400, 25
+							rect			10, 190, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							visible			("gui::powerfulHMD" == 2)
+							visible			("gui::powerfulHMD" != 0)
 
 							windowDef OVA_Title_Shadows {
 								rect		0, 0, 200, 25
@@ -790,6 +790,15 @@
 								choices		"No;Yes"
 								cvar		"r_shadows"
 								choiceType	0
+							}
+							windowDef OVA_Warning_Shadows {
+								rect		70, 20, 200, 25
+								forecolor	1, 0.25, 0.25, 0.9
+								textaligny	0
+								textscale	0.25
+								shadow		1
+								text		"Shadows cause frame drops!"
+								visible		("gui::powerfulHMD" != 2)
 							}
 						}
 					}
@@ -902,7 +911,7 @@
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
-							visible			("gui::powerfulHMD" != 0)
+							visible			("gui::powerfulHMD" == 2)
 
 							windowDef OVR_Title_RefreshRate {
 								rect		0, 0, 200, 25
