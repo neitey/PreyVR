@@ -63,6 +63,19 @@ static const int	SSF_NO_DUPS =			BIT(9);	// try not to play the same sound twice
 static const int	SSF_VOICEAMPLITUDE =	BIT(10);// HUMANHEAD pdm: include in findamplitude queries
 static const int	SSF_OMNI_WHEN_CLOSE =	BIT(11);// HUMANHEAD pdm: make omni when within the mindistance
 static const int	SSF_NOREVERB =			BIT(12);// HUMANHEAD pdm: reverb exclusion
+
+//HUMANHEAD rww - subtitle functionality
+typedef struct soundSubtitle_s {
+	idStr			subText;
+	float			subTime;
+	int				subChannel;
+} soundSub_t;
+
+typedef struct soundSubtitleList_s {
+	idStr				soundName;
+	idList<soundSub_t>	subList;
+} soundSubtitleList_t;
+//HUMANHEAD END
 #endif
 
 // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
@@ -75,7 +88,7 @@ typedef struct {
 	int						soundClass;				// for global fading of sounds
 
 #ifdef _HUMANHEAD
-	int						subIndex;
+	int						subIndex;               //HUMANHEAD rww - indices into the subtitle table
 	int						profanityIndex;			// HUMANHEAD pdm
 	float					profanityDelay;			// HUMANHEAD pdm
 	float					profanityDuration;		// HUMANHEAD pdm
@@ -88,6 +101,7 @@ class hhSoundShaderParmsModifier {
 public:
 	hhSoundShaderParmsModifier() {
 		memset(&parms, 0, sizeof(soundShaderParms_t));
+		parms.subIndex = -1;
 		minDistanceIsSet = false;
 		maxDistanceIsSet = false;
 		volumeIsSet = false;
@@ -455,6 +469,15 @@ public:
 
 	// is EFX support present - -1: disabled at compile time, 0: no suitable hardware, 1: ok
 	virtual int				IsEFXAvailable( void ) = 0;
+
+#ifdef _HUMANHEAD
+	//HUMANHEAD rww
+	virtual int					GetSubtitleIndex(const char *soundName) = 0;
+	virtual void				SetSubtitleData(int subIndex, int subNum, const char *subText, float subTime, int subChannel) = 0;
+	virtual soundSub_t			*GetSubtitle(int subIndex, int subNum) = 0;
+	virtual soundSubtitleList_t *GetSubtitleList(int subIndex) = 0;
+	//HUMANHEAD END
+#endif
 };
 
 extern idSoundSystem	*soundSystem;

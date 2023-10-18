@@ -44,6 +44,9 @@ void idSoundShader::Init( void ) {
 	numLeadins = 0;
 	leadinVolume = 0;
 	altSound = NULL;
+#ifdef _HUMANHEAD
+	parms.subIndex = -1;
+#endif
 }
 
 /*
@@ -159,6 +162,9 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 	parms.shakes = 0;
 	parms.soundShaderFlags = 0;
 	parms.soundClass = 0;
+#ifdef _HUMANHEAD
+	parms.subIndex = -1;
+#endif
 
 	speakerMask = 0;
 	altSound = NULL;
@@ -340,7 +346,16 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 			else if (!token.Icmp("bleep")) {
 			src.SkipRestOfLine();
 		}
-		else if (!token.IcmpPrefix("subtitle")) {
+		else if (!token.IcmpPrefix("subtitle")) { //k: subtitle1	2.0	"#str_30000"
+			idStr subChn = token.Right(token.Length() - strlen("subtitle"));
+			int subChannel = atoi(subChn.c_str());
+			float subTime = src.ParseFloat();
+			idToken subText;
+			src.ReadToken(&subText);
+			int subIndex = soundSystemLocal.GetSubtitleIndex(GetName());
+			soundSystemLocal.SetSubtitleData(subIndex, subChannel, subText.c_str(), subTime, subChannel);
+			parms.subIndex = subIndex;
+
 			src.SkipRestOfLine();
 		}
 		else if (!token.Icmp("omniwhenclose")) {

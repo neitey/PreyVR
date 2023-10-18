@@ -185,6 +185,9 @@ void idSoundChannel::Clear( void ) {
 		lastV[j] = 0.0f;
 	}
 	memset( &parms, 0, sizeof(parms) );
+#ifdef _HUMANHEAD
+	parms.subIndex = -1;
+#endif
 
 	triggered = false;
 	openalSource = 0;
@@ -400,6 +403,9 @@ void idSoundEmitterLocal::Clear( void ) {
 	spatializedOrigin.Zero();
 
 	memset( &parms, 0, sizeof( parms ) );
+#ifdef _HUMANHEAD
+	parms.subIndex = -1;
+#endif
 }
 
 /*
@@ -438,6 +444,33 @@ void idSoundEmitterLocal::OverrideParms( const soundShaderParms_t *base,
 	} else {
 		out->soundClass = base->soundClass;
 	}
+
+#ifdef _HUMANHEAD
+	if (over->subIndex) {
+		out->subIndex = over->subIndex;
+	} else {
+		out->subIndex = base->subIndex;
+	}
+
+	if (over->profanityIndex) {
+		out->profanityIndex = over->profanityIndex;
+	} else {
+		out->profanityIndex = base->profanityIndex;
+	}
+
+	if (over->profanityDelay) {
+		out->profanityDelay = over->profanityDelay;
+	} else {
+		out->profanityDelay = base->profanityDelay;
+	}
+
+	if (over->profanityDuration) {
+		out->profanityDuration = over->profanityDuration;
+	} else {
+		out->profanityDuration = base->profanityDuration;
+	}
+#endif
+
 	out->soundShaderFlags = base->soundShaderFlags | over->soundShaderFlags;
 }
 

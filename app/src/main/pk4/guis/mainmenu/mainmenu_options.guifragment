@@ -505,23 +505,23 @@
 								choiceType	0
 							}
 						}
-						
-						buttonDef OG_UseDDA {
+
+						buttonDef OG_Subtitles {
 							rect			10, 100, 400, 25
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
 
-							windowDef OGT_UseDDA {
+							windowDef OGT_Subtitles {
 								rect		0, 0, 250, 25
 								forecolor	STATIC_FORECOLOR_COMMA
-								text		"#str_41097"
+								text		"#str_20267"
 								textalign	1
 								textaligny	-2
 								textscale	0.33
 								shadow		1
 							}
-							choiceDef OGO_UseDDA {
+							choiceDef OGO_Subtitles {
 								rect		200, 0, 200, 25
 								forecolor	EDITABLE_FORECOLOR_COMMA
 								hovercolor	EDITABLE_HOVERCOLOR_COMMA
@@ -530,37 +530,46 @@
 								textscale	0.33
 								shadow		1
 								choices		"#str_20152"
-								cvar		"g_useDDA"
+								cvar		"g_subtitles"
 								choiceType	0
 							}
 						}
 
-						buttonDef OG_Profanity {
-							rect			10, 130, 400, 25
+						buttonDef OG_Language {
+							rect			10, 130, 400, 50
 							leftMat			"guis/assets/menu/textbar_corner.tga"
 							middleMat		"guis/assets/menu/textbarstrip.tga"
 							rightMat		"guis/assets/menu/textbar_invcorner.tga"
 
-							windowDef OGT_Profanity {
+							windowDef OG_Title_Language {
 								rect		0, 0, 250, 25
 								forecolor	STATIC_FORECOLOR_COMMA
-								text		"#str_41002"
+								text		"Language"
 								textalign	1
 								textaligny	-2
 								textscale	0.33
 								shadow		1
 							}
-							choiceDef OGO_Profanity {
+							choiceDef OG_Choice_Language {
 								rect		200, 0, 200, 25
 								forecolor	EDITABLE_FORECOLOR_COMMA
 								hovercolor	EDITABLE_HOVERCOLOR_COMMA
 								textalign	1
-								textaligny	-2
+								textaligny	0
 								textscale	0.33
 								shadow		1
-								choices		"#str_20152"
-								cvar		"com_profanity"	
-								choiceType	0
+								choices		"English;French;German;Italian;Spanish"
+								values		"english;french;german;italian;spanish"
+								cvar		"sys_lang"
+								choiceType	1
+							}
+							windowDef OG_Warning_Language {
+								rect		70, 20, 200, 25
+								forecolor	STATIC_FORECOLOR_COMMA
+								textaligny	0
+								textscale	0.25
+								shadow		1
+								text		"Restart game to apply!"
 							}
 						}
 					}
