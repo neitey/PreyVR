@@ -1,0 +1,74 @@
+/*
+	Subtitles
+*/
+
+//subtitles 1 through 3 are for normal subs.
+//subtitle 4 is for combat sound subs.
+
+windowDef Desktop {
+	rect			0, 0, 640, 480
+	backcolor		0, 0, 0, 0
+	nocursor		1
+	menugui			1
+	
+	windowDef subtitles1 {
+		text		"gui::subtitleText1"
+		rect		70, 60, 500, 60//Lubos
+		backcolor	0, 0, 0, 0
+		forecolor	1, 1, 1, "gui::subtitleAlpha1"
+		textscale	0.35//Lubos
+		textalign	1
+		center		1
+		noclip		1
+		visible		1
+		shadow		1
+	}
+	windowDef subtitles2 {
+		text		"gui::subtitleText2"
+		rect		70, 100, 500, 60//Lubos
+		backcolor	0, 0, 0, 0
+		forecolor	1, 1, 1, "gui::subtitleAlpha2"
+		textscale	0.35//Lubos
+		textalign	1
+		center		1
+		noclip		1
+		visible		1
+		shadow		1
+	}
+	windowDef subtitles3 {
+		text		"gui::subtitleText3"
+		rect		70, 140, 500, 60//Lubos
+		backcolor	0, 0, 0, 0
+		forecolor	1, 1, 1, "gui::subtitleAlpha3"
+		textscale	0.35//Lubos
+		textalign	1
+		center		1
+		noclip		1
+		visible		1
+		shadow		1
+	}
+	windowDef subtitles4 {
+		text		"gui::subtitleText4"
+		rect		70, 440, 500, 40
+		backcolor	0, 0, 0, 0
+		forecolor	1, 1, 1, "gui::subtitleAlpha4"
+		textscale	0.3
+		textalign	1
+		center		1
+		noclip		1
+		visible		1
+		shadow		1
+	}
+	windowDef subtitles5 {
+		text		"gui::subtitleText5"
+		rect		70, 220, 500, 20
+		backcolor	0, 0, 0, 0
+		forecolor	1, 1, 1, "gui::subtitleAlpha5"
+		textscale	0.3
+		textalign	1
+		center		1
+		noclip		1
+		visible		1
+		shadow		1
+	}
+}
