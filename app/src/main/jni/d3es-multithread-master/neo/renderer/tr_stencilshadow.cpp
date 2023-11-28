@@ -1195,7 +1195,7 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	// use the fast infinite projection in dynamic situations, which
 	// trades somewhat more overdraw and no cap optimizations for
 	// a very simple generation process
-	if ( optimize == SG_DYNAMIC ) {//Lubos && r_useTurboShadow.GetBool() ) {
+	if ( optimize == SG_DYNAMIC && r_useTurboShadow.GetBool() ) {
 		return R_CreateVertexProgramTurboShadowVolume(ent, tri, light, cullInfo);
 	}
 
