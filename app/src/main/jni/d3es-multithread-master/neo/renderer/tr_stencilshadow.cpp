@@ -1134,9 +1134,6 @@ bool ShouldRenderShadow() {
 	if (!pVRClientInfo) return false;
 	if (!r_shadows.GetBool()) return false;
 
-	// Performance reasons
-	if (pVRClientInfo->lockedCamera && (strcmp(pVRClientInfo->levelname, "maps/game/feedingtowera") == 0)) return false;
-
 	// Shadows could be rendered
 	return true;
 }
