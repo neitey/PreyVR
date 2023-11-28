@@ -74,7 +74,7 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 * 6DoF motion tracking (mapping movement to keys + elevation adjust)
 * 6DoF weapon tracking (apply controller movement to weapons)
 * Apply headset refreshrate to game
-* Automatic fix pf axis misalignment
+* Automatic fix of axis misalignment
 * Big hunter scene recreated (the engine doesn't support original animation)
 * Camera shaking option (shaking adds immersion but also motion sickness)
 * Demo data without DDS textures (DDS textures are unsupported by the engine)
@@ -108,6 +108,7 @@ Special thanks to all early versions testers on **Team Beef** discord server!
 ### Missing features
 * BHaptics support (I do not own the accessory)
 * Controling ingame UI using fingers
+* Disappear effect (unsupported by the renderer)
 * Glitch effect (unsupported by the renderer) 
 * Glow effect (unsupported by the renderer)
 * Network communication (missing source code)
