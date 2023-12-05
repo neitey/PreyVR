@@ -26,6 +26,11 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../../SupportLibs/stb/stb_image.h"
+#include "../../SupportLibs/soil/soil_dds_image.h"
+
 #include "idlib/precompiled.h"
 
 #include "renderer/tr_local.h"
@@ -42,6 +47,122 @@ This file only has a single entry point:
 void R_LoadImage( const char *name, byte **pic, int *width, int *height, bool makePowerOf2 );
 
 */
+
+static void LoadDDS(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp)
+{
+
+	byte	*fbuffer;
+	int	len;
+
+	if (pic) {
+		*pic = NULL;		// until proven otherwise
+	}
+
+	{
+		idFile *f;
+
+		f = fileSystem->OpenFileRead(filename);
+
+		if (!f) {
+			return;
+		}
+
+		len = f->Length();
+
+		if (timestamp) {
+			*timestamp = f->Timestamp();
+		}
+
+		if (!pic) {
+			fileSystem->CloseFile(f);
+			return;	// just getting timestamp
+		}
+
+		fbuffer = (byte *)Mem_ClearedAlloc(len);
+		f->Read(fbuffer, len);
+		fileSystem->CloseFile(f);
+	}
+
+	int w=0, h=0, comp=0;
+	byte* decodedImageData = stbi_dds_load_from_memory( fbuffer, len, &w, &h, &comp, STBI_rgb_alpha );
+
+	Mem_Free( fbuffer );
+
+	if ( decodedImageData == NULL ) {
+		common->Warning( "stb_image was unable to load DDS %s : %s\n",
+		                 filename, stbi_failure_reason());
+		return;
+	}
+
+	// *pic must be allocated with R_StaticAlloc(), but stb_image allocates with malloc()
+	// (and as there is no R_StaticRealloc(), #define STBI_MALLOC etc won't help)
+	// so the decoded data must be copied once
+	int size = w*h*4;
+	*pic = (byte *)R_StaticAlloc( size );
+	memcpy( *pic, decodedImageData, size );
+	*width = w;
+	*height = h;
+	// now that decodedImageData has been copied into *pic, it's not needed anymore
+	stbi_image_free( decodedImageData );
+}
+
+static void LoadPNG(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp)
+{
+
+	byte	*fbuffer;
+	int	len;
+
+	if (pic) {
+		*pic = NULL;		// until proven otherwise
+	}
+
+	{
+		idFile *f;
+
+		f = fileSystem->OpenFileRead(filename);
+
+		if (!f) {
+			return;
+		}
+
+		len = f->Length();
+
+		if (timestamp) {
+			*timestamp = f->Timestamp();
+		}
+
+		if (!pic) {
+			fileSystem->CloseFile(f);
+			return;	// just getting timestamp
+		}
+
+		fbuffer = (byte *)Mem_ClearedAlloc(len);
+		f->Read(fbuffer, len);
+		fileSystem->CloseFile(f);
+	}
+
+	int w=0, h=0, comp=0;
+	byte* decodedImageData = stbi_load_from_memory( fbuffer, len, &w, &h, &comp, STBI_rgb_alpha );
+
+	Mem_Free( fbuffer );
+
+	if ( decodedImageData == NULL ) {
+		common->Warning( "stb_image was unable to load PNG %s : %s\n",
+		                 filename, stbi_failure_reason());
+		return;
+	}
+
+	// *pic must be allocated with R_StaticAlloc(), but stb_image allocates with malloc()
+	// (and as there is no R_StaticRealloc(), #define STBI_MALLOC etc won't help)
+	// so the decoded data must be copied once
+	int size = w*h*4;
+	*pic = (byte *)R_StaticAlloc( size );
+	memcpy( *pic, decodedImageData, size );
+	*width = w;
+	*height = h;
+	// now that decodedImageData has been copied into *pic, it's not needed anymore
+	stbi_image_free( decodedImageData );
+}
 
 /*
 ================
@@ -959,6 +1080,18 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 			name.StripFileExtension();
 			name.DefaultFileExtension( ".jpg" );
 			LoadJPG( name.c_str(), pic, width, height, timestamp );
+
+			if ((pic && *pic == 0) || (timestamp && *timestamp == -1)) {
+				name.StripFileExtension();
+				name.DefaultFileExtension(".png");
+				LoadPNG(name.c_str(), pic, width, height, timestamp);
+
+				if ((pic && *pic == 0) || (timestamp && *timestamp == -1)) {
+					name.StripFileExtension();
+					name.DefaultFileExtension(".dds");
+					LoadDDS(name.c_str(), pic, width, height, timestamp);
+				}
+			}
 		}
 	} else if ( ext == "pcx" ) {
 		LoadPCX32( name.c_str(), pic, width, height, timestamp );
@@ -966,6 +1099,10 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 		LoadBMP( name.c_str(), pic, width, height, timestamp );
 	} else if ( ext == "jpg" ) {
 		LoadJPG( name.c_str(), pic, width, height, timestamp );
+	} else if (ext == "png") {
+		LoadPNG(name.c_str(), pic, width, height, timestamp);
+	} else if (ext == "dds") {
+		LoadDDS(name.c_str(), pic, width, height, timestamp);
 	}
 
 	if ( ( width && *width < 1 ) || ( height && *height < 1 ) ) {
