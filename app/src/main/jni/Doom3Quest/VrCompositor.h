@@ -118,4 +118,4 @@ void ovrScene_Create( int width, int height, ovrScene * scene, const ovrJava * j
 
 ovrLayerCylinder2 BuildCylinderLayer( ovrRenderer * cylinderRenderer,
 	const int textureWidth, const int textureHeight,
-	const ovrTracking2 * tracking, float rotateYaw );
+	const ovrTracking2 * tracking, float rotateYaw, float aspect );

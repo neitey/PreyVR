@@ -65,9 +65,10 @@ static ovrMatrix4f CylinderModelMatrix( const int texWidth, const int texHeight,
 										const float rotateYaw,
 										const float rotatePitch,
 										const float radius,
-										const float density )
+										const float density,
+										const float aspect)
 {
-	const ovrMatrix4f scaleMatrix = ovrMatrix4f_CreateScale( radius, radius * (float)texHeight * VRAPI_PI / density, radius );
+	const ovrMatrix4f scaleMatrix = ovrMatrix4f_CreateScale( radius, radius * (float)texHeight * VRAPI_PI / density / aspect, radius );
 	const ovrMatrix4f transMatrix = ovrMatrix4f_CreateTranslation( translation.x, translation.y, translation.z );
 	const ovrMatrix4f rotXMatrix = ovrMatrix4f_CreateRotation( rotateYaw, 0.0f, 0.0f );
 	const ovrMatrix4f rotYMatrix = ovrMatrix4f_CreateRotation( 0.0f, rotatePitch, 0.0f );
@@ -82,7 +83,7 @@ extern float SS_MULTIPLIER;
 
 ovrLayerCylinder2 BuildCylinderLayer( ovrRenderer * cylinderRenderer,
 	const int textureWidth, const int textureHeight,
-	const ovrTracking2 * tracking, float rotatePitch )
+	const ovrTracking2 * tracking, float rotatePitch, float aspect )
 {
 	ovrLayerCylinder2 layer = vrapi_DefaultLayerCylinder2();
 
@@ -100,7 +101,7 @@ ovrLayerCylinder2 BuildCylinderLayer( ovrRenderer * cylinderRenderer,
 
 	ovrMatrix4f cylinderTransform = 
 		CylinderModelMatrix( textureWidth, textureHeight, translation,
-							 rotatePitch, radians(screenYaw), radius, density );
+							 rotatePitch, radians(screenYaw), radius, density, aspect );
 
 	const float circScale = density * 0.5f / textureWidth;
 	const float circBias = -circScale * ( 0.5f * ( 1.0f - 1.0f / circScale ) );

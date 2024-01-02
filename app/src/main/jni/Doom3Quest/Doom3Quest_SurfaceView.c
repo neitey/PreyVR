@@ -1421,7 +1421,9 @@ void Doom3Quest_submitFrame()
         // Add a simple cylindrical layer
         gAppState.Layers[gAppState.LayerCount++].Cylinder =
                 BuildCylinderLayer(&gAppState.Scene.CylinderRenderer,
-                                   gAppState.Scene.CylinderWidth, gAppState.Scene.CylinderHeight, &gAppState.Tracking[renderThreadFrameIndex % MAX_TRACKING_SAMPLES], radians(playerYaw) );
+                                   gAppState.Scene.CylinderWidth, gAppState.Scene.CylinderHeight,
+								   &gAppState.Tracking[renderThreadFrameIndex % MAX_TRACKING_SAMPLES],
+								   radians(playerYaw), inMenu ? 1 : 0.85f );
 
         // Compose the layers for this frame.
         const ovrLayerHeader2 * layerHeaders[ovrMaxLayerCount] = { 0 };
