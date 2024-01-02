@@ -383,7 +383,7 @@ void Doom3Quest_prepareEyeBuffer( )
 		VR_SetConfig(VR_CONFIG_VIEWPORT_VALID, true);
 	}
 
-	VR_SetConfigFloat(VR_CONFIG_CANVAS_ASPECT, 1);
+	VR_SetConfigFloat(VR_CONFIG_CANVAS_ASPECT, inMenu ? 1 : 0.75f);
 	VR_SetConfigFloat(VR_CONFIG_CANVAS_DISTANCE, 4);
 	VR_SetConfig(VR_CONFIG_MODE, Doom3Quest_useScreenLayer() ? VR_MODE_STEREO_SCREEN : VR_MODE_STEREO_6DOF);
 
