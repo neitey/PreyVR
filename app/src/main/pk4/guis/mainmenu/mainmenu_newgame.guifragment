@@ -256,18 +256,6 @@
 				rightHoverMat	"guis/assets/menu/button/rollover_invcorner"
 				edgeWidth		12
 				noTime			1
-				onTime 0 {
-					if ("gui::nightmare" != 0) {
-						set "forecolor" BUTTON_FORECOLOR_STRING;
-						set "hovercolor" BUTTON_HOVERCOLOR_STRING;
-						set "hoverMatColor" "1 1 1 1";
-					}
-					else {
-						set "forecolor" BUTTON_FORECOLOR_GREYED_STRING;
-						set "hovercolor" BUTTON_FORECOLOR_GREYED_STRING;
-						set "hoverMatColor" "0.5 0.5 0.5 1";
-					}
-				}
 				onMouseEnter {
 					set "Skill_PictureNormal_Mouseover::visible" "0";
 					set "Skill_PictureWicked_Mouseover::visible" "1";
@@ -287,12 +275,10 @@
 					set "Skill_DescriptionWicked::visible" "0";
 				}
 				onAction {
-					if ("gui::nightmare" != 0) {
-						set	"cmd" "play guisounds_menu_clickin" ;
-						set "gui::wicked" "1";
-						set "gui::casino" "0";
-						set	"cmd" "startgame game/roadhouse" ;
-					}
+					set	"cmd" "play guisounds_menu_clickin" ;
+					set "gui::wicked" "1";
+					set "gui::casino" "0";
+					set	"cmd" "startgame game/roadhouse" ;
 				}
 			}
 
