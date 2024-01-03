@@ -795,7 +795,7 @@
 								textaligny	0
 								textscale	0.33
 								shadow		1
-								choices		"Original;Modern"
+								choices		"Modern;Original"
 								cvar		"r_usePhong"
 								choiceType	0
 							}

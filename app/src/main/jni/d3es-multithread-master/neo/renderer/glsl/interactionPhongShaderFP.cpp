@@ -61,11 +61,10 @@ void main()
   float specularFalloff = pow(RdotV, u_specularExponent);
   
   vec3 color;
-  color = diffuseColor * 0.25; //Lubos:less difusse color
-  color -= (color - (color.r + color.g + color.b) / 3.0) * 0.25; //Lubos:desaturize
+  color = diffuseColor;
   color += specularFalloff * specularColor;
   color *= NdotL * lightProjection;
-  color *= 3.0 * lightFalloff; //Lubos:more specular color and light projection
+  color *= lightFalloff;
   
   fragColor = vec4(color, 1.0) * var_Color;
 }
