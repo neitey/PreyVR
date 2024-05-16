@@ -226,15 +226,15 @@ import java.util.Vector;
 			case "vr_monterey":
 				configFile = "quest1_default.cfg";
 				break;
-			//Quest 2, Quest Pro, unknown
+			//Quest 2, Quest Pro
 			case "hollywood":
 			case "seacliff":
-			default:
 				configFile = "quest2_default.cfg";
 				break;
-			//Quest 3
+			//Quest 3, unknown
 			case "eureka":
 			case "stinson":
+			default:
 				configFile = "quest3_default.cfg";
 				SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 				updateConfig = pref.getInt(CFG_VERSION_KEY, 0) != CFG_VERSION_CURRENT;
