@@ -348,6 +348,6 @@ LOCAL_SRC_FILES = $(SRC_ANDROID) \
 LOCAL_SHARED_LIBRARIES := openal SDL2 libvorbis libogg
 LOCAL_STATIC_LIBRARIES := jpeg
 
-LOCAL_LDLIBS :=  -llog -lm  -lEGL -landroid -lGLESv3 -lz $(TOP_DIR)/OpenXR/stub/arm64-v8a/libopenxr_loader.so
+LOCAL_LDLIBS :=  -llog -lm  -lEGL -landroid -lGLESv3 -lz $(TOP_DIR)/OpenXR/android/arm64-v8a/libopenxr_loader.so
 
 include $(BUILD_SHARED_LIBRARY)
