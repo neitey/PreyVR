@@ -22,14 +22,11 @@ import android.view.WindowManager;
 import com.drbeef.externalhapticsservice.HapticServiceClient;
 import com.drbeef.externalhapticsservice.HapticsConstants;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
-import java.util.Locale;
 import java.util.Vector;
 
 @SuppressLint("SdCardPath") public class GLES3JNIActivity extends Activity implements SurfaceHolder.Callback
@@ -44,13 +41,6 @@ import java.util.Vector;
 
 	static
 	{
-		String manufacturer = Build.MANUFACTURER.toLowerCase(Locale.ROOT);
-		if (manufacturer.contains("oculus")) // rename oculus to meta as this will probably happen in the future anyway
-			manufacturer = "meta";
-
-		//Load manufacturer specific loader
-		System.loadLibrary("openxr_" + manufacturer);
-
 		//Load the game
 		System.loadLibrary( "doom3" );
 

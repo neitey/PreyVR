@@ -3,6 +3,7 @@
 #include "VrRenderer.h"
 
 #include <assert.h>
+#include <string.h>
 
 XrFovf fov;
 XrView* projections;
@@ -200,6 +201,10 @@ void VR_InitRenderer( engine_t* engine, bool multiview ) {
 	}
 
 	projections = (XrView*)(malloc(ovrMaxNumEyes * sizeof(XrView)));
+	for (int eye = 0; eye < ovrMaxNumEyes; eye++) {
+		memset(&projections[eye], 0, sizeof(XrView));
+		projections[eye].type = XR_TYPE_VIEW;
+	}
 
 	ovrRenderer_Create(engine->appState.Session, &engine->appState.Renderer,
 			engine->appState.ViewConfigurationView[0].recommendedImageRectWidth,
@@ -244,15 +249,6 @@ bool VR_InitFrame( engine_t* engine ) {
 	OXR(xrWaitFrame(engine->appState.Session, &waitFrameInfo, &frameState));
 	engine->predictedDisplayTime = frameState.predictedDisplayTime;
 
-	// Get the HMD pose, predicted for the middle of the time period during which
-	// the new eye images will be displayed. The number of frames predicted ahead
-	// depends on the pipeline depth of the engine and the synthesis rate.
-	// The better the prediction, the less black will be pulled in at the edges.
-	XrFrameBeginInfo beginFrameDesc = {};
-	beginFrameDesc.type = XR_TYPE_FRAME_BEGIN_INFO;
-	beginFrameDesc.next = NULL;
-	OXR(xrBeginFrame(engine->appState.Session, &beginFrameDesc));
-
 	XrViewLocateInfo projectionInfo = {};
 	projectionInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
 	projectionInfo.viewConfigurationType = engine->appState.ViewportConfig.viewConfigurationType;
@@ -271,10 +267,14 @@ bool VR_InitFrame( engine_t* engine ) {
 			projectionCapacityInput,
 			&projectionCountOutput,
 			projections));
-	if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
-	    (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-		return false;  // There is no valid tracking poses for the views.
-	}
+	// Get the HMD pose, predicted for the middle of the time period during which
+	// the new eye images will be displayed. The number of frames predicted ahead
+	// depends on the pipeline depth of the engine and the synthesis rate.
+	// The better the prediction, the less black will be pulled in at the edges.
+	XrFrameBeginInfo beginFrameDesc = {};
+	beginFrameDesc.type = XR_TYPE_FRAME_BEGIN_INFO;
+	beginFrameDesc.next = NULL;
+	OXR(xrBeginFrame(engine->appState.Session, &beginFrameDesc));
 
 	fov.angleLeft = 0;
 	fov.angleRight = 0;
@@ -324,26 +324,6 @@ void VR_EndFrame( engine_t* engine ) {
 }
 
 void VR_FinishFrame( engine_t* engine ) {
-
-	XrViewLocateInfo projectionInfo = {};
-	projectionInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
-	projectionInfo.viewConfigurationType = engine->appState.ViewportConfig.viewConfigurationType;
-	projectionInfo.displayTime = VR_GetPlatformFlag(VR_PLATFORM_TRACKING_DELAYED) ? 0 : frameState.predictedDisplayTime;
-	projectionInfo.space = engine->appState.CurrentSpace;
-
-	XrViewState viewState = {XR_TYPE_VIEW_STATE, NULL};
-
-	uint32_t projectionCapacityInput = ovrMaxNumEyes;
-	uint32_t projectionCountOutput = projectionCapacityInput;
-
-	OXR(xrLocateViews(
-			engine->appState.Session,
-			&projectionInfo,
-			&viewState,
-			projectionCapacityInput,
-			&projectionCountOutput,
-			projections));
-
 	int vrMode = vrConfig[VR_CONFIG_MODE];
 	XrCompositionLayerProjectionView projection_layer_elements[2] = {};
 	if ((vrMode == VR_MODE_MONO_6DOF) || (vrMode == VR_MODE_STEREO_6DOF)) {
