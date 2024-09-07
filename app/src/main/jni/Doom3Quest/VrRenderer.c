@@ -252,7 +252,7 @@ bool VR_InitFrame( engine_t* engine ) {
 	XrViewLocateInfo projectionInfo = {};
 	projectionInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
 	projectionInfo.viewConfigurationType = engine->appState.ViewportConfig.viewConfigurationType;
-	projectionInfo.displayTime = VR_GetPlatformFlag(VR_PLATFORM_TRACKING_DELAYED) ? 0 : frameState.predictedDisplayTime;
+	projectionInfo.displayTime = frameState.predictedDisplayTime;
 	projectionInfo.space = engine->appState.CurrentSpace;
 
 	XrViewState viewState = {XR_TYPE_VIEW_STATE, NULL};
