@@ -785,7 +785,7 @@
 								textaligny	0
 								textscale	0.33
 								shadow		1
-								text		"Color scheme"
+								text		"PBR shader"
 							}
 							choiceDef OVA_Choice_ColorScheme {
 								rect		200, 0, 200, 25
@@ -795,7 +795,7 @@
 								textaligny	0
 								textscale	0.33
 								shadow		1
-								choices		"Modern;Original"
+								choices		"On;Off"
 								cvar		"r_usePhong"
 								choiceType	0
 							}
