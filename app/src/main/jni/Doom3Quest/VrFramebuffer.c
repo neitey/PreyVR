@@ -11,6 +11,16 @@ double FromXrTime(const XrTime time) {
 	return (time * 1e-9);
 }
 
+void GLCheckErrors(const char* file, int line) {
+    for (int i = 0; i < 10; i++) {
+        const GLenum error = glGetError();
+        if (error == GL_NO_ERROR) {
+            break;
+        }
+        ALOGE("GL error on line %s:%d %d", file, line, error);
+    }
+}
+
 typedef void(GL_APIENTRY* PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC)(
 		GLenum target,
 		GLenum attachment,
