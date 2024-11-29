@@ -121,7 +121,7 @@ void VR_Recenter(engine_t* engine) {
 	// Calculate recenter reference
 	XrReferenceSpaceCreateInfo spaceCreateInfo = {};
 	spaceCreateInfo.type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO;
-	spaceCreateInfo.poseInReferenceSpace.orientation.w = 1.0f;
+	spaceCreateInfo.poseInReferenceSpace = XrPosef_Identity();
 	if (engine->appState.CurrentSpace != XR_NULL_HANDLE) {
 		XrSpaceLocation loc = {};
 		loc.type = XR_TYPE_SPACE_LOCATION;
@@ -147,6 +147,7 @@ void VR_Recenter(engine_t* engine) {
 	// Create a default stage space to use if SPACE_TYPE_STAGE is not
 	// supported, or calls to xrGetReferenceSpaceBoundsRect fail.
 	spaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
+	spaceCreateInfo.poseInReferenceSpace = XrPosef_Identity();
 	if (VR_GetPlatformFlag(VR_PLATFORM_TRACKING_FLOOR)) {
 		spaceCreateInfo.poseInReferenceSpace.position.y = -1.6750f;
 	}
