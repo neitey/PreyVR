@@ -277,19 +277,20 @@ bool VR_InitFrame( engine_t* engine ) {
 	beginFrameDesc.next = NULL;
 	OXR(xrBeginFrame(engine->appState.Session, &beginFrameDesc));
 
-	fov.angleLeft = 0;
-	fov.angleRight = 0;
-	fov.angleUp = 0;
-	fov.angleDown = 0;
+	float fovx = 0;
+	float fovy = 0;
 	for (int eye = 0; eye < ovrMaxNumEyes; eye++) {
-		fov.angleLeft += projections[eye].fov.angleLeft / 2.0f;
-		fov.angleRight += projections[eye].fov.angleRight / 2.0f;
-		fov.angleUp += projections[eye].fov.angleUp / 2.0f;
-		fov.angleDown += projections[eye].fov.angleDown / 2.0f;
+		fovx += fabs(projections[eye].fov.angleDown - projections[eye].fov.angleUp) / 2.0f;
+		fovy += fabs(projections[eye].fov.angleRight - projections[eye].fov.angleLeft) / 2.0f;
 		invViewTransform[eye] = projections[eye].pose;
 	}
-	VR_SetConfigFloat(VR_CONFIG_FOVX, ToDegrees(fabs(fov.angleLeft) + fabs(fov.angleRight)));
-	VR_SetConfigFloat(VR_CONFIG_FOVY, ToDegrees(fabs(fov.angleUp) + fabs(fov.angleDown)));
+	fovy *= 1.1f; //hack to avoid low vertical FOV
+	VR_SetConfigFloat(VR_CONFIG_FOVX, ToDegrees(fovx));
+	VR_SetConfigFloat(VR_CONFIG_FOVY, ToDegrees(fovy));
+	fov.angleLeft = -fovx / 2.0f;
+	fov.angleRight = fovx / 2.0f;
+	fov.angleDown = -fovy / 2.0f;
+	fov.angleUp = fovy / 2.0f;
 
 	// Update HMD and controllers
 	hmdorientation = XrQuaternionf_ToEulerAngles(invViewTransform[0].orientation);
