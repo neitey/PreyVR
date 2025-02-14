@@ -53,15 +53,10 @@ android {
 android {
     task PackVrSupportPK4(type: Zip) {
         from 'src/main/pk4/'
-        archiveName 'vr_support.pk4'
-        destinationDir(file('src/main/assets/'))
+        archiveFileName.set('vr_support.pk4')
+        getDestinationDirectory().set(file('src/main/assets/'))
     }
-    afterEvaluate {
-        if (project(':app').tasks.findByName('createDebugVariantModel'))
-            project(':app').createDebugVariantModel.dependsOn PackVrSupportPK4
-        if (project(':app').tasks.findByName('createReleaseVariantModel'))
-            project(':app').createReleaseVariantModel.dependsOn PackVrSupportPK4
-    }
+    preBuild.dependsOn PackVrSupportPK4
 }
 
 dependencies {

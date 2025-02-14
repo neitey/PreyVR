@@ -162,12 +162,12 @@ void HandleInput_Default(int controlscheme, int switchsticks)
 			//Weapon Chooser
 			static bool itemSwitched = false;
 			if (between(-0.2f, pPrimaryJoystick.x, 0.2f) &&
-				(between(0.8f, pPrimaryJoystick.y, 1.0f) ||
-				 between(-1.0f, pPrimaryJoystick.y, -0.8f)))
+				(between(0.5f, pPrimaryJoystick.y, 1.0f) ||
+				 between(-1.0f, pPrimaryJoystick.y, -0.5f)))
 			{
-				pVRClientInfo->weaponZooming = between(0.8f, pPrimaryJoystick.y, 1.0f) ? 1 : -1; //Lubos
+				pVRClientInfo->weaponZooming = between(0.5f, pPrimaryJoystick.y, 1.0f) ? 1 : -1; //Lubos
 				if (!itemSwitched) {
-					if (between(0.8f, pPrimaryJoystick.y, 1.0f))
+					if (between(0.5f, pPrimaryJoystick.y, 1.0f))
 					{
 					    //Previous Weapon
                         Android_SetImpulse(UB_IMPULSE15);
@@ -179,7 +179,7 @@ void HandleInput_Default(int controlscheme, int switchsticks)
 					}
 					itemSwitched = true;
 				}
-			} else if (fabsf(pPrimaryJoystick.y) < 0.66f) {//Lubos
+			} else if (fabsf(pPrimaryJoystick.y) < 0.4f) {//Lubos
 				pVRClientInfo->weaponZooming = 0; //Lubos
 				itemSwitched = false;
 			}

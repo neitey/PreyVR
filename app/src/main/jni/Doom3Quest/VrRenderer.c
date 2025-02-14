@@ -238,16 +238,10 @@ bool VR_InitFrame( engine_t* engine ) {
 		stageBoundsDirty = false;
 	}
 
-	// NOTE: OpenXR does not use the concept of frame indices. Instead,
-	// XrWaitFrame returns the predicted display time.
-	XrFrameWaitInfo waitFrameInfo = {};
-	waitFrameInfo.type = XR_TYPE_FRAME_WAIT_INFO;
-	waitFrameInfo.next = NULL;
-
 	frameState.type = XR_TYPE_FRAME_STATE;
 	frameState.next = NULL;
 
-	OXR(xrWaitFrame(engine->appState.Session, &waitFrameInfo, &frameState));
+	OXR(xrWaitFrame(engine->appState.Session, 0, &frameState));
 	engine->predictedDisplayTime = frameState.predictedDisplayTime;
 
 	XrViewLocateInfo projectionInfo = {};
@@ -284,7 +278,6 @@ bool VR_InitFrame( engine_t* engine ) {
 		fovy += fabs(projections[eye].fov.angleRight - projections[eye].fov.angleLeft) / 2.0f;
 		invViewTransform[eye] = projections[eye].pose;
 	}
-	fovy *= 1.1f; //hack to avoid low vertical FOV
 	VR_SetConfigFloat(VR_CONFIG_FOVX, ToDegrees(fovx));
 	VR_SetConfigFloat(VR_CONFIG_FOVY, ToDegrees(fovy));
 	fov.angleLeft = -fovx / 2.0f;
